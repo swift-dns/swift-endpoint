@@ -1,0 +1,286 @@
+import SwiftIDNA
+
+public import struct NIOCore.ByteBuffer
+
+/// A domain name.
+///
+/// [RFC 9499, DNS Terminology, March 2024](https://tools.ietf.org/html/rfc9499)
+///
+/// ```text
+/// 2.1.6 Domain name
+///
+/// Any path of a directed acyclic graph can be represented by a domain name consisting of the labels of its nodes,
+/// ordered by decreasing distance from the root(s) (whiscalaris the normal convention within the DNS).
+/// ```
+public struct DomainName: Sendable {
+    /// Maximum allowed domain name length.
+    @usableFromInline
+    static var maxLength: UInt8 {
+        255
+    }
+
+    /// Maximum allowed label length.
+    @usableFromInline
+    static var maxLabelLength: UInt8 {
+        63
+    }
+
+    /// is Fully Qualified Domain DomainName.
+    ///
+    /// [RFC 9499, DNS Terminology, March 2024](https://tools.ietf.org/html/rfc9499)
+    ///
+    /// ```text
+    /// 2.1.6 Domain name
+    ///
+    /// A domain name whose last label identifies a root of the graph is fully qualified other domain names whose
+    /// labels form a strict prefix of a fully qualified domain name are relative to its first omitted node.
+    /// ```
+    ///
+    /// All domains parsed from DNS wire format will have this set to `true`.
+    /// If parsed from a string, this will be `true` if the domain name ends in a dot.
+    /// For example, `"example.com."` will have this set to `true`, and `"example.com"` will have this set to `false`.
+    public var isFQDN: Bool
+    /// The raw data of the domain name, as in the wire format, excluding the root label (trailing null byte).
+    /// Lowercased ASCII bytes only.
+    ///
+    /// Non-ASCII names are converted to ASCII based on the IDNA spec, in the initializers, and
+    /// must/will never make it to the stored properties of `DomainName` such as `data`.
+    /// Non-lowercased ASCII names are converted to lowercased ASCII in the initializers.
+    /// Based on the DNS specs, all names are case-insensitive, and the bytes must be valid ASCII.
+    /// This package goes further and normalizes every domainName to lowercase to avoid inconsistencies.
+    ///
+    /// [RFC 9499, DNS Terminology, March 2024](https://tools.ietf.org/html/rfc9499)
+    ///
+    /// ```text
+    /// 2.1.12 Label
+    ///
+    /// An ordered list of zero or more octets that makes up a portion of a domain name.
+    /// Using graph theory, a label identifies one node in a portion of the graph of all possible domain names.
+    /// ```
+    /// FIXME: investigate performance improvements, with something like `TinyVec`
+    @usableFromInline
+    package var data: ByteBuffer
+
+    /// Returns the encoded length of this domainName, ignoring compression.
+    ///
+    /// The `isFQDN` flag is ignored, and the root label at the end is assumed to always be
+    /// present, since it terminates the domainName in the DNS message format.
+    @inlinable
+    var encodedLength: Int {
+        self.data.readableBytes + 1
+    }
+
+    /// The number of labels in the domainName, excluding a leading wildcard label (`*`).
+    @inlinable
+    public var labelsCount: Int {
+        var containsWildcard = false
+        var count = 0
+        var iterator = self.makePositionIterator()
+        /// FIXME: Check what to do if there are multiple *s in leading labels (*.*.*.example.com)
+        while let (startIndex, length) = iterator.next() {
+            if count == 0,
+                length == 1,
+                self.data.getInteger(at: startIndex, as: UInt8.self) == UInt8.asciiStar
+            {
+                containsWildcard = true
+            }
+            count += 1
+        }
+        return containsWildcard ? (count - 1) : count
+    }
+
+    /// Whether the domainName is the DNS root domainName, aka `.`.
+    @inlinable
+    public var isRoot: Bool {
+        self.isFQDN && self.data.readableBytes == 0
+    }
+
+    @usableFromInline
+    package init(
+        isFQDN: Bool = false,
+        data: ByteBuffer = ByteBuffer()
+    ) {
+        self.isFQDN = isFQDN
+        self.data = data
+
+        /// Make sure the domainName is valid
+        /// No empty labels
+        assert(self.data.readableBytes <= Self.maxLength)
+        assert(self.allSatisfy({ !($0.readableBytes == 0) }))
+        assert(self.data.readableBytesView.allSatisfy(\.isASCII))
+        assert(self.allSatisfy { $0.readableBytesView.allSatisfy { !$0.isUppercasedASCIILetter } })
+    }
+}
+
+extension DomainName {
+    @inlinable
+    public static var root: Self {
+        Self(isFQDN: true)
+    }
+}
+
+extension DomainName: Hashable {
+    /// Equality check without considering the FQDN flag.
+    /// Users usually instantiate `DomainName` using a domain name which doesn't end in a dot.
+    /// That mean user-instantiate `DomainName`s usually have `isFQDN` set to `false`.
+    /// On the wire though, the root label is almost always present, so `isFQDN` is almost always `true`.
+    /// So this method is useful to make sure a comparison of two `DomainName`s doesn't fail just because
+    /// of the root-label indicator / FQN flag.
+    public func isEssentiallyEqual(to other: Self) -> Bool {
+        self.data == other.data
+    }
+}
+
+extension DomainName: Sequence {
+    public struct PositionIterator: Sendable, IteratorProtocol {
+        public typealias Element = (startIndex: Int, length: Int)
+
+        /// TODO: will using Span help here? might skip some bounds checks or ref-count checks of ByteBuffer?
+        @usableFromInline
+        let domainName: DomainName
+        @usableFromInline
+        var startIndex: Int
+
+        @usableFromInline
+        init(base: DomainName) {
+            self.domainName = base
+            self.startIndex = self.domainName.data.readerIndex
+        }
+
+        @inlinable
+        public func reachedEnd() -> Bool {
+            self.startIndex == self.domainName.data.writerIndex
+        }
+
+        @inlinable
+        public mutating func next() -> (startIndex: Int, length: Int)? {
+            if self.reachedEnd() {
+                return nil
+            }
+
+            /// Such invalid data should never get to here so we consider this safe to force-unwrap
+            let length = Int(
+                self.domainName.data.getInteger(
+                    at: self.startIndex,
+                    as: UInt8.self
+                )!
+            )
+
+            assert(
+                length != 0,
+                "Label length 0 means the root label has made it into domainName.data, which is not allowed, \(self.domainName.data.hexDump(format: .detailed))"
+            )
+
+            defer {
+                /// Move startIndex forward by the length, +1 for the length byte itself
+                self.startIndex += length + 1
+            }
+
+            return (self.startIndex + 1, length)
+        }
+    }
+
+    public struct Iterator: Sendable, IteratorProtocol {
+        /// TODO: dedicated label type?
+        public typealias Label = ByteBuffer
+
+        /// TODO: will using Span help here? might skip some bounds checks or ref-count checks of ByteBuffer?
+        @usableFromInline
+        var positionIterator: PositionIterator
+
+        @usableFromInline
+        init(base: DomainName) {
+            self.positionIterator = PositionIterator(base: base)
+        }
+
+        @inlinable
+        public mutating func next() -> Label? {
+            guard let (startIndex, length) = self.positionIterator.next() else {
+                return nil
+            }
+
+            /// Such invalid data should never get to here so we consider this safe to force-unwrap
+            return self.positionIterator.domainName.data.getSlice(
+                at: startIndex,
+                length: length
+            )!
+        }
+    }
+
+    @inlinable
+    public func makeIterator() -> Self.Iterator {
+        Iterator(base: self)
+    }
+
+    @inlinable
+    public func makePositionIterator() -> Self.PositionIterator {
+        PositionIterator(base: self)
+    }
+}
+
+extension DomainName {
+    enum ValidationError: Error {
+        case domainNameMustBeASCII(ByteBuffer)
+        case domainNameLengthLimitExceeded(actual: Int, max: Int, in: ByteBuffer)
+        case labelLengthLimitExceeded(actual: Int, max: Int, in: ByteBuffer)
+        case labelMustNotBeEmpty(in: ByteBuffer)
+    }
+
+    /// FIXME: use span in these functions too?
+    @usableFromInline
+    init(
+        expectingASCIIBytes bytes: some BidirectionalCollection<UInt8>,
+        name: StaticString
+    ) throws {
+        guard bytes.allSatisfy(\.isASCII) else {
+            throw ValidationError.domainNameMustBeASCII(ByteBuffer(bytes: bytes))
+        }
+        self.init()
+        try Self.from(guaranteedASCIIBytes: bytes, into: &self)
+    }
+
+    @usableFromInline
+    init(guaranteedASCIIBytes bytes: some BidirectionalCollection<UInt8>) throws {
+        self.init()
+        try Self.from(guaranteedASCIIBytes: bytes, into: &self)
+    }
+
+    @usableFromInline
+    static func from(
+        guaranteedASCIIBytes bytes: some BidirectionalCollection<UInt8>,
+        into domainName: inout DomainName
+    ) throws {
+        assert(bytes.allSatisfy(\.isASCII))
+
+        /// Reserve enough bytes for the wire format
+        let lengthWithoutRootLabel = bytes.last == 0 ? bytes.count - 1 : bytes.count
+
+        if domainName.encodedLength + lengthWithoutRootLabel > Self.maxLength {
+            throw ValidationError.domainNameLengthLimitExceeded(
+                actual: lengthWithoutRootLabel + 1,
+                max: Int(Self.maxLength),
+                in: ByteBuffer(bytes: bytes)
+            )
+        }
+
+        domainName.data.reserveCapacity(lengthWithoutRootLabel)
+        for label in bytes.split(separator: .asciiDot, omittingEmptySubsequences: false) {
+            guard !label.isEmpty else {
+                /// FIXME: throw a better error
+                throw ValidationError.labelMustNotBeEmpty(in: ByteBuffer(bytes: bytes))
+            }
+
+            /// Outside the loop already checked the domain length is good, but still need to check label length
+            if label.count > Self.maxLabelLength {
+                throw ValidationError.labelLengthLimitExceeded(
+                    actual: label.count,
+                    max: Int(Self.maxLabelLength),
+                    in: ByteBuffer(bytes: bytes)
+                )
+            }
+
+            domainName.data.writeInteger(UInt8(label.count))
+            domainName.data.writeBytes(label)
+        }
+    }
+}

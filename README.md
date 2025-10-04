@@ -95,6 +95,9 @@ Here's the result at that point in time. Note that I made a lot of effort to mak
 All benchmarks on all platforms commit similar allocations.   
 3 of the benchmarks always do `0`, `IPv6_String_Encoding_Mixed` always does `1`.
 
+In all benchmarks apart from 1, this library performs better than the C libraries.   
+On the "IPv6 string decoding" benchmark it performs only 30% worse than Glibc, at ~23 millions rounds per second.
+
 ### Against Apple's Darwin
 
 These were performed on my M1 MacBook, on macOS 26.0.
@@ -134,6 +137,6 @@ inet_pton: 240ms
 swift: 200ms   
 inet_ntop: 1830ms   
 
-**2 Millions IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets**   
-swift: 110ms   
-inet_ntop: 70ms
+**3 Millions IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets**   
+swift: 130ms   
+inet_ntop: 100ms

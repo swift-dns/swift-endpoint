@@ -28,7 +28,7 @@ The package contains a great amount of unit tests as well as benchmarks to ensur
 ## Implementations
 
 - `DomainName`
-  - With IDNA support for non-ASCII domain names. 
+  - With Unicode-17-compliant IDNA support for non-ASCII domain names. 
 - `IPv4Address`, `IPv6Address`, `AnyIPAddress`
 - `CIDR`
 

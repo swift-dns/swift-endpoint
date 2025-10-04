@@ -1,0 +1,81 @@
+name: lint
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+on:
+  pull_request: { types: [opened, reopened, synchronize] }
+  push: { branches: [main] }
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -e -u -o pipefail {0}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 10
+
+    container: swift:6.2-noble
+
+    permissions:
+      contents: write # For committing formatting updates
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Configure git
+        run: |
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Check out ${{ github.event.repository.name }}
+        uses: actions/checkout@v5
+
+      - name: Check config file
+        run: |
+          if [ ! -f .swift-format ]; then
+            echo "No .swift-format file found."
+            exit 1
+          fi
+
+      - name: Lint
+        id: lint
+        run: |
+          apt -q update && apt -yq install curl
+          curl -s https://raw.githubusercontent.com/swiftlang/github-workflows/refs/heads/main/.github/workflows/scripts/check-swift-format.sh | bash
+          echo "exit-status=$?" >> "${GITHUB_OUTPUT}"
+
+      - name: Check for modifications
+        if: steps.lint.outputs.exit-status != '0'
+        id: check-modifications
+        run: |
+          MODIFICATIONS="$(git status --porcelain)"
+          if [ -n "$MODIFICATIONS" ]; then
+            echo "has-modifications=true" >> $GITHUB_OUTPUT
+            echo "changes-count=$(git status --porcelain | awk '{print $2}' | uniq | wc -l)" >> $GITHUB_OUTPUT
+          else
+            echo "has-modifications=false" >> $GITHUB_OUTPUT
+            echo "changes-count=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit formatting changes to a new branch
+        if: steps.check-modifications.outputs.has-modifications == 'true'
+        id: commit-update
+        run: |
+          CURRENT_BRANCH="${{ github.head_ref || github.ref_name }}"
+          NEW_BRANCH="format-update/${{ github.run_id }}/${CURRENT_BRANCH}"
+
+          echo "new-branch=${NEW_BRANCH}" >> $GITHUB_OUTPUT
+
+          git checkout -b "${NEW_BRANCH}"
+          git add .
+          git commit -m "Formatting update
+
+          Committed to ${NEW_BRANCH} by ${RUN_LINK}"
+          git push origin "${NEW_BRANCH}"
+
+          echo "commit-sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT

@@ -1,0 +1,284 @@
+name: benchmarks
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+on:
+  pull_request: { types: [opened, reopened, synchronize] }
+  push: { branches: [main] }
+  schedule:
+    - cron: "0 6 * * 6"
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -e -u -o pipefail {0}
+
+env:
+  RUN_LINK: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+  CHECK_NAME: "benchmark / benchmark-vs-thresholds"
+  THRESHOLDS_PATH: "Benchmarks/Thresholds/"
+
+jobs:
+  benchmark-vs-thresholds:
+    runs-on: [self-hosted, linux, x64]
+
+    container: swift:6.2-noble
+
+    permissions:
+      pull-requests: write # For the comment action
+      contents: write # For committing threshold updates
+
+    steps:
+      # jemalloc is a dependency of the Benchmarking package
+      # actions/cache will detect zstd and will become much faster.
+      - name: Install jemalloc, zstd, curl and jq
+        run: |
+          apt update -q && apt install -yq libjemalloc-dev zstd curl jq
+
+      - name: Find commit info
+        id: commit-info
+        env:
+          GITHUB_OBJECT: ${{ toJson(github) }}
+        run: |
+          # 'github.event.pull_request.head.sha' is needed for certain 'pull_request' events, such
+          # as 'opened' and 'reopened' events.
+          # 'github.sha' is needed for 'schedule' events.
+          COMMIT_SHA="${{ github.event.after || github.event.pull_request.head.sha || github.sha }}"
+
+          if [[ "${{ github.event_name }}" == *"pull_request"* ]]; then
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+            echo "ref=$COMMIT_SHA" >> "${GITHUB_OUTPUT}"
+            echo "sha=$COMMIT_SHA" >> "${GITHUB_OUTPUT}"
+            echo "title=Current-PR" >> "${GITHUB_OUTPUT}"
+            echo "pr_number=$PR_NUMBER" >> "${GITHUB_OUTPUT}"
+            SHORT_NAME="$(echo $COMMIT_SHA | cut -c 1-7)"
+            FILES_LINK="https://github.com/${{ github.repository }}/pull/${PR_NUMBER}/commits/${COMMIT_SHA}"
+          elif [[ "${{ github.event_name }}" == "push" || "${{ github.event_name }}" == "schedule" ]]; then
+            echo "ref=$COMMIT_SHA" >> "${GITHUB_OUTPUT}"
+            echo "sha=$COMMIT_SHA" >> "${GITHUB_OUTPUT}"
+            echo "title=Current-Branch" >> "${GITHUB_OUTPUT}"
+            echo "pr_number=" >> "${GITHUB_OUTPUT}"
+            SHORT_NAME="$(echo $COMMIT_SHA | cut -c 1-7)"
+            FILES_LINK="https://github.com/${{ github.repository }}/commit/${GITHUB_SHA}"
+          else
+            printf '%s\n' "$GITHUB_OBJECT"
+            exit 1
+          fi
+
+          echo "md_link=[${SHORT_NAME}](${FILES_LINK})" >> "${GITHUB_OUTPUT}"
+
+      - name: Construct in-progress comment
+        if: steps.commit-info.outputs.pr_number != ''
+        run: |
+          echo "## [Benchmark](${RUN_LINK}) Report for ${{ steps.commit-info.outputs.md_link }}" >> in-progress-comment.md
+          echo 'Benchmark in progress...' >> in-progress-comment.md
+
+      - name: Comment in PR
+        if: steps.commit-info.outputs.pr_number != ''
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          pr-number: ${{ steps.commit-info.outputs.pr_number }}
+          file-path: in-progress-comment.md
+          comment-tag: benchmark-ci-comment
+
+      - name: Check out code
+        uses: actions/checkout@v5
+        with:
+          ref: "${{ steps.commit-info.outputs.ref }}"
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Restore .build
+        if: ${{ runner.debug != '1' }}
+        id: restore-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: Benchmarks/.build
+          key: "swiftpm-benchmark-build-${{ runner.os }}-${{ steps.commit-info.outputs.sha }}"
+          restore-keys: "swiftpm-benchmark-build-${{ runner.os }}-"
+
+      - name: Run benchmarks for '${{ steps.commit-info.outputs.title }}'
+        run: |
+          swift package -c release \
+            --package-path Benchmarks \
+            --allow-writing-to-package-directory \
+            benchmark baseline update \
+            '${{ steps.commit-info.outputs.title }}'
+
+      - name: Read benchmark result
+        run: |
+          swift package -c release \
+            --package-path Benchmarks \
+            --allow-writing-to-package-directory \
+            benchmark baseline read \
+            '${{ steps.commit-info.outputs.title }}' \
+            --no-progress \
+            --format markdown \
+            >> benchmark.md
+
+      - name: Compare '${{ steps.commit-info.outputs.title }}' against thresholds
+        id: comparison
+        run: |
+          TIMESTAMP="$(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          ENCODED_TIMESTAMP="$(date -u +"%Y-%m-%dT%H%%3A%M%%3A%SZ")"
+          TIMESTAMP_LINK="https://www.timeanddate.com/worldclock/fixedtime.html?iso=$ENCODED_TIMESTAMP"
+          echo "## Benchmark check running at [$TIMESTAMP]($TIMESTAMP_LINK)" >> comparison.md
+
+          # Disable 'set -e' to prevent the script from exiting on non-zero exit codes
+          set +e
+          swift package -c release \
+            --package-path Benchmarks \
+            --allow-writing-to-package-directory \
+            benchmark thresholds check \
+            '${{ steps.commit-info.outputs.title }}' \
+            --path "$PWD/${{ env.THRESHOLDS_PATH }}" \
+            --skip-loading-benchmark-targets \
+            --no-progress \
+            --format markdown \
+            >> comparison.md
+          echo "exit-status=$?" >> "${GITHUB_OUTPUT}"
+          set -e
+
+      - name: Cache .build
+        if: steps.restore-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: Benchmarks/.build
+          key: "swiftpm-benchmark-build-${{ runner.os }}-${{ steps.commit-info.outputs.sha }}"
+
+      - name: Update thresholds based on the failed benchmark
+        if: steps.comparison.outputs.exit-status != '0'
+        run: |
+          swift package -c release \
+            --package-path Benchmarks \
+            --allow-writing-to-package-directory \
+            benchmark thresholds update \
+            '${{ steps.commit-info.outputs.title }}' \
+            --path "$PWD/${{ env.THRESHOLDS_PATH }}" \
+            --range
+
+      - name: Format threshold files with jq
+        if: steps.comparison.outputs.exit-status != '0'
+        run: |
+          echo "Processing threshold files..."
+          for file in "${{ env.THRESHOLDS_PATH }}"/*.json; do
+            echo "Processing: ${file}"
+            jq '.' "${file}" > "${file}.tmp" && mv "${file}.tmp" "${file}"
+          done
+
+      - name: Check for modifications
+        if: steps.comparison.outputs.exit-status != '0'
+        id: check-modifications
+        run: |
+          MODIFICATIONS="$(git status --porcelain "${{ env.THRESHOLDS_PATH }}")"
+          if [ -n "$MODIFICATIONS" ]; then
+            echo "has-modifications=true" >> $GITHUB_OUTPUT
+            echo "changes-count=$(git status --porcelain "${{ env.THRESHOLDS_PATH }}" | awk '{print $2}' | uniq | wc -l)" >> $GITHUB_OUTPUT
+          else
+            echo "has-modifications=false" >> $GITHUB_OUTPUT
+            echo "changes-count=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit threshold changes to another branch
+        if: steps.check-modifications.outputs.has-modifications == 'true'
+        id: commit-update
+        run: |
+          CURRENT_BRANCH="${{ github.head_ref || github.ref_name }}"
+          NEW_BRANCH="thr-update/${CURRENT_BRANCH}"
+
+          echo "new-branch=${NEW_BRANCH}" >> $GITHUB_OUTPUT
+
+          git checkout -B "${NEW_BRANCH}" "origin/${CURRENT_BRANCH}"
+          git add "${{ env.THRESHOLDS_PATH }}"
+          git commit -m "Update of benchmark thresholds with the deviated baseline
+
+          Committed to ${NEW_BRANCH} by ${RUN_LINK}"
+
+          git push -f origin "${NEW_BRANCH}"
+
+          echo "commit-sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Construct result comment if the benchmark-process succeeded
+        run: |
+          echo "## [Benchmark](${RUN_LINK}) Report for ${{ steps.commit-info.outputs.md_link }}" >> comment.md
+
+          EXIT_CODE='${{ steps.comparison.outputs.exit-status }}'
+
+          case "${EXIT_CODE}" in
+              0)
+                  echo '**✅ Benchmark results are within the specified thresholds ✅**' >> comment.md
+                  ;;
+              1)
+                  echo '**❌ Benchmark results are outside the specified thresholds 📊**' >> comment.md
+                  ;;
+              2)
+                  echo '**❌ Benchmark results are worse than the specified thresholds 📉**' >> comment.md
+                  ;;
+              4)
+                  echo '**❌ Benchmark results are better than the specified thresholds 📈**' >> comment.md
+                  ;;
+              *)
+                  echo '**❌ Benchmark comparison failed to complete properly with exit code $EXIT_CODE ❌**' >> comment.md
+                  ;;
+          esac
+
+          if [[ '${{ steps.check-modifications.outputs.has-modifications }}' == 'true' ]]; then
+            SHORT_SHA="$(echo '${{ steps.commit-update.outputs.commit-sha }}' | cut -c 1-7)"
+            COMMIT_LINK="https://github.com/${{ github.repository }}/commit/${{ steps.commit-update.outputs.commit-sha }}"
+            BRANCH_NAME="${{ steps.commit-update.outputs.new-branch }}"
+            BRANCH_LINK="https://github.com/${{ github.repository }}/tree/${BRANCH_NAME}"
+            echo '' >> comment.md
+            echo "Pushed commit [${SHORT_SHA}](${COMMIT_LINK}) to branch [${BRANCH_NAME}](${BRANCH_LINK}) containing an update of current thresholds with the deviated baseline." >> comment.md
+          fi
+
+          echo '<details>' >> comment.md
+          echo '  <summary> Click to expand comparison result </summary>' >> comment.md
+          echo '' >> comment.md
+          cat comparison.md >> comment.md
+          echo '' >> comment.md
+          echo '</details>' >> comment.md
+
+          echo '' >> comment.md
+
+          echo '<details>' >> comment.md
+          echo '  <summary> Click to expand benchmark result </summary>' >> comment.md
+          echo '' >> comment.md
+          cat benchmark.md >> comment.md
+          echo '' >> comment.md
+          echo '</details>' >> comment.md
+
+      - name: Construct result comment if the benchmark process was cancelled
+        if: cancelled()
+        run: |
+          echo "## [Benchmark](${RUN_LINK}) Report for ${{ steps.commit-info.outputs.md_link }}" >> comment.md
+          echo '**🔕 Benchmark process was cancelled 🔕**' >> comment.md
+
+      - name: Construct result comment if the benchmark process failed
+        if: failure()
+        run: |
+          echo "## [Benchmark](${RUN_LINK}) Report for ${{ steps.commit-info.outputs.md_link }}" >> comment.md
+          echo '**🛑 Benchmark process failed to complete 🛑**' >> comment.md
+
+      - name: Update comment in PR
+        if: always() && (steps.commit-info.outputs.pr_number != '')
+        id: pr-comment
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          pr-number: ${{ steps.commit-info.outputs.pr_number }}
+          file-path: comment.md
+          comment-tag: benchmark-ci-comment
+
+      - name: Output the comment as job summary
+        if: always()
+        run: |
+          cat comment.md >> "${GITHUB_STEP_SUMMARY}"
+          if [[ -n '${{ steps.commit-info.outputs.pr_number }}' ]]; then
+            echo 'Commented at ${{ steps.pr-comment.outputs.html-url }}' >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Exit with correct status
+        run: exit ${{ steps.comparison.outputs.exit-status }}

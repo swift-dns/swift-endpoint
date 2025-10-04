@@ -65,7 +65,14 @@ let package = Package(
         ),
         .testTarget(
             name: "EndpointTests",
-            dependencies: ["Endpoint"],
+            dependencies: [
+                .product(
+                    name: "NIOCore",
+                    package: "swift-nio",
+                    condition: .when(traits: ["NIO_BYTE_BUFFER_SUPPORT"])
+                ),
+                "Endpoint"
+            ],
             swiftSettings: settings
         ),
     ]

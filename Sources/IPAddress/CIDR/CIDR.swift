@@ -115,7 +115,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     ///     Ignores amounts that are greater than the bit width of the IP address type,
     ///     which means 32 for IPv4 or 128 for IPv6.
     @inlinable
-    static func makeMaskBasedOn(countOfMaskedBits: UInt8) -> IPAddressType {
+    package static func makeMaskBasedOn(countOfMaskedBits: UInt8) -> IPAddressType {
         let bitWidth = UInt8(IntegerLiteralType.bitWidth)
         if countOfMaskedBits >= bitWidth {
             return IPAddressType(integerLiteral: IntegerLiteralType.max)

@@ -1,6 +1,5 @@
 import struct NIOCore.ByteBuffer
 
-
 #if canImport(FoundationEssentials)
 import FoundationEssentials
 #else

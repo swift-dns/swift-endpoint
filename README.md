@@ -98,9 +98,11 @@ All benchmarks on all platforms commit similar allocations.
 In all benchmarks apart from 1, this library performs better than the C libraries.   
 On the "IPv6 string decoding" benchmark it performs only 30% worse than Glibc, at ~23 millions rounds per second.
 
-### Against Apple's Darwin
+The results are all reproducible by simply running `scripts/benchmark.bash` on a machine of your own.
 
-These were performed on my M1 MacBook, on macOS 26.0.
+### Against Darwin
+
+These were performed on my M1 Pro MacBook, on macOS 26.0.
 
 **15 Millions IPv4_String_Encoding_Mixed**   
 swift: 153ms   
@@ -114,7 +116,7 @@ inet_pton: 468ms
 swift: 281ms   
 inet_ntop: 1473ms
 
-**2 Millions IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets**   
+**3 Millions IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets**   
 swift: 180ms   
 inet_ntop: 360ms
 

@@ -58,8 +58,7 @@
 @available(endpointApplePlatforms 15, *)
 public struct IPv6Address: Sendable, Hashable, _IPAddressProtocol {
     /// The byte size of an IPv6.
-    @usableFromInline
-    static var size: Int {
+    public static var size: Int {
         16
     }
 

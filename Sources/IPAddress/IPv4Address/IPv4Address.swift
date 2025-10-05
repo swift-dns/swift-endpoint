@@ -17,8 +17,7 @@
 /// [IETF RFC 6943]: https://tools.ietf.org/html/rfc6943#section-3.1.1
 public struct IPv4Address: Sendable, Hashable, _IPAddressProtocol {
     /// The byte size of an IPv4.
-    @usableFromInline
-    static var size: Int {
+    public static var size: Int {
         4
     }
 

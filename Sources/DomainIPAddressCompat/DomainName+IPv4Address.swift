@@ -100,7 +100,7 @@ extension IPv4Address {
             }
             endIndex &-= 1
         }
-        let byteSpan4 = asciiSpan.extracting(unchecked: range4)
+        let byteSpan4 = asciiSpan.extracting(unchecked: range4.lowerBound..<endIndex)
         guard let byte4 = UInt8(decimalRepresentation: byteSpan4) else {
             return nil
         }

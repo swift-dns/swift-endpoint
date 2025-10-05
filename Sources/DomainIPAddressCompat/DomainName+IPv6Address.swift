@@ -12,7 +12,7 @@ extension IPv6Address {
     @inlinable
     public init?(domainName: DomainName) {
         var iterator = domainName.makePositionIterator()
-        guard let position = iterator.next() else {
+        guard let (range, _) = iterator.nextRange() else {
             return nil
         }
 
@@ -21,7 +21,6 @@ extension IPv6Address {
             let asciiSpan = ptr.bindMemory(to: UInt8.self).span
 
             if iterator.reachedEnd() {
-                let range = position.startIndex..<(position.startIndex &+ position.length)
                 return IPv6Address(
                     __uncheckedASCIIspan: asciiSpan.extracting(unchecked: range)
                 )
@@ -31,7 +30,7 @@ extension IPv6Address {
                 return IPv6Address.ipv4Mapped(
                     asciiSpan: asciiSpan,
                     iterator: &iterator,
-                    position: position
+                    firstRange: range
                 )
             }
         }) {
@@ -46,14 +45,13 @@ extension IPv6Address {
     static func ipv4Mapped(
         asciiSpan: Span<UInt8>,
         iterator: inout DomainName.PositionIterator,
-        position: (startIndex: Int, length: Int)
+        firstRange: Range<Int>
     ) -> IPv6Address? {
         guard let lastColonIdx = asciiSpan.lastIndex(where: { $0 == .asciiColon }) else {
             return nil
         }
         let afterLastColonIdx = lastColonIdx &+ 1
-        let upperbound = position.startIndex &+ position.length
-        guard afterLastColonIdx < upperbound else {
+        guard afterLastColonIdx < firstRange.upperBound else {
             return nil
         }
         /// Need to trim the square brackets here and notify the ipv4 parsing logic
@@ -61,8 +59,8 @@ extension IPv6Address {
         /// we'll be asking the ipv4-parsing logic to parse `1.1.1.1]` and the ipv6 parsing logic to
         /// parse `[::FFFF`, and both of these are invalid.
         let expectingRightSquareBracketAtTheEnd =
-            asciiSpan[unchecked: position.startIndex] == UInt8.asciiLeftSquareBracket
-        var ipv6StartIndex = position.startIndex
+            asciiSpan[unchecked: firstRange.lowerBound] == UInt8.asciiLeftSquareBracket
+        var ipv6StartIndex = firstRange.lowerBound
         if expectingRightSquareBracketAtTheEnd {
             ipv6StartIndex &+= 1
         }
@@ -70,15 +68,15 @@ extension IPv6Address {
             let ipv4MappedSegment = IPv4Address(
                 __domainNameSpan: asciiSpan,
                 iterator: &iterator,
-                firstRange: afterLastColonIdx..<upperbound,
+                firstRange: afterLastColonIdx..<firstRange.upperBound,
                 expectingRightSquareBracketAtTheEnd: expectingRightSquareBracketAtTheEnd
             )
         else {
             return nil
         }
-        let range = ipv6StartIndex..<lastColonIdx
+        let ipv6Range = ipv6StartIndex..<lastColonIdx
         return IPv6Address(
-            __uncheckedASCIIspan: asciiSpan.extracting(unchecked: range),
+            __uncheckedASCIIspan: asciiSpan.extracting(unchecked: ipv6Range),
             preParsedIPv4MappedSegment: ipv4MappedSegment
         )
     }

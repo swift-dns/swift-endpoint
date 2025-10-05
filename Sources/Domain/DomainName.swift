@@ -168,15 +168,29 @@ extension DomainName: Sequence {
 
             assert(
                 length != 0,
-                "Label length 0 means the root label has made it into domainName.data, which is not allowed, \(self.domainName.data.hexDump(format: .detailed))"
+                "Label length 0 means the root label has made it into DomainName.data, which is not allowed, \(self.domainName.data.hexDump(format: .detailed))"
             )
 
             defer {
                 /// Move startIndex forward by the length, +1 for the length byte itself
-                self.startIndex += length + 1
+                /// Unchecked is safe here because `DomainName` has already been using these numbers
+                /// in one way or another.
+                self.startIndex &+= length &+ 1
             }
 
-            return (self.startIndex + 1, length)
+            return (self.startIndex &+ 1, length)
+        }
+
+        @inlinable
+        public mutating func nextRange() -> (range: Range<Int>, length: Int)? {
+            guard let (startIndex, length) = self.next() else {
+                return nil
+            }
+            /// This range must be valid and must at least have 1 number in it based
+            /// on our contract with `DomainName`.
+            let range = Range(uncheckedBounds: (startIndex, startIndex &+ length))
+
+            return (range, length)
         }
     }
 
@@ -184,7 +198,6 @@ extension DomainName: Sequence {
         /// TODO: dedicated label type?
         public typealias Label = ByteBuffer
 
-        /// TODO: will using Span help here? might skip some bounds checks or ref-count checks of ByteBuffer?
         @usableFromInline
         var positionIterator: PositionIterator
 

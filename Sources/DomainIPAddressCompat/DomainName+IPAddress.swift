@@ -16,10 +16,9 @@ extension AnyIPAddress {
             let result = domainName.data.withUnsafeReadableBytes({ ptr -> AnyIPAddress? in
                 var iterator = domainName.makePositionIterator()
 
-                guard let position = iterator.next() else {
+                guard let (range, _) = iterator.nextRange() else {
                     return nil
                 }
-                let range = position.startIndex..<(position.startIndex &+ position.length)
 
                 /// `DomainName.data` always only contains ASCII bytes
                 let asciiSpan = ptr.bindMemory(to: UInt8.self).span
@@ -37,9 +36,7 @@ extension AnyIPAddress {
                         ipv4.address |= UInt32(byte) &<< 24
 
                         var idx = 1
-                        while let position = iterator.next() {
-                            let range =
-                                position.startIndex..<(position.startIndex &+ position.length)
+                        while let (range, _) = iterator.nextRange() {
                             guard
                                 let byte = UInt8(
                                     decimalRepresentation: asciiSpan.extracting(unchecked: range)
@@ -69,7 +66,7 @@ extension AnyIPAddress {
                         return IPv6Address.ipv4Mapped(
                             asciiSpan: asciiSpan,
                             iterator: &iterator,
-                            position: position
+                            firstRange: range
                         ).map { .v6($0) }
                     }
                 }

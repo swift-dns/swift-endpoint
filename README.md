@@ -52,6 +52,10 @@ let domainName2 = try DomainName(string: "新华网.中国")
 print(domainName2) /// prints "新华网.中国"
 print(domainName2.debugDescription) /// prints "xn--xkrr14bows.xn--fiqs8s"
 
+/// Define a domain name containing an ip address. 
+let domainName3 = try DomainName(string: "255.255.255.255")
+print(domainName3) /// prints "255.255.255.255"
+
 /// Define an ipv4 address. The type will parse the ip address into a UInt32 internally.
 let ipv4Address1 = IPv4Address("127.0.0.1")!
 let ipv4Address2 = IPv4Address(192, 168, 1, 1)!
@@ -82,6 +86,25 @@ print(cidr1) /// prints "127.0.0.1/8"
 print(cidr2) /// prints "192.168.1.1/24"
 print(containmentCheck1) /// prints "false"
 print(containmentCheck2) /// prints "true"
+```
+
+## Type Conversions
+
+All types are convertible to each other in a performant way. Some examples:
+
+```swift
+import Endpoint
+
+let ipInDomainName = try DomainName(string: "255.255.255.255")
+
+let fastIPv4 = IPv4Address(domainName: ipInDomainName)! /// ✅ Converts the domain into the equivalent ipv4 address
+let slowIPv4 = IPv4Address(ipInDomainName.description)! /// ❌ This does work, but has worse performance
+
+let fastIPv4Conversion = try DomainName(ipv4: fastIPv4)! /// ✅ Converts the ipv4 into the equivalent domain name
+let slowIPv4Conversion = DomainName(string: fastIPv4.description)! /// ❌ This does work, but has worse performance
+
+let anyIPAddress = AnyIPAddress(domainName: ipInDomainName)
+print(anyIPAddress) /// prints "v4(255.255.255.255)"
 ```
 
 ## Performance

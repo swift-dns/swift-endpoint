@@ -11,7 +11,7 @@ enum Resources: String {
     case topDomains = "top-domains.csv"
 
     func buffer() -> ByteBuffer {
-        ByteBuffer(bytes: self._data())
+        ByteBuffer(bytes: self.data())
     }
 
     func data() -> Data {

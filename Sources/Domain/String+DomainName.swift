@@ -40,7 +40,7 @@ extension DomainName {
             domainName: &domainName
         )
 
-        try Self.from(guaranteedASCIIBytes: domainName.utf8, into: &self)
+        try Self.from(uncheckedASCIIBytes: domainName.utf8, into: &self)
     }
 }
 

@@ -268,7 +268,7 @@ extension DomainName {
             throw ValidationError.domainNameMustBeASCII(ByteBuffer(bytes: bytes))
         }
         self.init()
-        try Self.from(guaranteedASCIIBytes: bytes, into: &self)
+        try Self.from(uncheckedASCIIBytes: bytes, into: &self)
     }
 
     /// Initialized a domain name from a collection of ASCII bytes.
@@ -280,12 +280,12 @@ extension DomainName {
     @inlinable
     public init(uncheckedASCIIBytes bytes: some BidirectionalCollection<UInt8>) throws {
         self.init()
-        try Self.from(guaranteedASCIIBytes: bytes, into: &self)
+        try Self.from(uncheckedASCIIBytes: bytes, into: &self)
     }
 
     @inlinable
     static func from(
-        guaranteedASCIIBytes bytes: some BidirectionalCollection<UInt8>,
+        uncheckedASCIIBytes bytes: some BidirectionalCollection<UInt8>,
         into domainName: inout DomainName
     ) throws {
         assert(bytes.allSatisfy(\.isASCII))

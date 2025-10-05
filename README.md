@@ -21,16 +21,17 @@
 
 # swift-endpoint
 
-swift-endpoint is a high-performance package containing types representing an endpoint.
+swift-endpoint is a high-performance package containing types representing an endpoint and related utilities.
 
 The package contains a great amount of unit tests as well as benchmarks to ensure correctness and high performance.
 
 ## Implementations
 
-- `DomainName`
-  - With Unicode-17-compliant IDNA support for non-ASCII domain names. 
-- `IPv4Address`, `IPv6Address`, `AnyIPAddress`
-- `CIDR`
+- [x] `DomainName`
+  - [x] Unicode-17-compliant IDNA support for non-ASCII domain names. 
+- [x] `IPv4Address`, `IPv6Address`, `AnyIPAddress`
+- [x] `CIDR`
+- [ ] `UnixDomainSocketAddress`
 
 ## Usage
 

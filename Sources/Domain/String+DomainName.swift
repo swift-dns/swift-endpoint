@@ -97,21 +97,21 @@ extension DomainName {
 
             self.data.withUnsafeReadableBytes { domainNamePtr in
                 var iterator = self.makePositionIterator()
-                if let (startIndex, length) = iterator.next() {
+                if let (range, _) = iterator.nextRange() {
                     /// These are all ASCII bytes so safe to map directly
-                    for idx in startIndex..<(startIndex + length) {
+                    for idx in range {
                         stringBuffer[bufferIdx] = domainNamePtr[idx]
                         /// Can't possibly overflow since it can't be greater than the buffer size
                         bufferIdx &+= 1
                     }
                 }
 
-                while let (startIndex, length) = iterator.next() {
+                while let (range, _) = iterator.nextRange() {
                     stringBuffer[bufferIdx] = .asciiDot
                     /// Can't possibly overflow since it can't be greater than the buffer size
                     bufferIdx &+= 1
                     /// These are all ASCII bytes so safe to map directly
-                    for idx in startIndex..<(startIndex + length) {
+                    for idx in range {
                         stringBuffer[bufferIdx] = domainNamePtr[idx]
                         /// Can't possibly overflow since it can't be greater than the buffer size
                         bufferIdx &+= 1

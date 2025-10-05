@@ -18,8 +18,7 @@ extension IPv4Address {
                 let asciiSpan = ptr.bindMemory(to: UInt8.self).span
 
                 var idx = 0
-                while let position = iterator.next() {
-                    let range = position.startIndex..<(position.startIndex &+ position.length)
+                while let (range, _) = iterator.nextRange() {
                     guard
                         let byte = UInt8(
                             decimalRepresentation: asciiSpan.extracting(unchecked: range)
@@ -72,30 +71,28 @@ extension IPv4Address {
         }
         self.address |= UInt32(byte1) &<< 24
 
-        guard let position2 = iterator.next() else {
+        guard let (range2, _) = iterator.nextRange() else {
             return nil
         }
-        let range2 = position2.startIndex..<(position2.startIndex &+ position2.length)
         let byteSpan2 = asciiSpan.extracting(unchecked: range2)
         guard let byte2 = UInt8(decimalRepresentation: byteSpan2) else {
             return nil
         }
         self.address |= UInt32(byte2) &<< 16
 
-        guard let position3 = iterator.next() else {
+        guard let (range3, _) = iterator.nextRange() else {
             return nil
         }
-        let range3 = position3.startIndex..<(position3.startIndex &+ position3.length)
         let byteSpan3 = asciiSpan.extracting(unchecked: range3)
         guard let byte3 = UInt8(decimalRepresentation: byteSpan3) else {
             return nil
         }
         self.address |= UInt32(byte3) &<< 8
 
-        guard let position4 = iterator.next() else {
+        guard let (range4, _) = iterator.nextRange() else {
             return nil
         }
-        var endIndex = position4.startIndex &+ position4.length
+        var endIndex = range4.upperBound
         if expectingRightSquareBracketAtTheEnd {
             /// Domain name labels can't be empty based on contract, so this &-1 is safe
             guard asciiSpan[unchecked: endIndex &- 1] == UInt8.asciiRightSquareBracket else {
@@ -103,7 +100,6 @@ extension IPv4Address {
             }
             endIndex &-= 1
         }
-        let range4 = position4.startIndex..<endIndex
         let byteSpan4 = asciiSpan.extracting(unchecked: range4)
         guard let byte4 = UInt8(decimalRepresentation: byteSpan4) else {
             return nil

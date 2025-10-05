@@ -34,7 +34,7 @@ struct DomainNameTests {
     func initFromString(domainName: String, isFQDN: Bool, data: ByteBuffer) throws {
         let domainName = try DomainName(string: domainName)
         #expect(domainName.isFQDN == isFQDN)
-        #expect(domainName.data == data)
+        #expect(domainName._data == data)
     }
 
     @Test(

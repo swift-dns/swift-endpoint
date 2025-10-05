@@ -95,7 +95,7 @@ extension DomainName {
         var domainName = String(unsafeUninitializedCapacity: neededCapacity) { stringBuffer in
             var bufferIdx = 0
 
-            self.data.withUnsafeReadableBytes { domainNamePtr in
+            self._data.withUnsafeReadableBytes { domainNamePtr in
                 var iterator = self.makePositionIterator()
                 if let (range, _) = iterator.nextRange() {
                     /// These are all ASCII bytes so safe to map directly

@@ -40,11 +40,15 @@ public struct DomainName: Sendable {
     /// If parsed from a string, this will be `true` if the domain name ends in a dot.
     /// For example, `"example.com."` will have this set to `true`, and `"example.com"` will have this set to `false`.
     public var isFQDN: Bool
+    /// Using this property directly is highly discouraged, as denoted by the underscored name.
+    /// If you want a description of the domain name, use the `domainName.description` instead.
+    /// If you want to iterate over the labels of the domain name, simply for-loop over the domain name.
+    ///
     /// The raw data of the domain name, as in the wire format, excluding the root label (trailing null byte).
     /// Lowercased ASCII bytes only.
     ///
     /// Non-ASCII names are converted to ASCII based on the IDNA spec, in the initializers, and
-    /// must/will never make it to the stored properties of `DomainName` such as `data`.
+    /// will never make it to the stored this property.
     /// Non-lowercased ASCII names are converted to lowercased ASCII in the initializers.
     /// Based on the DNS specs, all names are case-insensitive, and the bytes must be valid ASCII.
     /// This package goes further and normalizes every domainName to lowercase to avoid inconsistencies.
@@ -57,9 +61,7 @@ public struct DomainName: Sendable {
     /// An ordered list of zero or more octets that makes up a portion of a domain name.
     /// Using graph theory, a label identifies one node in a portion of the graph of all possible domain names.
     /// ```
-    /// FIXME: investigate performance improvements, with something like `TinyVec`
-    @usableFromInline
-    package var data: ByteBuffer
+    public var _data: ByteBuffer
 
     /// Returns the encoded length of this domainName, ignoring compression.
     ///
@@ -67,7 +69,7 @@ public struct DomainName: Sendable {
     /// present, since it terminates the domainName in the DNS message format.
     @inlinable
     var encodedLength: Int {
-        self.data.readableBytes + 1
+        self._data.readableBytes + 1
     }
 
     /// The number of labels in the domainName, excluding a leading wildcard label (`*`).
@@ -80,7 +82,7 @@ public struct DomainName: Sendable {
         while let (startIndex, length) = iterator.next() {
             if count == 0,
                 length == 1,
-                self.data.getInteger(at: startIndex, as: UInt8.self) == UInt8.asciiStar
+                self._data.getInteger(at: startIndex, as: UInt8.self) == UInt8.asciiStar
             {
                 containsWildcard = true
             }
@@ -92,7 +94,7 @@ public struct DomainName: Sendable {
     /// Whether the domainName is the DNS root domainName, aka `.`.
     @inlinable
     public var isRoot: Bool {
-        self.isFQDN && self.data.readableBytes == 0
+        self.isFQDN && self._data.readableBytes == 0
     }
 
     /// Using this initializer is not safe and is highly discouraged.
@@ -116,13 +118,13 @@ public struct DomainName: Sendable {
         uncheckedData data: ByteBuffer = ByteBuffer()
     ) {
         self.isFQDN = isFQDN
-        self.data = data
+        self._data = data
 
         /// Make sure the domainName is valid
         /// No empty labels
-        assert(self.data.readableBytes <= Self.maxLength)
+        assert(self._data.readableBytes <= Self.maxLength)
         assert(self.allSatisfy({ !($0.readableBytes == 0) }))
-        assert(self.data.readableBytesView.allSatisfy(\.isASCII))
+        assert(self._data.readableBytesView.allSatisfy(\.isASCII))
         assert(self.allSatisfy { $0.readableBytesView.allSatisfy { !$0.isUppercasedASCIILetter } })
     }
 }
@@ -142,7 +144,7 @@ extension DomainName: Hashable {
     /// So this method is useful to make sure a comparison of two `DomainName`s doesn't fail just because
     /// of the root-label indicator / FQN flag.
     public func isEssentiallyEqual(to other: Self) -> Bool {
-        self.data == other.data
+        self._data == other._data
     }
 }
 
@@ -159,12 +161,12 @@ extension DomainName: Sequence {
         @usableFromInline
         init(base: DomainName) {
             self.domainName = base
-            self.startIndex = self.domainName.data.readerIndex
+            self.startIndex = self.domainName._data.readerIndex
         }
 
         @inlinable
         public func reachedEnd() -> Bool {
-            self.startIndex == self.domainName.data.writerIndex
+            self.startIndex == self.domainName._data.writerIndex
         }
 
         @inlinable
@@ -175,7 +177,7 @@ extension DomainName: Sequence {
 
             /// Such invalid data should never get to here so we consider this safe to force-unwrap
             let length = Int(
-                self.domainName.data.getInteger(
+                self.domainName._data.getInteger(
                     at: self.startIndex,
                     as: UInt8.self
                 )!
@@ -183,7 +185,7 @@ extension DomainName: Sequence {
 
             assert(
                 length != 0,
-                "Label length 0 means the root label has made it into DomainName.data, which is not allowed, \(self.domainName.data.hexDump(format: .detailed))"
+                "Label length 0 means the root label has made it into DomainName.data, which is not allowed, \(self.domainName._data.hexDump(format: .detailed))"
             )
 
             defer {
@@ -228,7 +230,7 @@ extension DomainName: Sequence {
             }
 
             /// Such invalid data should never get to here so we consider this safe to force-unwrap
-            return self.positionIterator.domainName.data.getSlice(
+            return self.positionIterator.domainName._data.getSlice(
                 at: startIndex,
                 length: length
             )!
@@ -301,7 +303,7 @@ extension DomainName {
             )
         }
 
-        domainName.data.reserveCapacity(lengthWithoutRootLabel)
+        domainName._data.reserveCapacity(lengthWithoutRootLabel)
         /// FIXME: do lazy splitting, don't allocate a new array for the labels
         for label in bytes.split(separator: .asciiDot, omittingEmptySubsequences: false) {
             guard !label.isEmpty else {
@@ -318,8 +320,8 @@ extension DomainName {
                 )
             }
 
-            domainName.data.writeInteger(UInt8(label.count))
-            domainName.data.writeBytes(label)
+            domainName._data.writeInteger(UInt8(label.count))
+            domainName._data.writeBytes(label)
         }
     }
 }

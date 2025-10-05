@@ -16,7 +16,7 @@ extension IPv6Address {
             return nil
         }
 
-        if let ipv6Address = domainName.data.withUnsafeReadableBytes({ ptr -> IPv6Address? in
+        if let ipv6Address = domainName._data.withUnsafeReadableBytes({ ptr -> IPv6Address? in
             /// `DomainName.data` always only contains ASCII bytes
             let asciiSpan = ptr.bindMemory(to: UInt8.self).span
 

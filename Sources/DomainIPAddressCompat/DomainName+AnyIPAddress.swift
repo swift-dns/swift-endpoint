@@ -13,7 +13,7 @@ extension AnyIPAddress {
     @inlinable
     public init?(domainName: DomainName) {
         guard
-            let result = domainName.data.withUnsafeReadableBytes({ ptr -> AnyIPAddress? in
+            let result = domainName._data.withUnsafeReadableBytes({ ptr -> AnyIPAddress? in
                 var iterator = domainName.makePositionIterator()
 
                 guard let (range, _) = iterator.nextRange() else {

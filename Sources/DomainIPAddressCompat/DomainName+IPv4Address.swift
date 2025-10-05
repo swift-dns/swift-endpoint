@@ -11,7 +11,7 @@ extension IPv4Address {
     @inlinable
     public init?(domainName: DomainName) {
         guard
-            let result = domainName.data.withUnsafeReadableBytes({ ptr -> IPv4Address? in
+            let result = domainName._data.withUnsafeReadableBytes({ ptr -> IPv4Address? in
                 var ipv4 = IPv4Address(0)
                 var iterator = domainName.makePositionIterator()
                 /// `DomainName.data` always only contains ASCII bytes

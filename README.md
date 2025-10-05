@@ -128,41 +128,23 @@ The results are all reproducible by simply running `scripts/benchmark.bash` on a
 
 These were performed on my M1 Pro MacBook, on macOS 26.0.
 
-**15 Millions IPv4_String_Encoding_Mixed**   
-swift: 153ms   
-inet_pton: 3036ms
-
-**10 Millions IPv4_String_Decoding_Local_Broadcast**   
-swift: 251ms   
-inet_pton: 468ms
-
-**4 Millions IPv6_String_Encoding_Mixed**   
-swift: 281ms   
-inet_ntop: 1473ms
-
-**3 Millions IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets**   
-swift: 180ms   
-inet_ntop: 360ms
+| Benchmark Name                                         | Rounds      | Swift | inet_pton/ntop |
+|--------------------------------------------------------|-------------|-------|----------------|
+| IPv4_String_Encoding_Mixed                             | 15 Millions | 153ms | 3036ms         |
+| IPv4_String_Decoding_Local_Broadcast                   | 10 Millions | 251ms | 468ms          |
+| IPv6_String_Encoding_Mixed                             | 4 Millions  | 281ms | 1473ms         |
+| IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle | 3 Millions  | 180ms | 360ms          |
 
 ### Against Glibc
 
-These were performed on a machine from Hetzner in the Falkenstein region.
+These were performed on a dedicated-cpu-core machine from Hetzner in the Falkenstein region.
 
 > Host 'eba52b5e61ab' with 2 'x86_64' processors with 7 GB memory, running:   
 > #85-Ubuntu SMP PREEMPT_DYNAMIC Thu Sep 18 15:26:59 UTC 2025
 
-**15 Millions IPv4_String_Encoding_Mixed**   
-swift: 190ms   
-inet_pton: 1570ms
-
-**10 Millions IPv4_String_Decoding_Local_Broadcast**   
-swift: 180ms   
-inet_pton: 240ms
-
-**4 Millions IPv6_String_Encoding_Mixed**   
-swift: 200ms   
-inet_ntop: 1830ms   
-
-**3 Millions IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets**   
-swift: 130ms   
-inet_ntop: 100ms
+| Benchmark Name                                         | Rounds      | Swift | inet_pton/ntop |
+|--------------------------------------------------------|-------------|-------|----------------|
+| IPv4_String_Encoding_Mixed                             | 15 Millions | 190ms | 1570ms         |
+| IPv4_String_Decoding_Local_Broadcast                   | 10 Millions | 180ms | 240ms          |
+| IPv6_String_Encoding_Mixed                             | 4 Millions  | 200ms | 1830ms         |
+| IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle | 3 Millions  | 130ms | 100ms          |

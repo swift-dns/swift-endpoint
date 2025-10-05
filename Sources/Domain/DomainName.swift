@@ -14,14 +14,12 @@ public import struct NIOCore.ByteBuffer
 /// ```
 public struct DomainName: Sendable {
     /// Maximum allowed domain name length.
-    @usableFromInline
-    static var maxLength: UInt8 {
+    public static var maxLength: UInt8 {
         255
     }
 
     /// Maximum allowed label length.
-    @usableFromInline
-    static var maxLabelLength: UInt8 {
+    public static var maxLabelLength: UInt8 {
         63
     }
 
@@ -63,12 +61,12 @@ public struct DomainName: Sendable {
     /// ```
     public var _data: ByteBuffer
 
-    /// Returns the encoded length of this domainName, ignoring compression.
+    /// Returns the encoded length of this domainName in the DNS wire format, ignoring compression.
     ///
     /// The `isFQDN` flag is ignored, and the root label at the end is assumed to always be
     /// present, since it terminates the domainName in the DNS message format.
     @inlinable
-    var encodedLength: Int {
+    public var encodedLength: Int {
         self._data.readableBytes + 1
     }
 

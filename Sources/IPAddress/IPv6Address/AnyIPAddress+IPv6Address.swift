@@ -1,18 +1,17 @@
-extension IPv4Address {
+@available(endpointApplePlatforms 15, *)
+extension IPv6Address {
     /// The exact translation of an `AnyIPAddress` to an `IPv4Address`.
     ///
-    /// This does not handle ipv6-to-ipv4 mappings. Use `init?(ipv6:)` for that.
+    /// This intentionally does not handle ipv4-mapped ipv6 addresses. Use `init(ipv4:)` for that.
     @available(endpointApplePlatforms 15, *)
     public init?(exactly ipAddress: AnyIPAddress) {
-        switch ipAddress {
-        case .v4(let ipv4):
-            self = ipv4
-        case .v6:
+        guard let ipv6 = ipAddress.ipv6Value else {
             return nil
         }
+        self = ipv6
     }
 
-    /// Maps an IPv6 address to an IPv4 address if the ipv6 is in a specific address space mentioned in [RFC 4291, IP Version 6 Addressing Architecture, February 2006](https://datatracker.ietf.org/doc/rfc4291#section-2.5.5.2).
+    /// Maps an IPv4 address to an IPv6 address in the reserved address space by [RFC 4291, IP Version 6 Addressing Architecture, February 2006](https://datatracker.ietf.org/doc/rfc4291#section-2.5.5.2).
     ///
     /// ```text
     /// 2.5.5.2.  IPv4-Mapped IPv6 Address
@@ -33,13 +32,12 @@ extension IPv4Address {
     ///    See [RFC4038] for background on the usage of the "IPv4-mapped IPv6
     ///    address".
     /// ```
-    @available(endpointApplePlatforms 15, *)
     @inlinable
-    public init?(ipv6: IPv6Address) {
-        guard CIDR<IPv6Address>.ipv4Mapped.contains(ipv6) else {
-            return nil
+    public init(ipv4: IPv4Address) {
+        self.address = UInt128(ipv4.address)
+        withUnsafeMutableBytes(of: &self.address) { ptr in
+            ptr[4] = 0xFF
+            ptr[5] = 0xFF
         }
-
-        self.address = UInt32(truncatingIfNeeded: ipv6.address)
     }
 }

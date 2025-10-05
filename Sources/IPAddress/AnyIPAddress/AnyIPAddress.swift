@@ -9,6 +9,28 @@ public enum AnyIPAddress: Sendable, Hashable {
     /// An IPv6 address.
     case v6(IPv6Address)
 
+    /// Returns the `IPv4Address` of the `v4` case, if available. Otherwise `nil`.
+    @inlinable
+    public var ipv4Value: IPv4Address? {
+        switch self {
+        case .v4(let ipv4):
+            return ipv4
+        case .v6:
+            return nil
+        }
+    }
+
+    /// Returns the `IPv6Address` of the `v6` case, if available. Otherwise `nil`.
+    @inlinable
+    public var ipv6Value: IPv6Address? {
+        switch self {
+        case .v6(let ipv6):
+            return ipv6
+        case .v4:
+            return nil
+        }
+    }
+
     /// Whether or not this instance corresponds to the `v4` case.
     @inlinable
     public var isIPv4: Bool {

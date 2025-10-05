@@ -22,11 +22,32 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     /// which is equal to `127.0.0.0`.
     public let mask: IPAddressType
 
+    /// Create a new CIDR with the given prefix and mask.
+    ///
+    /// Examples:
+    /// In 92.0.0.0/8, `92.0.0.0` is the prefix, and `0b11111111(24 zeros)` == `127.0.0.0` is the mask.
+    /// In 0xFE80::/10, `0xFE80::` is the prefix, and `0b1111111111(118 zeros)` == `0xFFC0::` is the mask.
+    ///
+    /// - Parameters:
+    ///   - prefix: The IP address that is desired after the masking happens.
+    ///     Extra bits that are not needed for the mask, will be truncated.
+    ///     Example: 192.168.1.1/24 will be truncated to 192.168.1.0 since the trailing 1 is insignificant.
+    ///   - uncheckedMask: The masked part of the address.
+    ///     The mask will not be verified by the initializer in optimized builds, and MUST be
+    ///     in a "continuous" form.
+    ///     e.g. 0b11110000 is good, but 0b11110001 is not. 0b00001111 is not good either.
+    ///     There must be only 1 group of leading ones and 1 group of trailing zeros.
     @inlinable
-    init(
+    public init(
         prefix: IPAddressType,
-        uncheckedUnsafeMask mask: IPAddressType
+        uncheckedMask mask: IPAddressType
     ) {
+        assert(
+            Self.makeMaskBasedOn(
+                uncheckedCountOfTrailingZeros: UInt8(mask.address.trailingZeroBitCount)
+            ) == mask
+        )
+
         self.prefix = IPAddressType(integerLiteral: prefix.address & mask.address)
         self.mask = mask
     }
@@ -55,36 +76,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
             return nil
         }
 
-        self.init(prefix: prefix, uncheckedUnsafeMask: mask)
-    }
-
-    /// Create a new CIDR with the given prefix and mask.
-    ///
-    /// Examples:
-    /// In 92.0.0.0/8, `92.0.0.0` is the prefix, and `0b11111111(24 zeros)` == `127.0.0.0` is the mask.
-    /// In 0xFE80::/10, `0xFE80::` is the prefix, and `0b1111111111(118 zeros)` == `0xFFC0::` is the mask.
-    ///
-    /// - Parameters:
-    ///   - prefix: The IP address that is desired after the masking happens.
-    ///     Extra bits that are not needed for the mask, will be truncated.
-    ///     Example: 192.168.1.1/24 will be truncated to 192.168.1.0 since the trailing 1 is insignificant.
-    ///   - uncheckedMask: The masked part of the address.
-    ///     The mask will not be verified by the initializer in optimized builds, and MUST be
-    ///     in a "continuous" form.
-    ///     e.g. 0b11110000 is good, but 0b11110001 is not. 0b00001111 is not good either.
-    ///     There must be only 1 group of leading ones and 1 group of trailing zeros.
-    @inlinable
-    public init(
-        prefix: IPAddressType,
-        uncheckedMask mask: IPAddressType
-    ) {
-        assert(
-            Self.makeMaskBasedOn(
-                uncheckedCountOfTrailingZeros: UInt8(mask.address.trailingZeroBitCount)
-            ) == mask
-        )
-
-        self.init(prefix: prefix, uncheckedUnsafeMask: mask)
+        self.init(prefix: prefix, uncheckedMask: mask)
     }
 
     /// Create a new CIDR with the given prefix and count of masked bits.
@@ -106,7 +98,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
         countOfMaskedBits: UInt8
     ) {
         let mask = Self.makeMaskBasedOn(countOfMaskedBits: countOfMaskedBits)
-        self.init(prefix: prefix, uncheckedUnsafeMask: mask)
+        self.init(prefix: prefix, uncheckedMask: mask)
     }
 
     /// Creates a number with `countOfMaskedBits` amount of leading 1s followed by all zeros.

@@ -67,7 +67,7 @@ extension DomainName {
             as: UInt8.self
         )
 
-        self.init(isFQDN: false, data: buffer)
+        self.init(isFQDN: false, uncheckedData: buffer)
     }
 
     public init(ipv6: IPv6Address) {
@@ -99,6 +99,6 @@ extension DomainName {
             as: UInt8.self
         )
 
-        self.init(isFQDN: false, data: buffer)
+        self.init(isFQDN: false, uncheckedData: buffer)
     }
 }

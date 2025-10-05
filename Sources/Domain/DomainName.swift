@@ -1,4 +1,4 @@
-import SwiftIDNA
+public import SwiftIDNA
 
 public import struct NIOCore.ByteBuffer
 
@@ -95,10 +95,25 @@ public struct DomainName: Sendable {
         self.isFQDN && self.data.readableBytes == 0
     }
 
-    @usableFromInline
-    package init(
+    /// Using this initializer is not safe and is highly discouraged.
+    /// To initialize a domain name, use the `init(string:)` initializer instead.
+    ///
+    /// - Parameters:
+    ///   - isFQDN: Whether the domainName is a FQDN.
+    ///     All domain names parsed from DNS wire format will have this set to `true`.
+    ///     If parsed from a string, this will be `true` if the domain name ends in a dot.
+    ///     e.g. `"example.com."` will have this set to `true`, and `"example.com"` will have this set to `false`.
+    ///   - uncheckedData: The dns-wire-format data of the domain name.
+    ///     Must exclude the trailing zero.
+    ///     Must be valid ASCII.
+    ///     Must not contain uppercased A-Z. Use lowercased bytes instead.
+    ///     Must not have empty labels.
+    ///     Must not have labels that are longer than 63 bytes.
+    ///     Must not have a total length greater than 255 bytes.
+    @inlinable
+    public init(
         isFQDN: Bool = false,
-        data: ByteBuffer = ByteBuffer()
+        uncheckedData data: ByteBuffer = ByteBuffer()
     ) {
         self.isFQDN = isFQDN
         self.data = data
@@ -232,7 +247,8 @@ extension DomainName: Sequence {
 }
 
 extension DomainName {
-    enum ValidationError: Error {
+    /// FIXME: public non frozen enum?
+    public enum ValidationError: Error {
         case domainNameMustBeASCII(ByteBuffer)
         case domainNameLengthLimitExceeded(actual: Int, max: Int, in: ByteBuffer)
         case labelLengthLimitExceeded(actual: Int, max: Int, in: ByteBuffer)
@@ -240,11 +256,14 @@ extension DomainName {
     }
 
     /// FIXME: use span in these functions too?
-    @usableFromInline
-    init(
-        expectingASCIIBytes bytes: some BidirectionalCollection<UInt8>,
-        name: StaticString
-    ) throws {
+
+    /// Initialized a domain name from a collection of bytes.
+    /// These are string-format bytes, not wire-format bytes.
+    /// So passing bytes of an string such as `"example.com"` is acceptable.
+    ///
+    /// Will throw if the bytes are not valid ASCII, or the domain name is invalid.
+    @inlinable
+    public init(expectingASCIIBytes bytes: some BidirectionalCollection<UInt8>) throws {
         guard bytes.allSatisfy(\.isASCII) else {
             throw ValidationError.domainNameMustBeASCII(ByteBuffer(bytes: bytes))
         }
@@ -252,13 +271,19 @@ extension DomainName {
         try Self.from(guaranteedASCIIBytes: bytes, into: &self)
     }
 
-    @usableFromInline
-    init(guaranteedASCIIBytes bytes: some BidirectionalCollection<UInt8>) throws {
+    /// Initialized a domain name from a collection of ASCII bytes.
+    /// These are string-format bytes, not wire-format bytes.
+    /// So passing bytes of an string such as `"example.com"` is acceptable.
+    ///
+    /// Will assert if the bytes are not valid ASCII.
+    /// Will throw if the domain name is invalid.
+    @inlinable
+    public init(uncheckedASCIIBytes bytes: some BidirectionalCollection<UInt8>) throws {
         self.init()
         try Self.from(guaranteedASCIIBytes: bytes, into: &self)
     }
 
-    @usableFromInline
+    @inlinable
     static func from(
         guaranteedASCIIBytes bytes: some BidirectionalCollection<UInt8>,
         into domainName: inout DomainName
@@ -277,6 +302,7 @@ extension DomainName {
         }
 
         domainName.data.reserveCapacity(lengthWithoutRootLabel)
+        /// FIXME: do lazy splitting, don't allocate a new array for the labels
         for label in bytes.split(separator: .asciiDot, omittingEmptySubsequences: false) {
             guard !label.isEmpty else {
                 /// FIXME: throw a better error

@@ -14,7 +14,7 @@ let benchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<200_000 {
-            let domainName = try! DomainName(string: google)
+            let domainName = try! DomainName(google)
             blackHole(domainName)
         }
     }
@@ -27,7 +27,7 @@ let benchmarks: @Sendable () -> Void = {
             maxIterations: 10,
         )
     ) { benchmark in
-        let domainName = try! DomainName(string: google)
+        let domainName = try! DomainName(google)
         blackHole(domainName)
     }
 
@@ -41,7 +41,7 @@ let benchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<200_000 {
-            let domainName = try! DomainName(string: appAnalyticsServices)
+            let domainName = try! DomainName(appAnalyticsServices)
             blackHole(domainName)
         }
     }
@@ -54,12 +54,12 @@ let benchmarks: @Sendable () -> Void = {
             maxIterations: 10,
         )
     ) { benchmark in
-        let domainName = try! DomainName(string: appAnalyticsServices)
+        let domainName = try! DomainName(appAnalyticsServices)
         blackHole(domainName)
     }
 
-    let name1 = try! DomainName(string: "google.com.")
-    let name2 = try! DomainName(string: "google.com.")
+    let name1 = try! DomainName("google.com.")
+    let name2 = try! DomainName("google.com.")
     Benchmark(
         "Equality_Check_CPU_20M",
         configuration: .init(

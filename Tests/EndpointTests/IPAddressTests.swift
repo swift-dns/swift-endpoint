@@ -67,7 +67,7 @@ struct IPAddressTests {
         expectedAddress: IPv4Address?,
         isValidIPv6: Bool
     ) {
-        let domainName = try? DomainName(string: string)
+        let domainName = try? DomainName(string)
 
         let ipv4Address = domainName.flatMap { IPv4Address(domainName: $0) }
         #expect(ipv4Address == expectedAddress)
@@ -275,7 +275,7 @@ struct IPAddressTests {
         expectedAddress: IPv6Address?,
         isValidIPv4: Bool
     ) {
-        let domainName = try? DomainName(string: string)
+        let domainName = try? DomainName(string)
 
         let ipv6Address = domainName.flatMap { IPv6Address(domainName: $0) }
 

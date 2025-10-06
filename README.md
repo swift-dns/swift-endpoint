@@ -28,7 +28,7 @@ The package contains a great amount of unit tests as well as benchmarks to ensur
 ## Implementations
 
 - [x] `DomainName`
-  - [x] Unicode-17-compliant IDNA support for non-ASCII domain names. 
+  - [x] Unicode-17-compliant IDNA support for non-ASCII domain names.
 - [x] `IPv4Address`, `IPv6Address`, `AnyIPAddress`
 - [x] `CIDR`
 - [ ] `UnixDomainSocketAddress`
@@ -45,16 +45,16 @@ Here are some examples:
 import Endpoint
 
 /// Define a domain name. The type will parse the domain name and store it in DNS wire-format internally.
-let domainName1 = try DomainName(string: "mahdibm.com")
+let domainName1 = try DomainName("mahdibm.com")
 print(domainName1) /// prints "mahdibm.com"
 
-/// Define a non-ASCII domain. 
-let domainName2 = try DomainName(string: "新华网.中国")
+/// Define a non-ASCII domain.
+let domainName2 = try DomainName("新华网.中国")
 print(domainName2) /// prints "新华网.中国"
 print(domainName2.debugDescription) /// prints "xn--xkrr14bows.xn--fiqs8s"
 
-/// Define a domain name containing an ip address. 
-let domainName3 = try DomainName(string: "255.255.255.255")
+/// Define a domain name containing an ip address.
+let domainName3 = try DomainName("255.255.255.255")
 print(domainName3) /// prints "255.255.255.255"
 
 /// Define an ipv4 address. The type will parse the ip address into a UInt32 internally.
@@ -96,13 +96,13 @@ All types are convertible to each other in a performant way. Some examples:
 ```swift
 import Endpoint
 
-let ipInDomainName = try DomainName(string: "255.255.255.255")
+let ipInDomainName = try DomainName("255.255.255.255")
 
 let fastIPv4 = IPv4Address(domainName: ipInDomainName)! /// ✅ Converts the domain into the equivalent ipv4 address
 let slowIPv4 = IPv4Address(ipInDomainName.description)! /// ❌ This does work, but has worse performance
 
 let fastIPv4Conversion = try DomainName(ipv4: fastIPv4)! /// ✅ Converts the ipv4 into the equivalent domain name
-let slowIPv4Conversion = DomainName(string: fastIPv4.description)! /// ❌ This does work, but has worse performance
+let slowIPv4Conversion = DomainName( fastIPv4.description)! /// ❌ This does work, but has worse performance
 
 let anyIPAddress = AnyIPAddress(domainName: ipInDomainName)
 print(anyIPAddress) /// prints "v4(255.255.255.255)"
@@ -116,10 +116,10 @@ In [this post](https://forums.swift.org/t/pitch-standard-network-address-types/8
 
 Here's the result at that point in time. Note that I made a lot of effort to make sure the C related functions are performing at their best.
 
-All benchmarks on all platforms commit similar allocations.   
+All benchmarks on all platforms commit similar allocations.
 3 of the benchmarks always do `0`, `IPv6_String_Encoding_Mixed` always does `1`.
 
-In all benchmarks apart from 1, this library performs better than the C libraries.   
+In all benchmarks apart from 1, this library performs better than the C libraries.
 On the "IPv6 string decoding" benchmark it performs only 30% worse than Glibc, at ~23 millions rounds per second.
 
 The results are all reproducible by simply running `scripts/benchmark.bash` on a machine of your own.
@@ -129,7 +129,7 @@ The results are all reproducible by simply running `scripts/benchmark.bash` on a
 These were performed on my M1 Pro MacBook, on macOS 26.0.
 
 | Benchmark Name                                         | Rounds      | Swift | inet_pton/ntop |
-|--------------------------------------------------------|-------------|-------|----------------|
+| ------------------------------------------------------ | ----------- | ----- | -------------- |
 | IPv4_String_Encoding_Mixed                             | 15 Millions | 153ms | 3036ms         |
 | IPv4_String_Decoding_Local_Broadcast                   | 10 Millions | 251ms | 468ms          |
 | IPv6_String_Encoding_Mixed                             | 4 Millions  | 281ms | 1473ms         |
@@ -139,11 +139,11 @@ These were performed on my M1 Pro MacBook, on macOS 26.0.
 
 These were performed on a dedicated-cpu-core machine from Hetzner in the Falkenstein region.
 
-> Host 'eba52b5e61ab' with 2 'x86_64' processors with 7 GB memory, running:   
+> Host 'eba52b5e61ab' with 2 'x86_64' processors with 7 GB memory, running:
 > #85-Ubuntu SMP PREEMPT_DYNAMIC Thu Sep 18 15:26:59 UTC 2025
 
 | Benchmark Name                                         | Rounds      | Swift | inet_pton/ntop |
-|--------------------------------------------------------|-------------|-------|----------------|
+| ------------------------------------------------------ | ----------- | ----- | -------------- |
 | IPv4_String_Encoding_Mixed                             | 15 Millions | 190ms | 1570ms         |
 | IPv4_String_Decoding_Local_Broadcast                   | 10 Millions | 180ms | 240ms          |
 | IPv6_String_Encoding_Mixed                             | 4 Millions  | 200ms | 1830ms         |

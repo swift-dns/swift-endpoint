@@ -5,6 +5,8 @@ public import struct NIOCore.ByteBuffer
 @available(endpointApplePlatforms 13, *)
 extension DomainName: CustomStringConvertible {
     /// Unicode-friendly description of the domain name, excluding the possible root label separator.
+    /// Example: `"mahdibm.com"`
+    /// Example: `"新华网.中国"` (for `"新华网.中国"`)
     @inlinable
     public var description: String {
         self.description(format: .unicode)
@@ -14,6 +16,8 @@ extension DomainName: CustomStringConvertible {
 @available(endpointApplePlatforms 13, *)
 extension DomainName: CustomDebugStringConvertible {
     /// Source-accurate description of the domain name.
+    /// Example: `"mahdibm.com."`
+    /// Example: `"xn--xkrr14bows.xn--fiqs8s."` (for `"新华网.中国."`)
     @inlinable
     public var debugDescription: String {
         self.description(format: .ascii, options: .includeRootLabelIndicator)
@@ -435,7 +439,7 @@ extension DomainName {
     ) throws {
         let range = Range(uncheckedBounds: (startIndex, idx))
         let chunk = span.extracting(range)
-        let labelLength = range.count
+        var labelLength = range.count
         if labelLength == 0 {
             throw ValidationError.labelMustNotBeEmpty(
                 in: ByteBuffer(swiftEndpointReadingFromSpan: span)
@@ -449,10 +453,10 @@ extension DomainName {
             )
         }
 
-        var copyableLabelLength = UInt8(truncatingIfNeeded: labelLength)
-        withUnsafeBytes(of: &copyableLabelLength) {
+        withUnsafeBytes(of: &labelLength) {
             dataPtr.copyMemory(
                 from: UnsafeRawPointer($0.baseAddress.unsafelyUnwrapped),
+                /// Label length is 1 byte (even less, 63 max)
                 byteCount: 1
             )
             dataPtr = dataPtr.advanced(by: 1)
@@ -467,6 +471,8 @@ extension DomainName {
         }
     }
 
+    /// There are 4 IDNA label separators, 1 of which is `.`, which is only 1 byte.
+    /// The other 3 are the ones in this function.
     @inlinable
     static func isIDNALabelSeparator(_ first: UInt8, _ second: UInt8, _ third: UInt8) -> Bool {
         /// U+3002 ( 。 ) IDEOGRAPHIC FULL STOP
@@ -500,15 +506,15 @@ extension DomainName {
             }
         }
 
-        guard span.count > 1 else {
-            return
-        }
-
         let endIndex = span.count &- 1
         switch span.count {
-        case 2:
-            let rhs = span[unchecked: endIndex]
-            if rhs.isIDNALabelSeparator {
+        case 0:
+            /// Ignore, an error will be thrown in the initializer
+            break
+        case 1, 2:
+            let lhs = span[unchecked: 0]
+            let rhs = span[unchecked: 1]
+            if lhs.isIDNALabelSeparator || rhs.isIDNALabelSeparator {
                 fatalError(
                     "DomainName initializer should not be used with root label indicator: \(span[unchecked: endIndex])"
                 )

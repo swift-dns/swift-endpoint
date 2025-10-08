@@ -3,9 +3,21 @@ extension AnyIPAddress: CustomStringConvertible {
     public var description: String {
         switch self {
         case .v4(let ipv4):
-            return "v4(\(ipv4))"
+            return ipv4.description
         case .v6(let ipv6):
-            return "v6(\(ipv6))"
+            return ipv6.description
+        }
+    }
+}
+
+@available(endpointApplePlatforms 15, *)
+extension AnyIPAddress: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        switch self {
+        case .v4(let ipv4):
+            return "AnyIPAddress(.v4(\(ipv4.description)))"
+        case .v6(let ipv6):
+            return "AnyIPAddress(.v6(\(ipv6.description)))"
         }
     }
 }

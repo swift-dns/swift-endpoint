@@ -1,9 +1,18 @@
 @available(endpointApplePlatforms 15, *)
 extension CIDR: CustomStringConvertible {
-    /// The textual representation of the CIDR, in form `<ip-address>/<masked-bits-count>`.
+    /// The textual representation of the CIDR, in form `<ip-address>/<prefix-length>`.
     /// For example `"192.168.1.98/24"`, or `"[2001:db8:1111::]/64"`.
     public var description: String {
         "\(prefix)/\(IntegerLiteralType.bitWidth - mask.address.trailingZeroBitCount)"
+    }
+}
+
+@available(endpointApplePlatforms 15, *)
+extension CIDR: CustomDebugStringConvertible {
+    /// The textual representation of the CIDR, in form `IPAddressType(<ip-address>)/<prefix-length>`.
+    /// For example `"192.168.1.98/24"`, or `"[2001:db8:1111::]/64"`.
+    public var debugDescription: String {
+        "\(prefix.debugDescription)/\(IntegerLiteralType.bitWidth - mask.address.trailingZeroBitCount)"
     }
 }
 
@@ -12,7 +21,7 @@ extension CIDR: LosslessStringConvertible {
     /// Initialize an CIDR from its textual representation.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
     /// This initializer tolerates and repairs the CIDR range if needed.
-    /// For example they'll ignore if the mask is greater than the address size, and they'll
+    /// For example it'll ignore if the mask is greater than the address size, and it'll
     /// repair the prefix if it contains bits that don't matter.
     /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
     /// 2001::/220 will be repaired to 2001::/128.
@@ -24,7 +33,7 @@ extension CIDR: LosslessStringConvertible {
     /// Initialize an CIDR from its textual representation.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
     /// This initializer tolerates and repairs the CIDR range if needed.
-    /// For example they'll ignore if the mask is greater than the address size, and they'll
+    /// For example it'll ignore if the mask is greater than the address size, and it'll
     /// repair the prefix if it contains bits that don't matter.
     /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
     /// 2001::/220 will be repaired to 2001::/128.
@@ -36,7 +45,7 @@ extension CIDR: LosslessStringConvertible {
     /// Initialize an CIDR from a `UTF8Span` of its textual representation.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
     /// This initializer tolerates and repairs the CIDR range if needed.
-    /// For example they'll ignore if the mask is greater than the address size, and they'll
+    /// For example it'll ignore if the mask is greater than the address size, and it'll
     /// repair the prefix if it contains bits that don't matter.
     /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
     /// 2001::/220 will be repaired to 2001::/128.
@@ -56,7 +65,7 @@ extension CIDR {
     /// Initialize an CIDR from a `Span<UInt8>` of its textual representation.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
     /// This initializer tolerates and repairs the CIDR range if needed.
-    /// For example they'll ignore if the mask is greater than the address size, and they'll
+    /// For example it'll ignore if the mask is greater than the address size, and it'll
     /// repair the prefix if it contains bits that don't matter.
     /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
     /// 2001::/220 will be repaired to 2001::/128.
@@ -76,7 +85,7 @@ extension CIDR {
     /// The provided **span is required to be ASCII**.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
     /// This initializer tolerates and repairs the CIDR range if needed.
-    /// For example they'll ignore if the mask is greater than the address size, and they'll
+    /// For example it'll ignore if the mask is greater than the address size, and it'll
     /// repair the prefix if it contains bits that don't matter.
     /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
     /// 2001::/220 will be repaired to 2001::/128.
@@ -103,11 +112,11 @@ extension CIDR {
             let utf8Byte = span[unchecked: backwardsIdx]
             if utf8Byte == .asciiForwardSlash {
                 /// Unchecked because `0 <= backwardsIdx <= maxIdx < span.count`
-                let prefixSpan = span.extracting(unchecked: 0..<backwardsIdx)
+                let prefixSpanRange = Range(uncheckedBounds: (0, backwardsIdx))
+                let prefixSpan = span.extracting(unchecked: prefixSpanRange)
                 /// Unchecked because `0 <= backwardsIdx <= maxIdx < span.count`
-                let countOfMaskedBitsSpan = span.extracting(
-                    unchecked: (backwardsIdx &+ 1)..<span.count
-                )
+                let maskSpanRange = Range(uncheckedBounds: (backwardsIdx &+ 1, span.count))
+                let countOfMaskedBitsSpan = span.extracting(unchecked: maskSpanRange)
                 guard
                     let prefix = IPAddressType(__uncheckedASCIIspan: prefixSpan),
                     let countOfMaskedBits = UInt8(decimalRepresentation: countOfMaskedBitsSpan)
@@ -119,6 +128,11 @@ extension CIDR {
             }
         }
 
-        return nil
+        /// There was no forward slash found, so just decode this as the prefix.
+        /// Set the prefix length to the full bit width of the IP address type (32 or 128).
+        guard let prefix = IPAddressType(__uncheckedASCIIspan: span) else {
+            return nil
+        }
+        self.init(prefix: prefix, countOfMaskedBits: UInt8(IntegerLiteralType.bitWidth))
     }
 }

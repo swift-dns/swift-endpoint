@@ -33,7 +33,24 @@ extension IPv6Address: CustomStringConvertible {
             }
         }
     }
+}
 
+@available(endpointApplePlatforms 15, *)
+extension IPv6Address: CustomDebugStringConvertible {
+    /// The textual representation of an IPv6 address appropriate for debugging.
+    /// That is, 8 16-bits (2-bytes) separated by `:`, enclosed in `[]`, while using
+    /// the compression sign (`::`) when possible. Enclosed in `IPv6Address(` and `)`.
+    ///
+    /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://tools.ietf.org/html/rfc5952).
+    @inlinable
+    public var debugDescription: String {
+        "IPv6Address(\(self.description))"
+    }
+}
+
+
+@available(endpointApplePlatforms 15, *)
+extension IPv6Address {
     @inlinable
     @inline(__always)
     package func makeDescription<Buffer>(

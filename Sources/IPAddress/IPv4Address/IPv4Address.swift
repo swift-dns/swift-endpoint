@@ -15,7 +15,7 @@
 /// are indicated with a leading `0x`) are not allowed per [IETF RFC 6943].
 ///
 /// [IETF RFC 6943]: https://tools.ietf.org/html/rfc6943#section-3.1.1
-public struct IPv4Address: Sendable, Hashable, _IPAddressProtocol {
+public struct IPv4Address: Sendable, Hashable {
     /// The byte size of an IPv4.
     public static var size: Int {
         4
@@ -73,6 +73,9 @@ public struct IPv4Address: Sendable, Hashable, _IPAddressProtocol {
         }
     }
 }
+
+@available(endpointApplePlatforms 13, *)
+extension IPv4Address: _IPAddressProtocol {}
 
 extension IPv4Address: ExpressibleByIntegerLiteral {
     /// Initialize an `IPv4Address` from its raw 32-bit unsigned integer representation.

@@ -195,14 +195,14 @@ struct IPAddressTests {
         #expect(ip.bytes.14 == 0x0F)
         #expect(ip.bytes.15 == 0x11)
 
-        #expect(ip.bytePairs.0 == 0x0102)
-        #expect(ip.bytePairs.1 == 0xF3F4)
-        #expect(ip.bytePairs.2 == 0x1516)
-        #expect(ip.bytePairs.3 == 0x7080)
-        #expect(ip.bytePairs.4 == 0x90A0)
-        #expect(ip.bytePairs.5 == 0xCBBC)
-        #expect(ip.bytePairs.6 == 0x0D0E)
-        #expect(ip.bytePairs.7 == 0x0F11)
+        #expect(ip.segments.0 == 0x0102)
+        #expect(ip.segments.1 == 0xF3F4)
+        #expect(ip.segments.2 == 0x1516)
+        #expect(ip.segments.3 == 0x7080)
+        #expect(ip.segments.4 == 0x90A0)
+        #expect(ip.segments.5 == 0xCBBC)
+        #expect(ip.segments.6 == 0x0D0E)
+        #expect(ip.segments.7 == 0x0F11)
     }
 
     @available(endpointApplePlatforms 15, *)

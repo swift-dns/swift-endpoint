@@ -56,7 +56,7 @@
 ///
 /// [IETF RFC 5952]: https://tools.ietf.org/html/rfc5952
 @available(endpointApplePlatforms 15, *)
-public struct IPv6Address: Sendable, Hashable, _IPAddressProtocol {
+public struct IPv6Address: Sendable, Hashable {
     /// The byte size of an IPv6.
     public static var size: Int {
         16
@@ -175,6 +175,17 @@ public struct IPv6Address: Sendable, Hashable, _IPAddressProtocol {
 }
 
 @available(endpointApplePlatforms 15, *)
+extension IPv6Address: _IPAddressProtocol {}
+
+@available(endpointApplePlatforms 15, *)
+extension IPv6Address: ExpressibleByIntegerLiteral {
+    /// Initialize an `IPv6Address` from its raw 128-bit unsigned integer representation.
+    public init(integerLiteral value: UInt128) {
+        self.address = value
+    }
+}
+
+@available(endpointApplePlatforms 15, *)
 extension IPv6Address {
     /// The 16 bytes representing this IPv6 address.
     @inlinable
@@ -192,14 +203,10 @@ extension IPv6Address {
         }
     }
 
-    /// The 8 16-bits (2-bytes) representing this IPv6 address.
+    /// The 8 segments representing this IPv6 address, each being 2 bytes / 16 bits.
     /// The same as 8-segments / groups divided by colons (`:`) in the textual representation.
     @inlinable
-    public var bytePairs:
-        (
-            UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16
-        )
-    {
+    public var segments: (UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16) {
         withUnsafeBytes(of: self.address) { ptr in
             (
                 UInt16(ptr[15]) &<< 8 | UInt16(ptr[14]),
@@ -212,13 +219,5 @@ extension IPv6Address {
                 UInt16(ptr[1]) &<< 8 | UInt16(ptr[0])
             )
         }
-    }
-}
-
-@available(endpointApplePlatforms 15, *)
-extension IPv6Address: ExpressibleByIntegerLiteral {
-    /// Initialize an `IPv6Address` from its raw 128-bit unsigned integer representation.
-    public init(integerLiteral value: UInt128) {
-        self.address = value
     }
 }

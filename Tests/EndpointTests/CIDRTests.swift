@@ -63,6 +63,10 @@ struct CIDRTests {
                 expectedCIDR: CIDR(prefix: IPv4Address(255, 255, 255, 255), countOfMaskedBits: 32)
             ),
             (
+                text: "9.56.223.178",
+                expectedCIDR: CIDR(prefix: IPv4Address(9, 56, 223, 178), countOfMaskedBits: 32)
+            ),
+            (
                 text: "0.0.0.0/0",
                 expectedCIDR: CIDR(prefix: IPv4Address(0, 0, 0, 0), countOfMaskedBits: 0)
             ),
@@ -377,6 +381,10 @@ struct CIDRTests {
                     prefix: IPv6Address("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:0000:0000")!,
                     countOfMaskedBits: 32
                 )
+            ),
+            (
+                text: "[1:2:33:Ff:AAaa::]",
+                expectedCIDR: CIDR(prefix: IPv6Address("1:2:33:ff:aaaa::")!, countOfMaskedBits: 32)
             ),
             (
                 text: "[::]/0",

@@ -11,6 +11,8 @@
 public protocol _IPAddressProtocol:
     Sendable,
     Hashable,
+    CustomStringConvertible,
+    CustomDebugStringConvertible,
     ExpressibleByIntegerLiteral
 where
     IntegerLiteralType: Sendable

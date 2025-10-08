@@ -41,6 +41,15 @@ extension IPv4Address: CustomStringConvertible {
     }
 }
 
+@available(endpointApplePlatforms 13, *)
+extension IPv4Address: CustomDebugStringConvertible {
+    /// The textual representation of an IPv4 address appropriate for debugging.
+    @inlinable
+    public var debugDescription: String {
+        "IPv4Address(\(self.description))"
+    }
+}
+
 @available(endpointApplePlatforms 26, *)
 extension IPv4Address: LosslessStringConvertible {
     /// Initialize an IPv4 address from its textual representation.

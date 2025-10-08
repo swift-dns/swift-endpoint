@@ -3,16 +3,16 @@ extension CIDR: CustomStringConvertible {
     /// The textual representation of the CIDR, in form `<ip-address>/<prefix-length>`.
     /// For example `"192.168.1.98/24"`, or `"[2001:db8:1111::]/64"`.
     public var description: String {
-        "\(prefix)/\(IntegerLiteralType.bitWidth - mask.address.trailingZeroBitCount)"
+        "\(self.prefix)/\(self.prefixLength)"
     }
 }
 
 @available(endpointApplePlatforms 15, *)
 extension CIDR: CustomDebugStringConvertible {
     /// The textual representation of the CIDR, in form `IPAddressType(<ip-address>)/<prefix-length>`.
-    /// For example `"192.168.1.98/24"`, or `"[2001:db8:1111::]/64"`.
+    /// For example `"IPv4Address(192.168.1.98)/24"`, or `"IPv6Address([2001:db8:1111::])/64"`.
     public var debugDescription: String {
-        "\(prefix.debugDescription)/\(IntegerLiteralType.bitWidth - mask.address.trailingZeroBitCount)"
+        "\(self.prefix.debugDescription)/\(self.prefixLength)"
     }
 }
 
@@ -116,14 +116,14 @@ extension CIDR {
                 let prefixSpan = span.extracting(unchecked: prefixSpanRange)
                 /// Unchecked because `0 <= backwardsIdx <= maxIdx < span.count`
                 let maskSpanRange = Range(uncheckedBounds: (backwardsIdx &+ 1, span.count))
-                let countOfMaskedBitsSpan = span.extracting(unchecked: maskSpanRange)
+                let prefixLengthSpan = span.extracting(unchecked: maskSpanRange)
                 guard
                     let prefix = IPAddressType(__uncheckedASCIIspan: prefixSpan),
-                    let countOfMaskedBits = UInt8(decimalRepresentation: countOfMaskedBitsSpan)
+                    let prefixLength = UInt8(decimalRepresentation: prefixLengthSpan)
                 else {
                     return nil
                 }
-                self.init(prefix: prefix, countOfMaskedBits: countOfMaskedBits)
+                self.init(prefix: prefix, prefixLength: prefixLength)
                 return
             }
         }
@@ -133,6 +133,6 @@ extension CIDR {
         guard let prefix = IPAddressType(__uncheckedASCIIspan: span) else {
             return nil
         }
-        self.init(prefix: prefix, countOfMaskedBits: UInt8(IntegerLiteralType.bitWidth))
+        self.init(prefix: prefix, prefixLength: UInt8(IntegerLiteralType.bitWidth))
     }
 }

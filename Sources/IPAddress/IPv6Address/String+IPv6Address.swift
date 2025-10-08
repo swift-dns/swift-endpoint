@@ -48,7 +48,6 @@ extension IPv6Address: CustomDebugStringConvertible {
     }
 }
 
-
 @available(endpointApplePlatforms 15, *)
 extension IPv6Address {
     @inlinable

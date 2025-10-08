@@ -79,7 +79,7 @@ print(anyIPv4Address) /// prints "192.168.1.1"
 print(anyIPv6Address) /// prints "[2001:db8:85a3::100]"
 
 /// Define a CIDR. The type will store a `prefix` and a `mask`, representing this block of ips.
-let cidr1 = CIDR(prefix: ipv4Address1, countOfMaskedBits: 8) /// ipv4Address1 == "127.0.0.1"
+let cidr1 = CIDR(prefix: ipv4Address1, prefixLength: 8) /// ipv4Address1 == "127.0.0.1"
 let cidr2 = CIDR<IPv4Address>("192.168.1.1")!
 let containmentCheck1 = cidr1.contains(ipv4Address2) /// ipv4Address2 == "192.168.1.1"
 let containmentCheck2 = cidr2.contains(ipv4Address2) /// ipv4Address2 == "192.168.1.1"

@@ -15,12 +15,20 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     public let prefix: IPAddressType
     /// The masked part of the address.
     /// Of type `UInt32` for `IPv4Address` or `UInt128` for `IPv6Address`.
-    /// Example: in 127.0.0.1/8, the mask is the first 8 bits / the first segment of the IP.
+    /// Example: in 127.0.0.0/8, the mask is the first 8 bits / the first segment of the IP.
     /// in 0xFF00::/8, the mask is the first 8 bits / the first 2 letters of the IP.
     /// That means in those 2 cases, the mask is an integer with 8 leading 1s and all the rest bits
     /// set to zeros. For example for IPv4 that'd be: `0b11111111_00000000_00000000_00000000`,
     /// which is equal to `127.0.0.0`.
     public let mask: IPAddressType
+
+    /// The number of trailing bits in the prefix that are significant to this CIDR block.
+    /// Example: in 127.0.0.0/8, the prefix length is 8, which means any address that has matching
+    /// initial 8 bits, is within this CIDR block. In other words, any address starting with `127`.
+    /// in 0xFF00::/120, the prefix length is 120.
+    public var prefixLength: Int {
+        IntegerLiteralType.bitWidth - self.mask.address.trailingZeroBitCount
+    }
 
     /// Create a new CIDR with the given prefix and mask.
     ///
@@ -37,11 +45,9 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     ///     in a "continuous" form.
     ///     e.g. 0b11110000 is good, but 0b11110001 is not. 0b00001111 is not good either.
     ///     There must be only 1 group of leading ones and 1 group of trailing zeros.
+    ///     Example: in 127.0.0.0/8, the mask is `0b11111111_00000000_00000000_00000000`.
     @inlinable
-    public init(
-        prefix: IPAddressType,
-        uncheckedMask mask: IPAddressType
-    ) {
+    public init(prefix: IPAddressType, uncheckedMask mask: IPAddressType) {
         assert(
             Self.makeMaskBasedOn(
                 uncheckedCountOfTrailingZeros: UInt8(mask.address.trailingZeroBitCount)
@@ -61,11 +67,9 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     /// - Parameters:
     ///   - prefix: The IP address that is desired after the masking happens.
     ///   - mask: The masked part of the address.
+    ///     Example: in 127.0.0.0/8, the mask is `0b11111111_00000000_00000000_00000000`.
     @inlinable
-    public init?(
-        prefix: IPAddressType,
-        mask: IPAddressType
-    ) {
+    public init?(prefix: IPAddressType, mask: IPAddressType) {
         /// Make sure the mask is "continuous" and has no leading zeros
         /// e.g. 0b11110000 is good, but 0b11110001 is not. 0b00001111 is not good either.
         guard
@@ -90,29 +94,27 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     ///   - prefix: The IP address that is desired after the masking happens.
     ///     Extra bits that are not needed for the mask, will be truncated.
     ///     Example: 192.168.1.1/24 will be truncated to 192.168.1.0 since the trailing 1 is insignificant.
-    ///   - countOfMaskedBits: The number of leading bits to mask.
+    ///   - prefixLength: The number of leading bits to mask.
     ///     This shouldn't be greater than 32 for IPv4 or 128 for IPv6. The extra bits will be ignored.
+    ///     Example: in 192.168.1.0/24, the prefix length is 24.
     @inlinable
-    public init(
-        prefix: IPAddressType,
-        countOfMaskedBits: UInt8
-    ) {
-        let mask = Self.makeMaskBasedOn(countOfMaskedBits: countOfMaskedBits)
+    public init(prefix: IPAddressType, prefixLength: UInt8) {
+        let mask = Self.makeMaskBasedOn(prefixLength: prefixLength)
         self.init(prefix: prefix, uncheckedMask: mask)
     }
 
-    /// Creates a number with `countOfMaskedBits` amount of leading 1s followed by all zeros.
+    /// Creates a number with `prefixLength` amount of leading 1s followed by all zeros.
     /// Parameters:
-    ///   - countOfMaskedBits: The number of leading 1s to have, followed by all zeros.
+    ///   - prefixLength: The number of leading 1s to have, followed by all zeros.
     ///     Ignores amounts that are greater than the bit width of the IP address type,
     ///     which means 32 for IPv4 or 128 for IPv6.
     @inlinable
-    package static func makeMaskBasedOn(countOfMaskedBits: UInt8) -> IPAddressType {
+    package static func makeMaskBasedOn(prefixLength: UInt8) -> IPAddressType {
         let bitWidth = UInt8(IntegerLiteralType.bitWidth)
-        if countOfMaskedBits >= bitWidth {
+        if prefixLength >= bitWidth {
             return IPAddressType(integerLiteral: IntegerLiteralType.max)
         }
-        let mask = ~(IntegerLiteralType.max &>> countOfMaskedBits)
+        let mask = ~(IntegerLiteralType.max &>> prefixLength)
         return IPAddressType(integerLiteral: mask)
     }
 
@@ -128,7 +130,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
         if countOfTrailingZeros == IntegerLiteralType.bitWidth {
             return 0
         } else {
-            /// ~IntegerLiteralType((IntegerLiteralType(1) &<<< countOfTrailingZeros) &-- 1)
+            /// ~IntegerLiteralType((IntegerLiteralType(1) &<< countOfTrailingZeros) &- 1)
             /// also works. The compiler optimizes these anyway, so doesn't matter which
             /// one to use.
             let mask = (IntegerLiteralType.max &>> countOfTrailingZeros) &<< countOfTrailingZeros
@@ -136,14 +138,14 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
         }
     }
 
-    /// Whether or not the given AnyIPAddress is within this CIDR.
+    /// Whether or not the given AnyIPAddress is within this CIDR block.
     /// Complexity: O(1)
     @inlinable
     public func contains(_ other: IPAddressType) -> Bool {
         other.address & self.mask.address == self.prefix.address
     }
 
-    /// Whether or not the given AnyIPAddress is within this CIDR.
+    /// Whether or not the given AnyIPAddress is within this CIDR block.
     /// Complexity: O(1)
     @inlinable
     public func contains(_ other: AnyIPAddress) -> Bool {

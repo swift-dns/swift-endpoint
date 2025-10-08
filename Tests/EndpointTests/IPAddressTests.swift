@@ -306,10 +306,10 @@ struct IPAddressTests {
     @available(endpointApplePlatforms 15, *)
     @Test(
         arguments: [
-            (AnyIPAddress.v4(IPv4Address(192, 168, 1, 1)), "v4(192.168.1.1)"),
+            (AnyIPAddress.v4(IPv4Address(192, 168, 1, 1)), "192.168.1.1"),
             (
                 AnyIPAddress.v6(IPv6Address(0x2001_0DB8_85A3_0000_0000_0000_0000_0100)),
-                "v6([2001:db8:85a3::100])"
+                "[2001:db8:85a3::100]"
             ),
         ]
     )

@@ -7,23 +7,23 @@ struct CIDRTests {
     @Test(
         arguments: [(cidr: CIDR<IPv4Address>, expectedDescription: String)]([
             (
-                cidr: CIDR(prefix: IPv4Address(1, 43, 255, 199), countOfMaskedBits: 8),
+                cidr: CIDR(prefix: IPv4Address(1, 43, 255, 199), prefixLength: 8),
                 expectedDescription: "1.0.0.0/8"
             ),
             (
-                cidr: CIDR(prefix: IPv4Address(244, 89, 123, 0), countOfMaskedBits: 24),
+                cidr: CIDR(prefix: IPv4Address(244, 89, 123, 0), prefixLength: 24),
                 expectedDescription: "244.89.123.0/24"
             ),
             (
-                cidr: CIDR(prefix: IPv4Address(0, 0, 0, 0), countOfMaskedBits: 0),
+                cidr: CIDR(prefix: IPv4Address(0, 0, 0, 0), prefixLength: 0),
                 expectedDescription: "0.0.0.0/0"
             ),
             (
-                cidr: CIDR(prefix: IPv4Address(255, 255, 255, 255), countOfMaskedBits: 32),
+                cidr: CIDR(prefix: IPv4Address(255, 255, 255, 255), prefixLength: 32),
                 expectedDescription: "255.255.255.255/32"
             ),
             (
-                cidr: CIDR(prefix: IPv4Address(192, 168, 1, 0), countOfMaskedBits: 24),
+                cidr: CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: 24),
                 expectedDescription: "192.168.1.0/24"
             ),
         ])
@@ -40,35 +40,35 @@ struct CIDRTests {
         arguments: [(text: String, expectedCIDR: CIDR<IPv4Address>?)]([
             (
                 text: "192.168.1.0/24",
-                expectedCIDR: CIDR(prefix: IPv4Address(192, 168, 1, 0), countOfMaskedBits: 24)
+                expectedCIDR: CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: 24)
             ),
             (
                 text: "192.168.1.0/27",
-                expectedCIDR: CIDR(prefix: IPv4Address(192, 168, 1, 0), countOfMaskedBits: 27)
+                expectedCIDR: CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: 27)
             ),
             (
                 text: "192.168.1.1/120",
-                expectedCIDR: CIDR(prefix: IPv4Address(192, 168, 1, 1), countOfMaskedBits: 32)
+                expectedCIDR: CIDR(prefix: IPv4Address(192, 168, 1, 1), prefixLength: 32)
             ),
             (
                 text: "233.122.61.98/0",
-                expectedCIDR: CIDR(prefix: IPv4Address(0, 0, 0, 0), countOfMaskedBits: 0)
+                expectedCIDR: CIDR(prefix: IPv4Address(0, 0, 0, 0), prefixLength: 0)
             ),
             (
                 text: "233.122.61.98/8",
-                expectedCIDR: CIDR(prefix: IPv4Address(233, 0, 0, 0), countOfMaskedBits: 8)
+                expectedCIDR: CIDR(prefix: IPv4Address(233, 0, 0, 0), prefixLength: 8)
             ),
             (
                 text: "255.255.255.255/32",
-                expectedCIDR: CIDR(prefix: IPv4Address(255, 255, 255, 255), countOfMaskedBits: 32)
+                expectedCIDR: CIDR(prefix: IPv4Address(255, 255, 255, 255), prefixLength: 32)
             ),
             (
                 text: "9.56.223.178",
-                expectedCIDR: CIDR(prefix: IPv4Address(9, 56, 223, 178), countOfMaskedBits: 32)
+                expectedCIDR: CIDR(prefix: IPv4Address(9, 56, 223, 178), prefixLength: 32)
             ),
             (
                 text: "0.0.0.0/0",
-                expectedCIDR: CIDR(prefix: IPv4Address(0, 0, 0, 0), countOfMaskedBits: 0)
+                expectedCIDR: CIDR(prefix: IPv4Address(0, 0, 0, 0), prefixLength: 0)
             ),
             (text: "256.122.61.98/8", expectedCIDR: nil),
             (text: "5.5.5.5/-1", expectedCIDR: nil),
@@ -91,37 +91,37 @@ struct CIDRTests {
     @Test(
         arguments: [(cidr: CIDR<IPv4Address>, containsIP: IPv4Address, result: Bool)]([
             (
-                cidr: CIDR(prefix: IPv4Address(192, 168, 1, 0), countOfMaskedBits: 24),
+                cidr: CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: 24),
                 containsIP: IPv4Address(192, 168, 1, 0),
                 result: true
             ),
             (
-                cidr: CIDR(prefix: IPv4Address(192, 168, 1, 0), countOfMaskedBits: 24),
+                cidr: CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: 24),
                 containsIP: IPv4Address(192, 168, 1, 1),
                 result: true
             ),
             (
-                cidr: CIDR(prefix: IPv4Address(192, 168, 1, 0), countOfMaskedBits: 24),
+                cidr: CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: 24),
                 containsIP: IPv4Address(192, 168, 1, 255),
                 result: true
             ),
             (
-                cidr: CIDR(prefix: IPv4Address(192, 168, 1, 0), countOfMaskedBits: 24),
+                cidr: CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: 24),
                 containsIP: IPv4Address(192, 168, 1, 254),
                 result: true
             ),
             (
-                cidr: CIDR(prefix: IPv4Address(192, 168, 1, 0), countOfMaskedBits: 24),
+                cidr: CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: 24),
                 containsIP: IPv4Address(192, 168, 2, 123),
                 result: false
             ),
             (
-                cidr: CIDR(prefix: IPv4Address(192, 168, 1, 0), countOfMaskedBits: 24),
+                cidr: CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: 24),
                 containsIP: IPv4Address(192, 168, 0, 123),
                 result: false
             ),
             (
-                cidr: CIDR(prefix: IPv4Address(192, 168, 1, 0), countOfMaskedBits: 24),
+                cidr: CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: 24),
                 containsIP: IPv4Address(192, 168, 255, 123),
                 result: false
             ),
@@ -181,96 +181,96 @@ struct CIDRTests {
 
     @available(endpointApplePlatforms 15, *)
     @Test(
-        arguments: [(countOfMaskedBits: UInt8, ip: IPv4Address, expectedIP: IPv4Address)]([
+        arguments: [(prefixLength: UInt8, ip: IPv4Address, expectedIP: IPv4Address)]([
             (
-                countOfMaskedBits: 0 as UInt8,
+                prefixLength: 0 as UInt8,
                 ip: 0b00000000_00000000_00000000_00000000,
                 expectedIP: 0b00000000_00000000_00000000_00000000
             ),
             (
-                countOfMaskedBits: 0 as UInt8,
+                prefixLength: 0 as UInt8,
                 ip: 0b10000000_00000000_00000000_00000000,
                 expectedIP: 0b00000000_00000000_00000000_00000000
             ),
             (
-                countOfMaskedBits: 0 as UInt8,
+                prefixLength: 0 as UInt8,
                 ip: 0b10000000_00001000_00000000_00100000,
                 expectedIP: 0b00000000_00000000_00000000_00000000
             ),
             (
-                countOfMaskedBits: 1 as UInt8,
+                prefixLength: 1 as UInt8,
                 ip: 0b00000000_00001000_00000000_00100000,
                 expectedIP: 0b00000000_00000000_00000000_00000000
             ),
             (
-                countOfMaskedBits: 1 as UInt8,
+                prefixLength: 1 as UInt8,
                 ip: 0b10000000_00000000_00000000_00000000,
                 expectedIP: 0b10000000_00000000_00000000_00000000
             ),
             (
-                countOfMaskedBits: 1 as UInt8,
+                prefixLength: 1 as UInt8,
                 ip: 0b11000000_00000000_00000000_00000000,
                 expectedIP: 0b10000000_00000000_00000000_00000000
             ),
             (
-                countOfMaskedBits: 9 as UInt8,
+                prefixLength: 9 as UInt8,
                 ip: 0b1111111_10000000_00000000_00000000,
                 expectedIP: 0b1111111_10000000_00000000_00000000
             ),
             (
-                countOfMaskedBits: 9 as UInt8,
+                prefixLength: 9 as UInt8,
                 ip: 0b1111111_10001000_00010010_00000001,
                 expectedIP: 0b1111111_10000000_00000000_00000000
             ),
             (
-                countOfMaskedBits: 24 as UInt8,
+                prefixLength: 24 as UInt8,
                 ip: 0b1111111_11111111_11111111_00000000,
                 expectedIP: 0b1111111_11111111_11111111_00000000
             ),
             (
-                countOfMaskedBits: 24 as UInt8,
+                prefixLength: 24 as UInt8,
                 ip: 0b1111111_11111111_11111111_11111111,
                 expectedIP: 0b1111111_11111111_11111111_00000000
             ),
             (
-                countOfMaskedBits: 25 as UInt8,
+                prefixLength: 25 as UInt8,
                 ip: 0b1111111_11111111_11111111_11111000,
                 expectedIP: 0b1111111_11111111_11111111_10000000
             ),
             (
-                countOfMaskedBits: 30 as UInt8,
+                prefixLength: 30 as UInt8,
                 ip: 0b1111111_11111111_11111111_11111101,
                 expectedIP: 0b1111111_11111111_11111111_11111100
             ),
             (
-                countOfMaskedBits: 31 as UInt8,
+                prefixLength: 31 as UInt8,
                 ip: 0b1111111_11111111_11111111_11111111,
                 expectedIP: 0b1111111_11111111_11111111_11111110
             ),
             (
-                countOfMaskedBits: 32 as UInt8,
+                prefixLength: 32 as UInt8,
                 ip: 0b1111111_11111111_11111111_11111111,
                 expectedIP: 0b1111111_11111111_11111111_11111111
             ),
             (
-                countOfMaskedBits: 33 as UInt8,
+                prefixLength: 33 as UInt8,
                 ip: 0b1111111_11111111_11111111_11111111,
                 expectedIP: 0b1111111_11111111_11111111_11111111
             ),
         ])
     ) func `ipv4 CIDR standard initializer truncates prefix if needed`(
-        countOfMaskedBits: UInt8,
+        prefixLength: UInt8,
         ip: IPv4Address,
         expectedIP: IPv4Address
     ) {
         let cidr = CIDR(
             prefix: ip,
-            countOfMaskedBits: countOfMaskedBits
+            prefixLength: prefixLength
         )
         #expect(
             cidr.prefix == expectedIP,
             """
-            countOfMaskedBits: \(countOfMaskedBits)
+            prefixLength: \(prefixLength)
             prefix:   0b\(String(cidr.prefix.address, radix: 2)); \(cidr.prefix.address.trailingZeroBitCount) trailing zeros
             expected: 0b\(String(expectedIP.address, radix: 2)); \(expectedIP.address.trailingZeroBitCount) trailing zeros
             """
@@ -279,7 +279,7 @@ struct CIDRTests {
 
     @available(endpointApplePlatforms 15, *)
     @Test(
-        arguments: [(countOfMaskedBits: UInt8, expectedMask: UInt32)]([
+        arguments: [(prefixLength: UInt8, expectedMask: UInt32)]([
             (0 as UInt8, 0b00000000_00000000_00000000_00000000 as UInt32),
             (1 as UInt8, 0b10000000_00000000_00000000_00000000 as UInt32),
             (2 as UInt8, 0b11000000_00000000_00000000_00000000 as UInt32),
@@ -297,17 +297,17 @@ struct CIDRTests {
             (255 as UInt8, 0b11111111_11111111_11111111_11111111 as UInt32),
         ])
     )
-    func `ipv4 mask is correctly calculated when using countOfMaskedBits`(
-        countOfMaskedBits: UInt8,
+    func `ipv4 mask is correctly calculated when using prefixLength`(
+        prefixLength: UInt8,
         expectedMask: UInt32
     ) {
         let calculatedMask = CIDR<IPv4Address>.makeMaskBasedOn(
-            countOfMaskedBits: countOfMaskedBits
+            prefixLength: prefixLength
         )
         #expect(
             calculatedMask.address == expectedMask,
             """
-            countOfMaskedBits: \(countOfMaskedBits)
+            prefixLength: \(prefixLength)
             calculated: 0b\(String(calculatedMask.address, radix: 2)); \(calculatedMask.address.trailingZeroBitCount) trailing zeros
             expected:   0b\(String(expectedMask, radix: 2)); \(expectedMask.trailingZeroBitCount) trailing zeros
             """
@@ -320,26 +320,26 @@ struct CIDRTests {
             (
                 cidr: CIDR(
                     prefix: IPv6Address(0x2001_0DB8_85A3_0000_0000_0000_0000_0100),
-                    countOfMaskedBits: 24
+                    prefixLength: 24
                 ),
                 expectedDescription: "[2001:d00::]/24"
             ),
             (
-                cidr: CIDR(prefix: IPv6Address("FF00::")!, countOfMaskedBits: 8),
+                cidr: CIDR(prefix: IPv6Address("FF00::")!, prefixLength: 8),
                 expectedDescription: "[ff00::]/8"
             ),
             (
-                cidr: CIDR(prefix: 0x0, countOfMaskedBits: 0),
+                cidr: CIDR(prefix: 0x0, prefixLength: 0),
                 expectedDescription: "[::]/0"
             ),
             (
-                cidr: CIDR(prefix: IPv6Address(UInt128.max), countOfMaskedBits: 128),
+                cidr: CIDR(prefix: IPv6Address(UInt128.max), prefixLength: 128),
                 expectedDescription: "[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]/128"
             ),
             (
                 cidr: CIDR(
                     prefix: IPv6Address(0x2001_0DB8_85A3_0000_0000_0000_0000_0000),
-                    countOfMaskedBits: 48
+                    prefixLength: 48
                 ),
                 expectedDescription: "[2001:db8:85a3::]/48"
             ),
@@ -357,38 +357,38 @@ struct CIDRTests {
         arguments: [(text: String, expectedCIDR: CIDR<IPv6Address>?)]([
             (
                 text: "FF::/24",
-                expectedCIDR: CIDR(prefix: IPv6Address("FF::")!, countOfMaskedBits: 24)
+                expectedCIDR: CIDR(prefix: IPv6Address("FF::")!, prefixLength: 24)
             ),
             (
                 text: "12::/111",
-                expectedCIDR: CIDR(prefix: IPv6Address("12::")!, countOfMaskedBits: 111)
+                expectedCIDR: CIDR(prefix: IPv6Address("12::")!, prefixLength: 111)
             ),
             (
                 text: "[1234:5678::]/188",
-                expectedCIDR: CIDR(prefix: IPv6Address("1234:5678::")!, countOfMaskedBits: 128)
+                expectedCIDR: CIDR(prefix: IPv6Address("1234:5678::")!, prefixLength: 128)
             ),
             (
                 text: "::1234/0",
-                expectedCIDR: CIDR(prefix: IPv6Address("::")!, countOfMaskedBits: 0)
+                expectedCIDR: CIDR(prefix: IPv6Address("::")!, prefixLength: 0)
             ),
             (
                 text: "[::]/8",
-                expectedCIDR: CIDR(prefix: IPv6Address("::")!, countOfMaskedBits: 8)
+                expectedCIDR: CIDR(prefix: IPv6Address("::")!, prefixLength: 8)
             ),
             (
                 text: "[FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF]/32",
                 expectedCIDR: CIDR(
                     prefix: IPv6Address("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:0000:0000")!,
-                    countOfMaskedBits: 32
+                    prefixLength: 32
                 )
             ),
             (
                 text: "[1:2:33:Ff:AAaa::]",
-                expectedCIDR: CIDR(prefix: IPv6Address("1:2:33:ff:aaaa::")!, countOfMaskedBits: 32)
+                expectedCIDR: CIDR(prefix: IPv6Address("1:2:33:ff:aaaa::")!, prefixLength: 128)
             ),
             (
                 text: "[::]/0",
-                expectedCIDR: CIDR(prefix: IPv6Address("::")!, countOfMaskedBits: 0)
+                expectedCIDR: CIDR(prefix: IPv6Address("::")!, prefixLength: 0)
             ),
             (text: "[::]/-1", expectedCIDR: nil),
             (text: "/", expectedCIDR: nil),
@@ -415,33 +415,33 @@ struct CIDRTests {
         arguments: [(cidr: CIDR<IPv6Address>, containsIP: IPv6Address, result: Bool)]([
             (
                 /// `FF::` is equivalent to `00FF::`
-                cidr: CIDR(prefix: IPv6Address("FF::")!, countOfMaskedBits: 8),
+                cidr: CIDR(prefix: IPv6Address("FF::")!, prefixLength: 8),
                 containsIP: IPv6Address("FF00::")!,
                 result: false
             ),
             (
                 /// `FF::` is equivalent to `00FF::`
-                cidr: CIDR(prefix: IPv6Address("FF::")!, countOfMaskedBits: 16),
+                cidr: CIDR(prefix: IPv6Address("FF::")!, prefixLength: 16),
                 containsIP: IPv6Address("FF::")!,
                 result: true
             ),
             (
-                cidr: CIDR(prefix: IPv6Address("FF00::")!, countOfMaskedBits: 8),
+                cidr: CIDR(prefix: IPv6Address("FF00::")!, prefixLength: 8),
                 containsIP: IPv6Address("FF92::")!,
                 result: true
             ),
             (
-                cidr: CIDR(prefix: IPv6Address("FF00::")!, countOfMaskedBits: 8),
+                cidr: CIDR(prefix: IPv6Address("FF00::")!, prefixLength: 8),
                 containsIP: IPv6Address("FFEE:9328:3212:0:1::")!,
                 result: true
             ),
             (
-                cidr: CIDR(prefix: IPv6Address("FF00::")!, countOfMaskedBits: 8),
+                cidr: CIDR(prefix: IPv6Address("FF00::")!, prefixLength: 8),
                 containsIP: IPv6Address("FF00:9328:3212:0:1::")!,
                 result: true
             ),
             (
-                cidr: CIDR(prefix: IPv6Address("FF00::")!, countOfMaskedBits: 8),
+                cidr: CIDR(prefix: IPv6Address("FF00::")!, prefixLength: 8),
                 containsIP: IPv6Address("EEFF:9328:3212:0:1::")!,
                 result: false
             ),
@@ -501,64 +501,64 @@ struct CIDRTests {
 
     @available(endpointApplePlatforms 15, *)
     @Test(
-        arguments: [(countOfMaskedBits: UInt8, ip: IPv6Address, expectedIP: IPv6Address)]([
+        arguments: [(prefixLength: UInt8, ip: IPv6Address, expectedIP: IPv6Address)]([
             (
-                countOfMaskedBits: 0 as UInt8,
+                prefixLength: 0 as UInt8,
                 ip: IPv6Address(0b00000000_00000000_00000000_00000000 << 96),
                 expectedIP: IPv6Address(0b00000000_00000000_00000000_00000000 << 96)
             ),
             (
-                countOfMaskedBits: 0 as UInt8,
+                prefixLength: 0 as UInt8,
                 ip: IPv6Address(0b10000000_00000000_00000000_00000000 << 96),
                 expectedIP: IPv6Address(0b00000000_00000000_00000000_00000000 << 96)
             ),
             (
-                countOfMaskedBits: 0 as UInt8,
+                prefixLength: 0 as UInt8,
                 ip: IPv6Address(0b10000000_00001000_00000000_00100000 << 96),
                 expectedIP: IPv6Address(0b00000000_00000000_00000000_00000000 << 96)
             ),
             (
-                countOfMaskedBits: 1 as UInt8,
+                prefixLength: 1 as UInt8,
                 ip: IPv6Address(0b00000000_00001000_00000000_00100000 << 96),
                 expectedIP: IPv6Address(0b00000000_00000000_00000000_00000000 << 96)
             ),
             (
-                countOfMaskedBits: 1 as UInt8,
+                prefixLength: 1 as UInt8,
                 ip: IPv6Address(0b10000000_00000000_00000000_00000000 << 96),
                 expectedIP: IPv6Address(0b10000000_00000000_00000000_00000000 << 96)
             ),
             (
-                countOfMaskedBits: 1 as UInt8,
+                prefixLength: 1 as UInt8,
                 ip: IPv6Address(0b11000000_00000000_00000000_00000000 << 96),
                 expectedIP: IPv6Address(0b10000000_00000000_00000000_00000000 << 96)
             ),
             (
-                countOfMaskedBits: 9 as UInt8,
+                prefixLength: 9 as UInt8,
                 ip: IPv6Address(0b1111111_10000000_00000000_00000000 << 96),
                 expectedIP: IPv6Address(0b1111111_10000000_00000000_00000000 << 96)
             ),
             (
-                countOfMaskedBits: 9 as UInt8,
+                prefixLength: 9 as UInt8,
                 ip: IPv6Address(0b1111111_10001000_00010010_00000001 << 96),
                 expectedIP: IPv6Address(0b1111111_10000000_00000000_00000000 << 96)
             ),
             (
-                countOfMaskedBits: 24 as UInt8,
+                prefixLength: 24 as UInt8,
                 ip: IPv6Address(0b1111111_11111111_11111111_00000000 << 96),
                 expectedIP: IPv6Address(0b1111111_11111111_11111111_00000000 << 96)
             ),
             (
-                countOfMaskedBits: 24 as UInt8,
+                prefixLength: 24 as UInt8,
                 ip: IPv6Address(0b1111111_11111111_11111111_11111111 << 96),
                 expectedIP: IPv6Address(0b1111111_11111111_11111111_00000000 << 96)
             ),
             (
-                countOfMaskedBits: 25 as UInt8,
+                prefixLength: 25 as UInt8,
                 ip: IPv6Address(0b1111111_11111111_11111111_11111000 << 96),
                 expectedIP: IPv6Address(0b1111111_11111111_11111111_10000000 << 96)
             ),
             (
-                countOfMaskedBits: 120 as UInt8,
+                prefixLength: 120 as UInt8,
                 ip: IPv6Address(
                     0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_01000100
                 ),
@@ -567,7 +567,7 @@ struct CIDRTests {
                 )
             ),
             (
-                countOfMaskedBits: 120 as UInt8,
+                prefixLength: 120 as UInt8,
                 ip: IPv6Address(
                     0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
                 ),
@@ -576,7 +576,7 @@ struct CIDRTests {
                 )
             ),
             (
-                countOfMaskedBits: 120 as UInt8,
+                prefixLength: 120 as UInt8,
                 ip: IPv6Address(
                     0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_00000000
                 ),
@@ -585,7 +585,7 @@ struct CIDRTests {
                 )
             ),
             (
-                countOfMaskedBits: 126 as UInt8,
+                prefixLength: 126 as UInt8,
                 ip: IPv6Address(
                     0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
                 ),
@@ -594,7 +594,7 @@ struct CIDRTests {
                 )
             ),
             (
-                countOfMaskedBits: 126 as UInt8,
+                prefixLength: 126 as UInt8,
                 ip: IPv6Address(
                     0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111101
                 ),
@@ -603,7 +603,7 @@ struct CIDRTests {
                 )
             ),
             (
-                countOfMaskedBits: 126 as UInt8,
+                prefixLength: 126 as UInt8,
                 ip: IPv6Address(
                     0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111100
                 ),
@@ -612,7 +612,7 @@ struct CIDRTests {
                 )
             ),
             (
-                countOfMaskedBits: 127 as UInt8,
+                prefixLength: 127 as UInt8,
                 ip: IPv6Address(
                     0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
                 ),
@@ -621,7 +621,7 @@ struct CIDRTests {
                 )
             ),
             (
-                countOfMaskedBits: 127 as UInt8,
+                prefixLength: 127 as UInt8,
                 ip: IPv6Address(
                     0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111110
                 ),
@@ -630,7 +630,7 @@ struct CIDRTests {
                 )
             ),
             (
-                countOfMaskedBits: 128 as UInt8,
+                prefixLength: 128 as UInt8,
                 ip: IPv6Address(
                     0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
                 ),
@@ -639,7 +639,7 @@ struct CIDRTests {
                 )
             ),
             (
-                countOfMaskedBits: 129 as UInt8,
+                prefixLength: 129 as UInt8,
                 ip: IPv6Address(
                     0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
                 ),
@@ -649,18 +649,18 @@ struct CIDRTests {
             ),
         ])
     ) func `ipv6 CIDR standard initializer truncates prefix if needed`(
-        countOfMaskedBits: UInt8,
+        prefixLength: UInt8,
         ip: IPv6Address,
         expectedIP: IPv6Address
     ) {
         let cidr = CIDR(
             prefix: ip,
-            countOfMaskedBits: countOfMaskedBits
+            prefixLength: prefixLength
         )
         #expect(
             cidr.prefix == expectedIP,
             """
-            countOfMaskedBits: \(countOfMaskedBits)
+            prefixLength: \(prefixLength)
             prefix:   0b\(String(cidr.prefix.address, radix: 2)); \(cidr.prefix.address.trailingZeroBitCount) trailing zeros
             expected: 0b\(String(expectedIP.address, radix: 2)); \(expectedIP.address.trailingZeroBitCount) trailing zeros
             """
@@ -669,7 +669,7 @@ struct CIDRTests {
 
     @available(endpointApplePlatforms 15, *)
     @Test(
-        arguments: [(countOfMaskedBits: UInt8, expectedMask: UInt128)]([
+        arguments: [(prefixLength: UInt8, expectedMask: UInt128)]([
             (0 as UInt8, (0b0 << 128) as UInt128),
             (1 as UInt8, (0b1 << 127) as UInt128),
             (2 as UInt8, (0b11 << 126) as UInt128),
@@ -730,17 +730,17 @@ struct CIDRTests {
             ),
         ])
     )
-    func `ipv6 mask is correctly calculated when using countOfMaskedBits`(
-        countOfMaskedBits: UInt8,
+    func `ipv6 mask is correctly calculated when using prefixLength`(
+        prefixLength: UInt8,
         expectedMask: UInt128
     ) {
         let calculatedMask = CIDR<IPv6Address>.makeMaskBasedOn(
-            countOfMaskedBits: countOfMaskedBits
+            prefixLength: prefixLength
         )
         #expect(
             calculatedMask.address == expectedMask,
             """
-            countOfMaskedBits: \(countOfMaskedBits)
+            prefixLength: \(prefixLength)
             calculated: 0b\(String(calculatedMask.address, radix: 2)); \(calculatedMask.address.trailingZeroBitCount) trailing zeros
             expected:   0b\(String(expectedMask, radix: 2)); \(expectedMask.trailingZeroBitCount) trailing zeros
             """
@@ -761,7 +761,7 @@ struct CIDRTests {
         for bitCount in UInt8(0)...bitWidth {
             let cidr = CIDR(
                 prefix: IPAddressType(integerLiteral: .random(in: .all)),
-                countOfMaskedBits: bitCount
+                prefixLength: bitCount
             )
 
             var cidrPrefixBits = String(cidr.prefix.address, radix: 2)

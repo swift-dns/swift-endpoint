@@ -75,16 +75,16 @@ print(ipv6Address3) /// prints "[::ffff:cc98:bd74]"
 /// Define an any-ip-address. The type will automatically parse the ip address into the corrext type.
 let anyIPv4Address = AnyIPAddress("192.168.1.1")
 let anyIPv6Address = AnyIPAddress("[2001:DB8:85A3::100]")
-print(anyIPv4Address) /// prints "v4(192.168.1.1)"
-print(anyIPv6Address) /// prints "v6([2001:db8:85a3::100])"
+print(anyIPv4Address) /// prints "192.168.1.1"
+print(anyIPv6Address) /// prints "[2001:db8:85a3::100]"
 
 /// Define a CIDR. The type will store a `prefix` and a `mask`, representing this block of ips.
-let cidr1 = CIDR(prefix: ipv4Address1, countOfMaskedBits: 8)
-let cidr2 = CIDR<IPv4Address>("192.168.1.1/24")!
+let cidr1 = CIDR(prefix: ipv4Address1, countOfMaskedBits: 8) /// ipv4Address1 == "127.0.0.1"
+let cidr2 = CIDR<IPv4Address>("192.168.1.1")!
 let containmentCheck1 = cidr1.contains(ipv4Address2) /// ipv4Address2 == "192.168.1.1"
 let containmentCheck2 = cidr2.contains(ipv4Address2) /// ipv4Address2 == "192.168.1.1"
-print(cidr1) /// prints "127.0.0.1/8"
-print(cidr2) /// prints "192.168.1.1/24"
+print(cidr1) /// prints "127.0.0.0/8"
+print(cidr2) /// prints "192.168.1.1/32"
 print(containmentCheck1) /// prints "false"
 print(containmentCheck2) /// prints "true"
 ```
@@ -102,10 +102,10 @@ let fastIPv4 = IPv4Address(domainName: ipInDomainName)! /// ✅ Converts the dom
 let slowIPv4 = IPv4Address(ipInDomainName.description)! /// ❌ This does work, but has worse performance
 
 let fastIPv4Conversion = try DomainName(ipv4: fastIPv4)! /// ✅ Converts the ipv4 into the equivalent domain name
-let slowIPv4Conversion = DomainName( fastIPv4.description)! /// ❌ This does work, but has worse performance
+let slowIPv4Conversion = DomainName(fastIPv4.description)! /// ❌ This does work, but has worse performance
 
 let anyIPAddress = AnyIPAddress(domainName: ipInDomainName)
-print(anyIPAddress) /// prints "v4(255.255.255.255)"
+print(anyIPAddress) /// prints "255.255.255.255"
 ```
 
 ## Performance

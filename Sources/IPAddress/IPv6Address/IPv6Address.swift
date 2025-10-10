@@ -55,7 +55,7 @@
 /// [IETF RFC 5952].
 ///
 /// [IETF RFC 5952]: https://tools.ietf.org/html/rfc5952
-@available(endpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 15, *)
 public struct IPv6Address: Sendable, Hashable {
     /// The byte size of an IPv6.
     public static var size: Int {
@@ -174,10 +174,10 @@ public struct IPv6Address: Sendable, Hashable {
     }
 }
 
-@available(endpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 15, *)
 extension IPv6Address: _IPAddressProtocol {}
 
-@available(endpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 15, *)
 extension IPv6Address: ExpressibleByIntegerLiteral {
     /// Initialize an `IPv6Address` from its raw 128-bit unsigned integer representation.
     public init(integerLiteral value: UInt128) {
@@ -185,7 +185,7 @@ extension IPv6Address: ExpressibleByIntegerLiteral {
     }
 }
 
-@available(endpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 15, *)
 extension IPv6Address {
     /// The 16 bytes representing this IPv6 address.
     @inlinable

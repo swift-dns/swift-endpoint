@@ -1,4 +1,4 @@
-@available(endpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 15, *)
 extension IPv6Address {
     /// Initialize an `IPv6Address` from the 16 bytes representing it.
     public init?(from span: Span<UInt8>) {

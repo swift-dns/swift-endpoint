@@ -1,4 +1,4 @@
-@available(endpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension Span {
     @inlinable
     func firstIndex(

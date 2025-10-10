@@ -1,8 +1,9 @@
-@available(endpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 15, *)
 public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
 
     /// The underlying type of the IP address.
     /// This is always either `UInt32` or `UInt128`.
+    ///
     /// There is no need to assume any other type will be added in the future, as that would
     /// require a new IP version to be introduced, in which case it'll take years before that
     /// new IP version is adopted, and at that point we'll just have released a new major version.
@@ -15,11 +16,12 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     public let prefix: IPAddressType
     /// The masked part of the address.
     /// Of type `UInt32` for `IPv4Address` or `UInt128` for `IPv6Address`.
+    ///
     /// Example: in 127.0.0.0/8, the mask is the first 8 bits / the first segment of the IP.
     /// in 0xFF00::/8, the mask is the first 8 bits / the first 2 letters of the IP.
     /// That means in those 2 cases, the mask is an integer with 8 leading 1s and all the rest bits
     /// set to zeros. For example for IPv4 that'd be: `0b11111111_00000000_00000000_00000000`,
-    /// which is equal to `127.0.0.0`.
+    /// which is equal to `255.0.0.0`.
     public let mask: IPAddressType
 
     /// The number of trailing bits in the prefix that are significant to this CIDR block.
@@ -48,11 +50,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     ///     Example: in 127.0.0.0/8, the mask is `0b11111111_00000000_00000000_00000000`.
     @inlinable
     public init(prefix: IPAddressType, uncheckedMask mask: IPAddressType) {
-        assert(
-            Self.makeMaskBasedOn(
-                uncheckedCountOfTrailingZeros: UInt8(mask.address.trailingZeroBitCount)
-            ) == mask
-        )
+        assert(Self.makeMaskBasedOn(countOfTrailingZerosOf: mask.address) == mask)
 
         self.prefix = IPAddressType(integerLiteral: prefix.address & mask.address)
         self.mask = mask
@@ -72,11 +70,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     public init?(prefix: IPAddressType, mask: IPAddressType) {
         /// Make sure the mask is "continuous" and has no leading zeros
         /// e.g. 0b11110000 is good, but 0b11110001 is not. 0b00001111 is not good either.
-        guard
-            Self.makeMaskBasedOn(
-                uncheckedCountOfTrailingZeros: UInt8(mask.address.trailingZeroBitCount)
-            ) == mask
-        else {
+        guard Self.makeMaskBasedOn(countOfTrailingZerosOf: mask.address) == mask else {
             return nil
         }
 
@@ -125,8 +119,9 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     ///     which means 32 for IPv4 or 128 for IPv6.
     @inlinable
     static func makeMaskBasedOn(
-        uncheckedCountOfTrailingZeros countOfTrailingZeros: UInt8
+        countOfTrailingZerosOf integer: IntegerLiteralType
     ) -> IPAddressType {
+        let countOfTrailingZeros = integer.trailingZeroBitCount
         if countOfTrailingZeros == IntegerLiteralType.bitWidth {
             return 0
         } else {

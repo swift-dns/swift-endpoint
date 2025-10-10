@@ -3,7 +3,7 @@ import Testing
 
 @Suite
 struct CIDRTests {
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     @Test(
         arguments: [(cidr: CIDR<IPv4Address>, expectedDescription: String)]([
             (
@@ -35,7 +35,7 @@ struct CIDRTests {
         #expect(cidr.description == expectedDescription)
     }
 
-    @available(endpointApplePlatforms 26, *)
+    @available(swiftEndpointApplePlatforms 26, *)
     @Test(
         arguments: [(text: String, expectedCIDR: CIDR<IPv4Address>?)]([
             (
@@ -87,7 +87,7 @@ struct CIDRTests {
         #expect(CIDR<IPv4Address>(textualRepresentation: text.utf8Span.span) == expectedCIDR)
     }
 
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     @Test(
         arguments: [(cidr: CIDR<IPv4Address>, containsIP: IPv4Address, result: Bool)]([
             (
@@ -152,7 +152,7 @@ struct CIDRTests {
         )
     }
 
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     @Test func `randomly generated ipv4 CIDR containment checks work as expected`() {
         for (cidr, containsIP, result) in Self.makeRandom(
             ofType: IPv4Address.self,
@@ -179,7 +179,7 @@ struct CIDRTests {
         }
     }
 
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     @Test(
         arguments: [(prefixLength: UInt8, ip: IPv4Address, expectedIP: IPv4Address)]([
             (
@@ -277,7 +277,7 @@ struct CIDRTests {
         )
     }
 
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     @Test(
         arguments: [(prefixLength: UInt8, expectedMask: UInt32)]([
             (0 as UInt8, 0b00000000_00000000_00000000_00000000 as UInt32),
@@ -314,7 +314,7 @@ struct CIDRTests {
         )
     }
 
-    @available(endpointApplePlatforms 26, *)
+    @available(swiftEndpointApplePlatforms 26, *)
     @Test(
         arguments: [(cidr: CIDR<IPv6Address>, expectedDescription: String)]([
             (
@@ -352,7 +352,7 @@ struct CIDRTests {
         #expect(cidr.description == expectedDescription)
     }
 
-    @available(endpointApplePlatforms 26, *)
+    @available(swiftEndpointApplePlatforms 26, *)
     @Test(
         arguments: [(text: String, expectedCIDR: CIDR<IPv6Address>?)]([
             (
@@ -410,7 +410,7 @@ struct CIDRTests {
         #expect(CIDR<IPv6Address>(textualRepresentation: text.utf8Span.span) == expectedCIDR)
     }
 
-    @available(endpointApplePlatforms 26, *)
+    @available(swiftEndpointApplePlatforms 26, *)
     @Test(
         arguments: [(cidr: CIDR<IPv6Address>, containsIP: IPv6Address, result: Bool)]([
             (
@@ -472,7 +472,7 @@ struct CIDRTests {
         )
     }
 
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     @Test func `randomly generated ipv6 CIDR containment checks work as expected`() {
         for (cidr, containsIP, result) in Self.makeRandom(
             ofType: IPv6Address.self,
@@ -499,7 +499,7 @@ struct CIDRTests {
         }
     }
 
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     @Test(
         arguments: [(prefixLength: UInt8, ip: IPv6Address, expectedIP: IPv6Address)]([
             (
@@ -667,7 +667,7 @@ struct CIDRTests {
         )
     }
 
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     @Test(
         arguments: [(prefixLength: UInt8, expectedMask: UInt128)]([
             (0 as UInt8, (0b0 << 128) as UInt128),
@@ -747,7 +747,7 @@ struct CIDRTests {
         )
     }
 
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     /// We intentionally don't use much math operators here like bit-shift, to keep things
     /// simpler for tests.
     static func makeRandom<IPAddressType: _IPAddressProtocol>(

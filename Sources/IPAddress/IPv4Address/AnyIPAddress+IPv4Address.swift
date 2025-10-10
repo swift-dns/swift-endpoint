@@ -2,7 +2,7 @@ extension IPv4Address {
     /// The exact translation of an `AnyIPAddress` to an `IPv4Address`.
     ///
     /// This does not handle ipv6-to-ipv4 mappings. Use `init?(ipv6:)` for that.
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     public init?(exactly ipAddress: AnyIPAddress) {
         guard let ipv4 = ipAddress.ipv4Value else {
             return nil
@@ -31,7 +31,7 @@ extension IPv4Address {
     ///    See [RFC4038] for background on the usage of the "IPv4-mapped IPv6
     ///    address".
     /// ```
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     @inlinable
     public init?(ipv6: IPv6Address) {
         guard CIDR<IPv6Address>.ipv4Mapped.contains(ipv6) else {

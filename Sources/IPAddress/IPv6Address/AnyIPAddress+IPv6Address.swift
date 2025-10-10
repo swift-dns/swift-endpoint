@@ -1,9 +1,9 @@
-@available(endpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 15, *)
 extension IPv6Address {
     /// The exact translation of an `AnyIPAddress` to an `IPv4Address`.
     ///
     /// This intentionally does not handle ipv4-mapped ipv6 addresses. Use `init(ipv4:)` for that.
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     public init?(exactly ipAddress: AnyIPAddress) {
         guard let ipv6 = ipAddress.ipv6Value else {
             return nil

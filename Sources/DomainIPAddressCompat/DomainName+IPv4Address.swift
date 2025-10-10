@@ -3,7 +3,7 @@ public import IPAddress
 
 public import struct NIOCore.ByteBuffer
 
-@available(endpointApplePlatforms 26, *)
+@available(swiftEndpointApplePlatforms 26, *)
 extension IPv4Address {
     /// Initialize an `IPv4Address` from a `DomainName`.
     /// The domain name must correspond to a valid IPv4 address.

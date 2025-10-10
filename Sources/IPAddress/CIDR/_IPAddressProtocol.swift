@@ -24,9 +24,9 @@ where
 {
     var address: IntegerLiteralType { get }
 
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     init?(exactly ipAddress: AnyIPAddress)
 
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     init?(__uncheckedASCIIspan: Span<UInt8>)
 }

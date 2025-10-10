@@ -4,7 +4,7 @@ import Testing
 
 @Suite
 struct DomainNameTests {
-    @available(endpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 13, *)
     @Test(
         arguments: [
             (domainName: "*", isFQDN: false, data: ByteBuffer([1, 42])),
@@ -49,7 +49,7 @@ struct DomainNameTests {
         }
     }
 
-    @available(endpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 13, *)
     @Test(
         arguments: [
             (
@@ -108,7 +108,7 @@ struct DomainNameTests {
         )
     }
 
-    @available(endpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 13, *)
     @Test func equalityWhichMustBeCaseInsensitive() throws {
         let domainName = try DomainName("example.com.")
         let duplicate = try DomainName("example.com.")
@@ -140,7 +140,7 @@ struct DomainNameTests {
         #expect(weirdPartiallyUppercaseDomain == weirdUppercaseDomain)
     }
 
-    @available(endpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 13, *)
     @Test(
         arguments: [
             (domainName: ".", isFQDN: true),
@@ -188,7 +188,7 @@ struct DomainNameTests {
         try #expect(DomainName(domainName).labelsCount == expectedLabelsCount)
     }
 
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     @Test func ipv4AddressToName() throws {
         let ipAddress = IPv4Address(192, 168, 1, 1)
         let name1 = DomainName(ipv4: ipAddress)
@@ -197,7 +197,7 @@ struct DomainNameTests {
         #expect(name2.description == "192.168.1.1")
     }
 
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     @Test func ipv6AddressToName() {
         let ipAddress: IPv6Address = 0x2a01_5cc0_0001_0002_0000_0000_0000_0004
         let name1 = DomainName(ipv6: ipAddress)

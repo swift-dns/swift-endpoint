@@ -3,7 +3,7 @@ public import IPAddress
 
 import struct NIOCore.ByteBuffer
 
-@available(endpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 15, *)
 extension DomainName {
     public init(ip: AnyIPAddress) {
         switch ip {

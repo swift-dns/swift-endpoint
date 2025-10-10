@@ -1,4 +1,4 @@
-@available(endpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 15, *)
 extension CIDR: CustomStringConvertible {
     /// The textual representation of the CIDR, in form `<ip-address>/<prefix-length>`.
     /// For example `"192.168.1.98/24"`, or `"[2001:db8:1111::]/64"`.
@@ -7,7 +7,7 @@ extension CIDR: CustomStringConvertible {
     }
 }
 
-@available(endpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 15, *)
 extension CIDR: CustomDebugStringConvertible {
     /// The textual representation of the CIDR, in form `IPAddressType(<ip-address>)/<prefix-length>`.
     /// For example `"IPv4Address(192.168.1.98)/24"`, or `"IPv6Address([2001:db8:1111::])/64"`.
@@ -16,7 +16,7 @@ extension CIDR: CustomDebugStringConvertible {
     }
 }
 
-@available(endpointApplePlatforms 26, *)
+@available(swiftEndpointApplePlatforms 26, *)
 extension CIDR: LosslessStringConvertible {
     /// Initialize an CIDR from its textual representation.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
@@ -60,7 +60,7 @@ extension CIDR: LosslessStringConvertible {
     }
 }
 
-@available(endpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 15, *)
 extension CIDR {
     /// Initialize an CIDR from a `Span<UInt8>` of its textual representation.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.

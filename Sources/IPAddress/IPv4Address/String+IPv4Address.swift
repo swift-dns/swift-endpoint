@@ -1,4 +1,4 @@
-@available(endpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension IPv4Address: CustomStringConvertible {
     /// The textual representation of an IPv4 address.
     @inlinable
@@ -41,7 +41,7 @@ extension IPv4Address: CustomStringConvertible {
     }
 }
 
-@available(endpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension IPv4Address: CustomDebugStringConvertible {
     /// The textual representation of an IPv4 address appropriate for debugging.
     @inlinable
@@ -50,7 +50,7 @@ extension IPv4Address: CustomDebugStringConvertible {
     }
 }
 
-@available(endpointApplePlatforms 26, *)
+@available(swiftEndpointApplePlatforms 26, *)
 extension IPv4Address: LosslessStringConvertible {
     /// Initialize an IPv4 address from its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
@@ -82,7 +82,7 @@ extension IPv4Address: LosslessStringConvertible {
     }
 }
 
-@available(endpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension IPv4Address {
     /// Initialize an IPv4 address from a `Span<UInt8>` of its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.

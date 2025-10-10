@@ -2,7 +2,7 @@
 ///
 /// This enum can contain either an `IPv4Address` or an `IPv6Address`, see their
 /// respective documentation for more details.
-@available(endpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 15, *)
 public enum AnyIPAddress: Sendable, Hashable {
     /// An IPv4 address.
     case v4(IPv4Address)

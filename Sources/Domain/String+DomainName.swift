@@ -2,7 +2,7 @@ public import SwiftIDNA
 
 public import struct NIOCore.ByteBuffer
 
-@available(endpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension DomainName: CustomStringConvertible {
     /// Unicode-friendly description of the domain name, excluding the possible root label separator.
     /// Example: `"mahdibm.com"`
@@ -13,7 +13,7 @@ extension DomainName: CustomStringConvertible {
     }
 }
 
-@available(endpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension DomainName: CustomDebugStringConvertible {
     /// Source-accurate description of the domain name.
     /// Example: `"mahdibm.com."`
@@ -24,7 +24,7 @@ extension DomainName: CustomDebugStringConvertible {
     }
 }
 
-@available(endpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension DomainName {
     /// FIXME: public nonfrozen enum
     public enum DescriptionFormat: Sendable {
@@ -85,13 +85,11 @@ extension DomainName {
         }
 
         if format == .unicode {
-            let copy = domainName
-
             do {
-                try IDNA(configuration: .mostLax)
-                    .toUnicode(domainName: &domainName)
+                domainName = try IDNA(configuration: .mostLax)
+                    .toUnicode(domainName: domainName)
             } catch {
-                domainName = copy
+                domainName = "[invalid-domain](\(domainName))"
             }
         }
 
@@ -118,20 +116,16 @@ extension DomainName {
     }
 }
 
-@available(endpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension DomainName {
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName("mahdibm.com")
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
     public init(_ description: String, idnaConfiguration: IDNA.Configuration = .default) throws {
-        if #available(endpointApplePlatforms 26, *) {
-            try self.init(
-                macOS26_description: description,
-                idnaConfiguration: idnaConfiguration
-            )
-        } else {
-            try self.init(
-                macOSLowerThan26_description: description,
+        var description = description
+        self = try description.withSpan_Compatibility {
+            try DomainName(
+                textualRepresentation: $0,
                 idnaConfiguration: idnaConfiguration
             )
         }
@@ -141,89 +135,18 @@ extension DomainName {
     /// Example: try DomainName("mahdibm.com")
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
     public init(_ description: Substring, idnaConfiguration: IDNA.Configuration = .default) throws {
-        if #available(endpointApplePlatforms 26, *) {
-            try self.init(
-                macOS26_description: description,
-                idnaConfiguration: idnaConfiguration
-            )
-        } else {
-            try self.init(
-                macOSLowerThan26_description: String(description),
-                idnaConfiguration: idnaConfiguration
-            )
-        }
-    }
-
-    /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
-    /// Example: try DomainName("mahdibm.com")
-    /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
-    @inlinable
-    init(
-        macOSLowerThan26_description description: String,
-        idnaConfiguration: IDNA.Configuration = .default
-    ) throws {
-        self.init()
-
-        // short-circuit root parse
-        if description.unicodeScalars.count == 1,
-            description.unicodeScalars.first?.isIDNALabelSeparator == true
-        {
-            self.isFQDN = true
-            return
-        }
-
         var description = description
-
-        /// Remove the trailing dot if it exists, and set the FQDN flag
-        /// The IDNA spec doesn't like the root label separator.
-        if description.unicodeScalars.last?.isIDNALabelSeparator == true {
-            self.isFQDN = true
-            description = String(description.unicodeScalars.dropLast())
-        }
-
-        /// TODO: make sure all initializations of DomainName go through a single initializer that
-        /// asserts lowercased ASCII?
-
-        /// short-circuits most domain names which won't change with IDNA anyway.
-        try IDNA(
-            configuration: idnaConfiguration
-        ).toASCII(
-            domainName: &description
-        )
-
-        self = try description.withUTF8 { utf8Ptr in
-            try Self.init(
-                __uncheckedValidatedDomainNameSpan: utf8Ptr.span,
-                isFQDN: isFQDN
+        self = try description.withSpan_Compatibility {
+            try DomainName(
+                textualRepresentation: $0,
+                idnaConfiguration: idnaConfiguration
             )
         }
     }
 }
 
-@available(endpointApplePlatforms 26, *)
+@available(swiftEndpointApplePlatforms 26, *)
 extension DomainName {
-    @inlinable
-    init(
-        macOS26_description description: String,
-        idnaConfiguration: IDNA.Configuration = .default
-    ) throws {
-        try self.init(
-            textualRepresentation: description.utf8Span.span,
-            idnaConfiguration: idnaConfiguration
-        )
-    }
-
-    @inlinable
-    init(
-        macOS26_description description: Substring,
-        idnaConfiguration: IDNA.Configuration = .default
-    ) throws {
-        try self.init(
-            textualRepresentation: description.utf8Span.span,
-            idnaConfiguration: idnaConfiguration
-        )
-    }
-
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName(textualRepresentation: "mahdibm.com".utf8Span)
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
@@ -237,7 +160,10 @@ extension DomainName {
             idnaConfiguration: idnaConfiguration
         )
     }
+}
 
+@available(swiftEndpointApplePlatforms 13, *)
+extension DomainName {
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName(textualRepresentation: "mahdibm.com".utf8Span.span)
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
@@ -291,31 +217,24 @@ extension DomainName {
             isFQDN: &isFQDN
         )
 
-        /// FIXME: skip this step whenever swift-idna supports spans
-        var domainName = String(
-            unsafeUninitializedCapacity: bytesCount
-        ) { stringBuffer in
-            span.withUnsafeBytes { bytesBuffer in
-                let rawStringBuffer = UnsafeMutableRawBufferPointer(stringBuffer)
-                rawStringBuffer.copyMemory(from: bytesBuffer)
-            }
-            return bytesCount
-        }
-
         /// TODO: make sure all initializations of DomainName go through a single initializer that
         /// asserts lowercased ASCII?
 
         /// short-circuits most domain names which won't change with IDNA anyway.
-        try IDNA(
-            configuration: idnaConfiguration
-        ).toASCII(
-            domainName: &domainName
-        )
+        let idnaConversionResult = try IDNA(configuration: idnaConfiguration)
+            .toASCII(_uncheckedAssumingValidUTF8: span)
 
-        try self.init(
-            __uncheckedValidatedDomainNameSpan: domainName.utf8Span.span,
-            isFQDN: isFQDN
-        )
+        self = try idnaConversionResult.withSpan { span in
+            try DomainName(
+                __uncheckedValidatedDomainNameSpan: span,
+                isFQDN: isFQDN
+            )
+        } ifNotAvailable: {
+            try DomainName(
+                __uncheckedValidatedDomainNameSpan: span,
+                isFQDN: isFQDN
+            )
+        }
     }
 
     /// Only intended to be used in the initializer above
@@ -366,7 +285,7 @@ extension DomainName {
     }
 }
 
-@available(endpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension DomainName {
     /// `span` must be an already-validated domain name span.
     /// ASCII characters only.

@@ -28,7 +28,7 @@ public struct IPv4Address: Sendable, Hashable {
     /// Equivalent to `127.0.0.0/8` in CIDR notation.
     /// That is, any IPv4 address starting with this sequence of bits: `01111111`.
     /// In other words, any IPv4 address starting with `127`.
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     @inlinable
     public var isLoopback: Bool {
         CIDR<Self>.loopback.contains(self)
@@ -39,7 +39,7 @@ public struct IPv4Address: Sendable, Hashable {
     /// That is, any IPv4 address starting with this sequence of bits: `1110`.
     /// In other words, any IPv4 address whose first byte is within the range of `224 ... 239`.
     /// For example `224.1.2.3` and `239.255.2.44` but not `223.x.x.x` and not `240.x.x.x`.
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     @inlinable
     public var isMulticast: Bool {
         CIDR<Self>.multicast.contains(self)
@@ -49,7 +49,7 @@ public struct IPv4Address: Sendable, Hashable {
     /// Equivalent to `169.254.0.0/16` in CIDR notation.
     /// That is, any IPv4 address starting with this sequence of bits: `1010100111111110`.
     /// In other words, any IPv4 address starting with `169.254`.
-    @available(endpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 15, *)
     @inlinable
     public var isLinkLocal: Bool {
         CIDR<Self>.linkLocal.contains(self)
@@ -74,7 +74,7 @@ public struct IPv4Address: Sendable, Hashable {
     }
 }
 
-@available(endpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension IPv4Address: _IPAddressProtocol {}
 
 extension IPv4Address: ExpressibleByIntegerLiteral {

@@ -17,7 +17,7 @@ let package = Package(
         .default(enabledTraits: ["IDNA_SUPPORT", "NIO_BYTE_BUFFER_SUPPORT"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/swift-dns/swift-idna.git", from: "1.0.0-beta.13"),
+        .package(url: "https://github.com/swift-dns/swift-idna.git", from: "1.0.0-beta.14"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.82.0"),
     ],
     targets: [

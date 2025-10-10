@@ -3,7 +3,7 @@ public import IPAddress
 
 public import struct NIOCore.ByteBuffer
 
-@available(swiftEndpointApplePlatforms 26, *)
+@available(swiftEndpointApplePlatforms 15, *)
 extension IPv6Address {
     /// Initialize an `IPv6Address` from a `DomainName`.
     /// The domain name must correspond to a valid IPv6 address.
@@ -22,7 +22,7 @@ extension IPv6Address {
 
             if iterator.reachedEnd() {
                 return IPv6Address(
-                    __uncheckedASCIIspan: asciiSpan.extracting(unchecked: range)
+                    _uncheckedAssumingValidASCII: asciiSpan.extracting(unchecked: range)
                 )
             } else {
                 /// Maybe it's an ipv4-mapped ipv6 address
@@ -76,7 +76,7 @@ extension IPv6Address {
         }
         let ipv6Range = ipv6StartIndex..<lastColonIdx
         return IPv6Address(
-            __uncheckedASCIIspan: asciiSpan.extracting(unchecked: ipv6Range),
+            _uncheckedAssumingValidASCII: asciiSpan.extracting(unchecked: ipv6Range),
             preParsedIPv4MappedSegment: ipv4MappedSegment
         )
     }

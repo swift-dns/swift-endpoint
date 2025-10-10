@@ -17,31 +17,7 @@ extension CIDR: CustomDebugStringConvertible {
 }
 
 @available(swiftEndpointApplePlatforms 26, *)
-extension CIDR: LosslessStringConvertible {
-    /// Initialize an CIDR from its textual representation.
-    /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
-    /// This initializer tolerates and repairs the CIDR range if needed.
-    /// For example it'll ignore if the mask is greater than the address size, and it'll
-    /// repair the prefix if it contains bits that don't matter.
-    /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
-    /// 2001::/220 will be repaired to 2001::/128.
-    @inlinable
-    public init?(_ description: String) {
-        self.init(textualRepresentation: description.utf8Span)
-    }
-
-    /// Initialize an CIDR from its textual representation.
-    /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
-    /// This initializer tolerates and repairs the CIDR range if needed.
-    /// For example it'll ignore if the mask is greater than the address size, and it'll
-    /// repair the prefix if it contains bits that don't matter.
-    /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
-    /// 2001::/220 will be repaired to 2001::/128.
-    @inlinable
-    public init?(_ description: Substring) {
-        self.init(textualRepresentation: description.utf8Span)
-    }
-
+extension CIDR {
     /// Initialize an CIDR from a `UTF8Span` of its textual representation.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
     /// This initializer tolerates and repairs the CIDR range if needed.
@@ -56,12 +32,60 @@ extension CIDR: LosslessStringConvertible {
             return nil
         }
 
-        self.init(__uncheckedASCIIspan: utf8Span.span)
+        self.init(_uncheckedAssumingValidASCII: utf8Span.span)
     }
 }
 
 @available(swiftEndpointApplePlatforms 15, *)
-extension CIDR {
+extension CIDR: LosslessStringConvertible {
+    /// Initialize an CIDR from its textual representation.
+    /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
+    /// This initializer tolerates and repairs the CIDR range if needed.
+    /// For example it'll ignore if the mask is greater than the address size, and it'll
+    /// repair the prefix if it contains bits that don't matter.
+    /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
+    /// 2001::/220 will be repaired to 2001::/128.
+    public init?(_ description: String) {
+        if #available(swiftEndpointApplePlatforms 26, *) {
+            self.init(textualRepresentation: description.utf8Span)
+            return
+        }
+
+        var description = description
+        guard
+            let result = description.withSpan_macOSUnder26({
+                CIDR(_uncheckedAssumingValidUTF8: $0)
+            })
+        else {
+            return nil
+        }
+        self = result
+    }
+
+    /// Initialize an CIDR from its textual representation.
+    /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
+    /// This initializer tolerates and repairs the CIDR range if needed.
+    /// For example it'll ignore if the mask is greater than the address size, and it'll
+    /// repair the prefix if it contains bits that don't matter.
+    /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
+    /// 2001::/220 will be repaired to 2001::/128.
+    public init?(_ description: Substring) {
+        if #available(swiftEndpointApplePlatforms 26, *) {
+            self.init(textualRepresentation: description.utf8Span)
+            return
+        }
+
+        var description = description
+        guard
+            let result = description.withSpan_macOSUnder26({
+                CIDR(_uncheckedAssumingValidUTF8: $0)
+            })
+        else {
+            return nil
+        }
+        self = result
+    }
+
     /// Initialize an CIDR from a `Span<UInt8>` of its textual representation.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
     /// This initializer tolerates and repairs the CIDR range if needed.
@@ -70,7 +94,7 @@ extension CIDR {
     /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
     /// 2001::/220 will be repaired to 2001::/128.
     @inlinable
-    public init?(textualRepresentation span: Span<UInt8>) {
+    public init?(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
         for idx in span.indices {
             /// Unchecked because `idx` comes right from `span.indices`
             if !span[unchecked: idx].isASCII {
@@ -78,7 +102,7 @@ extension CIDR {
             }
         }
 
-        self.init(__uncheckedASCIIspan: span)
+        self.init(_uncheckedAssumingValidASCII: span)
     }
 
     /// Initialize an CIDR from a `Span<UInt8>` of its textual representation.
@@ -90,7 +114,7 @@ extension CIDR {
     /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
     /// 2001::/220 will be repaired to 2001::/128.
     @inlinable
-    init?(__uncheckedASCIIspan span: Span<UInt8>) {
+    init?(_uncheckedAssumingValidASCII span: Span<UInt8>) {
         debugOnly {
             for idx in span.indices {
                 /// Unchecked because `idx` comes right from `span.indices`
@@ -118,7 +142,7 @@ extension CIDR {
                 let maskSpanRange = Range(uncheckedBounds: (backwardsIdx &+ 1, span.count))
                 let prefixLengthSpan = span.extracting(unchecked: maskSpanRange)
                 guard
-                    let prefix = IPAddressType(__uncheckedASCIIspan: prefixSpan),
+                    let prefix = IPAddressType(_uncheckedAssumingValidASCII: prefixSpan),
                     let prefixLength = UInt8(decimalRepresentation: prefixLengthSpan)
                 else {
                     return nil
@@ -130,7 +154,7 @@ extension CIDR {
 
         /// There was no forward slash found, so just decode this as the prefix.
         /// Set the prefix length to the full bit width of the IP address type (32 or 128).
-        guard let prefix = IPAddressType(__uncheckedASCIIspan: span) else {
+        guard let prefix = IPAddressType(_uncheckedAssumingValidASCII: span) else {
             return nil
         }
         self.init(prefix: prefix, prefixLength: UInt8(IntegerLiteralType.bitWidth))

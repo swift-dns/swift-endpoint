@@ -125,7 +125,7 @@ extension DomainName {
         var description = description
         self = try description.withSpan_Compatibility {
             try DomainName(
-                textualRepresentation: $0,
+                _uncheckedAssumingValidUTF8: $0,
                 idnaConfiguration: idnaConfiguration
             )
         }
@@ -138,7 +138,7 @@ extension DomainName {
         var description = description
         self = try description.withSpan_Compatibility {
             try DomainName(
-                textualRepresentation: $0,
+                _uncheckedAssumingValidUTF8: $0,
                 idnaConfiguration: idnaConfiguration
             )
         }
@@ -156,7 +156,7 @@ extension DomainName {
         idnaConfiguration: IDNA.Configuration = .default
     ) throws {
         try self.init(
-            textualRepresentation: span.span,
+            _uncheckedAssumingValidUTF8: span.span,
             idnaConfiguration: idnaConfiguration
         )
     }
@@ -169,7 +169,7 @@ extension DomainName {
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
     @inlinable
     public init(
-        textualRepresentation span: Span<UInt8>,
+        _uncheckedAssumingValidUTF8 span: Span<UInt8>,
         idnaConfiguration: IDNA.Configuration = .default
     ) throws {
         var span = span

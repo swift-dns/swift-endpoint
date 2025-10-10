@@ -218,25 +218,7 @@ extension IPv6Address {
 }
 
 @available(swiftEndpointApplePlatforms 26, *)
-extension IPv6Address: LosslessStringConvertible {
-    /// Initialize an IPv6 address from its textual representation.
-    /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
-    /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
-    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
-    @inlinable
-    public init?(_ description: String) {
-        self.init(textualRepresentation: description.utf8Span)
-    }
-
-    /// Initialize an IPv6 address from its textual representation.
-    /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
-    /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
-    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
-    @inlinable
-    public init?(_ description: Substring) {
-        self.init(textualRepresentation: description.utf8Span)
-    }
-
+extension IPv6Address {
     /// Initialize an IPv6 address from a `UTF8Span` of its textual representation.
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
@@ -248,18 +230,60 @@ extension IPv6Address: LosslessStringConvertible {
             return nil
         }
 
-        self.init(__uncheckedASCIIspan: utf8Span.span)
+        self.init(_uncheckedAssumingValidASCII: utf8Span.span)
     }
 }
 
 @available(swiftEndpointApplePlatforms 15, *)
-extension IPv6Address {
+extension IPv6Address: LosslessStringConvertible {
+    /// Initialize an IPv6 address from its textual representation.
+    /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
+    /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
+    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
+    public init?(_ description: String) {
+        if #available(swiftEndpointApplePlatforms 26, *) {
+            self.init(textualRepresentation: description.utf8Span)
+            return
+        }
+
+        var description = description
+        guard
+            let result = description.withSpan_macOSUnder26({
+                IPv6Address(_uncheckedAssumingValidUTF8: $0)
+            })
+        else {
+            return nil
+        }
+        self = result
+    }
+
+    /// Initialize an IPv6 address from its textual representation.
+    /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
+    /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
+    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
+    public init?(_ description: Substring) {
+        if #available(swiftEndpointApplePlatforms 26, *) {
+            self.init(textualRepresentation: description.utf8Span)
+            return
+        }
+
+        var description = description
+        guard
+            let result = description.withSpan_macOSUnder26({
+                IPv6Address(_uncheckedAssumingValidUTF8: $0)
+            })
+        else {
+            return nil
+        }
+        self = result
+    }
+
     /// Initialize an IPv6 address from a `Span<UInt8>` of its textual representation.
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     @inlinable
-    public init?(textualRepresentation span: Span<UInt8>) {
+    public init?(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
         for idx in span.indices {
             /// Unchecked because `idx` comes right from `span.indices`
             if !span[unchecked: idx].isASCII {
@@ -267,7 +291,7 @@ extension IPv6Address {
             }
         }
 
-        self.init(__uncheckedASCIIspan: span)
+        self.init(_uncheckedAssumingValidASCII: span)
     }
 
     /// Initialize an IPv6 address from a `Span<UInt8>` of its textual representation.
@@ -275,9 +299,13 @@ extension IPv6Address {
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
+    ///
+    /// You should usually use `init?(textualRepresentation: UTF8Span)`, or
+    /// `init?(_uncheckedAssumingValidUTF8:)` instead.
+    /// This initializer must only be used when you are 100% sure the span only contains ASCII characters.
     @inlinable
-    public init?(__uncheckedASCIIspan span: Span<UInt8>) {
-        self.init(__uncheckedASCIIspan: span, preParsedIPv4MappedSegment: nil)
+    public init?(_uncheckedAssumingValidASCII span: Span<UInt8>) {
+        self.init(_uncheckedAssumingValidASCII: span, preParsedIPv4MappedSegment: nil)
     }
 
     /// Initialize an IPv6 address from a `Span<UInt8>` of its textual representation.
@@ -295,7 +323,7 @@ extension IPv6Address {
     /// domain name to a proper ipv6 address.
     @inlinable
     package init?(
-        __uncheckedASCIIspan span: Span<UInt8>,
+        _uncheckedAssumingValidASCII span: Span<UInt8>,
         preParsedIPv4MappedSegment: IPv4Address?
     ) {
         debugOnly {
@@ -430,7 +458,7 @@ extension IPv6Address {
                     remainingBytesCount >= 4,
                     preParsedIPv4MappedSegment == nil,
                     var ipv4 = IPv4Address(
-                        __uncheckedASCIIspan: span.extracting(
+                        _uncheckedAssumingValidASCII: span.extracting(
                             unchecked: Range(
                                 uncheckedBounds: (latestColonIdx &+ 1, span.count)
                             )

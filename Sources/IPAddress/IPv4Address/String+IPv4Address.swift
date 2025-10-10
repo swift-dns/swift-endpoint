@@ -51,23 +51,7 @@ extension IPv4Address: CustomDebugStringConvertible {
 }
 
 @available(swiftEndpointApplePlatforms 26, *)
-extension IPv4Address: LosslessStringConvertible {
-    /// Initialize an IPv4 address from its textual representation.
-    /// That is, 4 decimal UInt8s separated by `.`.
-    /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
-    @inlinable
-    public init?(_ description: String) {
-        self.init(textualRepresentation: description.utf8Span)
-    }
-
-    /// Initialize an IPv4 address from its textual representation.
-    /// That is, 4 decimal UInt8s separated by `.`.
-    /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
-    @inlinable
-    public init?(_ description: Substring) {
-        self.init(textualRepresentation: description.utf8Span)
-    }
-
+extension IPv4Address {
     /// Initialize an IPv4 address from a `UTF8Span` of its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
@@ -78,17 +62,57 @@ extension IPv4Address: LosslessStringConvertible {
             return nil
         }
 
-        self.init(__uncheckedASCIIspan: utf8Span.span)
+        self.init(_uncheckedAssumingValidASCII: utf8Span.span)
     }
 }
 
 @available(swiftEndpointApplePlatforms 13, *)
-extension IPv4Address {
+extension IPv4Address: LosslessStringConvertible {
+    /// Initialize an IPv4 address from its textual representation.
+    /// That is, 4 decimal UInt8s separated by `.`.
+    /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    public init?(_ description: String) {
+        if #available(swiftEndpointApplePlatforms 26, *) {
+            self.init(textualRepresentation: description.utf8Span)
+            return
+        }
+
+        var description = description
+        guard
+            let result = description.withSpan_macOSUnder26({
+                IPv4Address(_uncheckedAssumingValidUTF8: $0)
+            })
+        else {
+            return nil
+        }
+        self = result
+    }
+
+    /// Initialize an IPv4 address from its textual representation.
+    /// That is, 4 decimal UInt8s separated by `.`.
+    /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    public init?(_ description: Substring) {
+        if #available(swiftEndpointApplePlatforms 26, *) {
+            self.init(textualRepresentation: description.utf8Span)
+            return
+        }
+
+        var description = description
+        guard
+            let result = description.withSpan_macOSUnder26({
+                IPv4Address(_uncheckedAssumingValidUTF8: $0)
+            })
+        else {
+            return nil
+        }
+        self = result
+    }
+
     /// Initialize an IPv4 address from a `Span<UInt8>` of its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
     @inlinable
-    public init?(textualRepresentation span: Span<UInt8>) {
+    public init?(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
         for idx in span.indices {
             /// Unchecked because `idx` comes right from `span.indices`
             if !span[unchecked: idx].isASCII {
@@ -96,15 +120,19 @@ extension IPv4Address {
             }
         }
 
-        self.init(__uncheckedASCIIspan: span)
+        self.init(_uncheckedAssumingValidASCII: span)
     }
 
     /// Initialize an IPv4 address from a `Span<UInt8>` of its textual representation.
     /// The provided **span is required to be ASCII**.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    ///
+    /// You should usually use `init?(textualRepresentation: UTF8Span)`, or
+    /// `init?(_uncheckedAssumingValidUTF8:)` instead.
+    /// This initializer must only be used when you are 100% sure the span only contains ASCII characters.
     @inlinable
-    public init?(__uncheckedASCIIspan span: Span<UInt8>) {
+    public init?(_uncheckedAssumingValidASCII span: Span<UInt8>) {
         debugOnly {
             for idx in span.indices {
                 /// Unchecked because `idx` comes right from `span.indices`

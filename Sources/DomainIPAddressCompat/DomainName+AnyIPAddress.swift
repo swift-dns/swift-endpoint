@@ -3,7 +3,7 @@ public import IPAddress
 
 public import struct NIOCore.ByteBuffer
 
-@available(swiftEndpointApplePlatforms 26, *)
+@available(swiftEndpointApplePlatforms 15, *)
 extension AnyIPAddress {
     /// Initialize an `AnyIPAddress` from a `DomainName`.
     /// The domain name must correspond to a valid IP address.
@@ -25,7 +25,7 @@ extension AnyIPAddress {
                 /// If it was only one label, then it must be an IPv6. Otherwise, it must be an IPv4.
                 if iterator.reachedEnd() {
                     return IPv6Address(
-                        __uncheckedASCIIspan: asciiSpan.extracting(unchecked: range)
+                        _uncheckedAssumingValidASCII: asciiSpan.extracting(unchecked: range)
                     ).map { .v6($0) }
                 } else {
                     var ipv4 = IPv4Address(0)

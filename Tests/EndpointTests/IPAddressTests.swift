@@ -41,19 +41,19 @@ struct IPAddressTests {
         #expect(IPv4Address(string) == expectedAddress)
         #expect(IPv4Address(Substring(string)) == expectedAddress)
         #expect(IPv4Address(textualRepresentation: string.utf8Span) == expectedAddress)
-        #expect(IPv4Address(textualRepresentation: string.utf8Span.span) == expectedAddress)
+        #expect(IPv4Address(_uncheckedAssumingValidUTF8: string.utf8Span.span) == expectedAddress)
 
         if isValidIPv6 {
             #expect(AnyIPAddress(string)?.isIPv6 == true)
             #expect(AnyIPAddress(Substring(string))?.isIPv6 == true)
             #expect(AnyIPAddress(textualRepresentation: string.utf8Span)?.isIPv6 == true)
-            #expect(AnyIPAddress(textualRepresentation: string.utf8Span.span)?.isIPv6 == true)
+            #expect(AnyIPAddress(_uncheckedAssumingValidUTF8: string.utf8Span.span)?.isIPv6 == true)
         } else {
             let expectedIPv4: AnyIPAddress? = expectedAddress.map { .v4($0) }
             #expect(AnyIPAddress(string) == expectedIPv4)
             #expect(AnyIPAddress(Substring(string)) == expectedIPv4)
             #expect(AnyIPAddress(textualRepresentation: string.utf8Span) == expectedIPv4)
-            #expect(AnyIPAddress(textualRepresentation: string.utf8Span.span) == expectedIPv4)
+            #expect(AnyIPAddress(_uncheckedAssumingValidUTF8: string.utf8Span.span) == expectedIPv4)
         }
     }
 
@@ -248,20 +248,20 @@ struct IPAddressTests {
         #expect(IPv6Address(Substring(string)) == expectedAddress)
         #expect(IPv6Address(textualRepresentation: string.utf8Span) == expectedAddress)
         #expect(
-            IPv6Address(textualRepresentation: string.utf8Span.span) == expectedAddress
+            IPv6Address(_uncheckedAssumingValidUTF8: string.utf8Span.span) == expectedAddress
         )
 
         if isValidIPv4 {
             #expect(AnyIPAddress(string)?.isIPv4 == true)
             #expect(AnyIPAddress(Substring(string))?.isIPv4 == true)
             #expect(AnyIPAddress(textualRepresentation: string.utf8Span)?.isIPv4 == true)
-            #expect(AnyIPAddress(textualRepresentation: string.utf8Span.span)?.isIPv4 == true)
+            #expect(AnyIPAddress(_uncheckedAssumingValidUTF8: string.utf8Span.span)?.isIPv4 == true)
         } else {
             let expectedIPv6: AnyIPAddress? = expectedAddress.map { .v6($0) }
             #expect(AnyIPAddress(string) == expectedIPv6)
             #expect(AnyIPAddress(Substring(string)) == expectedIPv6)
             #expect(AnyIPAddress(textualRepresentation: string.utf8Span) == expectedIPv6)
-            #expect(AnyIPAddress(textualRepresentation: string.utf8Span.span) == expectedIPv6)
+            #expect(AnyIPAddress(_uncheckedAssumingValidUTF8: string.utf8Span.span) == expectedIPv6)
         }
     }
 

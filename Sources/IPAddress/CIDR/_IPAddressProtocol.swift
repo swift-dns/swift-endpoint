@@ -28,5 +28,5 @@ where
     init?(exactly ipAddress: AnyIPAddress)
 
     @available(swiftEndpointApplePlatforms 15, *)
-    init?(__uncheckedASCIIspan: Span<UInt8>)
+    init?(_uncheckedAssumingValidASCII: Span<UInt8>)
 }

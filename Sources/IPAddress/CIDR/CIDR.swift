@@ -50,7 +50,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     ///     Example: in 127.0.0.0/8, the mask is `0b11111111_00000000_00000000_00000000`.
     @inlinable
     public init(prefix: IPAddressType, uncheckedMask mask: IPAddressType) {
-        assert(Self.makeMaskBasedOn(countOfTrailingZerosOf: mask.address) == mask)
+        assert(Self.makeMaskBasedOn(countOfTrailingZerosOf: mask) == mask)
 
         self.prefix = IPAddressType(integerLiteral: prefix.address & mask.address)
         self.mask = mask
@@ -70,7 +70,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     public init?(prefix: IPAddressType, mask: IPAddressType) {
         /// Make sure the mask is "continuous" and has no leading zeros
         /// e.g. 0b11110000 is good, but 0b11110001 is not. 0b00001111 is not good either.
-        guard Self.makeMaskBasedOn(countOfTrailingZerosOf: mask.address) == mask else {
+        guard Self.makeMaskBasedOn(countOfTrailingZerosOf: mask) == mask else {
             return nil
         }
 
@@ -118,10 +118,8 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     ///     This MUST NOT be greater than the bit width of `IntegerLiteralType`,
     ///     which means 32 for IPv4 or 128 for IPv6.
     @inlinable
-    static func makeMaskBasedOn(
-        countOfTrailingZerosOf integer: IntegerLiteralType
-    ) -> IPAddressType {
-        let countOfTrailingZeros = integer.trailingZeroBitCount
+    static func makeMaskBasedOn(countOfTrailingZerosOf ip: IPAddressType) -> IPAddressType {
+        let countOfTrailingZeros = ip.address.trailingZeroBitCount
         if countOfTrailingZeros == IntegerLiteralType.bitWidth {
             return 0
         } else {

@@ -91,6 +91,9 @@ public struct IPv6Address: Sendable, Hashable {
     }
 
     /// Initialize an `IPv6Address` from its raw 128-bit unsigned integer representation.
+    /// For example `IPv6Address(0x0102_0304_0506_0708_090A_0B0C_0D0E_0F10)` will
+    /// result in an IP address equal to `0102:0304:0506:0708:090A:0B0C:0D0E:0F10`.
+    /// Or `IPv6Address(0x0102)` will result in an IP address equal to `::0102`.
     public init(_ address: UInt128) {
         self.address = address
     }
@@ -180,6 +183,9 @@ extension IPv6Address: _IPAddressProtocol {}
 @available(swiftEndpointApplePlatforms 15, *)
 extension IPv6Address: ExpressibleByIntegerLiteral {
     /// Initialize an `IPv6Address` from its raw 128-bit unsigned integer representation.
+    /// For example `IPv6Address(0x0102_0304_0506_0708_090A_0B0C_0D0E_0F10)` will
+    /// result in an IP address equal to `0102:0304:0506:0708:090A:0B0C:0D0E:0F10`.
+    /// Or `IPv6Address(0x0102)` will result in an IP address equal to `::0102`.
     public init(integerLiteral value: UInt128) {
         self.address = value
     }

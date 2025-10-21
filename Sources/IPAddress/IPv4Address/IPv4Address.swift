@@ -56,6 +56,8 @@ public struct IPv4Address: Sendable, Hashable {
     }
 
     /// Initialize an `IPv4Address` from its raw 32-bit unsigned integer representation.
+    /// For example `IPv4Address(0x7F00_0001)` will result in an IP address equal to `127.0.0.1`.
+    /// Or `IPv4Address(0x7F)` will result in an IP address equal to `0.0.0.127`.
     public init(_ address: UInt32) {
         self.address = address
     }
@@ -79,6 +81,8 @@ extension IPv4Address: _IPAddressProtocol {}
 
 extension IPv4Address: ExpressibleByIntegerLiteral {
     /// Initialize an `IPv4Address` from its raw 32-bit unsigned integer representation.
+    /// For example `IPv4Address(0x7F00_0001)` will result in an IP address equal to `127.0.0.1`.
+    /// Or `IPv4Address(0x7F)` will result in an IP address equal to `0.0.0.127`.
     public init(integerLiteral value: UInt32) {
         self.address = value
     }

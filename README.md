@@ -27,6 +27,8 @@ The package contains a great amount of unit tests as well as benchmarks to ensur
 
 ## Implementations
 
+- [x] `ConnectionTarget`
+  - Representing a network-layer endpoint such as an ip address + port, a domain name + port, or a socket address.
 - [x] `DomainName`
   - [x] Unicode-17-compliant IDNA support for non-ASCII domain names.
 - [x] `IPv4Address`, `IPv6Address`, `AnyIPAddress`

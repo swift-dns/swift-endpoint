@@ -29,6 +29,11 @@ let package = Package(
                 "Domain",
                 "IPAddress",
                 "DomainIPAddressCompat",
+                .product(
+                    name: "SwiftIDNA",
+                    package: "swift-idna",
+                    condition: .when(traits: ["IDNA_SUPPORT"])
+                ),
             ],
             swiftSettings: settings
         ),

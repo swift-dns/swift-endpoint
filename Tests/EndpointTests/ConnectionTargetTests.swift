@@ -1,0 +1,94 @@
+import Endpoint
+import Testing
+
+@Suite
+struct ConnectionTargetTests {
+    @available(swiftEndpointApplePlatforms 15, *)
+    @Test(
+        arguments: [(target: ConnectionTarget?, expected: ConnectionTarget.Target?)]([
+            (
+                target: try? .ipAddress("127.0.0.1", port: 11),
+                expected: .ipAddress(.v4(IPv4Address(127, 0, 0, 1)), port: 11)
+            ),
+            (
+                target: .ipAddress(IPv4Address(127, 0, 0, 1), port: 22),
+                expected: .ipAddress(.v4(IPv4Address(127, 0, 0, 1)), port: 22)
+            ),
+            (
+                target: .ipAddress(.v4(IPv4Address(127, 0, 0, 1)), port: 33),
+                expected: .ipAddress(.v4(IPv4Address(127, 0, 0, 1)), port: 33)
+            ),
+            (
+                target: try? .ipAddress("[::1]", port: 44),
+                expected: .ipAddress(.v6(IPv6Address(0x1)), port: 44)
+            ),
+            (
+                target: .ipAddress(IPv6Address(0x1), port: 55),
+                expected: .ipAddress(.v6(IPv6Address(0x1)), port: 55)
+            ),
+            (
+                target: .ipAddress(.v6(IPv6Address(0x1)), port: 66),
+                expected: .ipAddress(.v6(IPv6Address(0x1)), port: 66)
+            ),
+            (
+                target: try? .domainName(DomainName("www.example.com"), port: 77),
+                expected: try? .domainName(DomainName("www.example.com"), port: 77)
+            ),
+            (
+                target: try? .domainName(DomainName("127.0.0.1"), port: 88),
+                expected: .ipAddress(.v4(IPv4Address(127, 0, 0, 1)), port: 88)
+            ),
+            (
+                target: try? .domainName(DomainName("::1"), port: 99),
+                expected: nil
+            ),
+            (
+                target: try? .domainName("www.example.com", port: 77),
+                expected: try? .domainName(DomainName("www.example.com"), port: 77)
+            ),
+            (
+                target: try? .domainName("127.0.0.1", port: 88),
+                expected: .ipAddress(.v4(IPv4Address(127, 0, 0, 1)), port: 88)
+            ),
+            (
+                target: try? .domainName("::1", port: 99),
+                expected: nil
+            ),
+            (
+                target: .unixDomainSocketAddress("/tmp/socket"),
+                expected: .unixDomainSocketAddress("/tmp/socket")
+            ),
+        ])
+    )
+    func `static funcs work as expected`(
+        target: ConnectionTarget?,
+        expected: ConnectionTarget.Target?
+    ) throws {
+        #expect(target?.target == expected)
+    }
+
+    @available(swiftEndpointApplePlatforms 15, *)
+    @Test(
+        arguments: [(target: ConnectionTarget, expected: String)]([
+            (
+                target: .ipAddress(IPv4Address(192, 168, 1, 1), port: 123),
+                expected: "192.168.1.1:123"
+            ),
+            (
+                target: .ipAddress(IPv6Address(0x1), port: 324),
+                expected: "[::1]:324"
+            ),
+            (
+                target: try! .domainName("www.example.com", port: 443),
+                expected: "www.example.com:443"
+            ),
+            (
+                target: .unixDomainSocketAddress("/var/run/docker.sock"),
+                expected: "/var/run/docker.sock"
+            ),
+        ])
+    )
+    func `description works as expected`(target: ConnectionTarget, expected: String) throws {
+        #expect(target.description == target.target.description)
+    }
+}

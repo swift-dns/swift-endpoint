@@ -26,7 +26,7 @@ extension UnsignedInt128: LosslessStringConvertible {
     }
 
     static func parse(textualRepresentationSpan span: Span<UInt8>) -> Self? {
-        var result = Self(_low: 0, _high: 0)
+        var result = Self.zero
         var multiplier = UnsignedInt128(_low: 1, _high: 0)
         let lastIndex = span.count - 1
 

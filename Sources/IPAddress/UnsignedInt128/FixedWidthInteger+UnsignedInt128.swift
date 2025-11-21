@@ -21,16 +21,20 @@ extension UnsignedInt128 /*: FixedWidthInteger*/ {
         }
     }
 
-    public static var max: UnsignedInt128 {
+    public static var max: Self {
         Self(_low: UInt64.max, _high: UInt64.max)
     }
 
-    public static var min: UnsignedInt128 {
+    public static var min: Self {
+        Self(_low: 0, _high: 0)
+    }
+
+    public static var zero: Self {
         Self(_low: 0, _high: 0)
     }
 
     @inlinable
-    public var byteSwapped: UnsignedInt128 {
+    public var byteSwapped: Self {
         Self(_low: self._low.byteSwapped, _high: self._high.byteSwapped)
     }
 
@@ -91,7 +95,7 @@ extension UnsignedInt128 /*: FixedWidthInteger*/ {
     @inlinable
     public func multipliedReportingOverflow(by rhs: Self) -> (partialValue: Self, overflow: Bool) {
         let multiplicationResult = self.multipliedFullWidth(by: rhs)
-        let overflow = multiplicationResult.high > Self(_low: 0, _high: 0)
+        let overflow = multiplicationResult.high > .zero
 
         return (
             partialValue: multiplicationResult.low,
@@ -219,7 +223,7 @@ extension UnsignedInt128 /*: FixedWidthInteger*/ {
 
     @inlinable
     public func dividedReportingOverflow(by rhs: Self) -> (partialValue: Self, overflow: Bool) {
-        guard rhs != Self(_low: 0, _high: 0) else {
+        guard rhs != .zero else {
             return (self, true)
         }
 
@@ -228,12 +232,7 @@ extension UnsignedInt128 /*: FixedWidthInteger*/ {
     }
 
     public func quotientAndRemainder(dividingBy rhs: Self) -> (quotient: Self, remainder: Self) {
-        rhs.dividingFullWidth(
-            (
-                high: Self(_low: 0, _high: 0),
-                low: self
-            )
-        )
+        rhs.dividingFullWidth((high: .zero, low: self))
     }
 
     @inlinable
@@ -243,10 +242,10 @@ extension UnsignedInt128 /*: FixedWidthInteger*/ {
         let divisor = self
         let numeratorBitsToWalk: Int
 
-        if dividend.high > Self(_low: 0, _high: 0) {
+        if dividend.high > .zero {
             numeratorBitsToWalk = 255 - dividend.high.leadingZeroBitCount
-        } else if dividend.low == Self(_low: 0, _high: 0) {
-            return (Self(_low: 0, _high: 0), Self(_low: 0, _high: 0))
+        } else if dividend.low == .zero {
+            return (.zero, .zero)
         } else {
             numeratorBitsToWalk = 127 - dividend.low.leadingZeroBitCount
         }
@@ -254,10 +253,10 @@ extension UnsignedInt128 /*: FixedWidthInteger*/ {
         // The below algorithm was adapted from:
         // https://en.wikipedia.org/wiki/Division_algorithm#Integer_division_.28unsigned.29_with_remainder
 
-        precondition(self != Self(_low: 0, _high: 0), "Division by 0")
+        precondition(self != .zero, "Division by 0")
 
-        var quotient = Self(_low: 0, _high: 0)
-        var remainder = Self(_low: 0, _high: 0)
+        var quotient = Self.zero
+        var remainder = Self.zero
 
         for numeratorShiftWidth in (0...numeratorBitsToWalk).reversed() {
             remainder <<= Self(_low: 1, _high: 0)
@@ -302,7 +301,7 @@ extension UnsignedInt128 /*: FixedWidthInteger*/ {
     public func remainderReportingOverflow(
         dividingBy rhs: Self
     ) -> (partialValue: Self, overflow: Bool) {
-        guard rhs != Self(_low: 0, _high: 0) else {
+        guard rhs != .zero else {
             return (self, true)
         }
 

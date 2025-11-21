@@ -138,7 +138,9 @@ struct UnsignedInt128Tests {
     @Test func `test subtraction against UInt128`() {
         for (lhs, rhs) in generateRandomUInt128Pairs() {
             let uint128 = lhs.subtractingReportingOverflow(rhs)
-            let unsignedInt128 = UnsignedInt128(lhs).subtractingReportingOverflow(UnsignedInt128(rhs))
+            let unsignedInt128 = UnsignedInt128(lhs).subtractingReportingOverflow(
+                UnsignedInt128(rhs)
+            )
             #expect(uint128.partialValue == unsignedInt128.partialValue)
             #expect(uint128.overflow == unsignedInt128.overflow)
 

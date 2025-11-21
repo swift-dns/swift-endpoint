@@ -1,7 +1,7 @@
 public import SwiftIDNA
 
 /// A target for a connection.
-@available(swiftEndpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 13, *)
 public struct ConnectionTarget: Sendable, Hashable {
     public enum Error: Swift.Error {
         case invalidIPAddressString(String)

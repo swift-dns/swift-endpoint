@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 13, *)
 public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
 
     /// The underlying type of the IP address.
@@ -121,7 +121,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     static func makeMaskBasedOn(countOfTrailingZerosOf ip: IPAddressType) -> IPAddressType {
         let countOfTrailingZeros = ip.address.trailingZeroBitCount
         if countOfTrailingZeros == AddressValueType.bitWidth {
-            return IPAddressType(0)
+            return IPAddressType(.zero)
         } else {
             /// ~AddressValueType((AddressValueType(1) &<< countOfTrailingZeros) &- 1)
             /// also works. The compiler optimizes these anyway, so doesn't matter which

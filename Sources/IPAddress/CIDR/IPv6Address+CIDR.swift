@@ -1,10 +1,15 @@
-@available(swiftEndpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension CIDR<IPv6Address> {
     /// Representing ::1/128
     @inlinable
     public static var loopback: Self {
         Self(
-            prefix: 0x0000_0000_0000_0000_0000_0000_0000_0001,
+            prefix: IPv6Address(
+                UnsignedInt128(
+                    _low: 0x0000_0000_0000_0001,
+                    _high: 0x0000_0000_0000_0000
+                )
+            ),
             prefixLength: 128
         )
     }
@@ -13,7 +18,12 @@ extension CIDR<IPv6Address> {
     @inlinable
     public static var multicast: Self {
         Self(
-            prefix: 0xFF00_0000_0000_0000_0000_0000_0000_0000,
+            prefix: IPv6Address(
+                UnsignedInt128(
+                    _low: 0x0000_0000_0000_0000,
+                    _high: 0xFF00_0000_0000_0000
+                )
+            ),
             prefixLength: 8
         )
     }
@@ -22,7 +32,12 @@ extension CIDR<IPv6Address> {
     @inlinable
     public static var linkLocalUnicast: Self {
         Self(
-            prefix: 0xFE80_0000_0000_0000_0000_0000_0000_0000,
+            prefix: IPv6Address(
+                UnsignedInt128(
+                    _low: 0x0000_0000_0000_0000,
+                    _high: 0xFE80_0000_0000_0000
+                )
+            ),
             prefixLength: 10
         )
     }
@@ -31,7 +46,12 @@ extension CIDR<IPv6Address> {
     @inlinable
     public static var ipv4Mapped: Self {
         Self(
-            prefix: 0x0000_0000_0000_0000_0000_FFFF_0000_0000,
+            prefix: IPv6Address(
+                UnsignedInt128(
+                    _low: 0x0000_0000_0000_0000,
+                    _high: 0x0000_FFFF_0000_0000
+                )
+            ),
             prefixLength: 96
         )
     }

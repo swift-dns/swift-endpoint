@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension IPv6Address {
     /// Initialize an `IPv6Address` from the 16 bytes representing it.
     public init?(from span: Span<UInt8>) {
@@ -6,7 +6,7 @@ extension IPv6Address {
             return nil
         }
 
-        self.init(0)
+        self.init(.zero)
         withUnsafeMutableBytes(of: &self.address) { ptr in
             for idx in 0..<16 {
                 let reverseIdx = 15 &- idx

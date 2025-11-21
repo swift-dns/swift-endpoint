@@ -3,7 +3,7 @@ import Testing
 
 @Suite
 struct CIDRTests {
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 13, *)
     @Test(
         arguments: [(cidr: CIDR<IPv4Address>, expectedDescription: String)]([
             (
@@ -87,7 +87,7 @@ struct CIDRTests {
         #expect(CIDR<IPv4Address>(_uncheckedAssumingValidUTF8: text.utf8Span.span) == expectedCIDR)
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 13, *)
     @Test(
         arguments: [(cidr: CIDR<IPv4Address>, containsIP: IPv4Address, result: Bool)]([
             (
@@ -179,7 +179,7 @@ struct CIDRTests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 13, *)
     @Test(
         arguments: [(prefixLength: UInt8, ip: IPv4Address, expectedIP: IPv4Address)]([
             (
@@ -277,7 +277,7 @@ struct CIDRTests {
         )
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 13, *)
     @Test(
         arguments: [(prefixLength: UInt8, expectedMask: UInt32)]([
             (0 as UInt8, 0b00000000_00000000_00000000_00000000 as UInt32),
@@ -754,13 +754,13 @@ struct CIDRTests {
         ofType: IPAddressType.Type,
         countForEachBit: Int
     ) -> [(cidr: CIDR<IPAddressType>, containsIP: IPAddressType, result: Bool)] {
-        let bitWidth = UInt8(IPAddressType.IntegerLiteralType.bitWidth)
+        let bitWidth = UInt8(IPAddressType.AddressValueType.bitWidth)
         var results: [(cidr: CIDR<IPAddressType>, containsIP: IPAddressType, result: Bool)] = []
         results.reserveCapacity((Int(bitWidth) + 1) * 2 * countForEachBit)
 
         for bitCount in UInt8(0)...bitWidth {
             let cidr = CIDR(
-                prefix: IPAddressType(integerLiteral: .random(in: .all)),
+                prefix: IPAddressType(.anyRandom()),
                 prefixLength: bitCount
             )
 
@@ -773,11 +773,11 @@ struct CIDRTests {
                 let theRest = (0..<(bitWidth - bitCount)).map { _ in
                     "\(UInt8.random(in: 0...1))"
                 }
-                let number = IPAddressType.IntegerLiteralType(
+                let number = IPAddressType.AddressValueType(
                     matchingBits + theRest.joined(separator: ""),
                     radix: 2
                 )!
-                results.append((cidr, IPAddressType(integerLiteral: number), true))
+                results.append((cidr, IPAddressType(number), true))
             }
 
             guard bitCount > 0 else {
@@ -795,11 +795,11 @@ struct CIDRTests {
                 let theRest = (0..<(bitWidth - bitCount)).map { _ in
                     "\(UInt8.random(in: 0...1))"
                 }
-                let number = IPAddressType.IntegerLiteralType(
+                let number = IPAddressType.AddressValueType(
                     messedUpBits + theRest.joined(separator: ""),
                     radix: 2
                 )!
-                results.append((cidr, IPAddressType(integerLiteral: number), false))
+                results.append((cidr, IPAddressType(number), false))
             }
         }
 
@@ -807,8 +807,44 @@ struct CIDRTests {
     }
 }
 
-extension ClosedRange where Bound: FixedWidthInteger {
-    fileprivate static var all: Self {
-        Bound.min...Bound.max
+@available(swiftEndpointApplePlatforms 15, *)
+extension _IPAddressProtocolAddressValueType {
+    fileprivate static func anyRandom() -> Self {
+        switch Self.self {
+        case is UInt32.Type:
+            return UInt32.random(in: .min ... .max) as! Self
+        case is UnsignedInt128.Type:
+            return UnsignedInt128.random(in: .min ... .max) as! Self
+        default:
+            fatalError("Unsupported type: \(Self.self)")
+        }
+    }
+
+    @_disfavoredOverload
+    fileprivate init?(_ value: String, radix: Int = 10) {
+        switch Self.self {
+        case is UInt32.Type:
+            guard let value = UInt32(value, radix: radix) else { return nil }
+            self = value as! Self
+        case is UnsignedInt128.Type:
+            guard let value = UnsignedInt128(value, radix: radix) else { return nil }
+            self = value as! Self
+        default:
+            fatalError("Unsupported type: \(Self.self)")
+        }
+    }
+}
+
+extension String {
+    @_disfavoredOverload
+    fileprivate init<T: _IPAddressProtocolAddressValueType>(_ value: T, radix: Int) {
+        switch T.self {
+        case is UInt32.Type:
+            self = String(value as! UInt32, radix: radix)
+        case is UnsignedInt128.Type:
+            self = String(value as! UnsignedInt128, radix: radix)
+        default:
+            fatalError("Unsupported type: \(T.self)")
+        }
     }
 }

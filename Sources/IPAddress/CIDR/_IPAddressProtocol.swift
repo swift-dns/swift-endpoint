@@ -14,21 +14,36 @@ public protocol _IPAddressProtocol:
     CustomStringConvertible,
     CustomDebugStringConvertible
 {
-    associatedtype
-        AddressValueType: Sendable
-                & Hashable
-                & FixedWidthInteger
-                & UnsignedInteger
-                & BitwiseCopyable
-                & Comparable
+    associatedtype AddressValueType: _IPAddressProtocolAddressValueType
 
     var address: AddressValueType { get }
 
     init(_ value: AddressValueType)
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 13, *)
     init?(exactly ipAddress: AnyIPAddress)
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 13, *)
     init?(_uncheckedAssumingValidASCII: Span<UInt8>)
+}
+
+public protocol _IPAddressProtocolAddressValueType:
+    Sendable,
+    Hashable,
+    Comparable,
+    BitwiseCopyable
+{
+    static var zero: Self { get }
+    static var bitWidth: Int { get }
+    static var max: Self { get }
+    var trailingZeroBitCount: Int { get }
+
+    static func &>> (lhs: Self, rhs: Self) -> Self
+    static func &>> (lhs: Self, rhs: some BinaryInteger) -> Self
+
+    static func &<< (lhs: Self, rhs: Self) -> Self
+    static func &<< (lhs: Self, rhs: some BinaryInteger) -> Self
+
+    static func & (lhs: Self, rhs: Self) -> Self
+    static prefix func ~ (x: Self) -> Self
 }

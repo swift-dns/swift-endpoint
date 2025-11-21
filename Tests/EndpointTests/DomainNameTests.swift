@@ -189,7 +189,7 @@ struct DomainNameTests {
         try #expect(DomainName(domainName).labelsCount == expectedLabelsCount)
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 13, *)
     @Test func ipv4AddressToName() throws {
         let ipAddress = IPv4Address(192, 168, 1, 1)
         let name1 = DomainName(ipv4: ipAddress)

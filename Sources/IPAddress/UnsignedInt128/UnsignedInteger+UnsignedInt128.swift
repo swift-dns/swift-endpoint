@@ -1,7 +1,8 @@
 @available(swiftEndpointApplePlatforms 15, *)
 extension UnsignedInt128: UnsignedInteger {}
 
-extension UnsignedInt128 /*: UnsignedInteger*/ {
+/// UnsignedInteger conformance
+extension UnsignedInt128 {
     public typealias Magnitude = Self
 
     @inlinable

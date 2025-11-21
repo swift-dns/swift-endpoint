@@ -1,7 +1,8 @@
 @available(swiftEndpointApplePlatforms 15, *)
 extension UnsignedInt128: Numeric {}
 
-extension UnsignedInt128 /*: Numeric*/ {
+/// Numeric conformance
+extension UnsignedInt128 {
     @inlinable
     public init?(exactly source: some BinaryInteger) {
         guard let high = UInt64(exactly: source >> 64) else { return nil }
@@ -36,7 +37,7 @@ extension UnsignedInt128 /*: Numeric*/ {
         var sum: UInt64 = 0
         var overflowCount: UInt64 = 0
 
-        addends.forEach { addend in
+        for addend in addends {
             let interimSum = sum.addingReportingOverflow(addend)
             if interimSum.overflow {
                 overflowCount += 1

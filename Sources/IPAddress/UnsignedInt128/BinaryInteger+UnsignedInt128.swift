@@ -1,7 +1,8 @@
 @available(swiftEndpointApplePlatforms 15, *)
 extension UnsignedInt128: BinaryInteger {}
 
-extension UnsignedInt128 /*: BinaryInteger*/ {
+/// BinaryInteger conformance
+extension UnsignedInt128 {
     public struct Words {
         @usableFromInline
         let _value: UnsignedInt128

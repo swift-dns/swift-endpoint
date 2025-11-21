@@ -1,7 +1,8 @@
 @available(swiftEndpointApplePlatforms 15, *)
 extension UnsignedInt128: FixedWidthInteger {}
 
-extension UnsignedInt128 /*: FixedWidthInteger*/ {
+/// FixedWidthInteger conformance
+extension UnsignedInt128 {
     @inlinable
     public static var bitWidth: Int {
         128
@@ -110,14 +111,18 @@ extension UnsignedInt128 /*: FixedWidthInteger*/ {
 
         // Decompose lhs into an array of 4, 32 significant bit UInt64s.
         let lhsArray = [
-            self._high >> 32, /*0*/ self._high & lower32, /*1*/
-            self._low >> 32, /*2*/ self._low & lower32 /*3*/,
+            self._high >> 32,
+            self._high & lower32,
+            self._low >> 32,
+            self._low & lower32,
         ]
 
         // Decompose rhs into an array of 4, 32 significant bit UInt64s.
         let rhsArray = [
-            other._high >> 32, /*0*/ other._high & lower32, /*1*/
-            other._low >> 32, /*2*/ other._low & lower32 /*3*/,
+            other._high >> 32,
+            other._high & lower32,
+            other._low >> 32,
+            other._low & lower32,
         ]
 
         // The future contents of this array will be used to store segment

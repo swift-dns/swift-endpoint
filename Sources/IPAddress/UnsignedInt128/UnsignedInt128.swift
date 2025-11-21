@@ -1,0 +1,44 @@
+/// A replacement for `UInt128`. Swift's own UInt128 requires macOS 15.
+///
+/// If you can use UInt128, just convert this value to a UInt128 by using `UInt128(thisValue)`.
+///
+/// Provides a subset of identical APIs compared to UInt128.
+/// In a future minor version, this whole type might be turned into a `typealias` for `UInt128`.
+/// In a future major version, this whole type might be simply replaced by Swift's own `UInt128`.
+///
+/// This type conforms to all that `UInt128` currently does.
+/// The following conformances on macOS are only available on macOS 15 or higher:
+/// `BinaryInteger`, `FixedWidthInteger`, `Numeric`, `UnsignedInteger`, `AtomicRepresentable`, `ExpressibleByIntegerLiteral`.
+/// Note that the implementations are available on all macOS versions, but the mere conformances are limited to macOS 15 or higher.
+/// On other platforms the conformances are always available.
+///
+/// Parts of the implementation is inspired or copy-pasted from https://github.com/Jitsusama/UInt128
+public struct UnsignedInt128 {
+    /// The least significant 64 bits of the value.
+    public var _low: UInt64
+
+    /// The most significant 64 bits of the value.
+    public var _high: UInt64
+
+    /// Initializes a new `UnsignedInt128` value with the given least significant 64 bits and most significant 64 bits.
+    public init(_low: UInt64, _high: UInt64) {
+        self._low = _low
+        self._high = _high
+    }
+}
+
+extension UnsignedInt128: Sendable, SendableMetatype, Equatable, Hashable, BitwiseCopyable {}
+
+@available(swiftEndpointApplePlatforms 15, *)
+extension UnsignedInt128: ExpressibleByIntegerLiteral {
+    @inlinable
+    public init(integerLiteral value: UInt128) {
+        self.init(_low: value._low, _high: value._high)
+    }
+}
+
+extension UnsignedInt128: CustomReflectable {
+    public var customMirror: Mirror {
+        Mirror(self, unlabeledChildren: EmptyCollection<Void>())
+    }
+}

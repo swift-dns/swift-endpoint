@@ -12,17 +12,19 @@ public protocol _IPAddressProtocol:
     Sendable,
     Hashable,
     CustomStringConvertible,
-    CustomDebugStringConvertible,
-    ExpressibleByIntegerLiteral
-where
-    IntegerLiteralType: Sendable
-        & Hashable
-        & FixedWidthInteger
-        & UnsignedInteger
-        & BitwiseCopyable
-        & Comparable
+    CustomDebugStringConvertible
 {
-    var address: IntegerLiteralType { get }
+    associatedtype
+        AddressValueType: Sendable
+                & Hashable
+                & FixedWidthInteger
+                & UnsignedInteger
+                & BitwiseCopyable
+                & Comparable
+
+    var address: AddressValueType { get }
+
+    init(_ value: AddressValueType)
 
     @available(swiftEndpointApplePlatforms 15, *)
     init?(exactly ipAddress: AnyIPAddress)

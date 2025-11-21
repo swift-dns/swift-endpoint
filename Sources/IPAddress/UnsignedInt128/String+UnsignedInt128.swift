@@ -1,4 +1,5 @@
 extension UnsignedInt128: CustomStringConvertible {
+    @inlinable
     public var description: String {
         if self._high == 0 {
             return self._low.description
@@ -13,6 +14,7 @@ extension UnsignedInt128: CustomStringConvertible {
 
 @available(swiftEndpointApplePlatforms 13, *)
 extension UnsignedInt128: LosslessStringConvertible {
+    // @inlinable
     public init?(_ description: String) {
         var description = description
         guard
@@ -25,6 +27,7 @@ extension UnsignedInt128: LosslessStringConvertible {
         self = result
     }
 
+    @inlinable
     static func parse(textualRepresentationSpan span: Span<UInt8>) -> Self? {
         var result = Self.zero
         var multiplier = UnsignedInt128(_low: 1, _high: 0)

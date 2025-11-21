@@ -22,14 +22,17 @@ extension UnsignedInt128 {
         }
     }
 
+    @inlinable
     public static var max: Self {
         Self(_low: UInt64.max, _high: UInt64.max)
     }
 
+    @inlinable
     public static var min: Self {
         Self(_low: 0, _high: 0)
     }
 
+    @inlinable
     public static var zero: Self {
         Self(_low: 0, _high: 0)
     }
@@ -236,6 +239,7 @@ extension UnsignedInt128 {
         return (quotient, false)
     }
 
+    @inlinable
     public func quotientAndRemainder(dividingBy rhs: Self) -> (quotient: Self, remainder: Self) {
         rhs.dividingFullWidth((high: .zero, low: self))
     }
@@ -303,6 +307,7 @@ extension UnsignedInt128 {
         }
     }
 
+    @inlinable
     public func remainderReportingOverflow(
         dividingBy rhs: Self
     ) -> (partialValue: Self, overflow: Bool) {

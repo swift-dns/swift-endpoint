@@ -38,6 +38,7 @@ extension UnsignedInt128: ExpressibleByIntegerLiteral {
 }
 
 extension UnsignedInt128: CustomReflectable {
+    @inlinable
     public var customMirror: Mirror {
         Mirror(self, unlabeledChildren: EmptyCollection<Void>())
     }

@@ -231,7 +231,7 @@ extension UnsignedInt128 {
 
     @inlinable
     public func dividedReportingOverflow(by rhs: Self) -> (partialValue: Self, overflow: Bool) {
-        guard rhs != .zero else {
+        if rhs == .zero {
             return (self, true)
         }
 
@@ -268,7 +268,7 @@ extension UnsignedInt128 {
         var remainder = Self.zero
 
         for numeratorShiftWidth in (0...numeratorBitsToWalk).reversed() {
-            remainder <<= Self(_low: 1, _high: 0)
+            remainder <<= 1
             remainder |= Self._bitFromDoubleWidth(at: numeratorShiftWidth, for: dividend)
 
             if remainder >= divisor {
@@ -291,16 +291,16 @@ extension UnsignedInt128 {
         at bitPosition: Int,
         for input: (high: Self, low: Self)
     ) -> Self {
+        let _1 = Self(_low: 1, _high: 0)
         switch bitPosition {
         case 0:
-            return input.low & Self(_low: 1, _high: 0)
+            return input.low & _1
         case 1...127:
-            return input.low >> bitPosition & Self(_low: 1, _high: 0)
+            return input.low >> bitPosition & _1
         case 128:
-            return input.high & Self(_low: 1, _high: 0)
+            return input.high & _1
         default:
             let _128 = Self(_low: 128, _high: 0)
-            let _1 = Self(_low: 1, _high: 0)
             let bitPosition = Self(_low: UInt64(bitPosition), _high: 0)
             let shift = bitPosition - _128
             return input.high >> shift & _1
@@ -311,7 +311,7 @@ extension UnsignedInt128 {
     public func remainderReportingOverflow(
         dividingBy rhs: Self
     ) -> (partialValue: Self, overflow: Bool) {
-        guard rhs != .zero else {
+        if rhs == .zero {
             return (self, true)
         }
 
@@ -372,9 +372,10 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func &<< (lhs: Self, rhs: some BinaryInteger) -> Self {
-        Self(
-            _low: lhs._low &<< rhs,
-            _high: lhs._high &<< rhs
+        let shift = rhs % 128
+        return Self(
+            _low: lhs._low << shift,
+            _high: lhs._high << shift
         )
     }
 
@@ -385,9 +386,10 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func &>> (lhs: Self, rhs: some BinaryInteger) -> Self {
-        Self(
-            _low: lhs._low &>> rhs,
-            _high: lhs._high &>> rhs
+        let shift = rhs % 128
+        return Self(
+            _low: lhs._low >> shift,
+            _high: lhs._high >> shift
         )
     }
 

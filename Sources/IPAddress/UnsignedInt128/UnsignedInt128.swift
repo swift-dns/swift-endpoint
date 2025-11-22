@@ -9,8 +9,8 @@
 /// This type conforms to all that `UInt128` currently does.
 /// The following conformances on macOS are only available on macOS 15 or higher:
 /// `BinaryInteger`, `FixedWidthInteger`, `Numeric`, `UnsignedInteger`, `AtomicRepresentable`, `ExpressibleByIntegerLiteral`.
-/// Note that the implementations are available on all macOS versions, but the mere conformances are limited to macOS 15 or higher.
-/// On other platforms the conformances are always available.
+/// Note that for the most part the implementations are available on all macOS versions, but the mere conformances are
+/// limited to macOS 15 or higher. On other platforms the conformances are always available.
 ///
 /// Parts of the implementation is inspired or copy-pasted from https://github.com/Jitsusama/UInt128
 public struct UnsignedInt128 {
@@ -27,7 +27,26 @@ public struct UnsignedInt128 {
     }
 }
 
-extension UnsignedInt128: Sendable, SendableMetatype, Equatable, Hashable, BitwiseCopyable {}
+extension UnsignedInt128: Sendable, SendableMetatype, Hashable, BitwiseCopyable {}
+
+extension UnsignedInt128: Equatable {
+    @inlinable
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs._low == rhs._low && lhs._high == rhs._high
+    }
+
+    @inlinable
+    public static func == (lhs: Self, rhs: some BinaryInteger) -> Bool {
+        lhs._low == UInt64(truncatingIfNeeded: rhs)
+            && lhs._high == UInt64(truncatingIfNeeded: rhs >> 64)
+            && rhs >> 128 == 0
+    }
+
+    @inlinable
+    public static func == (lhs: some BinaryInteger, rhs: Self) -> Bool {
+        rhs == lhs
+    }
+}
 
 @available(swiftEndpointApplePlatforms 15, *)
 extension UnsignedInt128: ExpressibleByIntegerLiteral {

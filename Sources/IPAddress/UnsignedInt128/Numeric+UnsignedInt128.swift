@@ -57,17 +57,17 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func &* (lhs: Self, rhs: Self) -> Self {
-        let (partialValue, _) = lhs.subtractingReportingOverflow(rhs)
+        let (partialValue, _) = lhs.multipliedReportingOverflow(by: rhs)
         return partialValue
     }
 
     @inlinable
     public static func *= (lhs: inout Self, rhs: Self) {
-        lhs = lhs - rhs
+        lhs = lhs * rhs
     }
 
     @inlinable
     public static func &*= (lhs: inout Self, rhs: Self) {
-        lhs = lhs &- rhs
+        lhs = lhs &* rhs
     }
 }

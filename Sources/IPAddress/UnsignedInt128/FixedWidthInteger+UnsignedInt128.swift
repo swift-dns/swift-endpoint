@@ -39,7 +39,7 @@ extension UnsignedInt128 {
 
     @inlinable
     public var byteSwapped: Self {
-        Self(_low: self._low.byteSwapped, _high: self._high.byteSwapped)
+        Self(_low: self._high.byteSwapped, _high: self._low.byteSwapped)
     }
 
     @inlinable
@@ -234,50 +234,127 @@ extension UnsignedInt128 {
         if rhs == .zero {
             return (self, true)
         }
-
-        let quotient = self.quotientAndRemainder(dividingBy: rhs).quotient
-        return (quotient, false)
+        return (self / rhs, false)
     }
 
     @inlinable
     public func quotientAndRemainder(dividingBy rhs: Self) -> (quotient: Self, remainder: Self) {
-        rhs.dividingFullWidth((high: .zero, low: self))
+        (self / rhs, self % rhs)
     }
 
     @inlinable
     public func dividingFullWidth(
-        _ dividend: (high: Self, low: Self)
+        _ dividend: (high: Self, low: Self.Magnitude)
     ) -> (quotient: Self, remainder: Self) {
-        let divisor = self
-        let numeratorBitsToWalk: Int
+        // Validate preconditions to guarantee that the quotient is representable.
+        precondition(self != .zero, "Division by zero")
+        precondition(dividend.high < self, "dividend.high must be smaller than the divisor")
+        // UnsignedInteger should have a Magnitude = Self constraint, but does not,
+        // so we have to do this conversion (we can't easily add the constraint
+        // because it changes how generic signatures constrained to
+        // <FixedWidth & Unsigned> are minimized, which changes the mangling).
+        // In practice, "every" UnsignedInteger type will satisfy this, and if one
+        // somehow manages not to in a way that would break this conversion then
+        // a default implementation of this method never could have worked anyway.
+        let low = dividend.low
 
-        if dividend.high > .zero {
-            numeratorBitsToWalk = 255 - dividend.high.leadingZeroBitCount
-        } else if dividend.low == .zero {
-            return (.zero, .zero)
-        } else {
-            numeratorBitsToWalk = 127 - dividend.low.leadingZeroBitCount
+        // The basic algorithm is taken from Knuth (TAoCP, Vol 2, §4.3.1), using
+        // words that are half the size of Self (so the dividend has four words
+        // and the divisor has two). The fact that the denominator has exactly
+        // two words allows for a slight simplification vs. Knuth's Algorithm D,
+        // in that our computed quotient digit is always exactly right, while
+        // in the more general case it can be one too large, requiring a subsequent
+        // borrow.
+        //
+        // Knuth's algorithm (and any long division, really), requires that the
+        // divisor (self) be normalized (meaning that the high-order bit is set).
+        // We begin by counting the leading zeros so we know how many bits we
+        // have to shift to normalize.
+        let lz = leadingZeroBitCount
+
+        // If the divisor is actually a power of two, division is just a shift,
+        // which we can handle much more efficiently. So we do a check for that
+        // case and early-out if possible.
+        let _1 = Self(_low: 1, _high: 0)
+        if (self &- _1) & self == .zero {
+            let shift = Self.bitWidth - 1 - lz
+            let q = low &>> shift | dividend.high &<< -shift
+            let r = low & (self &- _1)
+            return (q, r)
         }
 
-        // The below algorithm was adapted from:
-        // https://en.wikipedia.org/wiki/Division_algorithm#Integer_division_.28unsigned.29_with_remainder
+        // Shift the divisor left by lz bits to normalize it. We shift the
+        // dividend left by the same amount so that we get the quotient is
+        // preserved (we will have to shift right to recover the remainder).
+        // Note that the right shift `low >> (Self.bitWidth - lz)` is
+        // deliberately a non-masking shift because lz might be zero.
+        let v = self &<< lz
+        let uh = dividend.high &<< lz | low >> (Self.bitWidth - lz)
+        let ul = low &<< lz
 
-        precondition(self != .zero, "Division by 0")
+        // Now we have a normalized dividend (uh:ul) and divisor (v). Split
+        // v into half-words (vh:vl) so that we can use the "normal" division
+        // on Self as a word / halfword -> halfword division get one halfword
+        // digit of the quotient at a time.
+        let n_2 = Self.bitWidth / 2
+        let mask = _1 &<< n_2 &- _1
+        let vh = v &>> n_2
+        let vl = v & mask
 
-        var quotient = Self.zero
-        var remainder = Self.zero
+        // For the (fairly-common) special case where vl is zero, we can simplify
+        // the arithmetic quite a bit:
+        if vl == .zero {
+            let qh = uh / vh
+            let residual = (uh &- qh &* vh) &<< n_2 | ul &>> n_2
+            let ql = residual / vh
 
-        for numeratorShiftWidth in (0...numeratorBitsToWalk).reversed() {
-            remainder <<= 1
-            remainder |= Self._bitFromDoubleWidth(at: numeratorShiftWidth, for: dividend)
-
-            if remainder >= divisor {
-                remainder -= divisor
-                quotient |= Self(_low: 1, _high: 0) << numeratorShiftWidth
+            return (
+                // Assemble quotient from half-word digits
+                quotient: qh &<< n_2 | ql,
+                // Compute remainder (we can re-use the residual to make this simpler).
+                remainder: ((residual &- ql &* vh) &<< n_2 | ul & mask) &>> lz
+            )
+        }
+        // Helper function: performs a (1½ word)/word division to produce a
+        // half quotient word q. We'll need to use this twice to generate the
+        // full quotient.
+        //
+        // high is the high word of the quotient for this sub-division.
+        // low is the low half-word of the quotient for this sub-division (the
+        //     high half of low must be zero).
+        //
+        // returns the quotient half-word digit. In a more general setting, this
+        // computed digit might be one too large, which has to be accounted for
+        // later on (see Knuth, Algorithm D), but when the divisor is only two
+        // half-words (as here), that can never happen, because we use the full
+        // divisor in the check for the while loop.
+        func generateHalfDigit(high: Self, low: Self) -> Self {
+            // Get q̂ satisfying a = vh q̂ + r̂ with 0 ≤ r̂ < vh:
+            var (q̂, r̂) = high.quotientAndRemainder(dividingBy: vh)
+            // Knuth's "Theorem A" establishes that q̂ is an approximation to
+            // the quotient digit q, satisfying q ≤ q̂ ≤ q + 2. We adjust it
+            // downward as needed until we have the correct q.
+            while q̂ > mask || q̂ &* vl > (r̂ &<< n_2 | low) {
+                q̂ &-= _1
+                r̂ &+= vh
+                if r̂ > mask { break }
             }
+            return q̂
         }
 
-        return (quotient, remainder)
+        // Generate the first quotient digit, subtract off its product with the
+        // divisor to generate the residual, then compute the second quotient
+        // digit from that.
+        let qh = generateHalfDigit(high: uh, low: ul &>> n_2)
+        let residual = (uh &<< n_2 | ul &>> n_2) &- (qh &* v)
+        let ql = generateHalfDigit(high: residual, low: ul & mask)
+
+        return (
+            // Assemble quotient from half-word digits
+            quotient: qh &<< n_2 | ql,
+            // Compute remainder (we can re-use the residual to make this simpler).
+            remainder: ((residual &<< n_2 | ul & mask) &- (ql &* v)) &>> lz
+        )
     }
 
     /// Returns the bit stored at the given position for the provided double width UInt128 input.
@@ -319,34 +396,29 @@ extension UnsignedInt128 {
         return (remainder, false)
     }
 
-    /// order if necessary.
-    ///
-    /// - Parameter value: A value to use as the big-endian representation of the
-    ///   new integer.
     @inlinable
     public init(bigEndian value: Self) {
-        self.init(_low: value._low.bigEndian, _high: value._high.bigEndian)
+        #if _endian(big)
+        self = value
+        #else
+        self = value.byteSwapped
+        #endif
     }
 
-    /// Creates an integer from its little-endian representation, changing the
-    /// byte order if necessary.
-    ///
-    /// - Parameter value: A value to use as the little-endian representation of
-    ///   the new integer.
     @inlinable
-    public init(littleEndian value: Self) {
-        self.init(_low: value._low.littleEndian, _high: value._high.littleEndian)
+    public var littleEndian: Self {
+        #if _endian(little)
+        return self
+        #else
+        return byteSwapped
+        #endif
     }
 
     // MARK: - Bitwise Operations
 
     @inlinable
     public static func &<< (lhs: Self, rhs: Self) -> Self {
-        let shift = (rhs % Self(_low: 128, _high: 0))._low
-        return Self(
-            _low: lhs._low << shift,
-            _high: lhs._high << shift
-        )
+        lhs << (rhs % Self(_low: 128, _high: 0))
     }
 
     @inlinable
@@ -356,11 +428,7 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func &>> (lhs: Self, rhs: Self) -> Self {
-        let shift = (rhs % Self(_low: 128, _high: 0))._low
-        return Self(
-            _low: lhs._low >> shift,
-            _high: lhs._high >> shift
-        )
+        lhs >> (rhs % Self(_low: 128, _high: 0))
     }
 
     @inlinable
@@ -372,11 +440,7 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func &<< (lhs: Self, rhs: some BinaryInteger) -> Self {
-        let shift = rhs % 128
-        return Self(
-            _low: lhs._low << shift,
-            _high: lhs._high << shift
-        )
+        lhs << (rhs % 128)
     }
 
     @inlinable
@@ -386,11 +450,7 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func &>> (lhs: Self, rhs: some BinaryInteger) -> Self {
-        let shift = rhs % 128
-        return Self(
-            _low: lhs._low >> shift,
-            _high: lhs._high >> shift
-        )
+        lhs >> (rhs % 128)
     }
 
     @inlinable

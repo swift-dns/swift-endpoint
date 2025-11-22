@@ -1,8 +1,10 @@
 /// A replacement for `UInt128`. Swift's own UInt128 requires macOS 15.
 ///
-/// If you can use UInt128, just convert this value to a UInt128 by using `UInt128(thisValue)`.
+/// Functionally, this implementation is expected to be identical to Swift's own `UInt128`.
+/// However, for performance reasons you are encouraged to immediately turn this value into a
+/// `UInt128` whenever you can, and perform your operations on that `UInt128` value instead.
 ///
-/// Provides a subset of identical APIs compared to UInt128.
+/// This type provides identical APIs compared to `UInt128`.
 /// In a future minor version, this whole type might be turned into a `typealias` for `UInt128`.
 /// In a future major version, this whole type might be simply replaced by Swift's own `UInt128`.
 ///
@@ -12,7 +14,7 @@
 /// Note that for the most part the implementations are available on all macOS versions, but the mere conformances are
 /// limited to macOS 15 or higher. On other platforms the conformances are always available.
 ///
-/// Parts of the implementation is inspired or copy-pasted from https://github.com/Jitsusama/UInt128
+/// Parts of the implementation is inspired or copy-pasted from either https://github.com/Jitsusama/UInt128 or stdlib.
 public struct UnsignedInt128 {
     /// The least significant 64 bits of the value.
     public var _low: UInt64

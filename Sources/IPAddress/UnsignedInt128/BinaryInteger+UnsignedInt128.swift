@@ -64,9 +64,43 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func / (lhs: Self, rhs: Self) -> Self {
-        let (partialValue, overflow) = lhs.dividedReportingOverflow(by: rhs)
-        precondition(!overflow, "\(lhs) / \(rhs) overflows by \(partialValue)")
-        return partialValue
+        precondition(rhs != .zero, "Division by zero")
+
+        if lhs < rhs {
+            return .zero
+        }
+
+        var result = Self.zero
+        var step = Self(_low: 1, _high: 0)
+        var stepIsGoingUp = true
+
+        while step != .zero, result != lhs {
+            let nextResult = result.addingReportingOverflow(step)
+            if nextResult.overflow {
+                stepIsGoingUp = false
+                step &>>= 1
+                continue
+            }
+            let multiplied = nextResult.partialValue.multipliedReportingOverflow(by: rhs)
+            if multiplied.overflow {
+                stepIsGoingUp = false
+                step &>>= 1
+                continue
+            }
+
+            if multiplied.partialValue <= lhs {
+                result = nextResult.partialValue
+            } else {
+                stepIsGoingUp = false
+                step &>>= 1
+            }
+            if stepIsGoingUp {
+                step &<<= 1
+                step |= Self(_low: 1, _high: 0)
+            }
+        }
+
+        return result
     }
 
     @inlinable
@@ -76,7 +110,15 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func % (lhs: Self, rhs: Self) -> Self {
-        lhs.remainderReportingOverflow(dividingBy: rhs).partialValue
+        if rhs == .zero {
+            return lhs
+        }
+
+        if lhs < rhs {
+            return lhs
+        }
+
+        return lhs - (lhs / rhs) * rhs
     }
 
     @inlinable
@@ -135,9 +177,17 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func << (lhs: Self, rhs: Self) -> Self {
-        Self(
-            _low: rhs._high == 0 ? lhs._low << rhs._low : 0,
-            _high: rhs._high == 0 ? lhs._high << rhs._low : 0
+        if rhs > Self(_low: 128, _high: 0) {
+            return .zero
+        }
+        let shift = rhs._low
+        let lowMovedToHigh =
+            rhs > Self(_low: 64, _high: 0)
+            ? lhs._low << (shift - 64)
+            : lhs._low >> (64 - shift)
+        return Self(
+            _low: lhs._low << shift,
+            _high: (lhs._high << shift) | lowMovedToHigh
         )
     }
 
@@ -148,9 +198,17 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func >> (lhs: Self, rhs: Self) -> Self {
-        Self(
-            _low: rhs._high == 0 ? lhs._low >> rhs._low : 0,
-            _high: rhs._high == 0 ? lhs._high >> rhs._low : 0
+        if rhs > Self(_low: 128, _high: 0) {
+            return .zero
+        }
+        let shift = rhs._low
+        let highMovedToLow =
+            rhs > Self(_low: 64, _high: 0)
+            ? lhs._high >> (shift - 64)
+            : lhs._high << (64 - shift)
+        return Self(
+            _low: (lhs._low >> shift) | highMovedToLow,
+            _high: lhs._high >> shift
         )
     }
 
@@ -163,9 +221,17 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func << (lhs: Self, rhs: some BinaryInteger) -> Self {
-        Self(
-            _low: lhs._low << rhs,
-            _high: lhs._high << rhs
+        if rhs > 128 {
+            return .zero
+        }
+        let shift = rhs
+        let lowMovedToHigh =
+            rhs > 64
+            ? lhs._low << (shift - 64)
+            : lhs._low >> (64 - shift)
+        return Self(
+            _low: lhs._low << shift,
+            _high: (lhs._high << shift) | lowMovedToHigh
         )
     }
 
@@ -176,9 +242,17 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func >> (lhs: Self, rhs: some BinaryInteger) -> Self {
-        Self(
-            _low: lhs._low >> rhs,
-            _high: lhs._high >> rhs
+        if rhs > 128 {
+            return .zero
+        }
+        let shift = rhs
+        let highMovedToLow =
+            rhs > 64
+            ? lhs._high >> (shift - 64)
+            : lhs._high << (64 - shift)
+        return Self(
+            _low: (lhs._low >> shift) | highMovedToLow,
+            _high: lhs._high >> shift
         )
     }
 

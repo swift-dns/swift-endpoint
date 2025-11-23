@@ -186,7 +186,7 @@ jobs:
           xcode-version: ${{ matrix.xcode.version }}
 
       - name: Check out ${{ github.event.repository.name }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v5
 
       - name: Set today's date
         run: echo "TODAY=$(date "+%Y-%m-%d")" >> $GITHUB_ENV

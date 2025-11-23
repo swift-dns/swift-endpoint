@@ -56,10 +56,14 @@ extension UnsignedInt128 {
 
     @inlinable
     public init(clamping source: some BinaryInteger) {
-        self.init(
-            _low: UInt64(clamping: source),
-            _high: UInt64(clamping: source >> 64)
-        )
+        if source.bitWidth > 128, source >> 128 != 0 {
+            self = .max
+        } else {
+            self.init(
+                _low: UInt64(truncatingIfNeeded: source),
+                _high: UInt64(truncatingIfNeeded: source >> 64)
+            )
+        }
     }
 
     @inlinable
@@ -111,11 +115,7 @@ extension UnsignedInt128 {
     @inlinable
     public static func % (lhs: Self, rhs: Self) -> Self {
         if rhs == .zero {
-            return lhs
-        }
-
-        if lhs < rhs {
-            return lhs
+            fatalError("Division by zero in remainder operation")
         }
 
         return lhs - (lhs / rhs) * rhs
@@ -181,14 +181,16 @@ extension UnsignedInt128 {
             return .zero
         }
         let shift = rhs._low
+        var shifted = Self(
+            _low: lhs._low << shift,
+            _high: lhs._high << shift
+        )
         let lowMovedToHigh =
-            rhs > Self(_low: 64, _high: 0)
+            shift > 64
             ? lhs._low << (shift - 64)
             : lhs._low >> (64 - shift)
-        return Self(
-            _low: lhs._low << shift,
-            _high: (lhs._high << shift) | lowMovedToHigh
-        )
+        shifted._high |= lowMovedToHigh
+        return shifted
     }
 
     @inlinable
@@ -202,14 +204,16 @@ extension UnsignedInt128 {
             return .zero
         }
         let shift = rhs._low
-        let highMovedToLow =
-            rhs > Self(_low: 64, _high: 0)
-            ? lhs._high >> (shift - 64)
-            : lhs._high << (64 - shift)
-        return Self(
-            _low: (lhs._low >> shift) | highMovedToLow,
+        var shifted = Self(
+            _low: lhs._low >> shift,
             _high: lhs._high >> shift
         )
+        let highMovedToLow =
+            shift > 64
+            ? lhs._high >> (shift - 64)
+            : lhs._high << (64 - shift)
+        shifted._low |= highMovedToLow
+        return shifted
     }
 
     @inlinable
@@ -225,14 +229,16 @@ extension UnsignedInt128 {
             return .zero
         }
         let shift = rhs
+        var shifted = Self(
+            _low: lhs._low << shift,
+            _high: lhs._high << shift
+        )
         let lowMovedToHigh =
-            rhs > 64
+            shift > 64
             ? lhs._low << (shift - 64)
             : lhs._low >> (64 - shift)
-        return Self(
-            _low: lhs._low << shift,
-            _high: (lhs._high << shift) | lowMovedToHigh
-        )
+        shifted._high |= lowMovedToHigh
+        return shifted
     }
 
     @inlinable
@@ -242,18 +248,20 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func >> (lhs: Self, rhs: some BinaryInteger) -> Self {
-        if rhs > 128 {
+        if rhs > 128 || rhs < 0 {
             return .zero
         }
         let shift = rhs
-        let highMovedToLow =
-            rhs > 64
-            ? lhs._high >> (shift - 64)
-            : lhs._high << (64 - shift)
-        return Self(
-            _low: (lhs._low >> shift) | highMovedToLow,
+        var shifted = Self(
+            _low: lhs._low >> shift,
             _high: lhs._high >> shift
         )
+        let highMovedToLow =
+            shift > 64
+            ? lhs._high >> (shift - 64)
+            : lhs._high << (64 - shift)
+        shifted._low |= highMovedToLow
+        return shifted
     }
 
     @inlinable

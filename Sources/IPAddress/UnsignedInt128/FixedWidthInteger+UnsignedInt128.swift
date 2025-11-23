@@ -243,148 +243,6 @@ extension UnsignedInt128 {
     }
 
     @inlinable
-    public func dividingFullWidth(
-        _ dividend: (high: Self, low: Self.Magnitude)
-    ) -> (quotient: Self, remainder: Self) {
-        // Validate preconditions to guarantee that the quotient is representable.
-        precondition(self != .zero, "Division by zero")
-        precondition(dividend.high < self, "dividend.high must be smaller than the divisor")
-        // UnsignedInteger should have a Magnitude = Self constraint, but does not,
-        // so we have to do this conversion (we can't easily add the constraint
-        // because it changes how generic signatures constrained to
-        // <FixedWidth & Unsigned> are minimized, which changes the mangling).
-        // In practice, "every" UnsignedInteger type will satisfy this, and if one
-        // somehow manages not to in a way that would break this conversion then
-        // a default implementation of this method never could have worked anyway.
-        let low = dividend.low
-
-        // The basic algorithm is taken from Knuth (TAoCP, Vol 2, §4.3.1), using
-        // words that are half the size of Self (so the dividend has four words
-        // and the divisor has two). The fact that the denominator has exactly
-        // two words allows for a slight simplification vs. Knuth's Algorithm D,
-        // in that our computed quotient digit is always exactly right, while
-        // in the more general case it can be one too large, requiring a subsequent
-        // borrow.
-        //
-        // Knuth's algorithm (and any long division, really), requires that the
-        // divisor (self) be normalized (meaning that the high-order bit is set).
-        // We begin by counting the leading zeros so we know how many bits we
-        // have to shift to normalize.
-        let lz = leadingZeroBitCount
-
-        // If the divisor is actually a power of two, division is just a shift,
-        // which we can handle much more efficiently. So we do a check for that
-        // case and early-out if possible.
-        let _1 = Self(_low: 1, _high: 0)
-        if (self &- _1) & self == .zero {
-            let shift = Self.bitWidth - 1 - lz
-            let q = low &>> shift | dividend.high &<< -shift
-            let r = low & (self &- _1)
-            return (q, r)
-        }
-
-        // Shift the divisor left by lz bits to normalize it. We shift the
-        // dividend left by the same amount so that we get the quotient is
-        // preserved (we will have to shift right to recover the remainder).
-        // Note that the right shift `low >> (Self.bitWidth - lz)` is
-        // deliberately a non-masking shift because lz might be zero.
-        let v = self &<< lz
-        let uh = dividend.high &<< lz | low >> (Self.bitWidth - lz)
-        let ul = low &<< lz
-
-        // Now we have a normalized dividend (uh:ul) and divisor (v). Split
-        // v into half-words (vh:vl) so that we can use the "normal" division
-        // on Self as a word / halfword -> halfword division get one halfword
-        // digit of the quotient at a time.
-        let n_2 = Self.bitWidth / 2
-        let mask = _1 &<< n_2 &- _1
-        let vh = v &>> n_2
-        let vl = v & mask
-
-        // For the (fairly-common) special case where vl is zero, we can simplify
-        // the arithmetic quite a bit:
-        if vl == .zero {
-            let qh = uh / vh
-            let residual = (uh &- qh &* vh) &<< n_2 | ul &>> n_2
-            let ql = residual / vh
-
-            return (
-                // Assemble quotient from half-word digits
-                quotient: qh &<< n_2 | ql,
-                // Compute remainder (we can re-use the residual to make this simpler).
-                remainder: ((residual &- ql &* vh) &<< n_2 | ul & mask) &>> lz
-            )
-        }
-        // Helper function: performs a (1½ word)/word division to produce a
-        // half quotient word q. We'll need to use this twice to generate the
-        // full quotient.
-        //
-        // high is the high word of the quotient for this sub-division.
-        // low is the low half-word of the quotient for this sub-division (the
-        //     high half of low must be zero).
-        //
-        // returns the quotient half-word digit. In a more general setting, this
-        // computed digit might be one too large, which has to be accounted for
-        // later on (see Knuth, Algorithm D), but when the divisor is only two
-        // half-words (as here), that can never happen, because we use the full
-        // divisor in the check for the while loop.
-        func generateHalfDigit(high: Self, low: Self) -> Self {
-            // Get q̂ satisfying a = vh q̂ + r̂ with 0 ≤ r̂ < vh:
-            var (q̂, r̂) = high.quotientAndRemainder(dividingBy: vh)
-            // Knuth's "Theorem A" establishes that q̂ is an approximation to
-            // the quotient digit q, satisfying q ≤ q̂ ≤ q + 2. We adjust it
-            // downward as needed until we have the correct q.
-            while q̂ > mask || q̂ &* vl > (r̂ &<< n_2 | low) {
-                q̂ &-= _1
-                r̂ &+= vh
-                if r̂ > mask { break }
-            }
-            return q̂
-        }
-
-        // Generate the first quotient digit, subtract off its product with the
-        // divisor to generate the residual, then compute the second quotient
-        // digit from that.
-        let qh = generateHalfDigit(high: uh, low: ul &>> n_2)
-        let residual = (uh &<< n_2 | ul &>> n_2) &- (qh &* v)
-        let ql = generateHalfDigit(high: residual, low: ul & mask)
-
-        return (
-            // Assemble quotient from half-word digits
-            quotient: qh &<< n_2 | ql,
-            // Compute remainder (we can re-use the residual to make this simpler).
-            remainder: ((residual &<< n_2 | ul & mask) &- (ql &* v)) &>> lz
-        )
-    }
-
-    /// Returns the bit stored at the given position for the provided double width UInt128 input.
-    ///
-    /// - parameter at: position to grab bit value from.
-    /// - parameter for: the double width UInt128 data value to grab the
-    ///   bit from.
-    /// - returns: single bit stored in a UInt128 value.
-    @inlinable
-    static func _bitFromDoubleWidth(
-        at bitPosition: Int,
-        for input: (high: Self, low: Self)
-    ) -> Self {
-        let _1 = Self(_low: 1, _high: 0)
-        switch bitPosition {
-        case 0:
-            return input.low & _1
-        case 1...127:
-            return input.low >> bitPosition & _1
-        case 128:
-            return input.high & _1
-        default:
-            let _128 = Self(_low: 128, _high: 0)
-            let bitPosition = Self(_low: UInt64(bitPosition), _high: 0)
-            let shift = bitPosition - _128
-            return input.high >> shift & _1
-        }
-    }
-
-    @inlinable
     public func remainderReportingOverflow(
         dividingBy rhs: Self
     ) -> (partialValue: Self, overflow: Bool) {
@@ -396,7 +254,6 @@ extension UnsignedInt128 {
         return (remainder, false)
     }
 
-    @inlinable
     public init(bigEndian value: Self) {
         #if _endian(big)
         self = value
@@ -405,12 +262,27 @@ extension UnsignedInt128 {
         #endif
     }
 
-    @inlinable
+    public init(littleEndian value: Self) {
+        #if _endian(little)
+        self = value
+        #else
+        self = value.byteSwapped
+        #endif
+    }
+
     public var littleEndian: Self {
         #if _endian(little)
         return self
         #else
-        return byteSwapped
+        return self.byteSwapped
+        #endif
+    }
+
+    public var bigEndian: Self {
+        #if _endian(big)
+        return self
+        #else
+        return self.byteSwapped
         #endif
     }
 

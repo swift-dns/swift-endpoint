@@ -8,11 +8,14 @@
 /// In a future minor version, this whole type might be turned into a `typealias` for `UInt128`.
 /// In a future major version, this whole type might be simply replaced by Swift's own `UInt128`.
 ///
-/// This type conforms to all that `UInt128` currently does.
+/// This type conforms to all that `UInt128` currently does, other than `AtomicRepresentable`.
 /// The following conformances on macOS are only available on macOS 15 or higher:
-/// `BinaryInteger`, `FixedWidthInteger`, `Numeric`, `UnsignedInteger`, `AtomicRepresentable`, `ExpressibleByIntegerLiteral`.
+/// `BinaryInteger`, `FixedWidthInteger`, `Numeric`, `UnsignedInteger`, `ExpressibleByIntegerLiteral`.
 /// Note that for the most part the implementations are available on all macOS versions, but the mere conformances are
-/// limited to macOS 15 or higher. On other platforms the conformances are always available.
+/// limited to macOS 15 or higher.
+/// This might make some behavior or some synthesized functions unavailable, but most functionality should still be available.
+/// On other platforms the conformances are always available.
+///
 ///
 /// Parts of the implementation is inspired or copy-pasted from either https://github.com/Jitsusama/UInt128 or stdlib.
 public struct UnsignedInt128 {

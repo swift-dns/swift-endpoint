@@ -1,4 +1,5 @@
 import IPAddress
+import Synchronization
 import Testing
 
 @Suite
@@ -10,6 +11,15 @@ struct UnsignedInt128Tests {
         #expect(UnsignedInt128.min == UInt128.min)
         #expect(UnsignedInt128.zero == UInt128.zero)
         #expect(UnsignedInt128.isSigned == UInt128.isSigned)
+    }
+
+    @available(swiftEndpointApplePlatforms 15, *)
+    @Test func `verify integer literal init against UInt128`() {
+        for lhs in generateRandomUInt128s() {
+            let uint128 = UInt128(integerLiteral: lhs)
+            let unsignedInt128 = UnsignedInt128(integerLiteral: lhs)
+            #expect(uint128 == unsignedInt128)
+        }
     }
 
     @available(swiftEndpointApplePlatforms 15, *)
@@ -165,6 +175,10 @@ struct UnsignedInt128Tests {
 
     @available(swiftEndpointApplePlatforms 15, *)
     @Test func `verify equality-operator against UInt128`() {
+        #expect(UnsignedInt128(_low: 0, _high: 0) == UnsignedInt128(_low: 0, _high: 0))
+        #expect(UnsignedInt128(_low: .max, _high: .max) == UnsignedInt128(_low: .max, _high: .max))
+        #expect(UnsignedInt128(_low: 19, _high: 7) == UnsignedInt128(_low: 19, _high: 7))
+
         for (lhs, rhs) in generateRandomUInt128Pairs() {
             if lhs == rhs { continue }
 
@@ -194,6 +208,23 @@ struct UnsignedInt128Tests {
             #expect(rhs == unsignedRhs)
             #expect(lhs != unsignedRhs)
             #expect(rhs != unsignedLhs)
+        }
+    }
+
+    @available(swiftEndpointApplePlatforms 15, *)
+    @Test func `verify strideable conformance against UInt128`() {
+        for (lhs, rhs) in generateRandomUInt128Pairs(range: 0...UInt128(Int32.max)) {
+            do {
+                let uint128 = lhs.distance(to: rhs)
+                let unsignedInt128 = UnsignedInt128(lhs).distance(to: UnsignedInt128(rhs))
+                #expect(uint128 == unsignedInt128)
+            }
+
+            do {
+                let uint128 = lhs.advanced(by: Int(rhs))
+                let unsignedInt128 = UnsignedInt128(lhs).advanced(by: Int(rhs))
+                #expect(uint128 == unsignedInt128)
+            }
         }
     }
 
@@ -554,17 +585,18 @@ struct UnsignedInt128Tests {
 
     @available(swiftEndpointApplePlatforms 15, *)
     private func generateRandomUInt128Pairs(
-        randomCount: Int = 10_000
+        randomCount: Int = 10_000,
+        range: ClosedRange<UInt128> = .min ... .max
     ) -> some Sequence<(UInt128, UInt128)> {
         typealias UInt128Pair = (UInt128, UInt128)
         let randomPairs: [UInt128Pair] = (0..<randomCount).map { _ in
-            (UInt128.random(in: .min ... .max), UInt128.random(in: .min ... .max))
+            (UInt128.random(in: range), UInt128.random(in: range))
         }
         let zeros1: [UInt128Pair] = (0..<100).map { _ in
-            (0, UInt128.random(in: .min ... .max))
+            (0, UInt128.random(in: range))
         }
         let zeros2: [UInt128Pair] = (0..<100).map { _ in
-            (UInt128.random(in: .min ... .max), 0)
+            (UInt128.random(in: range), 0)
         }
         let zeros3: [UInt128Pair] = [(0, 0)]
         let edgeCases: [UInt128Pair] = [
@@ -573,7 +605,12 @@ struct UnsignedInt128Tests {
             (.max, .max - 1), (.max - 1, .max),
             (1, .max), (.max, 1),
         ]
-        let result = randomPairs + zeros1 + zeros2 + zeros3 + edgeCases
+        let result: [UInt128Pair] =
+            if range.contains(.max), range.contains(.min) {
+                randomPairs + zeros1 + zeros2 + zeros3 + edgeCases
+            } else {
+                randomPairs + zeros1 + zeros2 + zeros3
+            }
         return result
     }
 

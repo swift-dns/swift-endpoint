@@ -344,6 +344,15 @@ struct UnsignedInt128Tests {
             #expect(uint128.overflow == unsignedInt128.overflow)
 
             do {
+                let uint128 = lhs.multipliedFullWidth(by: rhs)
+                let unsignedInt128 = UnsignedInt128(lhs).multipliedFullWidth(
+                    by: UnsignedInt128(rhs)
+                )
+                #expect(uint128.high == unsignedInt128.high)
+                #expect(uint128.low == unsignedInt128.low)
+            }
+
+            do {
                 let uint128 = lhs &* rhs
                 let unsignedInt128 = UnsignedInt128(lhs) &* UnsignedInt128(rhs)
                 #expect(uint128 == unsignedInt128)

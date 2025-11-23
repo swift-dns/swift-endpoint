@@ -18,7 +18,7 @@ public import Darwin
 #error("The String+IPv6Address module was unable to identify your C library.")
 #endif
 
-@available(swiftEndpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension IPv6Address: CustomStringConvertible {
     /// The textual representation of an IPv6 address.
     /// That is, 8 16-bits (2-bytes) separated by `:`, enclosed in `[]`, while using
@@ -35,7 +35,7 @@ extension IPv6Address: CustomStringConvertible {
     }
 }
 
-@available(swiftEndpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension IPv6Address: CustomDebugStringConvertible {
     /// The textual representation of an IPv6 address appropriate for debugging.
     /// That is, 8 16-bits (2-bytes) separated by `:`, enclosed in `[]`, while using
@@ -48,7 +48,7 @@ extension IPv6Address: CustomDebugStringConvertible {
     }
 }
 
-@available(swiftEndpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension IPv6Address {
     @inlinable
     @inline(__always)
@@ -59,7 +59,7 @@ extension IPv6Address {
         ) -> Buffer
     ) -> Buffer {
         /// Short-circuit "0".
-        if self.address == 0 {
+        if self.address == .zero {
             return writingToUnsafeMutableBufferPointerOfUInt8(4) { ptr in
                 ptr[0] = .asciiLeftSquareBracket
                 ptr[1] = .asciiColon
@@ -234,7 +234,7 @@ extension IPv6Address {
     }
 }
 
-@available(swiftEndpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension IPv6Address: LosslessStringConvertible {
     /// Initialize an IPv6 address from its textual representation.
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
@@ -337,7 +337,7 @@ extension IPv6Address: LosslessStringConvertible {
             }
         }
 
-        self.init(0)
+        self.init(.zero)
 
         /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics here
         /// and write backwards.

@@ -55,7 +55,7 @@
 /// [IETF RFC 5952].
 ///
 /// [IETF RFC 5952]: https://tools.ietf.org/html/rfc5952
-@available(swiftEndpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 13, *)
 public struct IPv6Address: Sendable, Hashable {
     /// The byte size of an IPv6.
     public static var size: Int {
@@ -63,7 +63,7 @@ public struct IPv6Address: Sendable, Hashable {
     }
 
     /// The underlying 128 bits (16 bytes) representing this IPv6 address.
-    public var address: UInt128
+    public var address: UnsignedInt128
 
     /// Whether this address is the IPv6 Loopback address, known as localhost, or not.
     /// Equivalent to `::1` or `0:0:0:0:0:0:0:1` in IPv6 description format.
@@ -94,8 +94,18 @@ public struct IPv6Address: Sendable, Hashable {
     /// For example `IPv6Address(0x0102_0304_0506_0708_090A_0B0C_0D0E_0F10)` will
     /// result in an IP address equal to `0102:0304:0506:0708:090A:0B0C:0D0E:0F10`.
     /// Or `IPv6Address(0x0102)` will result in an IP address equal to `::0102`.
-    public init(_ address: UInt128) {
+    public init(_ address: UnsignedInt128) {
         self.address = address
+    }
+
+    /// Initialize an `IPv6Address` from its raw 128-bit unsigned integer representation.
+    /// For example `IPv6Address(0x0102_0304_0506_0708_090A_0B0C_0D0E_0F10)` will
+    /// result in an IP address equal to `0102:0304:0506:0708:090A:0B0C:0D0E:0F10`.
+    /// Or `IPv6Address(0x0102)` will result in an IP address equal to `::0102`.
+    @available(swiftEndpointApplePlatforms 15, *)
+    @_disfavoredOverload
+    public init(_ address: UInt128) {
+        self.address = UnsignedInt128(address)
     }
 
     /// Initialize an IPv6 from the 8 16-bits (2-bytes) representing it.
@@ -112,7 +122,7 @@ public struct IPv6Address: Sendable, Hashable {
         _ _7: UInt16,
         _ _8: UInt16
     ) {
-        self.address = 0
+        self.address = .zero
         withUnsafeMutableBytes(of: &self.address) { ptr in
             ptr[15] = UInt8(_1 &>> 8)
             ptr[14] = UInt8(truncatingIfNeeded: _1)
@@ -155,7 +165,7 @@ public struct IPv6Address: Sendable, Hashable {
         _ _15: UInt8,
         _ _16: UInt8
     ) {
-        self.address = 0
+        self.address = .zero
         withUnsafeMutableBytes(of: &self.address) { ptr in
             ptr[15] = _1
             ptr[14] = _2
@@ -177,7 +187,7 @@ public struct IPv6Address: Sendable, Hashable {
     }
 }
 
-@available(swiftEndpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension IPv6Address: _IPAddressProtocol {}
 
 @available(swiftEndpointApplePlatforms 15, *)
@@ -187,11 +197,11 @@ extension IPv6Address: ExpressibleByIntegerLiteral {
     /// result in an IP address equal to `0102:0304:0506:0708:090A:0B0C:0D0E:0F10`.
     /// Or `IPv6Address(0x0102)` will result in an IP address equal to `::0102`.
     public init(integerLiteral value: UInt128) {
-        self.address = value
+        self.address = UnsignedInt128(value)
     }
 }
 
-@available(swiftEndpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension IPv6Address {
     /// The 16 bytes representing this IPv6 address.
     @inlinable

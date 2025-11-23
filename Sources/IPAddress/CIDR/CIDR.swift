@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 13, *)
 public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
 
     /// The underlying type of the IP address.
@@ -7,7 +7,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     /// There is no need to assume any other type will be added in the future, as that would
     /// require a new IP version to be introduced, in which case it'll take years before that
     /// new IP version is adopted, and at that point we'll just have released a new major version.
-    public typealias IntegerLiteralType = IPAddressType.IntegerLiteralType
+    public typealias AddressValueType = IPAddressType.AddressValueType
 
     /// The IP address that is desired after the masking happens.
     /// Of type `IPv4Address` or `IPv6Address`.
@@ -29,7 +29,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     /// initial 8 bits, is within this CIDR block. In other words, any address starting with `127`.
     /// in 0xFF00::/120, the prefix length is 120.
     public var prefixLength: Int {
-        IntegerLiteralType.bitWidth - self.mask.address.trailingZeroBitCount
+        AddressValueType.bitWidth - self.mask.address.trailingZeroBitCount
     }
 
     /// Create a new CIDR with the given prefix and mask.
@@ -52,7 +52,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     public init(prefix: IPAddressType, uncheckedMask mask: IPAddressType) {
         assert(Self.makeMaskBasedOn(countOfTrailingZerosOf: mask) == mask)
 
-        self.prefix = IPAddressType(integerLiteral: prefix.address & mask.address)
+        self.prefix = IPAddressType(prefix.address & mask.address)
         self.mask = mask
     }
 
@@ -104,30 +104,30 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     ///     which means 32 for IPv4 or 128 for IPv6.
     @inlinable
     package static func makeMaskBasedOn(prefixLength: UInt8) -> IPAddressType {
-        let bitWidth = UInt8(IntegerLiteralType.bitWidth)
+        let bitWidth = UInt8(AddressValueType.bitWidth)
         if prefixLength >= bitWidth {
-            return IPAddressType(integerLiteral: IntegerLiteralType.max)
+            return IPAddressType(AddressValueType.max)
         }
-        let mask = ~(IntegerLiteralType.max &>> prefixLength)
-        return IPAddressType(integerLiteral: mask)
+        let mask = ~(AddressValueType.max &>> prefixLength)
+        return IPAddressType(mask)
     }
 
     /// Makes a mask based on the number of trailing zeros.
     /// Parameters:
     ///   - countOfTrailingZeros: The number of trailing zeros to have.
-    ///     This MUST NOT be greater than the bit width of `IntegerLiteralType`,
+    ///     This MUST NOT be greater than the bit width of `AddressValueType`,
     ///     which means 32 for IPv4 or 128 for IPv6.
     @inlinable
     static func makeMaskBasedOn(countOfTrailingZerosOf ip: IPAddressType) -> IPAddressType {
         let countOfTrailingZeros = ip.address.trailingZeroBitCount
-        if countOfTrailingZeros == IntegerLiteralType.bitWidth {
-            return 0
+        if countOfTrailingZeros == AddressValueType.bitWidth {
+            return IPAddressType(.zero)
         } else {
-            /// ~IntegerLiteralType((IntegerLiteralType(1) &<< countOfTrailingZeros) &- 1)
+            /// ~AddressValueType((AddressValueType(1) &<< countOfTrailingZeros) &- 1)
             /// also works. The compiler optimizes these anyway, so doesn't matter which
             /// one to use.
-            let mask = (IntegerLiteralType.max &>> countOfTrailingZeros) &<< countOfTrailingZeros
-            return IPAddressType(integerLiteral: mask)
+            let mask = (AddressValueType.max &>> countOfTrailingZeros) &<< countOfTrailingZeros
+            return IPAddressType(mask)
         }
     }
 

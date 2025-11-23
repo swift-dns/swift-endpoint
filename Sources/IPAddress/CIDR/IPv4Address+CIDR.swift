@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 15, *)
+@available(swiftEndpointApplePlatforms 13, *)
 extension CIDR<IPv4Address> {
     /// Representing 127.0.0.0/8
     @inlinable

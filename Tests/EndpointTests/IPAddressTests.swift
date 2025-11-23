@@ -103,7 +103,7 @@ struct IPAddressTests {
         #expect(ipv4 == IPv4Address(ipv6: ipv6))
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(swiftEndpointApplePlatforms 13, *)
     @Test(
         arguments: [(IPv4Address, String, (@Sendable (IPv4Address) -> Bool))]([
             (IPv4Address(127, 0, 0, 0), "isLoopback", \.isLoopback),
@@ -176,7 +176,8 @@ struct IPAddressTests {
             0x11,
         )
         #expect(ip.address == ipWithUInt16.address)
-        #expect(ip.address == 0x0102_F3F4_1516_7080_90A0_CBBC_0D0E_0F11)
+        let expectedAddress: UnsignedInt128 = 0x0102_F3F4_1516_7080_90A0_CBBC_0D0E_0F11
+        #expect(ip.address == expectedAddress)
 
         #expect(ip.bytes.0 == 0x01)
         #expect(ip.bytes.1 == 0x02)

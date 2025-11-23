@@ -21,7 +21,34 @@ struct UnsignedInt128Tests {
             #expect(uint128.trailingZeroBitCount == unsignedInt128.trailingZeroBitCount)
             #expect(uint128.nonzeroBitCount == unsignedInt128.nonzeroBitCount)
             #expect(uint128.byteSwapped == unsignedInt128.byteSwapped)
+            #expect(uint128.littleEndian == unsignedInt128.littleEndian)
+            #expect(uint128.bigEndian == unsignedInt128.bigEndian)
             #expect(uint128.magnitude == unsignedInt128.magnitude)
+            #expect(
+                uint128.customMirror.children.count
+                    == unsignedInt128.customMirror.children.count
+            )
+            #expect(
+                uint128.customMirror.children.map(\.label)
+                    == unsignedInt128.customMirror.children.map(\.label)
+            )
+        }
+    }
+
+    @available(swiftEndpointApplePlatforms 15, *)
+    @Test func `verify description against UInt128`() {
+        let randomUInt128s: [UInt128] = (4..<512).map {
+            let bitCount = $0 / 4
+            let randomBits = (0..<bitCount)
+                .map { _ in Bool.random() ? "0" : "1" }
+                .joined()
+            let random = UInt128(randomBits, radix: 2)!
+            return random
+        }
+        for lhs in randomUInt128s {
+            let uint128 = UInt128(lhs)
+            let unsignedInt128 = UnsignedInt128(lhs)
+            #expect(uint128.description == unsignedInt128.description)
         }
     }
 
@@ -53,6 +80,34 @@ struct UnsignedInt128Tests {
                 unsignedInt128.words.index(after: $0)
             }
             #expect(uint128WordIndexAfter == unsignedInt128WordIndexAfter)
+        }
+    }
+
+    @available(swiftEndpointApplePlatforms 15, *)
+    @Test func `verify init(_ description: String) against UInt128`() throws {
+        for lhs in generateRandomUInt128s(randomCount: 1000) {
+            let desc = lhs.description
+            let uint128 = try #require(UInt128(desc))
+            let unsignedInt128 = try #require(UnsignedInt128(desc))
+            #expect(uint128 == unsignedInt128)
+            #expect(uint128 == lhs)
+        }
+    }
+
+    @available(swiftEndpointApplePlatforms 15, *)
+    @Test func `verify init(big/littleEndian:) against UInt128`() throws {
+        for lhs in generateRandomUInt128s() {
+            do {
+                let uint128 = UInt128(bigEndian: lhs)
+                let unsignedInt128 = UnsignedInt128(bigEndian: UnsignedInt128(lhs))
+                #expect(uint128 == unsignedInt128)
+            }
+
+            do {
+                let uint128 = UInt128(littleEndian: lhs)
+                let unsignedInt128 = UnsignedInt128(littleEndian: UnsignedInt128(lhs))
+                #expect(uint128 == unsignedInt128)
+            }
         }
     }
 
@@ -494,34 +549,6 @@ struct UnsignedInt128Tests {
                 #expect(uint128 == unsignedInt128)
                 #expect(uint128 == unsignedInt128_2)
             }
-        }
-    }
-
-    @available(swiftEndpointApplePlatforms 15, *)
-    @Test func `verify init(big/littleEndian:) against UInt128`() throws {
-        for lhs in generateRandomUInt128s() {
-            do {
-                let uint128 = UInt128(bigEndian: lhs)
-                let unsignedInt128 = UnsignedInt128(bigEndian: UnsignedInt128(lhs))
-                #expect(uint128 == unsignedInt128)
-            }
-
-            do {
-                let uint128 = UInt128(littleEndian: lhs)
-                let unsignedInt128 = UnsignedInt128(littleEndian: UnsignedInt128(lhs))
-                #expect(uint128 == unsignedInt128)
-            }
-        }
-    }
-
-    @available(swiftEndpointApplePlatforms 15, *)
-    @Test func `verify init(_ description: String) against UInt128`() throws {
-        for lhs in generateRandomUInt128s(randomCount: 1000) {
-            let desc = lhs.description
-            let uint128 = try #require(UInt128(desc))
-            let unsignedInt128 = try #require(UnsignedInt128(desc))
-            #expect(uint128 == unsignedInt128)
-            #expect(uint128 == lhs)
         }
     }
 

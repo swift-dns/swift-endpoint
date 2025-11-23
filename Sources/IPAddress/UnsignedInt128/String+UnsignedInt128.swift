@@ -1,20 +1,37 @@
+@available(swiftEndpointApplePlatforms 13, *)
 extension UnsignedInt128: CustomStringConvertible {
     @inlinable
     public var description: String {
-        if self._high == 0 {
-            return self._low.description
+        /// Accurate approx amount of base-10 digits, based on the number of bits
+        /// Simple logarithm trick:
+        /// `2^x = 10^y` -> `x * log10(2) = y` -> `log10(2) = y / x` -> `0.301 ~= y / x`
+        let significantBits = 128 - Double(self.leadingZeroBitCount)
+        /// This could possibly be 1 more than needed
+        let approximation = Int((significantBits * 301 / 1000).rounded(.up))
+        let toReserve = Swift.max(approximation, 1)
+        var value = self
+        let _10 = Self(_low: 10, _high: 0)
+        var idx = toReserve - 1
+        var string = String(unsafeUninitializedCapacity: toReserve) { buffer in
+            while value >= _10 {
+                let tenth = value / _10
+                let remainder = value - (tenth * _10)
+                let digit = remainder._low
+                let ascii = UInt8(digit) &+ UInt8.ascii0
+                value = tenth
+                buffer[idx] = ascii
+                idx &-= 1
+            }
+            let ascii = UInt8(value._low) &+ UInt8.ascii0
+            buffer[idx] = ascii
+            idx &-= 1
+            return toReserve - Swift.max(idx, 0)
         }
-
-        let lowDesc = self._low.description
-        let highDesc = self._high.description
-        let zeros = String(repeating: "0", count: 64 - lowDesc.count)
-        return "\(highDesc)\(zeros)\(lowDesc)"
+        if idx == 0 {
+            string.removeFirst()
+        }
+        return string
     }
-}
-
-@available(swiftEndpointApplePlatforms 13, *)
-extension UnsignedInt128: LosslessStringConvertible {
-    // @inlinable
     public init?(_ description: String) {
         var description = description
         guard

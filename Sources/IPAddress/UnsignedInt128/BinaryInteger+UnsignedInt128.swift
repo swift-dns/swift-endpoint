@@ -74,33 +74,38 @@ extension UnsignedInt128 {
             return .zero
         }
 
+        /// This algorithm works based on knowledge of that all numbers in range of
+        /// `0 ... (2^128 - 1)` are producible by summing up powers of 2 from 0 to 127.
+        /// For example `3 == 2^0 + 2^1`. Or `111 == 2^6 + 2^5 + 2^3 + 2^2 + 2^1 + 2^0`.
+        ///
+        /// Therefore we can start from `2^127` and on each step check if the `2^n` fits the result.
+        /// On each step we decrement `n` by 1 and continue the loop until we know we have the result.
+
         var result = Self.zero
-        var step = Self(_low: 1, _high: 0)
-        var stepIsGoingUp = true
+        /// `rhs != 0` & `lhs < rhs` -> `lhs >= 1` -> `lhs.leadingZeroBitCount <= 127`
+        /// Therefore the `shift >= 0`
+        let shift = 127 &- lhs.leadingZeroBitCount
+        var step = Self(_low: 1, _high: 0) &<< shift
 
-        while step != .zero, result != lhs {
-            let nextResult = result.addingReportingOverflow(step)
-            if nextResult.overflow {
-                stepIsGoingUp = false
-                step &>>= 1
-                continue
-            }
-            let multiplied = nextResult.partialValue.multipliedReportingOverflow(by: rhs)
-            if multiplied.overflow {
-                stepIsGoingUp = false
-                step &>>= 1
-                continue
-            }
+        var lhs = lhs
 
-            if multiplied.partialValue <= lhs {
-                result = nextResult.partialValue
-            } else {
-                stepIsGoingUp = false
-                step &>>= 1
-            }
-            if stepIsGoingUp {
-                step &<<= 1
-                step |= Self(_low: 1, _high: 0)
+        let multiplied = step.multipliedReportingOverflow(by: rhs)
+        if !multiplied.overflow,
+            multiplied.partialValue <= lhs
+        {
+            result &+= step
+            lhs &-= multiplied.partialValue
+        }
+
+        while step != Self(_low: 1, _high: 0), lhs != .zero {
+            step >>= 1
+
+            let multiplied = step.multipliedReportingOverflow(by: rhs)
+            if !multiplied.overflow,
+                multiplied.partialValue <= lhs
+            {
+                result &+= step
+                lhs &-= multiplied.partialValue
             }
         }
 

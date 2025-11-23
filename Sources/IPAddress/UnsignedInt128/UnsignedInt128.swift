@@ -15,9 +15,6 @@
 /// limited to macOS 15 or higher.
 /// This might make some behavior or some synthesized functions unavailable, but most functionality should still be available.
 /// On other platforms the conformances are always available.
-///
-///
-/// Parts of the implementation is inspired or copy-pasted from either https://github.com/Jitsusama/UInt128 or stdlib.
 public struct UnsignedInt128 {
     /// The least significant 64 bits of the value.
     public var _low: UInt64

@@ -83,7 +83,8 @@ extension UnsignedInt128 {
 
         var result = Self.zero
         /// `rhs != 0` & `lhs < rhs` -> `lhs >= 1` -> `lhs.leadingZeroBitCount <= 127`
-        /// Therefore the `shift >= 0`
+        /// -> `127 - lhs.leadingZeroBitCount >= 0` -> `shift >= 0`
+        /// So the `shift` below is guaranteed to be greater than or equal to 0.
         let shift = 127 &- lhs.leadingZeroBitCount
         var step = Self(_low: 1, _high: 0) &<< shift
 

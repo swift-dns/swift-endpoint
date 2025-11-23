@@ -20,34 +20,6 @@ extension UnsignedInt128 {
         self = value
     }
 
-    /// Takes a variable amount of 64bit Unsigned Integers and adds them together,
-    /// tracking the total amount of overflows that occurred during addition.
-    ///
-    /// - Parameter addends:
-    ///      Variably sized list of UInt64 values.
-    /// - Returns:
-    ///      A tuple containing the truncated result and a count of the total
-    ///      amount of overflows that occurred during addition.
-    @inlinable
-    static func _variadicAdditionWithOverflowCount(
-        _ addends: UInt64...
-    ) -> (
-        truncatedValue: UInt64, overflowCount: UInt64
-    ) {
-        var sum: UInt64 = 0
-        var overflowCount: UInt64 = 0
-
-        for addend in addends {
-            let interimSum = sum.addingReportingOverflow(addend)
-            if interimSum.overflow {
-                overflowCount += 1
-            }
-            sum = interimSum.partialValue
-        }
-
-        return (truncatedValue: sum, overflowCount: overflowCount)
-    }
-
     @inlinable
     public static func * (lhs: Self, rhs: Self) -> Self {
         let (partialValue, overflow) = lhs.multipliedReportingOverflow(by: rhs)

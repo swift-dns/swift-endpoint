@@ -48,8 +48,8 @@ extension CIDR<IPv6Address> {
         Self(
             prefix: IPv6Address(
                 UnsignedInt128(
-                    _low: 0x0000_0000_0000_0000,
-                    _high: 0x0000_FFFF_0000_0000
+                    _low: 0x0000_FFFF_0000_0000,
+                    _high: 0x0000_0000_0000_0000
                 )
             ),
             prefixLength: 96

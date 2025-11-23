@@ -764,7 +764,7 @@ struct CIDRTests {
                 prefixLength: bitCount
             )
 
-            var cidrPrefixBits = String(cidr.prefix.address, radix: 2)
+            var cidrPrefixBits = String(value: cidr.prefix.address, radix: 2)
             let remainingBits = Int(bitWidth) - cidrPrefixBits.count
             cidrPrefixBits = String(repeating: "0", count: remainingBits) + cidrPrefixBits
             let matchingBits = cidrPrefixBits.prefix(Int(bitCount))
@@ -835,9 +835,10 @@ extension _IPAddressProtocolAddressValueType {
     }
 }
 
+@available(swiftEndpointApplePlatforms 15, *)
 extension String {
     @_disfavoredOverload
-    fileprivate init<T: _IPAddressProtocolAddressValueType>(_ value: T, radix: Int) {
+    fileprivate init<T: _IPAddressProtocolAddressValueType>(value: T, radix: Int) {
         switch T.self {
         case is UInt32.Type:
             self = String(value as! UInt32, radix: radix)

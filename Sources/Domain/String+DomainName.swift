@@ -15,7 +15,7 @@ extension DomainName: CustomStringConvertible {
 
 @available(swiftEndpointApplePlatforms 13, *)
 extension DomainName: CustomDebugStringConvertible {
-    /// Source-accurate description of the domain name.
+    /// Source-accurate description of the domain name, including the possible root label separator.
     /// Example: `"mahdibm.com."`
     /// Example: `"xn--xkrr14bows.xn--fiqs8s."` (for `"新华网.中国."`)
     @inlinable

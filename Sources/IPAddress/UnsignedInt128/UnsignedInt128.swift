@@ -41,7 +41,7 @@ extension UnsignedInt128: Equatable {
     public static func == (lhs: Self, rhs: some BinaryInteger) -> Bool {
         lhs._low == UInt64(truncatingIfNeeded: rhs)
             && lhs._high == UInt64(truncatingIfNeeded: rhs >> 64)
-            && rhs >> 128 == 0
+            && (rhs.bitWidth <= 128 || rhs >> 128 == 0)
     }
 
     @inlinable

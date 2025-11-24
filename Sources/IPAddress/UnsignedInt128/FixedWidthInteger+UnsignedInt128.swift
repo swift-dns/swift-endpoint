@@ -98,18 +98,111 @@ extension UnsignedInt128 {
 
     @inlinable
     public func multipliedReportingOverflow(by rhs: Self) -> (partialValue: Self, overflow: Bool) {
-        let h1 = self._high.multipliedReportingOverflow(by: rhs._low)
-        let h2 = self._low.multipliedReportingOverflow(by: rhs._high)
-        let h3 = h1.partialValue.addingReportingOverflow(h2.partialValue)
-        let (h, l) = self._low.multipliedFullWidth(by: rhs._low)
-        let high = h3.partialValue.addingReportingOverflow(h)
+        /// We declare that:
+        /// `self == (_high: h0, _low: l0)`
+        /// `rhs == (_high: h1, _low: l1)`
+        ///
+        /// Assuming `B == 2^64`:
+        /// `self * rhs`
+        /// == `(h0*B + l0) * (h1*B + l1)`
+        /// == `h0*h1*B^2 + (h0*l1 + h1*l0)*B + l0*l1`
+        ///
+        /// So we can say that:
+        /// `l0*l1` is the new `_low`.
+        /// Due to `*B`, `(h0*l1 + h1*l0)` is the new `_high`.
+        ///
+        /// We know that `B == 2^64`. Therefore if `h0*h1 > 0`, we will have `h0*h1*B^2 > 2^128`.
+        /// So we can conclude that if `h0*h1 > 0`, we will have overflow.
+        /// Therefore we skip multiplying `h0*h1*B^2` altogether.
+        /// In the end, we check that `h0*h1` is `0` to ensure no overflow.
+
+        let (h0, l0) = (self._high, self._low)
+        let (h1, l1) = (rhs._high, rhs._low)
+
+        let h0l1 = h0.multipliedReportingOverflow(by: l1)
+        let h1l0 = h1.multipliedReportingOverflow(by: l0)
+        let h0l1_h1l0 = h0l1.partialValue.addingReportingOverflow(h1l0.partialValue)
+
+        let (l0l1_carryOver, l0l1) = l0.multipliedFullWidth(by: l1)
+
+        let h0l1_h1l0_w_carryOver = h0l1_h1l0.partialValue.addingReportingOverflow(
+            l0l1_carryOver
+        )
+
+        let h0h1B_isNotZero = h0 != 0 && h1 != 0
+
         let overflow =
-            (self._high != 0 && rhs._high != 0)
-            || h1.overflow
-            || h2.overflow
-            || h3.overflow
-            || high.overflow
-        return (Self(_low: l, _high: high.partialValue), overflow)
+            h0h1B_isNotZero
+            || h0l1.overflow
+            || h1l0.overflow
+            || h0l1_h1l0.overflow
+            || h0l1_h1l0_w_carryOver.overflow
+        return (
+            partialValue: Self(
+                _low: l0l1,
+                _high: h0l1_h1l0_w_carryOver.partialValue
+            ),
+            overflow: overflow
+        )
+    }
+
+    public func multipliedFullWidth(by rhs: Self) -> (high: Self, low: Self) {
+        /// We return (high: Self, low: Self). Let's name them like so:
+        /// `high == (_high: H0, _low: L0)`
+        /// `low == (_high: H1, _low: L1)`
+        ///
+        /// Also:
+        /// `self == (_high: h0, _low: l0)`
+        /// `rhs == (_high: h1, _low: l1)`
+        ///
+        /// Assuming `B == 2^64`:
+        /// `self * rhs`
+        /// == `(h0*B + l0) * (h1*B + l1)`
+        /// == `h0*h1*B^2 + (h0*l1 + h1*l0)*B + l0*l1`
+        ///
+        /// So we can then say that:
+        /// `l0*l1` is the new L1 and will carry over to H1.
+        /// Due to `*B`, `(h0*l1 + h1*l0)` is the new H1 and will carry over to L0 and H0.
+        /// Due to `*B^2`, `h0*h1` is the new L0 and will carry over to H0.
+
+        let (h0, l0) = (self._high, self._low)
+        let (h1, l1) = (rhs._high, rhs._low)
+
+        let (L1_carryOver, L1) = l0.multipliedFullWidth(by: l1)
+
+        let (h0l1_carryOver, h0l1) = h0.multipliedFullWidth(by: l1)
+        let (h1l0_carryOver, h1l0) = h1.multipliedFullWidth(by: l0)
+        let h0l1_h1l0 = h0l1.addingReportingOverflow(h1l0)
+        let h0l1_h1l0_w_carryOver = h0l1_h1l0.partialValue.addingReportingOverflow(L1_carryOver)
+        let H1 = h0l1_h1l0_w_carryOver.partialValue
+
+        var (H1_carryOver, H1_carryOver_overflow) = h0l1_carryOver.addingReportingOverflow(
+            h1l0_carryOver
+        )
+        if h0l1_h1l0.overflow {
+            H1_carryOver += 1
+        }
+        if h0l1_h1l0_w_carryOver.overflow {
+            H1_carryOver += 1
+        }
+
+        let (h0h1_carryOver, h0h1) = h0.multipliedFullWidth(by: h1)
+        let h0h1_w_carryOver = h0h1.addingReportingOverflow(H1_carryOver)
+        let L0 = h0h1_w_carryOver.partialValue
+
+        var L0_carryOver = h0h1_carryOver
+        if H1_carryOver_overflow {
+            L0_carryOver += 1
+        }
+        if h0h1_w_carryOver.overflow {
+            L0_carryOver += 1
+        }
+        let H0 = L0_carryOver
+
+        return (
+            high: Self(_low: L0, _high: H0),
+            low: Self(_low: L1, _high: H1)
+        )
     }
 
     @inlinable

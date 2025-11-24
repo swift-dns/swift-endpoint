@@ -95,7 +95,7 @@ struct UnsignedInt128Tests {
 
     @available(swiftEndpointApplePlatforms 15, *)
     @Test func `verify init(_ description: String) against UInt128`() throws {
-        for lhs in generateRandomUInt128s(randomCount: 1000) {
+        for lhs in generateRandomUInt128s() {
             let desc = lhs.description
             let uint128 = try #require(UInt128(desc))
             let unsignedInt128 = try #require(UnsignedInt128(desc))
@@ -508,7 +508,7 @@ struct UnsignedInt128Tests {
 
     @available(swiftEndpointApplePlatforms 15, *)
     @Test func `verify left bit-shift against UInt128`() {
-        for (lhs, rhs) in generateRandomUInt128Pairs(randomCount: 500) {
+        for (lhs, rhs) in generateRandomUInt128Pairs() {
             do {
                 let uint128 = lhs << rhs
                 let unsignedInt128 = UnsignedInt128(lhs) << UnsignedInt128(rhs)
@@ -551,7 +551,7 @@ struct UnsignedInt128Tests {
 
     @available(swiftEndpointApplePlatforms 15, *)
     @Test func `verify right bit-shift against UInt128`() {
-        for (lhs, rhs) in generateRandomUInt128Pairs(randomCount: 500) {
+        for (lhs, rhs) in generateRandomUInt128Pairs() {
             do {
                 let uint128 = lhs >> rhs
                 let unsignedInt128 = UnsignedInt128(lhs) >> UnsignedInt128(rhs)
@@ -594,11 +594,10 @@ struct UnsignedInt128Tests {
 
     @available(swiftEndpointApplePlatforms 15, *)
     private func generateRandomUInt128Pairs(
-        randomCount: Int = 10_000,
         range: ClosedRange<UInt128> = .min ... .max
     ) -> some Sequence<(UInt128, UInt128)> {
         typealias UInt128Pair = (UInt128, UInt128)
-        let randomPairs: [UInt128Pair] = (0..<randomCount).map { _ in
+        let randomPairs: [UInt128Pair] = (0..<10_000).map { _ in
             (UInt128.random(in: range), UInt128.random(in: range))
         }
         let zeros1: [UInt128Pair] = (0..<100).map { _ in
@@ -624,10 +623,8 @@ struct UnsignedInt128Tests {
     }
 
     @available(swiftEndpointApplePlatforms 15, *)
-    private func generateRandomUInt128s(
-        randomCount: Int = 10_000
-    ) -> some Sequence<UInt128> {
-        let randomPairs: [UInt128] = (0..<randomCount).map { _ in
+    private func generateRandomUInt128s() -> some Sequence<UInt128> {
+        let randomPairs: [UInt128] = (0..<10_000).map { _ in
             UInt128.random(in: .min ... .max)
         }
         let edgeCases: [UInt128] = [0, 1, .max - 1, .max]

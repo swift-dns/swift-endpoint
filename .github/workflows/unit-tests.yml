@@ -161,7 +161,6 @@ jobs:
       fail-fast: false
       matrix:
         macos:
-          - version: macos-13
           - version: macos-15
           - version: macos-26
         xcode:

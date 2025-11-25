@@ -82,7 +82,7 @@ extension UnsignedInt128 {
         /// On each step we decrement `n` by 1 and continue the loop until we know we have the result.
 
         var result = Self.zero
-        /// `rhs != 0` & `lhs < rhs` -> `lhs >= 1` -> `lhs.leadingZeroBitCount <= 127`
+        /// `rhs != 0` && `lhs < rhs` -> `lhs >= 1` -> `lhs.leadingZeroBitCount <= 127`
         /// -> `127 - lhs.leadingZeroBitCount >= 0` -> `shift >= 0`
         /// So the `shift` below is guaranteed to be greater than or equal to 0.
         let shift = 127 &- lhs.leadingZeroBitCount

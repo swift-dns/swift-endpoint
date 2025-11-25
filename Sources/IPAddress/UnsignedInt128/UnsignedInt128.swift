@@ -16,11 +16,17 @@
 /// This might make some behavior or some synthesized functions unavailable, but most functionality should still be available.
 /// On other platforms the conformances are always available.
 public struct UnsignedInt128 {
+    #if _endian(little)
     /// The least significant 64 bits of the value.
     public var _low: UInt64
-
     /// The most significant 64 bits of the value.
     public var _high: UInt64
+    #else
+    /// The most significant 64 bits of the value.
+    public var _high: UInt64
+    /// The least significant 64 bits of the value.
+    public var _low: UInt64
+    #endif
 
     /// Initializes a new `UnsignedInt128` value with the given least significant 64 bits and most significant 64 bits.
     public init(_low: UInt64, _high: UInt64) {

@@ -89,7 +89,7 @@ extension DomainName {
                 domainName = try IDNA(configuration: .mostLax)
                     .toUnicode(domainName: domainName)
             } catch {
-                domainName = "[invalid-domain](\(domainName))"
+                domainName = "invalid-domain.\(domainName)"
             }
         }
 

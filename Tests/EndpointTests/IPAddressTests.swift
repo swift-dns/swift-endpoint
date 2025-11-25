@@ -9,6 +9,33 @@ struct IPAddressTests {
         #expect(ip.bytes == (0x7F, 0x00, 0x00, 0x01))
     }
 
+    @Test func `IPv4Address encode decode happy-path with span works correctly`() throws {
+        let ip = IPv4Address(123, 251, 98, 234)
+
+        let bufferPointer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: 20)
+        defer { bufferPointer.deallocate() }
+        var outputSpan = OutputSpan(buffer: bufferPointer, initializedCount: 0)
+
+        let didEncode = ip.encode(into: &outputSpan)
+
+        #expect(didEncode)
+        #expect(outputSpan.capacity == 20)
+        #expect(outputSpan.freeCapacity == 16)
+        #expect(outputSpan.count == 4)
+        let isFull = outputSpan.isFull
+        #expect(!isFull)
+        let isEmpty = outputSpan.isEmpty
+        #expect(!isEmpty)
+        outputSpan.span.withUnsafeBytes { ptr in
+            let data = [UInt8](ptr)
+            #expect(data == [123, 251, 98, 234])
+        }
+
+        let _decodedIP = IPv4Address(from: outputSpan.span)
+        let decodedIP = try #require(_decodedIP)
+        #expect(decodedIP == ip)
+    }
+
     @Test(
         arguments: [
             (IPv4Address(127, 0, 0, 1), "127.0.0.1"),
@@ -206,6 +233,40 @@ struct IPAddressTests {
         #expect(ip.segments.7 == 0x0F11)
     }
 
+    @Test func `IPv6Address encode decode happy-path with span works correctly`() throws {
+        let ip = IPv6Address(0x0102, 0xF3F4, 0x1516, 0x7080, 0x90A0, 0xCBBC, 0x0D0E, 0x0F11)
+
+        let bufferPointer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: 20)
+        defer { bufferPointer.deallocate() }
+        var outputSpan = OutputSpan(buffer: bufferPointer, initializedCount: 0)
+
+        let didEncode = ip.encode(into: &outputSpan)
+
+        #expect(didEncode)
+        #expect(outputSpan.capacity == 20)
+        #expect(outputSpan.freeCapacity == 4)
+        #expect(outputSpan.count == 16)
+        let isFull = outputSpan.isFull
+        #expect(!isFull)
+        let isEmpty = outputSpan.isEmpty
+        #expect(!isEmpty)
+        outputSpan.span.withUnsafeBytes { ptr in
+            let data = [UInt8](ptr)
+            #expect(
+                data == [
+                    0x01, 0x02, 0xF3, 0xF4,
+                    0x15, 0x16, 0x70, 0x80,
+                    0x90, 0xA0, 0xCB, 0xBC,
+                    0x0D, 0x0E, 0x0F, 0x11,
+                ]
+            )
+        }
+
+        let _decodedIP = IPv6Address(from: outputSpan.span)
+        let decodedIP = try #require(_decodedIP)
+        #expect(decodedIP == ip)
+    }
+
     @available(swiftEndpointApplePlatforms 15, *)
     @Test(
         arguments: [
@@ -334,6 +395,16 @@ struct IPAddressTests {
         predicate: @Sendable (IPv6Address) -> Bool
     ) throws {
         let ip = try #require(IPv6Address(ip))
+        #expect(predicate(ip), "\(testCaseDescription)")
+    }
+
+    @available(swiftEndpointApplePlatforms 13, *)
+    @Test(arguments: anyIPAddressCIDRRelatedPropertiesTestCases)
+    func `AnyIPAddress CIDR-related properties work correctly`(
+        ip: AnyIPAddress,
+        testCaseDescription: String,
+        predicate: @Sendable (AnyIPAddress) -> Bool
+    ) throws {
         #expect(predicate(ip), "\(testCaseDescription)")
     }
 }
@@ -532,3 +603,26 @@ private let ipv6IDNAStringAndAddressTestCases: [(String, IPv6Address?, Bool)] = 
     ("[1:\u{AD}:1]", 0x0001_0000_0000_0000_0000_0000_0000_0001, false),
     ("[1:\u{AD}\u{200B}:1]", 0x0001_0000_0000_0000_0000_0000_0000_0001, false),
 ]
+
+let anyIPAddressCIDRRelatedPropertiesTestCases:
+    [(AnyIPAddress, String, (@Sendable (AnyIPAddress) -> Bool))] = [
+        (.v4(IPv4Address(127, 0, 0, 0)), "isLoopback", \.isLoopback),
+        (.v4(IPv4Address(127, 0, 0, 1)), "isLoopback", \.isLoopback),
+        (.v4(IPv4Address(127, 128, 9, 22)), "isLoopback", \.isLoopback),
+        (.v4(IPv4Address(127, 255, 255, 255)), "isLoopback", \.isLoopback),
+        (.v4(IPv4Address(126, 0, 0, 0)), "!isLoopback", { @Sendable in !$0.isLoopback }),
+        (.v4(IPv4Address(128, 0, 0, 0)), "!isLoopback", { @Sendable in !$0.isLoopback }),
+        (.v4(IPv4Address(224, 0, 0, 0)), "isMulticast", \.isMulticast),
+        (.v4(IPv4Address(239, 255, 255, 255)), "isMulticast", \.isMulticast),
+        (.v4(IPv4Address(229, 28, 192, 233)), "isMulticast", \.isMulticast),
+        (.v4(IPv4Address(244, 0, 0, 0)), "!isMulticast", { @Sendable in !$0.isMulticast }),
+
+        (.v6(IPv6Address("::1")!), "isLoopback", \.isLoopback),
+        (.v6(IPv6Address("::1:1")!), "!isLoopback", { @Sendable in !$0.isLoopback }),
+        (.v6(IPv6Address("FF00::")!), "isMulticast", \.isMulticast),
+        (.v6(IPv6Address("FF92::")!), "isMulticast", \.isMulticast),
+        (.v6(IPv6Address("FFFF:998A::1")!), "isMulticast", \.isMulticast),
+        (.v6(IPv6Address("FF::")!), "!isMulticast", { @Sendable in !$0.isMulticast }),
+        (.v6(IPv6Address("00FF::")!), "!isMulticast", { @Sendable in !$0.isMulticast }),
+        (.v6(IPv6Address("FAFF::")!), "!isMulticast", { @Sendable in !$0.isMulticast }),
+    ]

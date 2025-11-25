@@ -23,10 +23,10 @@ extension ConnectionTarget.Target: CustomStringConvertible {
 extension ConnectionTarget.Error: CustomStringConvertible {
     public var description: String {
         switch self {
-        case .invalidIPAddressString(let ipAddress):
-            return "Invalid IP address string: \(ipAddress.debugDescription)"
-        case .failedToParseDomainName(let domainName):
-            return "Failed to parse domain name with error: \(String(reflecting: domainName))"
+        case .invalidIPAddressString(let ipString):
+            return "Invalid IP address string: \(ipString.debugDescription)"
+        case .failedToParseDomainName(let error):
+            return "Failed to parse domain name with error: \(String(reflecting: error))"
         }
     }
 }

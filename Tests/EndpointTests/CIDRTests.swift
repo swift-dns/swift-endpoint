@@ -71,6 +71,7 @@ struct CIDRTests {
                 expectedCIDR: CIDR(prefix: IPv4Address(0, 0, 0, 0), prefixLength: 0)
             ),
             (text: "256.122.61.98/8", expectedCIDR: nil),
+            (text: "9.56.223.1782", expectedCIDR: nil),
             (text: "5.5.5.5/-1", expectedCIDR: nil),
             (text: "/", expectedCIDR: nil),
             (text: "/20", expectedCIDR: nil),

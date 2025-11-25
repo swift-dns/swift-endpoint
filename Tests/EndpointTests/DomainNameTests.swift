@@ -34,9 +34,19 @@ struct DomainNameTests {
         ]
     )
     func initFromString(domainName: String, isFQDN: Bool, data: ByteBuffer) throws {
-        let domainName = try DomainName(domainName)
-        #expect(domainName.isFQDN == isFQDN)
-        #expect(domainName._data == data)
+        do {
+            let domainName = try DomainName(domainName)
+            #expect(domainName.isFQDN == isFQDN)
+            #expect(domainName._data == data)
+        }
+
+        do {
+            let string = "dasda" + domainName + "sddsd"
+            let substring: Substring = string.dropFirst(5).dropLast(5)
+            let domainName = try DomainName(substring)
+            #expect(domainName.isFQDN == isFQDN)
+            #expect(domainName._data == data)
+        }
     }
 
     @Test(
@@ -84,15 +94,25 @@ struct DomainNameTests {
         unicodeNoRootLabel: String
     ) throws {
         let domainName = try DomainName(unicode)
-        let nameASCII = try DomainName(ascii)
+        let asciiWithBadChars = "112dasda" + ascii + "sdds231d4t"
+        let asciiSubstring: Substring = asciiWithBadChars.dropFirst(8).dropLast(10)
+        let nameASCII = try DomainName(asciiSubstring)
 
         /// If the names are the same then we don't need to compare their descriptions
         #expect(domainName == nameASCII)
 
+        #expect(domainName.description == unicodeNoRootLabel)
+        #expect(
+            domainName.description(format: .unicode)
+                == unicodeNoRootLabel
+        )
+
+        #expect(domainName.debugDescription == ascii)
         #expect(
             domainName.description(format: .ascii, options: .includeRootLabelIndicator)
                 == ascii
         )
+
         #expect(
             domainName.description(format: .unicode, options: .includeRootLabelIndicator)
                 == unicode
@@ -100,10 +120,6 @@ struct DomainNameTests {
         #expect(
             domainName.description(format: .ascii)
                 == asciiNoRootLabel
-        )
-        #expect(
-            domainName.description(format: .unicode)
-                == unicodeNoRootLabel
         )
     }
 

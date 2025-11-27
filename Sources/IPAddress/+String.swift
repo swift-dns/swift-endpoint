@@ -45,7 +45,8 @@ extension String {
         }
     }
     #else
-    /// @_transparent helps mitigate some performance regressions on Linux.
+    /// @_transparent helps mitigate some performance regressions on Linux that happened when
+    /// moving from directly using the underlying initializer, to this compatibility initializer.
     @_transparent
     @inlinable
     init(

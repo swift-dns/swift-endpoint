@@ -54,8 +54,9 @@ extension DomainName {
     ) -> String {
         /// The needed capacity without the root label indicator
         let neededCapacity = self.encodedLength - 1
-        var domainName = String(unsafeUninitializedCapacity_Compatibility: neededCapacity) {
-            stringBuffer in
+        var domainName = String(
+            unsafeUninitializedCapacity_Compatibility: neededCapacity
+        ) { stringBuffer in
             var bufferIdx = 0
 
             self._data.withUnsafeReadableBytes { domainNamePtr in

@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension UnsignedInt128: Encodable {
     @inlinable
     public func encode(to encoder: any Encoder) throws {
@@ -7,7 +7,7 @@ extension UnsignedInt128: Encodable {
     }
 }
 
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension UnsignedInt128: Decodable {
     @inlinable
     public init(from decoder: any Decoder) throws {

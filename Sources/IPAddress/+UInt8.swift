@@ -60,7 +60,7 @@ extension UInt8 {
     }
 }
 
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension UInt8 {
     /// Reads a span of a text like "127" as a `UInt8`, if the bytes are in correct form.
     /// Otherwise returns `nil`.

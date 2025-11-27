@@ -1,11 +1,11 @@
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension ConnectionTarget {
     public var description: String {
         self.target.description
     }
 }
 
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension ConnectionTarget.Target: CustomStringConvertible {
     public var description: String {
         switch self {
@@ -19,7 +19,7 @@ extension ConnectionTarget.Target: CustomStringConvertible {
     }
 }
 
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension ConnectionTarget.Error: CustomStringConvertible {
     public var description: String {
         switch self {

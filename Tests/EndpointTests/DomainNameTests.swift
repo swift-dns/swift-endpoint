@@ -4,7 +4,7 @@ import Testing
 
 @Suite
 struct DomainNameTests {
-    @available(swiftEndpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 10.15, *)
     @Test(
         arguments: [
             (domainName: "*", isFQDN: false, data: ByteBuffer([1, 42])),
@@ -58,7 +58,7 @@ struct DomainNameTests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 10.15, *)
     @Test(
         arguments: [
             (
@@ -123,7 +123,7 @@ struct DomainNameTests {
         )
     }
 
-    @available(swiftEndpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 10.15, *)
     @Test func equalityWhichMustBeCaseInsensitive() throws {
         let domainName = try DomainName("example.com.")
         let duplicate = try DomainName("example.com.")
@@ -159,7 +159,7 @@ struct DomainNameTests {
         #expect(weirdPartiallyUppercaseDomain == weirdUppercaseDomain)
     }
 
-    @available(swiftEndpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 10.15, *)
     @Test(
         arguments: [
             (domainName: ".", isFQDN: true),
@@ -205,7 +205,7 @@ struct DomainNameTests {
         try #expect(DomainName(domainName).labelsCount == expectedLabelsCount)
     }
 
-    @available(swiftEndpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 10.15, *)
     @Test func ipv4AddressToName() throws {
         let ipAddress = IPv4Address(192, 168, 1, 1)
         let name1 = DomainName(ipv4: ipAddress)

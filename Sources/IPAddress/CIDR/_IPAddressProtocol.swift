@@ -20,10 +20,10 @@ public protocol _IPAddressProtocol:
 
     init(_ value: AddressValueType)
 
-    @available(swiftEndpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 10.15, *)
     init?(exactly ipAddress: AnyIPAddress)
 
-    @available(swiftEndpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 10.15, *)
     init?(_uncheckedAssumingValidASCII: Span<UInt8>)
 }
 

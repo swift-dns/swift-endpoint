@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension UnsignedInt128: CustomStringConvertible {
     @inlinable
     public var description: String {
@@ -12,7 +12,7 @@ extension UnsignedInt128: CustomStringConvertible {
         var value = self
         let _10 = Self(_low: 10, _high: 0)
         var idx = toReserve - 1
-        var string = String(unsafeUninitializedCapacity: toReserve) { buffer in
+        var string = String(unsafeUninitializedCapacity_Compatibility: toReserve) { buffer in
             while value >= _10 {
                 let tenth = value / _10
                 let remainder = value - (tenth * _10)

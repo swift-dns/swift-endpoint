@@ -1,5 +1,5 @@
 {
-  "originHash" : "56007f648a927f395d3a865b06c8a66b02d6e769351141cc8657c90accbe777c",
+  "originHash" : "f41d38d590fb3857aaa6cd3368fb40fdb1710100a19dbdc442d5419b23a4df9e",
   "pins" : [
     {
       "identity" : "swift-atomics",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swift-dns/swift-idna.git",
       "state" : {
-        "revision" : "8ea4f4078883e4ba834243eea0d25674450c44a9",
-        "version" : "1.0.0-beta.15"
+        "revision" : "518a1ddf9734f14b7fddc9ad29d6cc58210b6039",
+        "version" : "1.0.0-beta.16"
       }
     },
     {
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-nio.git",
       "state" : {
-        "revision" : "6e02c7a2467cf22526ac54521d4230d8c5890e62",
-        "version" : "2.90.0"
+        "revision" : "3eea09220e07d34ace722221cbda90306f48c86c",
+        "version" : "2.90.1"
       }
     },
     {

@@ -85,7 +85,7 @@ jobs:
         with:
           ref: "${{ steps.commit-info.outputs.ref }}"
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Configure git
         run: |

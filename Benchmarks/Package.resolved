@@ -1,5 +1,5 @@
 {
-  "originHash" : "bc27715324d9dc927f2e16767c81df919096f53669a306ff4e04494544622574",
+  "originHash" : "54152dd9e3f10446d0317cf4600e88aeb3a6c582a86e53b973a4a96f9e1665dc",
   "pins" : [
     {
       "identity" : "hdrhistogram-swift",
@@ -60,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mahdibm/swift-idna.git",
       "state" : {
-        "revision" : "518a1ddf9734f14b7fddc9ad29d6cc58210b6039",
-        "version" : "1.0.0-beta.16"
+        "revision" : "3ad26f297bbdcf31ce6ba008b0775620fff4d034",
+        "version" : "1.0.0-beta.17"
       }
     },
     {

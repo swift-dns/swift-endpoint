@@ -130,7 +130,7 @@ struct IPAddressTests {
         #expect(ipv4 == IPv4Address(ipv6: ipv6))
     }
 
-    @available(swiftEndpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 10.15, *)
     @Test(
         arguments: [(IPv4Address, String, (@Sendable (IPv4Address) -> Bool))]([
             (IPv4Address(127, 0, 0, 0), "isLoopback", \.isLoopback),
@@ -398,7 +398,7 @@ struct IPAddressTests {
         #expect(predicate(ip), "\(testCaseDescription)")
     }
 
-    @available(swiftEndpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 10.15, *)
     @Test(arguments: anyIPAddressCIDRRelatedPropertiesTestCases)
     func `AnyIPAddress CIDR-related properties work correctly`(
         ip: AnyIPAddress,

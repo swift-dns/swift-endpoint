@@ -17,7 +17,7 @@ let package = Package(
         .default(enabledTraits: ["IDNA_SUPPORT", "NIO_BYTE_BUFFER_SUPPORT"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/swift-dns/swift-idna.git", from: "1.0.0-beta.14"),
+        .package(url: "https://github.com/swift-dns/swift-idna.git", from: "1.0.0-beta.17"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.82.0"),
     ],
     targets: [
@@ -97,7 +97,10 @@ var settings: [SwiftSetting] {
             "AvailabilityMacro=swiftEndpointApplePlatforms 15:macOS 15, iOS 18, tvOS 18, watchOS 11, visionOS 2"
         ),
         .enableExperimentalFeature(
-            "AvailabilityMacro=swiftEndpointApplePlatforms 13:macOS 13, iOS 16, tvOS 16, watchOS 9"
+            "AvailabilityMacro=swiftEndpointApplePlatforms 11:macOS 11, iOS 14, tvOS 14, watchOS 7"
+        ),
+        .enableExperimentalFeature(
+            "AvailabilityMacro=swiftEndpointApplePlatforms 10.15:macOS 10.15, iOS 13, tvOS 13, watchOS 6"
         ),
     ]
 }

@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
 
     /// The underlying type of the IP address.

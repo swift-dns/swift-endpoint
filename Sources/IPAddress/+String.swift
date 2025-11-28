@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension String {
     mutating func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
@@ -22,9 +22,47 @@ extension String {
             fatalError("Unexpected error: \(String(reflecting: error))")
         }
     }
+
+    #if canImport(Darwin)
+    @usableFromInline
+    init(
+        unsafeUninitializedCapacity_Compatibility capacity: Int,
+        initializingUTF8With initializer: (
+            _ buffer: UnsafeMutableBufferPointer<UInt8>
+        ) throws -> Int
+    ) rethrows {
+        if #available(swiftEndpointApplePlatforms 11, *) {
+            try self.init(unsafeUninitializedCapacity: capacity) { buffer in
+                try initializer(buffer)
+            }
+        } else {
+            let array = try [UInt8].init(
+                unsafeUninitializedCapacity: capacity
+            ) { buffer, initializedCount in
+                initializedCount = try initializer(buffer)
+            }
+            self.init(decoding: array, as: UTF8.self)
+        }
+    }
+    #else
+    /// @_transparent helps mitigate some performance regressions on Linux that happened when
+    /// moving from directly using the underlying initializer, to this compatibility initializer.
+    @_transparent
+    @inlinable
+    init(
+        unsafeUninitializedCapacity_Compatibility capacity: Int,
+        initializingWith initializer: (
+            _ buffer: UnsafeMutableBufferPointer<UInt8>
+        ) throws -> Int
+    ) rethrows {
+        try self.init(unsafeUninitializedCapacity: capacity) { buffer in
+            try initializer(buffer)
+        }
+    }
+    #endif
 }
 
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension Substring {
     mutating func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T

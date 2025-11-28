@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension IPv4Address: CustomStringConvertible {
     /// The textual representation of an IPv4 address.
     @inlinable
@@ -7,7 +7,7 @@ extension IPv4Address: CustomStringConvertible {
         /// For example for "255.255.255.255".
         /// Coincidentally, Swift's `_SmallString` supports up to 15 bytes, which helps make this
         /// implementation as fast as possible.
-        String(unsafeUninitializedCapacity: 15) { buffer in
+        String(unsafeUninitializedCapacity_Compatibility: 15) { buffer in
             var resultIdx = 0
 
             withUnsafeBytes(of: self.address) { addressBytes in
@@ -41,7 +41,7 @@ extension IPv4Address: CustomStringConvertible {
     }
 }
 
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension IPv4Address: CustomDebugStringConvertible {
     /// The textual representation of an IPv4 address appropriate for debugging.
     @inlinable
@@ -66,7 +66,7 @@ extension IPv4Address {
     }
 }
 
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension IPv4Address: LosslessStringConvertible {
     /// Initialize an IPv4 address from its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.

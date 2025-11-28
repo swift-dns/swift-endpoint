@@ -2,7 +2,7 @@ public import SwiftIDNA
 
 public import struct NIOCore.ByteBuffer
 
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension DomainName: CustomStringConvertible {
     /// Unicode-friendly description of the domain name, excluding the possible root label separator.
     /// Example: `"mahdibm.com"`
@@ -13,7 +13,7 @@ extension DomainName: CustomStringConvertible {
     }
 }
 
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension DomainName: CustomDebugStringConvertible {
     /// Source-accurate description of the domain name, including the possible root label separator.
     /// Example: `"mahdibm.com."`
@@ -24,7 +24,7 @@ extension DomainName: CustomDebugStringConvertible {
     }
 }
 
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension DomainName {
     /// FIXME: public nonfrozen enum
     public enum DescriptionFormat: Sendable {
@@ -54,7 +54,9 @@ extension DomainName {
     ) -> String {
         /// The needed capacity without the root label indicator
         let neededCapacity = self.encodedLength - 1
-        var domainName = String(unsafeUninitializedCapacity: neededCapacity) { stringBuffer in
+        var domainName = String(
+            unsafeUninitializedCapacity_Compatibility: neededCapacity
+        ) { stringBuffer in
             var bufferIdx = 0
 
             self._data.withUnsafeReadableBytes { domainNamePtr in
@@ -117,7 +119,7 @@ extension DomainName {
     }
 }
 
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension DomainName {
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName("mahdibm.com")
@@ -163,7 +165,7 @@ extension DomainName {
     }
 }
 
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension DomainName {
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName(textualRepresentation: "mahdibm.com".utf8Span.span)
@@ -287,7 +289,7 @@ extension DomainName {
     }
 }
 
-@available(swiftEndpointApplePlatforms 13, *)
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension DomainName {
     /// `span` must be an already-validated domain name span.
     /// ASCII characters only.

@@ -3,7 +3,7 @@ import Testing
 
 @Suite
 struct CIDRTests {
-    @available(swiftEndpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 10.15, *)
     @Test(
         arguments: [(cidr: CIDR<IPv4Address>, expectedDescription: String)]([
             (
@@ -88,7 +88,7 @@ struct CIDRTests {
         #expect(CIDR<IPv4Address>(_uncheckedAssumingValidUTF8: text.utf8Span.span) == expectedCIDR)
     }
 
-    @available(swiftEndpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 10.15, *)
     @Test(
         arguments: [(cidr: CIDR<IPv4Address>, containsIP: IPv4Address, result: Bool)]([
             (
@@ -180,7 +180,7 @@ struct CIDRTests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 10.15, *)
     @Test(
         arguments: [(prefixLength: UInt8, ip: IPv4Address, expectedIP: IPv4Address)]([
             (
@@ -278,7 +278,7 @@ struct CIDRTests {
         )
     }
 
-    @available(swiftEndpointApplePlatforms 13, *)
+    @available(swiftEndpointApplePlatforms 10.15, *)
     @Test(
         arguments: [(prefixLength: UInt8, expectedMask: UInt32)]([
             (0 as UInt8, 0b00000000_00000000_00000000_00000000 as UInt32),

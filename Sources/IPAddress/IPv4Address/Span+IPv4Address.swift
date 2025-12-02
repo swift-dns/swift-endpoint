@@ -22,7 +22,7 @@ extension IPv4Address {
             return false
         }
 
-        withUnsafeBytes(of: self.address) { ptr in
+        withUnsafeBytes(of: self.address.littleEndian) { ptr in
             for idx in 0..<4 {
                 let reverseIdx = 3 &- idx
                 span.append(ptr[reverseIdx])

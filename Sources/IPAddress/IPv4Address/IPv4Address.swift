@@ -91,7 +91,7 @@ extension IPv4Address: ExpressibleByIntegerLiteral {
 extension IPv4Address {
     /// The 4 bytes representing this IPv4 address.
     public var bytes: (UInt8, UInt8, UInt8, UInt8) {
-        withUnsafeBytes(of: self.address) { ptr in
+        withUnsafeBytes(of: self.address.littleEndian) { ptr in
             (ptr[3], ptr[2], ptr[1], ptr[0])
         }
     }

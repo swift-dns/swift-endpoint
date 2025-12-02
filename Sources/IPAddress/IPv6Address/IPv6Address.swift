@@ -211,7 +211,7 @@ extension IPv6Address {
             UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8
         )
     {
-        withUnsafeBytes(of: self.address) { ptr in
+        withUnsafeBytes(of: self.address.littleEndian) { ptr in
             (
                 ptr[15], ptr[14], ptr[13], ptr[12], ptr[11], ptr[10], ptr[9], ptr[8],
                 ptr[7], ptr[6], ptr[5], ptr[4], ptr[3], ptr[2], ptr[1], ptr[0]
@@ -223,7 +223,7 @@ extension IPv6Address {
     /// The same as 8-segments / groups divided by colons (`:`) in the textual representation.
     @inlinable
     public var segments: (UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16) {
-        withUnsafeBytes(of: self.address) { ptr in
+        withUnsafeBytes(of: self.address.littleEndian) { ptr in
             (
                 UInt16(ptr[15]) &<< 8 | UInt16(ptr[14]),
                 UInt16(ptr[13]) &<< 8 | UInt16(ptr[12]),

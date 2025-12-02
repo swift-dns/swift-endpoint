@@ -69,7 +69,7 @@ extension IPv6Address {
             }
         }
 
-        return withUnsafeBytes(of: self.address) { ptr in
+        return withUnsafeBytes(of: self.address.littleEndian) { ptr in
             func isZero(octalIdx idx: Int) -> Bool {
                 let doubled = idx &* 2
                 return ptr[15 &- doubled] == 0 && ptr[14 &- doubled] == 0

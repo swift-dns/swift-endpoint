@@ -10,7 +10,7 @@ extension IPv4Address: CustomStringConvertible {
         String(unsafeUninitializedCapacity_Compatibility: 15) { buffer in
             var resultIdx = 0
 
-            withUnsafeBytes(of: self.address) { addressBytes in
+            withUnsafeBytes(of: self.address.littleEndian) { addressBytes in
                 let range = 1..<4
                 var iterator = range.makeIterator()
 

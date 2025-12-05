@@ -53,6 +53,9 @@ jobs:
       - name: Manually update PATH with Swift
         run: echo "/home/gha/.local/share/swiftly/toolchains/6.2.1/usr/bin" >> $GITHUB_PATH
 
+      - name: Enable full performance
+        run: /usr/bin/ordo-performance
+
       - name: Construct in-progress comment
         if: ${{ inputs.pr_number != '' }}
         run: |
@@ -199,3 +202,7 @@ jobs:
           if [[ -n '${{ inputs.pr_number }}' ]]; then
             echo 'Commented at ${{ steps.pr-comment.outputs.html-url }}' >> "${GITHUB_STEP_SUMMARY}"
           fi
+
+      - name: Enable powersave mode
+        if: always()
+        run: /usr/bin/ordo-performance powersave

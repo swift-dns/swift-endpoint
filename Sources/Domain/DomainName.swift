@@ -16,8 +16,9 @@ public import struct NIOCore.ByteBuffer
 /// Use a for-loop to iterate over the labels of the domain name.
 ///
 /// Only lowercased letter, digits, hyphen-minus, underscores, stars, and whitespaces are allowed in this implementation.
-/// Underscores are allowed for service names like "_sip._tcp.example.com".
-/// Stars are allowed for wildcards like "*.example.com".
+/// Underscores are allowed for "underbar" service names like "_sip._tcp.example.com" according
+/// to [RFC 8552](https://tools.ietf.org/html/rfc8552) and [RFC 8553](https://tools.ietf.org/html/rfc8553).
+/// Stars are allowed for wildcards like "*.example.com" according to [RFC 4592](https://tools.ietf.org/html/rfc4592).
 /// Whitespaces are allowed for labels like "Mijia Cloud" which some Xiaomi devices use.
 public struct DomainName: Sendable {
     /// Maximum allowed domain name length.
@@ -54,9 +55,10 @@ public struct DomainName: Sendable {
     ///
     /// Only lowercased letter, digits, hyphen-minus, underscores, stars, and whitespaces will ever make it to this property.
     ///
-    /// Underscores are allowed for service names like "_sip._tcp.example.com".
+    /// Underscores are allowed for "underbar" service names like "_sip._tcp.example.com" according
+    /// to [RFC 8552](https://tools.ietf.org/html/rfc8552) and [RFC 8553](https://tools.ietf.org/html/rfc8553).
+    /// Stars are allowed for wildcards like "*.example.com" according to [RFC 4592](https://tools.ietf.org/html/rfc4592).
     /// Whitespaces are allowed for labels like "Mijia Cloud" which some Xiaomi devices use.
-    /// Stars are allowed for wildcards like "*.example.com".
     /// Non-ASCII names are converted to ASCII based on the IDNA spec, in the initializers.
     /// Non-lowercased ASCII names are converted to lowercased ASCII in the initializers.
     ///
@@ -89,6 +91,11 @@ public struct DomainName: Sendable {
         var iterator = self.makePositionIterator()
 
         /// FIXME: Check what to do if there are multiple *s in leading labels (*.*.*.example.com)
+        /// Check [RFC 4592](https://tools.ietf.org/html/rfc4592):
+        /// Left most label must be a "*" (and only a "*")
+        /// Matches any label that doesn't already exist
+        /// Including sub-labels under it
+        /// Causes a nameserver to synthesize and answer
         if let first = iterator.next() {
             let isWildcard =
                 first.length == 1
@@ -122,7 +129,7 @@ public struct DomainName: Sendable {
     ///     All domain names parsed from DNS wire format will have this set to `true`.
     ///     If parsed from a string, this will be `true` if the domain name ends in a dot.
     ///     e.g. `"example.com."` will have this set to `true`, and `"example.com"` will have this set to `false`.
-    ///   - uncheckedData: The dns-wire-format data of the domain name.
+    ///   - _uncheckedAssumingValidWireFormatBytes: The dns-wire-format data of the domain name.
     ///     Must exclude the trailing zero.
     ///     Must be valid ASCII.
     ///     Must not contain uppercased A-Z. Use lowercased bytes instead.

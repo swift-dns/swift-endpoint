@@ -24,6 +24,17 @@ struct DomainNameTests {
                 ])
             ),
             (
+                domainName: "_25._tcp.mail.example.com",
+                isFQDN: false,
+                data: ByteBuffer([
+                    3, 95, 50, 53,
+                    4, 95, 116, 99, 112,
+                    4, 109, 97, 105, 108,
+                    7, 101, 120, 97, 109, 112, 108, 101,
+                    3, 99, 111, 109,
+                ])
+            ),
+            (
                 domainName: "helloß.co.uk.",
                 isFQDN: true,
                 data: ByteBuffer([
@@ -50,7 +61,12 @@ struct DomainNameTests {
     }
 
     @Test(
-        arguments: [".mahdibm.com", ""]
+        arguments: [
+            ".mahdibm.com",
+            "",
+            "\(Array(repeating: "j", count: 64).joined()).example.com.",
+            "s\(Array(repeating: "]", count: 61).joined())s.example.com.",
+        ]
     )
     func initInvalidFromString(domainName: String) throws {
         #expect(throws: (any Error).self) {
@@ -167,6 +183,7 @@ struct DomainNameTests {
             (domainName: "www.example", isFQDN: false),
             (domainName: "www", isFQDN: false),
             (domainName: "test.", isFQDN: true),
+            (domainName: "_25._tcp.mail.example.com", isFQDN: false),
         ]
     )
     func `fqdnParsing`(domainName: String, isFQDN: Bool) throws {
@@ -175,20 +192,40 @@ struct DomainNameTests {
 
     @Test(
         arguments: [
-            (domainName: ".", expected: "."),
-            (domainName: "www.example.com.", expected: "www.example.com."),
-            (domainName: "www.example", expected: "www.example"),
-            (domainName: "www", expected: "www"),
-            (domainName: "test.", expected: "test."),
+            ".",
+            "www.example.com.",
+            "www.example",
+            "www",
+            "test.",
+            "\(Array(repeating: "j", count: 63).joined()).example.com.",
         ]
     )
-    func `parsingThenAsStringWorksAsExpected`(domainName: String, expected: String) throws {
+    func `parsing then as string works as expected`(domainName: String) throws {
         #expect(
             try DomainName(domainName).description(
                 format: .unicode,
                 options: .includeRootLabelIndicator
-            ) == expected
+            ) == domainName
         )
+    }
+
+    @Test(
+        arguments: [
+            /// _ _should_ only be at the start of a label, but we tolerate it anywhere.
+            "_25._tc😅_p.mail.example.com",
+            "_25._tc_p.mail.example.com",
+            /// * _should_ only be 1 at the start of the first label, but we tolerate it anywhere and in any amounts.
+            "*😅*.mahdibm.com",
+            "**.mahdibm.com",
+            /// * _should usually_ only be at the start of the first label, but we tolerate it anywhere.
+            "*.*.😅example.com",
+            "*.*.example.com",
+        ]
+    )
+    func `parsing works`(domainName: String) throws {
+        #expect(throws: Never.self) {
+            try DomainName(domainName)
+        }
     }
 
     @Test(
@@ -201,7 +238,7 @@ struct DomainNameTests {
             (domainName: "a.b.c", expectedLabelsCount: 3),
         ]
     )
-    func `numberOfLabels`(domainName: String, expectedLabelsCount: Int) throws {
+    func `number of labels`(domainName: String, expectedLabelsCount: Int) throws {
         try #expect(DomainName(domainName).labelsCount == expectedLabelsCount)
     }
 

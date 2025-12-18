@@ -14,41 +14,49 @@ extension DomainName {
     @inlinable
     public init(ipv6: IPv6Address) {
         var buffer = ByteBuffer()
-        /// 16 is the maximum number of bytes required to represent an IPv4 address,
-        /// 13 more bytes are required for the "in-addr" and "arpa" labels.
-        buffer.reserveCapacity(29)
+        /// 64 is the maximum number of bytes required to represent an IPv6 address,
+        /// 9 more bytes are required for the "ip6" and "arpa" labels.
+        buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 73) { bufferPtr in
+            var bufferIdx = 0
 
-        withUnsafeBytes(of: ipv6.address) { bytes in
-            for idx in 0..<16 {
-                let num1 = bytes[idx] &>> 4
-                let num2 = bytes[idx] & 0x0F
+            withUnsafeBytes(of: ipv6.address) { bytes in
+                for idx in 0..<16 {
+                    let num1 = bytes[idx] &>> 4
+                    let num2 = bytes[idx] & 0x0F
 
-                buffer.writeInteger(1, as: UInt8.self)
-                buffer.writeInteger(
-                    num2 > 9
+                    bufferPtr[bufferIdx] = 1
+                    bufferPtr[bufferIdx &+ 1] =
+                        num2 > 9
                         ? num2 &+ UInt8.asciiLowercasedA &- 10
                         : num2 &+ UInt8.ascii0
-                )
 
-                buffer.writeInteger(1, as: UInt8.self)
-                buffer.writeInteger(
-                    num1 > 9
+                    bufferPtr[bufferIdx &+ 2] = 1
+                    bufferPtr[bufferIdx &+ 3] =
+                        num1 > 9
                         ? num1 &+ UInt8.asciiLowercasedA &- 10
                         : num1 &+ UInt8.ascii0
-                )
+
+                    bufferIdx &+= 4
+                }
             }
+
+            bufferPtr[bufferIdx] = 3
+            bufferPtr[bufferIdx &+ 1] = UInt8(ascii: "i")
+            bufferPtr[bufferIdx &+ 2] = UInt8(ascii: "p")
+            bufferPtr[bufferIdx &+ 3] = UInt8(ascii: "6")
+            bufferIdx &+= 4
+
+            bufferPtr[bufferIdx] = 4
+            bufferPtr[bufferIdx &+ 1] = UInt8(ascii: "a")
+            bufferPtr[bufferIdx &+ 2] = UInt8(ascii: "r")
+            bufferPtr[bufferIdx &+ 3] = UInt8(ascii: "p")
+            bufferPtr[bufferIdx &+ 4] = UInt8(ascii: "a")
+            bufferIdx &+= 5
+
+            return bufferIdx
         }
 
-        buffer.writeInteger(3, as: UInt8.self)
-        buffer.writeBytes([
-            UInt8(ascii: "i"), UInt8(ascii: "p"), UInt8(ascii: "6"),
-        ])
-
-        buffer.writeInteger(4, as: UInt8.self)
-        buffer.writeBytes([
-            UInt8(ascii: "a"), UInt8(ascii: "r"), UInt8(ascii: "p"), UInt8(ascii: "a"),
-        ])
-
         self.init(isFQDN: true, _uncheckedAssumingValidWireFormatBytes: buffer)
+
     }
 }

@@ -33,45 +33,56 @@ extension DomainName {
     init(ipv4InDottedQuadNotation ipv4: IPv4Address) {
         var buffer = ByteBuffer()
         /// 16 is the maximum number of bytes required to represent an IPv4 address here
-        buffer.reserveCapacity(16)
+        buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 16) { bufferPtr in
+            var bufferIdx = 0
+            let bytes = ipv4.bytes
 
-        let bytes = ipv4.bytes
+            bufferPtr[bufferIdx] = .zero
+            bufferIdx &+= 1
+            var segmentStartIndex = bufferIdx
+            bytes.0.asDecimal(writeUTF8Byte: {
+                bufferPtr[bufferIdx] = $0
+                bufferIdx &+= 1
+            })
+            bufferPtr[segmentStartIndex &- 1] = UInt8(
+                truncatingIfNeeded: bufferIdx &- segmentStartIndex
+            )
 
-        buffer.writeInteger(.zero, as: UInt8.self)
-        var segmentStartIndex = buffer.writerIndex
-        bytes.0.asDecimal(writeUTF8Byte: { buffer.writeInteger($0) })
-        buffer.setInteger(
-            UInt8(truncatingIfNeeded: buffer.writerIndex &- segmentStartIndex),
-            at: segmentStartIndex &- 1,
-            as: UInt8.self
-        )
+            bufferPtr[bufferIdx] = .zero
+            bufferIdx &+= 1
+            segmentStartIndex = bufferIdx
+            bytes.1.asDecimal(writeUTF8Byte: {
+                bufferPtr[bufferIdx] = $0
+                bufferIdx &+= 1
+            })
+            bufferPtr[segmentStartIndex &- 1] = UInt8(
+                truncatingIfNeeded: bufferIdx &- segmentStartIndex
+            )
 
-        buffer.writeInteger(.zero, as: UInt8.self)
-        segmentStartIndex = buffer.writerIndex
-        bytes.1.asDecimal(writeUTF8Byte: { buffer.writeInteger($0) })
-        buffer.setInteger(
-            UInt8(truncatingIfNeeded: buffer.writerIndex &- segmentStartIndex),
-            at: segmentStartIndex &- 1,
-            as: UInt8.self
-        )
+            bufferPtr[bufferIdx] = .zero
+            bufferIdx &+= 1
+            segmentStartIndex = bufferIdx
+            bytes.2.asDecimal(writeUTF8Byte: {
+                bufferPtr[bufferIdx] = $0
+                bufferIdx &+= 1
+            })
+            bufferPtr[segmentStartIndex &- 1] = UInt8(
+                truncatingIfNeeded: bufferIdx &- segmentStartIndex
+            )
 
-        buffer.writeInteger(.zero, as: UInt8.self)
-        segmentStartIndex = buffer.writerIndex
-        bytes.2.asDecimal(writeUTF8Byte: { buffer.writeInteger($0) })
-        buffer.setInteger(
-            UInt8(truncatingIfNeeded: buffer.writerIndex &- segmentStartIndex),
-            at: segmentStartIndex &- 1,
-            as: UInt8.self
-        )
+            bufferPtr[bufferIdx] = .zero
+            bufferIdx &+= 1
+            segmentStartIndex = bufferIdx
+            bytes.3.asDecimal(writeUTF8Byte: {
+                bufferPtr[bufferIdx] = $0
+                bufferIdx &+= 1
+            })
+            bufferPtr[segmentStartIndex &- 1] = UInt8(
+                truncatingIfNeeded: bufferIdx &- segmentStartIndex
+            )
 
-        buffer.writeInteger(.zero, as: UInt8.self)
-        segmentStartIndex = buffer.writerIndex
-        bytes.3.asDecimal(writeUTF8Byte: { buffer.writeInteger($0) })
-        buffer.setInteger(
-            UInt8(truncatingIfNeeded: buffer.writerIndex &- segmentStartIndex),
-            at: segmentStartIndex &- 1,
-            as: UInt8.self
-        )
+            return bufferIdx
+        }
 
         self.init(isFQDN: true, _uncheckedAssumingValidWireFormatBytes: buffer)
     }
@@ -80,57 +91,74 @@ extension DomainName {
     init(ipv4InArpaFormat ipv4: IPv4Address) {
         var buffer = ByteBuffer()
         /// 16 is the maximum number of bytes required to represent an IPv4 address,
-        /// 13 more bytes are required for the "in-addr" and "arpa" labels.
-        buffer.reserveCapacity(29)
+        /// 15 more bytes are required for the "in-addr" and "arpa" labels.
+        buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 31) { bufferPtr in
+            var bufferIdx = 0
+            let bytes = ipv4.bytes
 
-        let bytes = ipv4.bytes
+            bufferPtr[bufferIdx] = .zero
+            bufferIdx &+= 1
+            var segmentStartIndex = bufferIdx
+            bytes.3.asDecimal(writeUTF8Byte: {
+                bufferPtr[bufferIdx] = $0
+                bufferIdx &+= 1
+            })
+            bufferPtr[segmentStartIndex &- 1] = UInt8(
+                truncatingIfNeeded: bufferIdx &- segmentStartIndex
+            )
 
-        buffer.writeInteger(.zero, as: UInt8.self)
-        var segmentStartIndex = buffer.writerIndex
-        bytes.3.asDecimal(writeUTF8Byte: { buffer.writeInteger($0) })
-        buffer.setInteger(
-            UInt8(truncatingIfNeeded: buffer.writerIndex &- segmentStartIndex),
-            at: segmentStartIndex &- 1,
-            as: UInt8.self
-        )
+            bufferPtr[bufferIdx] = .zero
+            bufferIdx &+= 1
+            segmentStartIndex = bufferIdx
+            bytes.2.asDecimal(writeUTF8Byte: {
+                bufferPtr[bufferIdx] = $0
+                bufferIdx &+= 1
+            })
+            bufferPtr[segmentStartIndex &- 1] = UInt8(
+                truncatingIfNeeded: bufferIdx &- segmentStartIndex
+            )
 
-        buffer.writeInteger(.zero, as: UInt8.self)
-        segmentStartIndex = buffer.writerIndex
-        bytes.2.asDecimal(writeUTF8Byte: { buffer.writeInteger($0) })
-        buffer.setInteger(
-            UInt8(truncatingIfNeeded: buffer.writerIndex &- segmentStartIndex),
-            at: segmentStartIndex &- 1,
-            as: UInt8.self
-        )
+            bufferPtr[bufferIdx] = .zero
+            bufferIdx &+= 1
+            segmentStartIndex = bufferIdx
+            bytes.1.asDecimal(writeUTF8Byte: {
+                bufferPtr[bufferIdx] = $0
+                bufferIdx &+= 1
+            })
+            bufferPtr[segmentStartIndex &- 1] = UInt8(
+                truncatingIfNeeded: bufferIdx &- segmentStartIndex
+            )
 
-        buffer.writeInteger(.zero, as: UInt8.self)
-        segmentStartIndex = buffer.writerIndex
-        bytes.1.asDecimal(writeUTF8Byte: { buffer.writeInteger($0) })
-        buffer.setInteger(
-            UInt8(truncatingIfNeeded: buffer.writerIndex &- segmentStartIndex),
-            at: segmentStartIndex &- 1,
-            as: UInt8.self
-        )
+            bufferPtr[bufferIdx] = .zero
+            bufferIdx &+= 1
+            segmentStartIndex = bufferIdx
+            bytes.0.asDecimal(writeUTF8Byte: {
+                bufferPtr[bufferIdx] = $0
+                bufferIdx &+= 1
+            })
+            bufferPtr[segmentStartIndex &- 1] = UInt8(
+                truncatingIfNeeded: bufferIdx &- segmentStartIndex
+            )
 
-        buffer.writeInteger(.zero, as: UInt8.self)
-        segmentStartIndex = buffer.writerIndex
-        bytes.0.asDecimal(writeUTF8Byte: { buffer.writeInteger($0) })
-        buffer.setInteger(
-            UInt8(truncatingIfNeeded: buffer.writerIndex &- segmentStartIndex),
-            at: segmentStartIndex &- 1,
-            as: UInt8.self
-        )
+            bufferPtr[bufferIdx] = 7
+            bufferPtr[bufferIdx &+ 1] = UInt8(ascii: "i")
+            bufferPtr[bufferIdx &+ 2] = UInt8(ascii: "n")
+            bufferPtr[bufferIdx &+ 3] = UInt8(ascii: "-")
+            bufferPtr[bufferIdx &+ 4] = UInt8(ascii: "a")
+            bufferPtr[bufferIdx &+ 5] = UInt8(ascii: "d")
+            bufferPtr[bufferIdx &+ 6] = UInt8(ascii: "d")
+            bufferPtr[bufferIdx &+ 7] = UInt8(ascii: "r")
+            bufferIdx &+= 8
 
-        buffer.writeInteger(7, as: UInt8.self)
-        buffer.writeBytes([
-            UInt8(ascii: "i"), UInt8(ascii: "n"), UInt8(ascii: "-"),
-            UInt8(ascii: "a"), UInt8(ascii: "d"), UInt8(ascii: "d"), UInt8(ascii: "r"),
-        ])
+            bufferPtr[bufferIdx] = 4
+            bufferPtr[bufferIdx &+ 1] = UInt8(ascii: "a")
+            bufferPtr[bufferIdx &+ 2] = UInt8(ascii: "r")
+            bufferPtr[bufferIdx &+ 3] = UInt8(ascii: "p")
+            bufferPtr[bufferIdx &+ 4] = UInt8(ascii: "a")
+            bufferIdx &+= 5
 
-        buffer.writeInteger(4, as: UInt8.self)
-        buffer.writeBytes([
-            UInt8(ascii: "a"), UInt8(ascii: "r"), UInt8(ascii: "p"), UInt8(ascii: "a"),
-        ])
+            return bufferIdx
+        }
 
         self.init(isFQDN: true, _uncheckedAssumingValidWireFormatBytes: buffer)
     }

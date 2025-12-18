@@ -260,7 +260,8 @@ struct DomainNameTests {
         let ipAddress: IPv6Address = 0x2a01_5cc0_0001_0002_0000_0000_0000_0004
         let name1 = DomainName(ipv6: ipAddress)
         let name2 = DomainName(ip: .v6(ipAddress))
-        let expectedDescription = "4.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.0.0.1.0.0.0.0.c.c.5.1.0.a.2.ip6.arpa."
+        let expectedDescription =
+            "4.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.0.0.1.0.0.0.0.c.c.5.1.0.a.2.ip6.arpa."
         #expect(name1.debugDescription == expectedDescription)
         #expect(name2.debugDescription == expectedDescription)
     }

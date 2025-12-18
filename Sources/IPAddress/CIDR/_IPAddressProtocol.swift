@@ -27,6 +27,8 @@ public protocol _IPAddressProtocol:
     init?(_uncheckedAssumingValidASCII: Span<UInt8>)
 }
 
+/// DO NOT IMPLEMENT THIS PROTOCOL YOURSELF.
+/// THIS PROTOCOL IS NOT CONSIDERED PART OF THE PUBLIC API, DENOTED BY THE UNDERSCORED NAME.
 public protocol _IPAddressProtocolAddressValueType:
     Sendable,
     Hashable,

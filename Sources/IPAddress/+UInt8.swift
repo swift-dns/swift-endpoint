@@ -5,7 +5,7 @@ extension UInt8 {
     }
 
     @inlinable
-    static var ascii0: UInt8 {
+    package static var ascii0: UInt8 {
         0x30
     }
 
@@ -15,7 +15,7 @@ extension UInt8 {
     }
 
     @inlinable
-    static var asciiLowercasedA: UInt8 {
+    package static var asciiLowercasedA: UInt8 {
         0x61
     }
 

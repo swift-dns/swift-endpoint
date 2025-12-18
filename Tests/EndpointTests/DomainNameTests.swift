@@ -245,16 +245,24 @@ struct DomainNameTests {
     @available(swiftEndpointApplePlatforms 10.15, *)
     @Test func ipv4AddressToName() throws {
         let ipAddress = IPv4Address(192, 168, 1, 1)
-        let name1 = DomainName(ipv4: ipAddress)
+        let name1 = DomainName(ipv4: ipAddress, format: .arpa)
         let name2 = DomainName(ip: .v4(ipAddress))
-        #expect(name1.description == "192.168.1.1")
-        #expect(name2?.description == "192.168.1.1")
+        let expectedDescription = "1.1.168.192.in-addr.arpa."
+        #expect(name1.debugDescription == expectedDescription)
+        #expect(name2.debugDescription == expectedDescription)
+
+        let name1InDottedQuad = DomainName(ipv4: ipAddress, format: .dottedQuad)
+        #expect(name1InDottedQuad.debugDescription == "192.168.1.1.")
     }
 
     @available(swiftEndpointApplePlatforms 15, *)
     @Test func ipv6AddressToName() {
         let ipAddress: IPv6Address = 0x2a01_5cc0_0001_0002_0000_0000_0000_0004
-        #expect(DomainName(ip: .v6(ipAddress)) == nil)
+        let name1 = DomainName(ipv6: ipAddress)
+        let name2 = DomainName(ip: .v6(ipAddress))
+        let expectedDescription = "4.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.2.0.0.0.1.0.0.0.0.c.c.5.1.0.a.2.ip6.arpa."
+        #expect(name1.debugDescription == expectedDescription)
+        #expect(name2.debugDescription == expectedDescription)
     }
 
     /// The file pointing to `Resources.topDomains` contains only 200 top domains, but you can

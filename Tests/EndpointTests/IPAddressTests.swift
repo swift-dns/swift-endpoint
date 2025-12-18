@@ -113,6 +113,37 @@ struct IPAddressTests {
     }
 
     @available(swiftEndpointApplePlatforms 26, *)
+    @Test(arguments: ipv4StringAndAddressTestCases)
+    func ipv4AddressFromStringThroughArpaDomainName(
+        string: String,
+        expectedAddress: IPv4Address?,
+        isValidIPv6: Bool
+    ) {
+        let arpa =
+            string
+            .split(separator: ".")
+            .reversed()
+            .joined(separator: ".")
+            + ".in-addr.arpa."
+        let domainName = try? DomainName(arpa)
+
+        let ipv4Address = domainName.flatMap { IPv4Address(arpaDomainName: $0) }
+        #expect(ipv4Address == expectedAddress)
+
+        let ipAddress = domainName.flatMap { AnyIPAddress(arpaDomainName: $0) }
+        switch ipAddress {
+        case .v4(let ipv4):
+            #expect(ipv4 == expectedAddress)
+        case .none:
+            #expect(expectedAddress == nil)
+        case .v6:
+            if !isValidIPv6 {
+                Issue.record("Expected IPv4 but got: \(ipAddress)")
+            }
+        }
+    }
+
+    @available(swiftEndpointApplePlatforms 26, *)
     @Test(
         arguments: [(IPv4Address?, String)]([
             (IPv4Address(192, 0, 2, 128), "::ffff:c000:0280"),
@@ -324,6 +355,86 @@ struct IPAddressTests {
             #expect(AnyIPAddress(Substring(string)) == expectedIPv6)
             #expect(AnyIPAddress(textualRepresentation: string.utf8Span) == expectedIPv6)
             #expect(AnyIPAddress(_uncheckedAssumingValidUTF8: string.utf8Span.span) == expectedIPv6)
+        }
+    }
+
+    @available(swiftEndpointApplePlatforms 26, *)
+    @Test(
+        arguments: [
+            (
+                try! DomainName(
+                    "b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6.arpa."
+                ),
+                IPv6Address("4321:0:1:2:3:4:567:89ab")!
+            )
+        ]
+    )
+    func ipv6AddressFromStringThroughArpaDomainNameHardcodedCase(
+        arpaDomainName domainName: DomainName,
+        expectedAddress: IPv6Address?
+    ) {
+        let ipv6Address = IPv6Address(arpaDomainName: domainName)
+        #expect(ipv6Address == expectedAddress)
+    }
+
+    @available(swiftEndpointApplePlatforms 26, *)
+    @Test(arguments: ipv6StringAndAddressTestCases)
+    func ipv6AddressFromStringThroughArpaDomainName(
+        string: String,
+        expectedAddress: IPv6Address?,
+        isValidIPv4: Bool
+    ) {
+        let plainIPv6Address = IPv6Address(string)
+        let arpa: String? = plainIPv6Address.map { address in
+            let bytes = address.bytes
+            func byteToLabel(_ byte: UInt8) -> String {
+                let _1 = String(byte & 0xF, radix: 16)
+                let _2 = String(byte >> 4, radix: 16)
+                return "\(_1).\(_2)"
+            }
+            let byte0 = byteToLabel(bytes.0)
+            let byte1 = byteToLabel(bytes.1)
+            let byte2 = byteToLabel(bytes.2)
+            let byte3 = byteToLabel(bytes.3)
+            let byte4 = byteToLabel(bytes.4)
+            let byte5 = byteToLabel(bytes.5)
+            let byte6 = byteToLabel(bytes.6)
+            let byte7 = byteToLabel(bytes.7)
+            let byte8 = byteToLabel(bytes.8)
+            let byte9 = byteToLabel(bytes.9)
+            let byte10 = byteToLabel(bytes.10)
+            let byte11 = byteToLabel(bytes.11)
+            let byte12 = byteToLabel(bytes.12)
+            let byte13 = byteToLabel(bytes.13)
+            let byte14 = byteToLabel(bytes.14)
+            let byte15 = byteToLabel(bytes.15)
+            let segment1 = "\(byte1).\(byte0)"
+            let segment2 = "\(byte3).\(byte2)"
+            let segment3 = "\(byte5).\(byte4)"
+            let segment4 = "\(byte7).\(byte6)"
+            let segment5 = "\(byte9).\(byte8)"
+            let segment6 = "\(byte11).\(byte10)"
+            let segment7 = "\(byte13).\(byte12)"
+            let segment8 = "\(byte15).\(byte14)"
+            let firstHalf = "\(segment8).\(segment7).\(segment6).\(segment5)"
+            let secondHalf = "\(segment4).\(segment3).\(segment2).\(segment1)"
+            return "\(firstHalf).\(secondHalf).ip6.arpa."
+        }
+        let domainName = arpa.flatMap { try? DomainName($0) }
+
+        let ipv6Address = domainName.flatMap { IPv6Address(arpaDomainName: $0) }
+        #expect(ipv6Address == expectedAddress)
+
+        let ipAddress = domainName.flatMap { AnyIPAddress(arpaDomainName: $0) }
+        switch ipAddress {
+        case .v6(let ipv6):
+            #expect(ipv6 == expectedAddress)
+        case .none:
+            #expect(expectedAddress == nil)
+        case .v4:
+            if !isValidIPv4 {
+                Issue.record("Expected IPv6 but got: \(ipAddress)")
+            }
         }
     }
 

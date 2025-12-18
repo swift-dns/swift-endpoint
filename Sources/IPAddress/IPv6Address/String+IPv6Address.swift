@@ -410,7 +410,7 @@ extension IPv6Address: LosslessStringConvertible {
         for idx in span.indices {
             let byte = span[unchecked: idx]
 
-            if let digit = IPv6Address.mapHexadecimalASCIIToUInt8(byte) {
+            if let digit = UInt8.mapHexadecimalByteToUInt8(byte) {
                 if segmentDigitIdx == 4 {
                     return false
                 }
@@ -570,39 +570,5 @@ extension IPv6Address: LosslessStringConvertible {
         } else {
             return remainingBytesCount == 0
         }
-    }
-
-    @inlinable
-    static func mapHexadecimalASCIIToUInt8(_ asciiByte: UInt8) -> UInt8? {
-        /// The order here is intentional.
-        /// First check for lower-or-equal to 9, then higher-or-equal to 0.
-        ///
-        /// In a correct IPv6 string, if this byte is not 0-9, then we skip
-        /// an unnecessary check for high-or-equal to 0.
-        if asciiByte <= UInt8.ascii9,
-            asciiByte >= UInt8.ascii0
-        {
-            return asciiByte &- UInt8.ascii0
-        }
-
-        /// The order here is intentional.
-        /// First check for higher-or-equal to a, then lower-or-equal to f.
-        ///
-        /// In a correct IPv6 string, if this byte is not a-f, then we skip
-        /// an unnecessary check for lower-or-equal to f.
-        if asciiByte >= UInt8.asciiLowercasedA,
-            asciiByte <= UInt8.asciiLowercasedF
-        {
-            return asciiByte &- UInt8.asciiLowercasedA &+ 10
-        }
-
-        /// The order here ... doesn't really matter at this point in this function.
-        if asciiByte >= UInt8.asciiUppercasedA,
-            asciiByte <= UInt8.asciiUppercasedF
-        {
-            return asciiByte &- UInt8.asciiUppercasedA &+ 10
-        }
-
-        return nil
     }
 }

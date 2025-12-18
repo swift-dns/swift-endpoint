@@ -118,6 +118,29 @@ extension UInt8 {
         }
         return utf8Byte &- UInt8.ascii0
     }
+
+    @inlinable
+    package static func mapHexadecimalByteToUInt8(_ asciiByte: UInt8) -> UInt8? {
+        if asciiByte <= UInt8.ascii9,
+            asciiByte >= UInt8.ascii0
+        {
+            return asciiByte &- UInt8.ascii0
+        }
+
+        if asciiByte >= UInt8.asciiLowercasedA,
+            asciiByte <= UInt8.asciiLowercasedF
+        {
+            return asciiByte &- UInt8.asciiLowercasedA &+ 10
+        }
+
+        if asciiByte >= UInt8.asciiUppercasedA,
+            asciiByte <= UInt8.asciiUppercasedF
+        {
+            return asciiByte &- UInt8.asciiUppercasedA &+ 10
+        }
+
+        return nil
+    }
 }
 
 extension UInt8 {

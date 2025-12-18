@@ -55,4 +55,68 @@ extension IPv4Address {
 
         self = result
     }
+
+    /// Initialize an `IPv4Address` from a `DomainName` which is in the special arpa domain name format,
+    /// according to [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://tools.ietf.org/html/rfc1035#section-3.5).
+    ///
+    /// The domain name must contain exactly 4 UInt8 labels containing the ipv4 address's value in reverse,
+    /// followed by `in-addr.arpa`.
+    /// For example a domain name like `"4.3.2.1.in-addr.arpa"` will parse into the IPv4 address `1.2.3.4`.
+    @inlinable
+    public init?(arpaDomainName domainName: DomainName) {
+        guard
+            let result = domainName._data.withUnsafeReadableBytes({ ptr -> IPv4Address? in
+                ptr.withMemoryRebound(to: UInt8.self) { ptr -> IPv4Address? in
+                    var ipv4 = IPv4Address(0)
+                    var iterator = domainName.makePositionIterator()
+
+                    /// `DomainName.data` always only contains ASCII bytes
+                    let asciiSpan = ptr.span
+
+                    for idx in 0..<4 {
+                        guard let (range, _) = iterator.nextRange() else {
+                            return nil
+                        }
+                        guard
+                            let byte = UInt8(
+                                decimalRepresentation: asciiSpan.extracting(unchecked: range)
+                            )
+                        else {
+                            return nil
+                        }
+                        let shift = 8 &* idx
+                        ipv4.address |= UInt32(byte) &<< shift
+                    }
+
+                    guard let (inAddrRange, _) = iterator.nextRange(),
+                        let (arpaRange, _) = iterator.nextRange(),
+                        iterator.reachedEnd()
+                    else {
+                        return nil
+                    }
+
+                    let inAddr = asciiSpan.extracting(unchecked: inAddrRange)
+                    let arpa = asciiSpan.extracting(unchecked: arpaRange)
+                    let inAddrBytes = [
+                        UInt8(ascii: "i"), UInt8(ascii: "n"), UInt8(ascii: "-"), UInt8(ascii: "a"),
+                        UInt8(ascii: "d"), UInt8(ascii: "d"), UInt8(ascii: "r"),
+                    ]
+                    let arpaBytes = [
+                        UInt8(ascii: "a"), UInt8(ascii: "r"), UInt8(ascii: "p"), UInt8(ascii: "a"),
+                    ]
+                    guard inAddr.swift_dns_equals(to: inAddrBytes),
+                        arpa.swift_dns_equals(to: arpaBytes)
+                    else {
+                        return nil
+                    }
+
+                    return ipv4
+                }
+            })
+        else {
+            return nil
+        }
+
+        self = result
+    }
 }

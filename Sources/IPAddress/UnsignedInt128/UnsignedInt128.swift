@@ -15,7 +15,25 @@
 /// limited to macOS 15 or higher.
 /// This might make some behavior or some synthesized functions unavailable, but most functionality should still be available.
 /// On other platforms the conformances are always available.
+///
+/// If you're trying to use this type in macOS versions lower than 15, you might need to make some adjustments to your code.
+/// For example you might need to use the `init(_low:_high:)` instead of using the "ExpressibleByIntegerLiteral" initializer:
+///
+/// ```swift
+/// /// On macOS 15 or higher:
+/// let value: UnsignedInt128 = 0x11223344556677889900665544332211
+///
+/// /// On macOS 14 or lower:
+/// let value = UnsignedInt128(
+///     _low: 0x9900665544332211, /// The least significant half of the value
+///     _high: 0x1122334455667788 /// The most significant half of the value
+/// )
+/// ```
 public struct UnsignedInt128 {
+    // There is a half-implemented big-endian support below.
+    // big-endian is pretty much extinct nowadays but I'm going to let this be.
+    // Swift itself doesn't properly support big-endian either so ...
+
     #if _endian(little)
     /// The least significant 64 bits of the value.
     public var _low: UInt64
@@ -28,7 +46,16 @@ public struct UnsignedInt128 {
     public var _low: UInt64
     #endif
 
-    /// Initializes a new `UnsignedInt128` value with the given least significant 64 bits and most significant 64 bits.
+    /// Initializes a new `UnsignedInt128` value given the least significant 64 bits and the most significant 64 bits.
+    ///
+    /// For example these 2 are equivalent:
+    /// ```swift
+    /// let value: UnsignedInt128 = 0x11223344556677889900665544332211
+    ///
+    /// let value = UnsignedInt128(
+    ///     _low: 0x9900665544332211, /// The least significant half of the value
+    ///     _high: 0x1122334455667788 /// The most significant half of the value
+    /// )
     public init(_low: UInt64, _high: UInt64) {
         self._low = _low
         self._high = _high

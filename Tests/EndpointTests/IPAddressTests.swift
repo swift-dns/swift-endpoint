@@ -127,18 +127,24 @@ struct IPAddressTests {
             + ".in-addr.arpa."
         let domainName = try? DomainName(arpa)
 
-        let ipv4Address = domainName.flatMap { IPv4Address(arpaDomainName: $0) }
-        #expect(ipv4Address == expectedAddress)
+        let ipv4Address1 = domainName.flatMap { IPv4Address(arpaDomainName: $0) }
+        #expect(ipv4Address1 == expectedAddress)
 
-        let ipAddress = domainName.flatMap { AnyIPAddress(arpaDomainName: $0) }
-        switch ipAddress {
-        case .v4(let ipv4):
-            #expect(ipv4 == expectedAddress)
-        case .none:
-            #expect(expectedAddress == nil)
-        case .v6:
-            if !isValidIPv6 {
-                Issue.record("Expected IPv4 but got: \(ipAddress)")
+        let ipv4Address2 = domainName.flatMap { IPv4Address(domainName: $0) }
+        #expect(ipv4Address2 == expectedAddress)
+
+        let anyIPAddress1 = domainName.flatMap { AnyIPAddress(arpaDomainName: $0) }
+        let anyIPAddress2 = domainName.flatMap { AnyIPAddress(domainName: $0) }
+        for ipAddress in [anyIPAddress1, anyIPAddress2] {
+            switch ipAddress {
+            case .v4(let ipv4):
+                #expect(ipv4 == expectedAddress)
+            case .none:
+                #expect(expectedAddress == nil)
+            case .v6:
+                if !isValidIPv6 {
+                    Issue.record("Expected IPv4 but got: \(ipAddress)")
+                }
             }
         }
     }
@@ -369,12 +375,15 @@ struct IPAddressTests {
             )
         ]
     )
-    func ipv6AddressFromStringThroughArpaDomainNameHardcodedCase(
+    func ipv6AddressFromStringThroughArpaDomainNameHardcodedCases(
         arpaDomainName domainName: DomainName,
         expectedAddress: IPv6Address?
     ) {
-        let ipv6Address = IPv6Address(arpaDomainName: domainName)
-        #expect(ipv6Address == expectedAddress)
+        let ipv6Address1 = IPv6Address(arpaDomainName: domainName)
+        #expect(ipv6Address1 == expectedAddress)
+
+        let ipv6Address2 = IPv6Address(domainName: domainName)
+        #expect(ipv6Address2 == expectedAddress)
     }
 
     @available(swiftEndpointApplePlatforms 26, *)
@@ -422,18 +431,24 @@ struct IPAddressTests {
         }
         let domainName = arpa.flatMap { try? DomainName($0) }
 
-        let ipv6Address = domainName.flatMap { IPv6Address(arpaDomainName: $0) }
-        #expect(ipv6Address == expectedAddress)
+        let ipv6Address1 = domainName.flatMap { IPv6Address(arpaDomainName: $0) }
+        #expect(ipv6Address1 == expectedAddress)
 
-        let ipAddress = domainName.flatMap { AnyIPAddress(arpaDomainName: $0) }
-        switch ipAddress {
-        case .v6(let ipv6):
-            #expect(ipv6 == expectedAddress)
-        case .none:
-            #expect(expectedAddress == nil)
-        case .v4:
-            if !isValidIPv4 {
-                Issue.record("Expected IPv6 but got: \(ipAddress)")
+        let ipv6Address2 = domainName.flatMap { IPv6Address(domainName: $0) }
+        #expect(ipv6Address2 == expectedAddress)
+
+        let anyIPAddress1 = domainName.flatMap { AnyIPAddress(arpaDomainName: $0) }
+        let anyIPAddress2 = domainName.flatMap { AnyIPAddress(domainName: $0) }
+        for ipAddress in [anyIPAddress1, anyIPAddress2] {
+            switch ipAddress {
+            case .v6(let ipv6):
+                #expect(ipv6 == expectedAddress)
+            case .none:
+                #expect(expectedAddress == nil)
+            case .v4:
+                if !isValidIPv4 {
+                    Issue.record("Expected IPv6 but got: \(ipAddress)")
+                }
             }
         }
     }

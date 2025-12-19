@@ -9,6 +9,21 @@ extension IPv6Address {
     /// followed by `ipv6.arpa`.
     /// For example a domain name like `"b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6.arpa."` will
     /// parse into the IPv6 address `[4321:0:1:2:3:4:567:89ab]`.
+    ///
+    /// For `IPv6Address`, currently this initializer is identical to `init(arpaDomainName:)` and
+    /// is only provided for consistency with `IPv4Address` and `AnyIPAddress`.
+    @inlinable
+    public init?(domainName: DomainName) {
+        self.init(arpaDomainName: domainName)
+    }
+
+    /// Initialize an `IPv6Address` from a `DomainName` which is in the special arpa domain name format,
+    /// according to [RFC 3596, DNS Extensions to Support IP Version 6, October 2003](https://tools.ietf.org/html/rfc3596#section-2.5).
+    ///
+    /// The domain name must contain exactly 32 hexadecimal integer labels containing the ipv6 address's value in reverse,
+    /// followed by `ipv6.arpa`.
+    /// For example a domain name like `"b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6.arpa."` will
+    /// parse into the IPv6 address `[4321:0:1:2:3:4:567:89ab]`.
     @inlinable
     public init?(arpaDomainName domainName: DomainName) {
         guard

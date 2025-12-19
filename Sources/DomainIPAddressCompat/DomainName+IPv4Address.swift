@@ -5,9 +5,14 @@ public import struct NIOCore.ByteBuffer
 
 @available(swiftEndpointApplePlatforms 10.15, *)
 extension IPv4Address {
-    /// Initialize an `IPv4Address` from a `DomainName`.
-    /// The domain name must correspond to a valid IPv4 address.
-    /// For example a domain name like `"127.0.0.1"` will parse into the IPv4 address `127.0.0.1`.
+    /// Initialize an `IPv4Address` from a `DomainName` which is in the special arpa domain name format,
+    /// according to [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://tools.ietf.org/html/rfc1035#section-3.5)
+    /// or is a simple IPv4 Address encoded in dotted quad notation like `"127.0.0.1"`.
+    ///
+    /// For a arpa-formatted domain name, it must contain exactly 4 UInt8 labels containing the ipv4 address's
+    /// value in reverse, followed by `in-addr.arpa`.
+    /// For example a domain name like `"4.3.2.1.in-addr.arpa"` will parse into the IPv4 address `1.2.3.4`.
+    /// Or it can be a simple domain name like `"127.0.0.1"` which will parse into the IPv4 address `127.0.0.1`.
     @inlinable
     public init?(domainName: DomainName) {
         guard
@@ -19,8 +24,10 @@ extension IPv4Address {
                     /// `DomainName.data` always only contains ASCII bytes
                     let asciiSpan = ptr.span
 
-                    var idx = 0
-                    while let (range, _) = iterator.nextRange() {
+                    for idx in 0..<4 {
+                        guard let (range, _) = iterator.nextRange() else {
+                            return nil
+                        }
                         guard
                             let byte = UInt8(
                                 decimalRepresentation: asciiSpan.extracting(unchecked: range)
@@ -32,21 +39,43 @@ extension IPv4Address {
                         /// Unchecked because `idx` can't exceed `3` anyway
                         let shift = 8 &* (3 &- idx)
                         ipv4.address |= UInt32(byte) &<< shift
-
-                        if idx == 3 {
-                            if iterator.reachedEnd() {
-                                /// We've had exactly enough labels, let's return
-                                return ipv4
-                            } else {
-                                return nil
-                            }
-                        }
-
-                        idx &+= 1
                     }
 
-                    /// We had less than 4 labels, so this is an error
-                    return nil
+                    if iterator.reachedEnd() {
+                        /// We've had exactly enough labels, let's return
+                        return ipv4
+                    }
+
+                    /// Check to see if this is an arpa domain name
+                    guard let (inAddrRange, _) = iterator.nextRange(),
+                        let (arpaRange, _) = iterator.nextRange(),
+                        iterator.reachedEnd()
+                    else {
+                        return nil
+                    }
+
+                    let inAddr = asciiSpan.extracting(unchecked: inAddrRange)
+                    let arpa = asciiSpan.extracting(unchecked: arpaRange)
+                    let inAddrBytes = [
+                        UInt8(ascii: "i"), UInt8(ascii: "n"), UInt8(ascii: "-"), UInt8(ascii: "a"),
+                        UInt8(ascii: "d"), UInt8(ascii: "d"), UInt8(ascii: "r"),
+                    ]
+                    let arpaBytes = [
+                        UInt8(ascii: "a"), UInt8(ascii: "r"), UInt8(ascii: "p"), UInt8(ascii: "a"),
+                    ]
+                    guard inAddr.swift_dns_equals(to: inAddrBytes),
+                        arpa.swift_dns_equals(to: arpaBytes)
+                    else {
+                        return nil
+                    }
+
+                    /// Arpa domain names have the domain name bytes in reversed order.
+                    withUnsafeMutableBytes(of: &ipv4.address) { ptr in
+                        ptr.swapAt(0, 3)
+                        ptr.swapAt(1, 2)
+                    }
+
+                    return ipv4
                 }
             })
         else {

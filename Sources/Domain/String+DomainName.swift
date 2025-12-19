@@ -26,7 +26,7 @@ extension DomainName: CustomDebugStringConvertible {
 
 @available(swiftEndpointApplePlatforms 10.15, *)
 extension DomainName {
-    /// FIXME: public nonfrozen enum
+    @nonexhaustive
     public enum DescriptionFormat: Sendable {
         /// ASCII-only description of the domain name, as in the wire format and IDNA.
         case ascii
@@ -108,7 +108,7 @@ extension DomainName {
 /// MARK: - Initializers from String
 
 extension DomainName {
-    /// FIXME: public non frozen enum?
+    @nonexhaustive
     public enum ValidationError: Error {
         case domainNameMustBeASCII(ByteBuffer)
         case domainNameLengthLimitExceeded(actual: Int, max: Int, in: ByteBuffer)

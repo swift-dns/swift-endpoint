@@ -1,4 +1,4 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.2.3
 
 import CompilerPluginSupport
 // MARK: - BEGIN exact copy of the main package's Package.swift
@@ -19,7 +19,7 @@ let package = Package(
         .default(enabledTraits: ["IDNA_SUPPORT", "NIO_BYTE_BUFFER_SUPPORT"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/mahdibm/swift-idna.git", from: "1.0.0-beta.17"),
+        .package(url: "https://github.com/mahdibm/swift-idna.git", from: "1.0.0-beta.18"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.82.0"),
     ],
     targets: [

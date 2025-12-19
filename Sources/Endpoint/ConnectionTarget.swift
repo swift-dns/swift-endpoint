@@ -3,13 +3,14 @@ public import SwiftIDNA
 /// A target for a connection.
 @available(swiftEndpointApplePlatforms 10.15, *)
 public struct ConnectionTarget: Sendable, Hashable {
+    @nonexhaustive
     public enum Error: Swift.Error {
         case invalidIPAddressString(String)
         case failedToParseDomainName(any Swift.Error)
     }
 
-    /// FIXME: non frozen enum?
     /// The target of a connection.
+    @nonexhaustive
     public enum Target: Sendable, Hashable {
         case ipAddress(AnyIPAddress, port: UInt16)
         case domainName(DomainName, port: UInt16)

@@ -57,7 +57,7 @@ print(domainName2.debugDescription) /// prints "xn--xkrr14bows.xn--fiqs8s"
 
 /// Define an ipv4 address. The type will parse the ip address into a UInt32 internally.
 let ipv4Address1 = IPv4Address("127.0.0.1")!
-let ipv4Address2 = IPv4Address(192, 168, 1, 1)!
+let ipv4Address2 = IPv4Address(192, 168, 1, 1)
 print(ipv4Address1) /// prints "127.0.0.1"
 print(ipv4Address2) /// prints "192.168.1.1"
 
@@ -98,17 +98,27 @@ All types are convertible to each other in a performant way. Some examples:
 ```swift
 import Endpoint
 
-let ipInDomainName = try DomainName("255.255.255.255")
+let simpleIpv4InDomainName = try DomainName("1.2.3.4")
 
-let fastIPv4 = IPv4Address(domainName: ipInDomainName)! /// ✅ Converts the domain into the equivalent ipv4 address
-let slowIPv4 = IPv4Address(ipInDomainName.description)! /// ❌ This does work, but has worse performance
+let fastIPv4 = IPv4Address(domainName: simpleIpv4InDomainName)! /// ✅ Converts the domain into the equivalent ipv4 address
+let slowIPv4 = IPv4Address(simpleIpv4InDomainName.description)! /// ❌ This does work, but has worse performance
 
-let fastIPv4Conversion = try DomainName(ipv4: fastIPv4)! /// ✅ Converts the ipv4 into the equivalent domain name
-let slowIPv4Conversion = DomainName(fastIPv4.description)! /// ❌ This does work, but has worse performance
+let fastIPv4Conversion = DomainName(ipv4: fastIPv4) /// ✅ Converts the ipv4 into the equivalent domain name
+let slowIPv4Conversion = try DomainName(fastIPv4.description) /// ❌ This does work, but has worse performance
 
-let anyIPAddress = AnyIPAddress(domainName: ipInDomainName)
-print(anyIPAddress) /// prints "255.255.255.255"
+print(fastIPv4Conversion) /// prints "4.3.2.1.in-addr.arpa."
+
+let anyIPAddress = AnyIPAddress(domainName: simpleIpv4InDomainName)
+print(anyIPAddress)/// prints "1.2.3.4"
 ```
+
+For `IPv4Address`, the `DomainName` conversions are possible to/from:
+* Dotted-quad notation, for example: "1.2.3.4"
+* Arpa domain name format, for example: "4.3.2.1.in-addr.arpa."
+
+For `IPv6Address`, the Arpa domain name format is supported. For example the followings are equivalent:   
+* `IPv6Address`: 4321::1:2:3:4:567:89ab   
+* `DomainName`: "b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6.arpa."
 
 ## Performance
 

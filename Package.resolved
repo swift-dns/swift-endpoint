@@ -1,5 +1,5 @@
 {
-  "originHash" : "2d2f688862116a542f74be90c844e9ddf61c4495b681272cd64f76a420068e94",
+  "originHash" : "5f4a990d323afa36fc6ccb7b5060703c49a5d18c139996211c40b344a0b48a53",
   "pins" : [
     {
       "identity" : "swift-atomics",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swift-dns/swift-idna.git",
       "state" : {
-        "revision" : "8f21ed04b655c56db78e02224a0ce4565770ceb7",
-        "version" : "1.0.0-beta.18"
+        "revision" : "2730ace97e94a768383d49991bc77ae25b0e9bc0",
+        "version" : "1.0.0-beta.20"
       }
     },
     {

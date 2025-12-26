@@ -465,13 +465,13 @@ extension DomainName {
 
     @inlinable
     static func __debugAssertValidDomainNameSpan(_ span: Span<UInt8>) {
+        if !span.isASCII {
+            fatalError(
+                "DomainName initializer should not be used with non-ASCII character: \([UInt8](copying: span))"
+            )
+        }
         for idx in span.indices {
             /// Unchecked because `idx` comes right from `span.indices`
-            if !span[unchecked: idx].isASCII {
-                fatalError(
-                    "DomainName initializer should not be used with non-ASCII character: \(span[unchecked: idx])"
-                )
-            }
             if span[unchecked: idx].isUppercasedASCIILetter {
                 fatalError(
                     "DomainName initializer should not be used with uppercased ASCII characters: \(span[unchecked: idx])"

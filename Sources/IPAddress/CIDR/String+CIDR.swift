@@ -85,12 +85,7 @@ extension CIDR: LosslessStringConvertible {
     /// 2001::/220 will be repaired to 2001::/128.
     @inlinable
     public init?(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
-        for idx in span.indices {
-            /// Unchecked because `idx` comes right from `span.indices`
-            if !span[unchecked: idx].isASCII {
-                return nil
-            }
-        }
+        if !span.isASCII { return nil }
 
         self.init(_uncheckedAssumingValidASCII: span)
     }
@@ -106,13 +101,10 @@ extension CIDR: LosslessStringConvertible {
     @inlinable
     init?(_uncheckedAssumingValidASCII span: Span<UInt8>) {
         debugOnly {
-            for idx in span.indices {
-                /// Unchecked because `idx` comes right from `span.indices`
-                if !span[unchecked: idx].isASCII {
-                    fatalError(
-                        "CIDR initializer should not be used with non-ASCII character: \(span[unchecked: idx])"
-                    )
-                }
+            if !span.isASCII {
+                fatalError(
+                    "CIDR initializer should not be used with non-ASCII character: \([UInt8](copying: span))"
+                )
             }
         }
 

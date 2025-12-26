@@ -72,14 +72,9 @@ extension IPv4Address: LosslessStringConvertible {
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
     public init?(_ description: String) {
-        if #available(swiftEndpointApplePlatforms 26, *) {
-            self.init(textualRepresentation: description.utf8Span)
-            return
-        }
-
         var description = description
         guard
-            let result = description.withSpan_macOSUnder26({
+            let result = description.withSpan_Compatibility({
                 IPv4Address(_uncheckedAssumingValidUTF8: $0)
             })
         else {
@@ -92,14 +87,9 @@ extension IPv4Address: LosslessStringConvertible {
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
     public init?(_ description: Substring) {
-        if #available(swiftEndpointApplePlatforms 26, *) {
-            self.init(textualRepresentation: description.utf8Span)
-            return
-        }
-
         var description = description
         guard
-            let result = description.withSpan_macOSUnder26({
+            let result = description.withSpan_Compatibility({
                 IPv4Address(_uncheckedAssumingValidUTF8: $0)
             })
         else {

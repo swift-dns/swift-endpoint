@@ -46,14 +46,9 @@ extension CIDR: LosslessStringConvertible {
     /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
     /// 2001::/220 will be repaired to 2001::/128.
     public init?(_ description: String) {
-        if #available(swiftEndpointApplePlatforms 26, *) {
-            self.init(textualRepresentation: description.utf8Span)
-            return
-        }
-
         var description = description
         guard
-            let result = description.withSpan_macOSUnder26({
+            let result = description.withSpan_Compatibility({
                 CIDR(_uncheckedAssumingValidUTF8: $0)
             })
         else {
@@ -70,14 +65,9 @@ extension CIDR: LosslessStringConvertible {
     /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
     /// 2001::/220 will be repaired to 2001::/128.
     public init?(_ description: Substring) {
-        if #available(swiftEndpointApplePlatforms 26, *) {
-            self.init(textualRepresentation: description.utf8Span)
-            return
-        }
-
         var description = description
         guard
-            let result = description.withSpan_macOSUnder26({
+            let result = description.withSpan_Compatibility({
                 CIDR(_uncheckedAssumingValidUTF8: $0)
             })
         else {

@@ -241,14 +241,9 @@ extension IPv6Address: LosslessStringConvertible {
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     public init?(_ description: String) {
-        if #available(swiftEndpointApplePlatforms 26, *) {
-            self.init(textualRepresentation: description.utf8Span)
-            return
-        }
-
         var description = description
         guard
-            let result = description.withSpan_macOSUnder26({
+            let result = description.withSpan_Compatibility({
                 IPv6Address(_uncheckedAssumingValidUTF8: $0)
             })
         else {
@@ -262,14 +257,9 @@ extension IPv6Address: LosslessStringConvertible {
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     public init?(_ description: Substring) {
-        if #available(swiftEndpointApplePlatforms 26, *) {
-            self.init(textualRepresentation: description.utf8Span)
-            return
-        }
-
         var description = description
         guard
-            let result = description.withSpan_macOSUnder26({
+            let result = description.withSpan_Compatibility({
                 IPv6Address(_uncheckedAssumingValidUTF8: $0)
             })
         else {

@@ -116,6 +116,7 @@ extension DomainName {
         case labelLengthLimitExceeded(actual: Int, max: Int, in: ByteBuffer)
         case labelMustNotBeEmpty(in: ByteBuffer)
         case emptyDomainName
+        case multipleRootLabelIndicatorsAreNotAllowed(in: ByteBuffer)
     }
 }
 
@@ -214,7 +215,7 @@ extension DomainName {
 
         /// Remove the trailing dot if it exists, and set the FQDN flag
         /// The IDNA spec doesn't like the root label separator.
-        DomainName.__removingRootLabelIndicator(
+        try DomainName.__removingRootLabelIndicator(
             from: &span,
             bytesCount: &bytesCount,
             isFQDN: &isFQDN
@@ -247,23 +248,25 @@ extension DomainName {
         from bytesSpan: inout Span<UInt8>,
         bytesCount: inout Int,
         isFQDN: inout Bool
-    ) {
+    ) throws {
         /// In the initializer above, we already checked if the domain name is 1-2 bytes and those
         /// 2 bytes are the IDNA label separator. Here we don't need to check for that.
         guard bytesCount > 1 else {
             return
         }
 
-        let endIndex = bytesCount &- 1
+        var newSpan = bytesSpan
+
+        var endIndex = bytesCount &- 1
         switch bytesCount {
         case 2:
             let rhs = bytesSpan[unchecked: endIndex]
             if rhs.isIDNALabelSeparator {
                 let range = Range(uncheckedBounds: (0, endIndex))
-                bytesSpan = bytesSpan.extracting(unchecked: range)
+                newSpan = bytesSpan.extracting(unchecked: range)
                 isFQDN = true
                 bytesCount &-= 1
-                return
+                break
             }
         case 3...:
             let first = bytesSpan[unchecked: endIndex &- 2]
@@ -271,21 +274,50 @@ extension DomainName {
             let third = bytesSpan[unchecked: endIndex]
             if third.isIDNALabelSeparator {
                 let range = Range(uncheckedBounds: (0, endIndex))
-                bytesSpan = bytesSpan.extracting(unchecked: range)
+                newSpan = bytesSpan.extracting(unchecked: range)
                 isFQDN = true
                 bytesCount &-= 1
-                return
+                break
             }
             if DomainName.isIDNALabelSeparator(first, second, third) {
                 let range = Range(uncheckedBounds: (0, endIndex &- 2))
-                bytesSpan = bytesSpan.extracting(unchecked: range)
+                newSpan = bytesSpan.extracting(unchecked: range)
                 isFQDN = true
                 bytesCount &-= 3
-                return
+                break
             }
         default:
             break
         }
+
+        endIndex = bytesCount &- 1
+        switch bytesCount {
+        case 1:
+            let rhs = newSpan[unchecked: endIndex]
+            if rhs.isIDNALabelSeparator {
+                throw ValidationError.multipleRootLabelIndicatorsAreNotAllowed(
+                    in: ByteBuffer(swift_endpoint_copying: bytesSpan)
+                )
+            }
+        case 3...:
+            let first = newSpan[unchecked: endIndex &- 2]
+            let second = newSpan[unchecked: endIndex &- 1]
+            let third = newSpan[unchecked: endIndex]
+            if third.isIDNALabelSeparator {
+                throw ValidationError.multipleRootLabelIndicatorsAreNotAllowed(
+                    in: ByteBuffer(swift_endpoint_copying: bytesSpan)
+                )
+            }
+            if DomainName.isIDNALabelSeparator(first, second, third) {
+                throw ValidationError.multipleRootLabelIndicatorsAreNotAllowed(
+                    in: ByteBuffer(swift_endpoint_copying: bytesSpan)
+                )
+            }
+        default:
+            break
+        }
+
+        bytesSpan = newSpan
     }
 }
 
@@ -314,7 +346,7 @@ extension DomainName {
             throw ValidationError.domainNameLengthLimitExceeded(
                 actual: totalLength,
                 max: Int(DomainName.maxLength),
-                in: ByteBuffer(swiftEndpointReadingFromSpan: span)
+                in: ByteBuffer(swift_endpoint_copying: span)
             )
         }
 
@@ -375,7 +407,7 @@ extension DomainName {
             if !byte.isAcceptableDomainNameCharacter {
                 throw ValidationError.labelContainsInvalidASCIIByte(
                     byte,
-                    in: ByteBuffer(swiftEndpointReadingFromSpan: chunk)
+                    in: ByteBuffer(swift_endpoint_copying: chunk)
                 )
             }
         }
@@ -383,14 +415,14 @@ extension DomainName {
         var labelLength = range.count
         if labelLength == 0 {
             throw ValidationError.labelMustNotBeEmpty(
-                in: ByteBuffer(swiftEndpointReadingFromSpan: span)
+                in: ByteBuffer(swift_endpoint_copying: span)
             )
         }
         if labelLength > DomainName.maxLabelLength {
             throw ValidationError.labelLengthLimitExceeded(
                 actual: Int(labelLength),
                 max: Int(DomainName.maxLabelLength),
-                in: ByteBuffer(swiftEndpointReadingFromSpan: span)
+                in: ByteBuffer(swift_endpoint_copying: span)
             )
         }
 

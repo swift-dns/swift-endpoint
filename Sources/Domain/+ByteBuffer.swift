@@ -3,7 +3,7 @@ public import struct NIOCore.ByteBuffer
 @available(swiftEndpointApplePlatforms 10.15, *)
 extension ByteBuffer {
     @inlinable
-    init(swiftEndpointReadingFromSpan span: Span<UInt8>) {
+    init(swift_endpoint_copying span: Span<UInt8>) {
         self.init()
         self.writeWithUnsafeMutableBytes(minimumWritableBytes: span.count) { bufferPtr in
             span.withUnsafeBytes { spanPtr in

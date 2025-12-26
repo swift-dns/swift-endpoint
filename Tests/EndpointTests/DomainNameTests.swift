@@ -66,6 +66,10 @@ struct DomainNameTests {
             "",
             "\(Array(repeating: "j", count: 64).joined()).example.com.",
             "s\(Array(repeating: "]", count: 61).joined())s.example.com.",
+            "..",
+            "...",
+            "....",
+            ".........",
         ]
     )
     func initInvalidFromString(domainName: String) throws {

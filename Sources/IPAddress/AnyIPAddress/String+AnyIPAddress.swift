@@ -46,14 +46,9 @@ extension AnyIPAddress: LosslessStringConvertible {
     /// and `"[2001:db8:1111::]"` will parse into `.v6(2001:DB8:1111:0:0:0:0:0)`,
     /// or in other words `.v6(0x2001_0DB8_1111_0000_0000_0000_0000_0000)`.
     public init?(_ description: String) {
-        if #available(swiftEndpointApplePlatforms 26, *) {
-            self.init(textualRepresentation: description.utf8Span)
-            return
-        }
-
         var description = description
         guard
-            let result = description.withSpan_macOSUnder26({
+            let result = description.withSpan_Compatibility({
                 AnyIPAddress(_uncheckedAssumingValidUTF8: $0)
             })
         else {
@@ -67,14 +62,9 @@ extension AnyIPAddress: LosslessStringConvertible {
     /// and `"[2001:db8:1111::]"` will parse into `.v6(2001:DB8:1111:0:0:0:0:0)`,
     /// or in other words `.v6(0x2001_0DB8_1111_0000_0000_0000_0000_0000)`.
     public init?(_ description: Substring) {
-        if #available(swiftEndpointApplePlatforms 26, *) {
-            self.init(textualRepresentation: description.utf8Span)
-            return
-        }
-
         var description = description
         guard
-            let result = description.withSpan_macOSUnder26({
+            let result = description.withSpan_Compatibility({
                 AnyIPAddress(_uncheckedAssumingValidUTF8: $0)
             })
         else {

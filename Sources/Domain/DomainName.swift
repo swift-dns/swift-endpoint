@@ -62,7 +62,7 @@ public struct DomainName: Sendable {
     /// Non-ASCII names are converted to ASCII based on the IDNA spec, in the initializers.
     /// Non-lowercased ASCII names are converted to lowercased ASCII in the initializers.
     ///
-    /// Based on the DNS specs, all names are case-insensitive.
+    /// Based on the DNS spec, all names are case-insensitive.
     /// This package goes further and normalizes every domainName to lowercase to avoid inconsistencies.
     ///
     /// [RFC 9499, DNS Terminology, March 2024](https://tools.ietf.org/html/rfc9499)

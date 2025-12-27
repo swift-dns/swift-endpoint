@@ -23,8 +23,17 @@ enum Resources: String {
     private func qualifiedPath() -> String {
         var components = URL(fileURLWithPath: #filePath).pathComponents
 
-        while components.last != "swift-endpoint" {
-            components.removeLast()
+        if let projectRootForTesting = ProcessInfo.processInfo
+            .environment["PROJECT_ROOT_FOR_TESTING"],
+            !projectRootForTesting.isEmpty
+        {
+            components = URL(fileURLWithPath: projectRootForTesting).pathComponents
+        } else {
+            components = URL(fileURLWithPath: #filePath).pathComponents
+
+            while components.last != "swift-endpoint" {
+                components.removeLast()
+            }
         }
 
         components.append(contentsOf: ["Tests", "Resources", self.rawValue])

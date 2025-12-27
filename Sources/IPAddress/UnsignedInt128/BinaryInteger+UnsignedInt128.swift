@@ -74,7 +74,7 @@ extension UnsignedInt128 {
             return .zero
         }
 
-        /// This algorithm works based on knowledge of that all numbers in range of
+        /// This algorithm works based on knowledge that all numbers in range of
         /// `0 ... (2^128 - 1)` are producible by summing up powers of 2 from 0 to 127.
         /// For example `3 == 2^0 + 2^1`. Or `111 == 2^6 + 2^5 + 2^3 + 2^2 + 2^1 + 2^0`.
         ///
@@ -99,7 +99,7 @@ extension UnsignedInt128 {
         }
 
         while step != Self(_low: 1, _high: 0), lhs != .zero {
-            step >>= 1
+            step &>>= 1
 
             let multiplied = step.multipliedReportingOverflow(by: rhs)
             if !multiplied.overflow,

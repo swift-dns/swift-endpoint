@@ -79,12 +79,7 @@ extension AnyIPAddress: LosslessStringConvertible {
     /// or in other words `.v6(0x2001_0DB8_1111_0000_0000_0000_0000_0000)`.
     @inlinable
     public init?(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
-        for idx in span.indices {
-            /// Unchecked because `idx` comes right from `span.indices`
-            if !span[unchecked: idx].isASCII {
-                return nil
-            }
-        }
+        if !span.isASCII { return nil }
 
         self.init(_uncheckedAssumingValidASCII: span)
     }
@@ -101,13 +96,10 @@ extension AnyIPAddress: LosslessStringConvertible {
     @inlinable
     public init?(_uncheckedAssumingValidASCII span: Span<UInt8>) {
         debugOnly {
-            for idx in span.indices {
-                /// Unchecked because `idx` comes right from `span.indices`
-                if !span[unchecked: idx].isASCII {
-                    fatalError(
-                        "AnyIPAddress initializer should not be used with non-ASCII character: \(span[unchecked: idx])"
-                    )
-                }
+            if !span.isASCII {
+                fatalError(
+                    "AnyIPAddress initializer should not be used with non-ASCII character: \([UInt8](copying: span))"
+                )
             }
         }
 

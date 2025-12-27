@@ -274,12 +274,7 @@ extension IPv6Address: LosslessStringConvertible {
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     @inlinable
     public init?(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
-        for idx in span.indices {
-            /// Unchecked because `idx` comes right from `span.indices`
-            if !span[unchecked: idx].isASCII {
-                return nil
-            }
-        }
+        if !span.isASCII { return nil }
 
         self.init(_uncheckedAssumingValidASCII: span)
     }
@@ -317,13 +312,10 @@ extension IPv6Address: LosslessStringConvertible {
         preParsedIPv4MappedSegment: IPv4Address?
     ) {
         debugOnly {
-            for idx in span.indices {
-                /// Unchecked because `idx` comes right from `span.indices`
-                if !span[unchecked: idx].isASCII {
-                    fatalError(
-                        "IPv6Address initializer should not be used with non-ASCII character: \(span[unchecked: idx])"
-                    )
-                }
+            if !span.isASCII {
+                fatalError(
+                    "IPv6Address initializer should not be used with non-ASCII character: \([UInt8](copying: span))"
+                )
             }
         }
 

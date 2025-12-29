@@ -187,7 +187,7 @@ extension DomainName: Hashable {
 
     /// Hash without considering the FQDN flag.
     /// Users usually instantiate `DomainName` using a domain name which doesn't end in a dot.
-    /// That mean user-instantiate `DomainName`s usually have `isFQDN` set to `false`.
+    /// That means user-instantiated `DomainName`s usually have `isFQDN` set to `false`.
     /// On the wire though, the root label is almost always present, so `isFQDN` is almost always `true`.
     @inlinable
     public func hash(into hasher: inout Hasher) {

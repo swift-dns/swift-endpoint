@@ -3,7 +3,7 @@ public import struct NIOCore.ByteBuffer
 extension DomainName {
     @nonexhaustive
     public enum IPv4AddressInDomainNameFormatting: Sendable {
-        /// The IPv4 address format for representation in dotted quad notation.
+        /// The IPv4 address format for representation in dotted-quad notation.
         /// For example `127.0.0.1` will turn into the domain name `"127.0.0.1"`.
         case dottedQuad
         /// The IPv4 address format for representation in the arpa format, according to

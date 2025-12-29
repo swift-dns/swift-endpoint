@@ -8,13 +8,13 @@ extension [UInt8] {
             return
         }
 
-        self.init(unsafeUninitializedCapacity: span.count) { buffer, initializedCount in
+        self.init(unsafeUninitializedCapacity: count) { buffer, initializedCount in
             let rawBuffer = UnsafeMutableRawBufferPointer(buffer)
             span.withUnsafeBytes { spanPtr in
                 let rawSpanPtr = UnsafeRawBufferPointer(spanPtr)
                 rawBuffer.copyMemory(from: rawSpanPtr)
             }
-            initializedCount = span.count
+            initializedCount = count
         }
     }
 }

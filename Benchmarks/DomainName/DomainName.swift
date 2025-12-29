@@ -6,14 +6,14 @@ let benchmarks: @Sendable () -> Void = {
 
     let google = "google.com"
     Benchmark(
-        "google_dot_com_String_Parsing_CPU_200K",
+        "google_dot_com_String_Parsing_CPU_1M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<200_000 {
+        for _ in 0..<1_000_000 {
             let domainName = try! DomainName(google)
             blackHole(domainName)
         }
@@ -33,14 +33,14 @@ let benchmarks: @Sendable () -> Void = {
 
     let appAnalyticsServices = "app-analytics-services.com"
     Benchmark(
-        "app-analytics-services_dot_com_String_Parsing_CPU_200K",
+        "app-analytics-services_dot_com_String_Parsing_CPU_1M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000,
         )
     ) { benchmark in
-        for _ in 0..<200_000 {
+        for _ in 0..<1_000_000 {
             let domainName = try! DomainName(appAnalyticsServices)
             blackHole(domainName)
         }

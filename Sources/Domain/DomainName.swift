@@ -226,6 +226,18 @@ extension DomainName: Sequence {
         }
 
         @inlinable
+        package func remainingBytes() -> ByteBuffer {
+            if self.reachedEnd() {
+                return ByteBuffer()
+            }
+
+            return self.domainName._data.getSlice(
+                at: self.startIndex,
+                length: self.domainName._data.writerIndex - self.startIndex
+            ).unsafelyUnwrapped
+        }
+
+        @inlinable
         package mutating func next() -> (startIndex: Int, length: Int)? {
             if self.reachedEnd() {
                 return nil
@@ -277,6 +289,11 @@ extension DomainName: Sequence {
         @usableFromInline
         init(base: DomainName) {
             self.positionIterator = PositionIterator(base: base)
+        }
+
+        @inlinable
+        package func remainingBytes() -> ByteBuffer {
+            self.positionIterator.remainingBytes()
         }
 
         @inlinable

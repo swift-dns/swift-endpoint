@@ -270,6 +270,88 @@ struct DomainNameTests {
         #expect(name2.debugDescription == expectedDescription)
     }
 
+    @Test func isSubdomain() throws {
+        let name1 = try DomainName("example.com")
+        let name2 = try DomainName("www.example.com")
+        let name3 = try DomainName("example.com.com")
+        let name4 = try DomainName("www.example.com.com")
+
+        #expect(name1.isSubdomain(of: name2))
+        #expect(!name1.isSubdomain(of: name3))
+        #expect(!name1.isSubdomain(of: name4))
+        #expect(!name2.isSubdomain(of: name4))
+        #expect(name3.isSubdomain(of: name4))
+
+        #expect(!name2.isSubdomain(of: name1))
+        #expect(!name3.isSubdomain(of: name1))
+        #expect(!name4.isSubdomain(of: name1))
+        #expect(!name4.isSubdomain(of: name2))
+        #expect(!name4.isSubdomain(of: name3))
+
+        #expect(name1.isStrictSubdomain(of: name2))
+        #expect(!name1.isStrictSubdomain(of: name3))
+        #expect(!name1.isStrictSubdomain(of: name4))
+        #expect(!name2.isStrictSubdomain(of: name4))
+        #expect(name3.isStrictSubdomain(of: name4))
+
+        #expect(!name2.isStrictSubdomain(of: name1))
+        #expect(!name3.isStrictSubdomain(of: name1))
+        #expect(!name4.isStrictSubdomain(of: name1))
+        #expect(!name4.isStrictSubdomain(of: name2))
+        #expect(!name4.isStrictSubdomain(of: name3))
+
+        #expect(name1.isSubdomain(of: name1))
+        #expect(name2.isSubdomain(of: name2))
+        #expect(name3.isSubdomain(of: name3))
+        #expect(name4.isSubdomain(of: name4))
+
+        #expect(!name1.isStrictSubdomain(of: name1))
+        #expect(!name2.isStrictSubdomain(of: name2))
+        #expect(!name3.isStrictSubdomain(of: name3))
+        #expect(!name4.isStrictSubdomain(of: name4))
+    }
+
+    @Test func isSuperdomain() throws {
+        let name1 = try DomainName("example.com")
+        let name2 = try DomainName("www.example.com")
+        let name3 = try DomainName("example.com.com")
+        let name4 = try DomainName("www.example.com.com")
+
+        #expect(name2.isSuperdomain(of: name1))
+        #expect(!name3.isSuperdomain(of: name1))
+        #expect(!name4.isSuperdomain(of: name1))
+        #expect(!name4.isSuperdomain(of: name2))
+        #expect(name4.isSuperdomain(of: name3))
+
+        #expect(!name1.isSuperdomain(of: name2))
+        #expect(!name1.isSuperdomain(of: name3))
+        #expect(!name1.isSuperdomain(of: name4))
+        #expect(!name2.isSuperdomain(of: name4))
+        #expect(!name3.isSuperdomain(of: name4))
+
+        #expect(name2.isStrictSuperdomain(of: name1))
+        #expect(!name3.isStrictSuperdomain(of: name1))
+        #expect(!name4.isStrictSuperdomain(of: name1))
+        #expect(!name4.isStrictSuperdomain(of: name2))
+        #expect(name4.isStrictSuperdomain(of: name3))
+
+        #expect(!name1.isStrictSuperdomain(of: name2))
+        #expect(!name1.isStrictSuperdomain(of: name3))
+        #expect(!name1.isStrictSuperdomain(of: name4))
+        #expect(!name2.isStrictSuperdomain(of: name4))
+        #expect(!name3.isStrictSuperdomain(of: name4))
+
+        #expect(name1.isSuperdomain(of: name1))
+        #expect(name2.isSuperdomain(of: name2))
+        #expect(name3.isSuperdomain(of: name3))
+        #expect(name4.isSuperdomain(of: name4))
+
+        #expect(!name1.isStrictSuperdomain(of: name1))
+        #expect(!name2.isStrictSuperdomain(of: name2))
+        #expect(!name3.isStrictSuperdomain(of: name3))
+        #expect(!name4.isStrictSuperdomain(of: name4))
+    }
+
     /// The file pointing to `Resources.topDomains` contains only 200 top domains, but you can
     /// try bigger files too.
     /// For example you can manually go to cloudflare radar (https://radar.cloudflare.com/domains)

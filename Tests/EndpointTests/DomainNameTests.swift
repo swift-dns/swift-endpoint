@@ -234,16 +234,32 @@ struct DomainNameTests {
 
     @Test(
         arguments: [
-            (domainName: "*", expectedLabelsCount: 0),
+            (domainName: "*", expectedLabelsCount: 1),
             (domainName: "a", expectedLabelsCount: 1),
-            (domainName: "*.b", expectedLabelsCount: 1),
+            (domainName: "*.b", expectedLabelsCount: 2),
             (domainName: "a.b", expectedLabelsCount: 2),
-            (domainName: "*.b.c", expectedLabelsCount: 2),
+            (domainName: "*.b.c", expectedLabelsCount: 3),
+            (domainName: "*.*.c", expectedLabelsCount: 3),
             (domainName: "a.b.c", expectedLabelsCount: 3),
         ]
     )
     func `number of labels`(domainName: String, expectedLabelsCount: Int) throws {
         try #expect(DomainName(domainName).labelsCount == expectedLabelsCount)
+    }
+
+    @Test(
+        arguments: [
+            (domainName: "*", isWildcard: true),
+            (domainName: "a", isWildcard: false),
+            (domainName: "*.b", isWildcard: true),
+            (domainName: "a.b", isWildcard: false),
+            (domainName: "*.b.c", isWildcard: true),
+            (domainName: "*.*.c", isWildcard: true),
+            (domainName: "a.b.c", isWildcard: false),
+        ]
+    )
+    func `is wildcard`(domainName: String, isWildcard: Bool) throws {
+        try #expect(DomainName(domainName).isWildcard == isWildcard)
     }
 
     @available(swiftEndpointApplePlatforms 10.15, *)
@@ -276,29 +292,29 @@ struct DomainNameTests {
         let name3 = try DomainName("example.com.com")
         let name4 = try DomainName("www.example.com.com")
 
-        #expect(name1.isSubdomain(of: name2))
+        #expect(!name1.isSubdomain(of: name2))
         #expect(!name1.isSubdomain(of: name3))
         #expect(!name1.isSubdomain(of: name4))
         #expect(!name2.isSubdomain(of: name4))
-        #expect(name3.isSubdomain(of: name4))
+        #expect(!name3.isSubdomain(of: name4))
 
-        #expect(!name2.isSubdomain(of: name1))
+        #expect(name2.isSubdomain(of: name1))
         #expect(!name3.isSubdomain(of: name1))
         #expect(!name4.isSubdomain(of: name1))
         #expect(!name4.isSubdomain(of: name2))
-        #expect(!name4.isSubdomain(of: name3))
+        #expect(name4.isSubdomain(of: name3))
 
-        #expect(name1.isStrictSubdomain(of: name2))
+        #expect(!name1.isStrictSubdomain(of: name2))
         #expect(!name1.isStrictSubdomain(of: name3))
         #expect(!name1.isStrictSubdomain(of: name4))
         #expect(!name2.isStrictSubdomain(of: name4))
-        #expect(name3.isStrictSubdomain(of: name4))
+        #expect(!name3.isStrictSubdomain(of: name4))
 
-        #expect(!name2.isStrictSubdomain(of: name1))
+        #expect(name2.isStrictSubdomain(of: name1))
         #expect(!name3.isStrictSubdomain(of: name1))
         #expect(!name4.isStrictSubdomain(of: name1))
         #expect(!name4.isStrictSubdomain(of: name2))
-        #expect(!name4.isStrictSubdomain(of: name3))
+        #expect(name4.isStrictSubdomain(of: name3))
 
         #expect(name1.isSubdomain(of: name1))
         #expect(name2.isSubdomain(of: name2))
@@ -309,6 +325,46 @@ struct DomainNameTests {
         #expect(!name2.isStrictSubdomain(of: name2))
         #expect(!name3.isStrictSubdomain(of: name3))
         #expect(!name4.isStrictSubdomain(of: name4))
+
+        /// Mark: - name5 (wildcard domain name)
+        let name5 = try DomainName("*.example.com")
+        let name6 = try DomainName("some.thing.example.com")
+        let name7 = try DomainName("*.thing.example.com")
+
+        #expect(!name1.isSubdomain(of: name5))
+        #expect(name2.isSubdomain(of: name5))
+        #expect(!name3.isSubdomain(of: name5))
+        #expect(!name4.isSubdomain(of: name5))
+        #expect(name5.isSubdomain(of: name5))
+        #expect(!name6.isSubdomain(of: name5))
+        #expect(!name7.isSubdomain(of: name5))
+
+        #expect(name5.isSubdomain(of: name1))
+        #expect(!name5.isSubdomain(of: name2))
+        #expect(!name5.isSubdomain(of: name3))
+        #expect(!name5.isSubdomain(of: name4))
+        #expect(!name5.isSubdomain(of: name6))
+        #expect(!name5.isSubdomain(of: name7))
+
+        #expect(!name1.isStrictSubdomain(of: name5))
+        #expect(name2.isStrictSubdomain(of: name5))
+        #expect(!name3.isStrictSubdomain(of: name5))
+        #expect(!name4.isStrictSubdomain(of: name5))
+        #expect(!name5.isStrictSubdomain(of: name5))
+        #expect(!name6.isStrictSubdomain(of: name5))
+        #expect(!name7.isStrictSubdomain(of: name5))
+
+        #expect(name5.isStrictSubdomain(of: name1))
+        #expect(!name5.isStrictSubdomain(of: name2))
+        #expect(!name5.isStrictSubdomain(of: name3))
+        #expect(!name5.isStrictSubdomain(of: name4))
+        #expect(!name5.isStrictSubdomain(of: name6))
+        #expect(!name5.isStrictSubdomain(of: name7))
+
+        #expect(name6.isSubdomain(of: name7))
+        #expect(!name7.isSubdomain(of: name6))
+        #expect(name6.isStrictSubdomain(of: name7))
+        #expect(!name7.isStrictSubdomain(of: name6))
     }
 
     @Test func isSuperdomain() throws {
@@ -317,29 +373,29 @@ struct DomainNameTests {
         let name3 = try DomainName("example.com.com")
         let name4 = try DomainName("www.example.com.com")
 
-        #expect(name2.isSuperdomain(of: name1))
+        #expect(!name2.isSuperdomain(of: name1))
         #expect(!name3.isSuperdomain(of: name1))
         #expect(!name4.isSuperdomain(of: name1))
         #expect(!name4.isSuperdomain(of: name2))
-        #expect(name4.isSuperdomain(of: name3))
+        #expect(!name4.isSuperdomain(of: name3))
 
-        #expect(!name1.isSuperdomain(of: name2))
+        #expect(name1.isSuperdomain(of: name2))
         #expect(!name1.isSuperdomain(of: name3))
         #expect(!name1.isSuperdomain(of: name4))
         #expect(!name2.isSuperdomain(of: name4))
-        #expect(!name3.isSuperdomain(of: name4))
+        #expect(name3.isSuperdomain(of: name4))
 
-        #expect(name2.isStrictSuperdomain(of: name1))
+        #expect(!name2.isStrictSuperdomain(of: name1))
         #expect(!name3.isStrictSuperdomain(of: name1))
         #expect(!name4.isStrictSuperdomain(of: name1))
         #expect(!name4.isStrictSuperdomain(of: name2))
-        #expect(name4.isStrictSuperdomain(of: name3))
+        #expect(!name4.isStrictSuperdomain(of: name3))
 
-        #expect(!name1.isStrictSuperdomain(of: name2))
+        #expect(name1.isStrictSuperdomain(of: name2))
         #expect(!name1.isStrictSuperdomain(of: name3))
         #expect(!name1.isStrictSuperdomain(of: name4))
         #expect(!name2.isStrictSuperdomain(of: name4))
-        #expect(!name3.isStrictSuperdomain(of: name4))
+        #expect(name3.isStrictSuperdomain(of: name4))
 
         #expect(name1.isSuperdomain(of: name1))
         #expect(name2.isSuperdomain(of: name2))
@@ -350,6 +406,46 @@ struct DomainNameTests {
         #expect(!name2.isStrictSuperdomain(of: name2))
         #expect(!name3.isStrictSuperdomain(of: name3))
         #expect(!name4.isStrictSuperdomain(of: name4))
+
+        /// Mark: - name5 (wildcard domain name)
+        let name5 = try DomainName("*.example.com")
+        let name6 = try DomainName("some.thing.example.com")
+        let name7 = try DomainName("*.thing.example.com")
+
+        #expect(!name5.isSuperdomain(of: name1))
+        #expect(name5.isSuperdomain(of: name2))
+        #expect(!name5.isSuperdomain(of: name3))
+        #expect(!name5.isSuperdomain(of: name4))
+        #expect(name5.isSuperdomain(of: name5))
+        #expect(!name5.isSuperdomain(of: name6))
+        #expect(!name5.isSuperdomain(of: name7))
+
+        #expect(name1.isSuperdomain(of: name5))
+        #expect(!name2.isSuperdomain(of: name5))
+        #expect(!name3.isSuperdomain(of: name5))
+        #expect(!name4.isSuperdomain(of: name5))
+        #expect(!name6.isSuperdomain(of: name5))
+        #expect(!name7.isSuperdomain(of: name5))
+
+        #expect(name1.isStrictSuperdomain(of: name5))
+        #expect(!name2.isStrictSuperdomain(of: name5))
+        #expect(!name3.isStrictSuperdomain(of: name5))
+        #expect(!name4.isStrictSuperdomain(of: name5))
+        #expect(!name5.isStrictSuperdomain(of: name5))
+        #expect(!name6.isStrictSuperdomain(of: name5))
+        #expect(!name7.isStrictSuperdomain(of: name5))
+
+        #expect(!name5.isStrictSuperdomain(of: name1))
+        #expect(name5.isStrictSuperdomain(of: name2))
+        #expect(!name5.isStrictSuperdomain(of: name3))
+        #expect(!name5.isStrictSuperdomain(of: name4))
+        #expect(!name5.isStrictSuperdomain(of: name6))
+        #expect(!name5.isStrictSuperdomain(of: name7))
+
+        #expect(!name6.isSuperdomain(of: name7))
+        #expect(name7.isSuperdomain(of: name6))
+        #expect(!name6.isStrictSuperdomain(of: name7))
+        #expect(name7.isStrictSuperdomain(of: name6))
     }
 
     /// The file pointing to `Resources.topDomains` contains only 200 top domains, but you can

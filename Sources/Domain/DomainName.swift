@@ -87,32 +87,35 @@ public struct DomainName: Sendable {
     /// The number of labels in the domainName, excluding a leading wildcard label (`*`).
     @inlinable
     public var labelsCount: Int {
-        var count = 0
+        self.reduce(into: 0, { num, _ in num &+= 1 })
+    }
+
+    /// Whether the domainName is a wildcard domainName.
+    ///
+    /// Per [RFC 4592](https://tools.ietf.org/html/rfc4592):
+    ///
+    /// ```text
+    /// 2.1.1.  Wildcard Domain Name and Asterisk Label
+    /// A "wildcard domain name" is defined by having its initial (i.e.,
+    /// leftmost or least significant) label be, in binary format:
+    ///
+    /// 0000 0001 0010 1010 (binary) = 0x01 0x2a (hexadecimal)
+    ///
+    /// The first octet is the normal label type and length for a 1-octet-
+    /// long label, and the second octet is the ASCII representation [RFC20]
+    /// for the '*' character.
+    /// ```
+    @inlinable
+    public var isWildcard: Bool {
         var iterator = self.makePositionIterator()
-
-        /// FIXME: Check what to do if there are multiple *s in leading labels (*.*.*.example.com)
-        /// Check [RFC 4592](https://tools.ietf.org/html/rfc4592):
-        /// Left most label must be a "*" (and only a "*")
-        /// Matches any label that doesn't already exist
-        /// Including sub-labels under it
-        /// Causes a nameserver to synthesize and answer
-        if let first = iterator.next() {
-            let isWildcard =
-                first.length == 1
-                && self._data.getInteger(
-                    at: first.startIndex,
-                    as: UInt8.self
-                ) == UInt8.asciiStar
-            if !isWildcard {
-                count += 1
-            }
+        guard let first = iterator.next() else {
+            return false
         }
-
-        while iterator.next() != nil {
-            count += 1
-        }
-
-        return count
+        return first.length == 1
+            && self._data.getInteger(
+                at: first.startIndex,
+                as: UInt8.self
+            ) == UInt8.asciiStar
     }
 
     /// Whether the domainName is the DNS root domainName, aka `.`.
@@ -206,7 +209,26 @@ extension DomainName: Sequence {
     @usableFromInline
     package struct PositionIterator: Sendable, IteratorProtocol {
         @usableFromInline
-        package typealias Element = (startIndex: Int, length: Int)
+        package struct LabelPosition: Sendable {
+            @usableFromInline
+            package let startIndex: Int
+            @usableFromInline
+            package let length: Int
+
+            @inlinable
+            package var range: Range<Int> {
+                Range(uncheckedBounds: (self.startIndex, self.startIndex &+ self.length))
+            }
+
+            @inlinable
+            package init(startIndex: Int, length: Int) {
+                self.startIndex = startIndex
+                self.length = length
+            }
+        }
+
+        @usableFromInline
+        package typealias Element = LabelPosition
 
         /// TODO: will using Span help here? might skip some bounds checks or ref-count checks of ByteBuffer?
         @usableFromInline
@@ -238,7 +260,7 @@ extension DomainName: Sequence {
         }
 
         @inlinable
-        package mutating func next() -> (startIndex: Int, length: Int)? {
+        package mutating func next() -> LabelPosition? {
             if self.reachedEnd() {
                 return nil
             }
@@ -263,19 +285,10 @@ extension DomainName: Sequence {
                 self.startIndex &+= length &+ 1
             }
 
-            return (self.startIndex &+ 1, length)
-        }
-
-        @inlinable
-        package mutating func nextRange() -> (range: Range<Int>, length: Int)? {
-            guard let (startIndex, length) = self.next() else {
-                return nil
-            }
-            /// This range must be valid and must at least have 1 number in it based
-            /// on our contract with `DomainName`.
-            let range = Range(uncheckedBounds: (startIndex, startIndex &+ length))
-
-            return (range, length)
+            return LabelPosition(
+                startIndex: self.startIndex &+ 1,
+                length: length
+            )
         }
     }
 
@@ -298,14 +311,14 @@ extension DomainName: Sequence {
 
         @inlinable
         public mutating func next() -> Label? {
-            guard let (startIndex, length) = self.positionIterator.next() else {
+            guard let labelPosition = self.positionIterator.next() else {
                 return nil
             }
 
             /// Such invalid data should never get to here so we consider this safe to force-unwrap
             return self.positionIterator.domainName._data.getSlice(
-                at: startIndex,
-                length: length
+                at: labelPosition.startIndex,
+                length: labelPosition.length
             )!
         }
     }

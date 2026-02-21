@@ -1,5 +1,6 @@
 public import struct NIOCore.ByteBuffer
 
+@available(swiftEndpointApplePlatforms 10.15, *)
 extension DomainName {
     /// Returns a Boolean value that indicates whether this domain name is a
     /// subdomain of the given domain name.
@@ -9,9 +10,11 @@ extension DomainName {
     /// let domainName = DomainName("example.com")
     /// let otherDomainName = DomainName("www.example.com")
     /// let anotherDomainName = DomainName("www.example.com.thing")
+    /// let wildcardDomainName = DomainName("*.example.com")
     ///
     /// domainName.isSubdomain(of: otherDomainName) // true
     /// domainName.isSubdomain(of: domainName) // true
+    /// wildcardDomainName.isSubdomain(of: domainName) // true
     /// otherDomainName.isSubdomain(of: domainName) // false
     /// otherDomainName.isSubdomain(of: anotherDomainName) // false
     /// ```
@@ -21,20 +24,52 @@ extension DomainName {
     ///   otherwise, `false`.
     @inlinable
     public func isSubdomain(of other: DomainName) -> Bool {
-        var otherIterator = other.makeIterator()
-        var selfIterator = self.makeIterator()
+        self._data.withUnsafeReadableBytes { selfPtr -> Bool in
+            selfPtr.withMemoryRebound(to: UInt8.self) { selfBytes -> Bool in
+                other._data.withUnsafeReadableBytes { otherPtr -> Bool in
+                    otherPtr.withMemoryRebound(to: UInt8.self) { otherBytes -> Bool in
+                        let selfSpan = selfBytes.span
+                        var selfIterator = self.makePositionIterator()
+                        let otherSpan = otherBytes.span
+                        var otherIterator = other.makePositionIterator()
 
-        guard let firstLabel = selfIterator.next() else {
-            return true
-        }
+                        guard var otherLabelPosition = otherIterator.next() else {
+                            return false
+                        }
 
-        while let otherLabel = otherIterator.next() {
-            if otherLabel == firstLabel {
-                break
+                        var seenWildcard = false
+                        while let selfLabelPosition = selfIterator.next() {
+                            let otherLabel = otherSpan.extracting(
+                                unchecked: otherLabelPosition.range
+                            )
+                            let otherLabelIsWildcard =
+                                otherLabelPosition.length == 1
+                                && otherSpan[unchecked: otherLabelPosition.startIndex] == .asciiStar
+
+                            if otherLabelIsWildcard {
+                                guard let newOtherLabelPosition = otherIterator.next() else {
+                                    return false
+                                }
+                                otherLabelPosition = newOtherLabelPosition
+                                seenWildcard = true
+                                continue
+                            }
+
+                            let selfLabel = selfSpan.extracting(
+                                unchecked: selfLabelPosition.range
+                            )
+                            if selfLabel.swift_dns_equals(to: otherLabel) {
+                                break
+                            } else if seenWildcard {
+                                return false
+                            }
+                        }
+
+                        return selfIterator.remainingBytes() == otherIterator.remainingBytes()
+                    }
+                }
             }
         }
-
-        return selfIterator.remainingBytes() == otherIterator.remainingBytes()
     }
 
     /// Returns a Boolean value that indicates whether this domain name is a
@@ -46,9 +81,11 @@ extension DomainName {
     /// let domainName = DomainName("example.com")
     /// let otherDomainName = DomainName("www.example.com")
     /// let anotherDomainName = DomainName("www.example.com.thing")
+    /// let wildcardDomainName = DomainName("*.example.com")
     ///
     /// domainName.isStrictSubdomain(of: otherDomainName) // true
     /// domainName.isStrictSubdomain(of: domainName) // false
+    /// wildcardDomainName.isStrictSubdomain(of: domainName) // true
     /// otherDomainName.isStrictSubdomain(of: domainName) // false
     /// otherDomainName.isStrictSubdomain(of: anotherDomainName) // false
     /// ```
@@ -70,8 +107,10 @@ extension DomainName {
     /// let domainName = DomainName("example.com")
     /// let otherDomainName = DomainName("www.example.com")
     /// let anotherDomainName = DomainName("www.example.com.thing")
+    /// let wildcardDomainName = DomainName("*.example.com")
     ///
     /// otherDomainName.isSuperdomain(of: domainName) // true
+    /// otherDomainName.isSuperdomain(of: wildcardDomainName) // false
     /// domainName.isSuperdomain(of: domainName) // true
     /// domainName.isSuperdomain(of: otherDomainName) // false
     /// anotherDomainName.isSuperdomain(of: otherDomainName) // false
@@ -94,8 +133,10 @@ extension DomainName {
     /// let domainName = DomainName("example.com")
     /// let otherDomainName = DomainName("www.example.com")
     /// let anotherDomainName = DomainName("www.example.com.thing")
+    /// let wildcardDomainName = DomainName("*.example.com")
     ///
     /// otherDomainName.isStrictSuperdomain(of: domainName) // true
+    /// otherDomainName.isStrictSuperdomain(of: wildcardDomainName) // false
     /// domainName.isStrictSuperdomain(of: domainName) // false
     /// domainName.isStrictSuperdomain(of: otherDomainName) // false
     /// anotherDomainName.isStrictSuperdomain(of: otherDomainName) // false

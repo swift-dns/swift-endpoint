@@ -17,7 +17,7 @@ extension IPv4Address {
     public init?(domainName: DomainName) {
         guard
             let result = domainName._data.withUnsafeReadableBytes({ ptr -> IPv4Address? in
-                ptr.withMemoryRebound(to: UInt8.self) { ptr in
+                ptr.withMemoryRebound(to: UInt8.self) { ptr -> IPv4Address? in
                     var ipv4 = IPv4Address(0)
                     var iterator = domainName.makePositionIterator()
 
@@ -25,7 +25,7 @@ extension IPv4Address {
                     let asciiSpan = ptr.span
 
                     for idx in 0..<4 {
-                        guard let (range, _) = iterator.nextRange() else {
+                        guard let range = iterator.next()?.range else {
                             return nil
                         }
                         guard
@@ -47,8 +47,8 @@ extension IPv4Address {
                     }
 
                     /// Check to see if this is an arpa domain name
-                    guard let (inAddrRange, _) = iterator.nextRange(),
-                        let (arpaRange, _) = iterator.nextRange(),
+                    guard let inAddrRange = iterator.next()?.range,
+                        let arpaRange = iterator.next()?.range,
                         iterator.reachedEnd()
                     else {
                         return nil
@@ -103,7 +103,7 @@ extension IPv4Address {
                     let asciiSpan = ptr.span
 
                     for idx in 0..<4 {
-                        guard let (range, _) = iterator.nextRange() else {
+                        guard let range = iterator.next()?.range else {
                             return nil
                         }
                         guard
@@ -117,8 +117,8 @@ extension IPv4Address {
                         ipv4.address |= UInt32(byte) &<< shift
                     }
 
-                    guard let (inAddrRange, _) = iterator.nextRange(),
-                        let (arpaRange, _) = iterator.nextRange(),
+                    guard let inAddrRange = iterator.next()?.range,
+                        let arpaRange = iterator.next()?.range,
                         iterator.reachedEnd()
                     else {
                         return nil

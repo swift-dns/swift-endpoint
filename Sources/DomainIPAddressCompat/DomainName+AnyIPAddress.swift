@@ -25,13 +25,13 @@ extension AnyIPAddress {
                     let asciiSpan = ptr.span
 
                     for _ in 0..<4 {
-                        guard iterator.nextRange() != nil else {
+                        guard iterator.next() != nil else {
                             return nil
                         }
                     }
 
                     /// If this is an IPv4, then the 5th label is always `in-addr`.
-                    guard let (identifierLabelRange, _) = iterator.nextRange() else {
+                    guard let identifierLabelRange = iterator.next()?.range else {
                         /// Can only be a simple IPv4 Address encoded in dotted quad notation like
                         /// `"127.0.0.1"` into the domain name.
                         return IPv4Address(domainName: domainName).map { .v4($0) }
@@ -75,12 +75,12 @@ extension AnyIPAddress {
                     let asciiSpan = ptr.span
 
                     for _ in 0..<4 {
-                        guard let (_, length) = iterator.nextRange() else {
+                        guard let labelPosition = iterator.next() else {
                             return nil
                         }
 
                         /// If this is an IPv6, then the label length is always 1.
-                        switch length {
+                        switch labelPosition.length {
                         case 1:
                             /// Can't know for sure if this is an IPv6 or IPv4, so continue.
                             continue
@@ -91,7 +91,7 @@ extension AnyIPAddress {
                     }
 
                     /// If this is an IPv4, then the 5th label is always `in-addr`.
-                    guard let (identifierLabelRange, _) = iterator.nextRange() else {
+                    guard let identifierLabelRange = iterator.next()?.range else {
                         return nil
                     }
                     let identifierLabel = asciiSpan.extracting(unchecked: identifierLabelRange)

@@ -61,7 +61,7 @@ extension DomainName {
 
             self._data.withUnsafeReadableBytes { domainNamePtr in
                 var iterator = self.makePositionIterator()
-                if let (range, _) = iterator.nextRange() {
+                if let range = iterator.next()?.range {
                     /// These are all ASCII bytes so safe to map directly
                     for idx in range {
                         stringBuffer[bufferIdx] = domainNamePtr[idx]
@@ -70,7 +70,7 @@ extension DomainName {
                     }
                 }
 
-                while let (range, _) = iterator.nextRange() {
+                while let range = iterator.next()?.range {
                     stringBuffer[bufferIdx] = .asciiDot
                     /// Can't possibly overflow since it can't be greater than the buffer size
                     bufferIdx &+= 1

@@ -1,3 +1,19 @@
+#if os(Windows)
+import ucrt
+#elseif canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+@preconcurrency import Glibc
+#elseif canImport(Musl)
+@preconcurrency import Musl
+#elseif canImport(Bionic)
+@preconcurrency import Bionic
+#elseif canImport(WASILibc)
+@preconcurrency import WASILibc
+#else
+#error("The Domain+Span module was unable to identify your C library.")
+#endif
+
 @available(swiftEndpointApplePlatforms 10.15, *)
 extension Span<UInt8> {
     @inlinable
@@ -7,5 +23,25 @@ extension Span<UInt8> {
             result |= self[unchecked: idx]
         }
         return result <= 127
+    }
+
+    @usableFromInline
+    func swift_dns_equals(to other: Self) -> Bool {
+        guard self.count == other.count else {
+            return false
+        }
+        if self.count == 0 {
+            return true
+        }
+
+        return self.withUnsafeBytes { selfBytes -> Bool in
+            other.withUnsafeBytes { otherBytes -> Bool in
+                memcmp(
+                    selfBytes.baseAddress.unsafelyUnwrapped,
+                    otherBytes.baseAddress.unsafelyUnwrapped,
+                    self.count
+                ) == 0
+            }
+        }
     }
 }

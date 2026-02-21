@@ -37,10 +37,10 @@ extension IPv6Address {
 
                     for idx in 0..<32 {
                         guard
-                            let (range, length) = iterator.nextRange(),
-                            length == 1,
+                            let labelPosition = iterator.next(),
+                            labelPosition.length == 1,
                             let byte = UInt8.mapHexadecimalByteToUInt8(
-                                asciiSpan[unchecked: range.lowerBound]
+                                asciiSpan[unchecked: labelPosition.startIndex]
                             )
                         else {
                             return nil
@@ -49,8 +49,8 @@ extension IPv6Address {
                         ipv6.address |= UnsignedInt128(byte) &<< shift
                     }
 
-                    guard let (ip6Range, _) = iterator.nextRange(),
-                        let (arpaRange, _) = iterator.nextRange(),
+                    guard let ip6Range = iterator.next()?.range,
+                        let arpaRange = iterator.next()?.range,
                         iterator.reachedEnd()
                     else {
                         return nil

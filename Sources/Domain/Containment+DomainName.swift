@@ -58,7 +58,7 @@ extension DomainName {
                             let selfLabel = selfSpan.extracting(
                                 unchecked: selfLabelPosition.range
                             )
-                            if selfLabel.swift_dns_equals(to: otherLabel) {
+                            if selfLabel.swift_endpoint_equals(to: otherLabel) {
                                 break
                             } else if seenWildcard {
                                 return false

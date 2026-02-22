@@ -43,7 +43,7 @@ extension AnyIPAddress {
                     ]
 
                     /// If the 5th label is `in-addr`, then this can only be an IPv4.
-                    if identifierLabel.swift_dns_equals(to: inAddrBytes) {
+                    if identifierLabel.swift_endpoint_equals(to: inAddrBytes) {
                         return IPv4Address(arpaDomainName: domainName).map { .v4($0) }
                     } else {
                         return IPv6Address(arpaDomainName: domainName).map { .v6($0) }
@@ -100,7 +100,7 @@ extension AnyIPAddress {
                         UInt8(ascii: "d"), UInt8(ascii: "d"), UInt8(ascii: "r"),
                     ]
                     /// If the 5th label is `in-addr`, then this can only be an IPv4.
-                    if identifierLabel.swift_dns_equals(to: inAddrBytes) {
+                    if identifierLabel.swift_endpoint_equals(to: inAddrBytes) {
                         return IPv4Address(arpaDomainName: domainName).map { .v4($0) }
                     } else {
                         return IPv6Address(arpaDomainName: domainName).map { .v6($0) }

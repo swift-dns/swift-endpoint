@@ -230,7 +230,6 @@ extension DomainName: Sequence {
         @usableFromInline
         package typealias Element = LabelPosition
 
-        /// TODO: will using Span help here? might skip some bounds checks or ref-count checks of ByteBuffer?
         @usableFromInline
         let domainName: DomainName
         @usableFromInline
@@ -255,7 +254,7 @@ extension DomainName: Sequence {
 
             return self.domainName._data.getSlice(
                 at: self.startIndex,
-                length: self.domainName._data.writerIndex - self.startIndex
+                length: self.domainName._data.writerIndex &- self.startIndex
             ).unsafelyUnwrapped
         }
 

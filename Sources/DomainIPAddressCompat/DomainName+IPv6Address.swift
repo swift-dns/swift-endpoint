@@ -64,8 +64,8 @@ extension IPv6Address {
                     let arpaBytes = [
                         UInt8(ascii: "a"), UInt8(ascii: "r"), UInt8(ascii: "p"), UInt8(ascii: "a"),
                     ]
-                    guard ip6.swift_dns_equals(to: ip6Bytes),
-                        arpa.swift_dns_equals(to: arpaBytes)
+                    guard ip6.swift_endpoint_equals(to: ip6Bytes),
+                        arpa.swift_endpoint_equals(to: arpaBytes)
                     else {
                         return nil
                     }

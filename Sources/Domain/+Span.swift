@@ -26,7 +26,7 @@ extension Span<UInt8> {
     }
 
     @usableFromInline
-    func swift_dns_equals(to other: Self) -> Bool {
+    func swift_endpoint_equals(to other: Self) -> Bool {
         guard self.count == other.count else {
             return false
         }
@@ -37,6 +37,7 @@ extension Span<UInt8> {
         return self.withUnsafeBytes { selfBytes -> Bool in
             other.withUnsafeBytes { otherBytes -> Bool in
                 memcmp(
+                    /// If the count is non-zero then the `UnsafeRawBufferPointer` guarantees there is a non-nil pointer.
                     selfBytes.baseAddress.unsafelyUnwrapped,
                     otherBytes.baseAddress.unsafelyUnwrapped,
                     self.count

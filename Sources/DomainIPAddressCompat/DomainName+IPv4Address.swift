@@ -63,8 +63,8 @@ extension IPv4Address {
                     let arpaBytes = [
                         UInt8(ascii: "a"), UInt8(ascii: "r"), UInt8(ascii: "p"), UInt8(ascii: "a"),
                     ]
-                    guard inAddr.swift_dns_equals(to: inAddrBytes),
-                        arpa.swift_dns_equals(to: arpaBytes)
+                    guard inAddr.swift_endpoint_equals(to: inAddrBytes),
+                        arpa.swift_endpoint_equals(to: arpaBytes)
                     else {
                         return nil
                     }
@@ -133,8 +133,8 @@ extension IPv4Address {
                     let arpaBytes = [
                         UInt8(ascii: "a"), UInt8(ascii: "r"), UInt8(ascii: "p"), UInt8(ascii: "a"),
                     ]
-                    guard inAddr.swift_dns_equals(to: inAddrBytes),
-                        arpa.swift_dns_equals(to: arpaBytes)
+                    guard inAddr.swift_endpoint_equals(to: inAddrBytes),
+                        arpa.swift_endpoint_equals(to: arpaBytes)
                     else {
                         return nil
                     }

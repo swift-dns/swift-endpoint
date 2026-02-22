@@ -2,7 +2,7 @@
 extension Span<UInt8> {
     @inlinable
     @_transparent
-    func swift_dns_equals(to bytes: [UInt8]) -> Bool {
+    func swift_endpoint_equals(to bytes: [UInt8]) -> Bool {
         guard self.count == bytes.count else {
             return false
         }

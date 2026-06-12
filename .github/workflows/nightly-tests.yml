@@ -279,7 +279,7 @@ jobs:
       fail-fast: false
       matrix:
         swift:
-          - version: nightly-main-noble
+          - version: nightly-main
         config:
           - mode: "debug"
           - mode: "release"

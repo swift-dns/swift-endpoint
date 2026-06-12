@@ -1,4 +1,4 @@
-// swift-tools-version: 6.2.1
+// swift-tools-version: 6.3
 
 import PackageDescription
 
@@ -17,8 +17,8 @@ let package = Package(
         .default(enabledTraits: ["IDNA_SUPPORT", "NIO_BYTE_BUFFER_SUPPORT"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/swift-dns/swift-idna.git", from: "1.0.0-beta.24"),
-        .package(url: "https://github.com/apple/swift-nio.git", from: "2.82.0"),
+        .package(url: "https://github.com/swift-dns/swift-idna.git", from: "1.0.0-beta.25"),
+        .package(url: "https://github.com/apple/swift-nio.git", from: "2.100.0"),
     ],
     targets: [
         .target(

@@ -11,16 +11,16 @@
             alt="Benchamrks CI"
         >
     </a>
-    <a href="https://codecov.io/gh/swift-dns/swift-endpoint"> 
-        <img 
+    <a href="https://codecov.io/gh/swift-dns/swift-endpoint">
+        <img
             src="https://codecov.io/gh/swift-dns/swift-endpoint/graph/badge.svg?token=KW7Y46RYYD"
             alt="Codecov Tests Code Coverage"
-        > 
+        >
     </a>
     <a href="https://swift.org">
         <img
             src="https://design.vapor.codes/images/swift623up.svg"
-            alt="Swift 6.2.3+"
+            alt="Swift 6.3+"
         >
     </a>
 </p>
@@ -122,8 +122,8 @@ For `IPv4Address`, the `DomainName` conversions are possible to/from:
 * Dotted-quad notation, for example: "1.2.3.4"
 * Arpa domain name format, for example: "4.3.2.1.in-addr.arpa."
 
-For `IPv6Address`, the Arpa domain name format is supported. For example the followings are equivalent:   
-* `IPv6Address`: 4321::1:2:3:4:567:89ab   
+For `IPv6Address`, the Arpa domain name format is supported. For example the followings are equivalent:
+* `IPv6Address`: 4321::1:2:3:4:567:89ab
 * `DomainName`: "b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6.arpa."
 
 ## Performance
@@ -132,7 +132,7 @@ In [this post](https://forums.swift.org/t/pitch-standard-network-address-types/8
 
 Here's the result at that point in time. Note that I made a lot of effort to make sure the C related functions are performing at their best.
 
-In 7 out of the 8 benchmarks this library performs better than the C libraries.   
+In 7 out of the 8 benchmarks this library performs better than the C libraries.
 In the "IPv6 string decoding" benchmark it performs only 30% worse than Glibc, at ~23 millions rounds per second.
 
 #### Against Darwin
@@ -163,5 +163,5 @@ These were performed on a dedicated-cpu-core machine from Hetzner in the Falkens
 
 * To see up to date information about performance of this package, please go to this [benchmarks list](https://github.com/swift-dns/swift-endpoint/actions/workflows/benchmarks.yml?query=branch%3Amain), and choose the most recent benchmark. You'll see a summary of the benchmark there.
 * The results above are all reproducible by simply running `scripts/benchmark.bash` on a machine of your own.
-* All benchmarks on all platforms commit similar allocations.   
+* All benchmarks on all platforms commit similar allocations.
 * 3 of the benchmarks always do `0`, `IPv6_String_Encoding_Mixed` always does `1`.

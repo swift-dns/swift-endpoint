@@ -134,21 +134,21 @@ For `IPv6Address`, the Arpa domain name format is supported. For example the fol
 
 In [this post](https://forums.swift.org/t/pitch-standard-network-address-types/82288/11) on the Swift forums I was asked to compare IP parsing implementations with the native C libraries which provide functions such as `inet_ntop` and `inet_pton` which are commonly used by everyone, including swift-nio.
 
-Here's the result at that point in time. Note that I made a lot of effort to make sure the C related functions are performing at their best.
+Here's the result ~~at that point in time~~ (Last update: Jun 13, 2026). Note that I made a lot of effort to make sure the C related functions are performing at their best.
 
 In 7 out of the 8 benchmarks this library performs better than the C libraries.
 In the "IPv6 string decoding" benchmark it performs only 30% worse than Glibc, at ~23 millions rounds per second.
 
 #### Against Darwin
 
-These were performed on my M1 Pro MacBook, on macOS 26.0.
+These were performed on my M1 Pro MacBook, on macOS 27.0 (beta 1).
 
 | Benchmark Name                              | Rounds      | Swift | inet_pton/ntop | Speedup |
 | ------------------------------------------- | ----------- | ----- | -------------- | ------- |
-| IPv4_String_Encoding_Mixed                  | 15 Millions | 153ms | 3036ms         | 19.84x  |
-| IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 251ms | 468ms          | 1.86x   |
-| IPv6_String_Encoding_Mixed                  | 4 Millions  | 281ms | 1473ms         | 5.24x   |
-| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 180ms | 360ms          | 2x      |
+| IPv4_String_Encoding_Mixed                  | 15 Millions | 196ms | 3670ms         | 18.72x  |
+| IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 289ms | 529ms          | 1.83x   |
+| IPv6_String_Encoding_Mixed                  | 4 Millions  | 321ms | 1658ms         | 5.17x   |
+| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 229ms | 400ms          | 1.75x   |
 
 #### Against Glibc
 
@@ -158,10 +158,10 @@ These were performed on a dedicated-cpu-core machine from Hetzner in the Falkens
 
 | Benchmark Name                              | Rounds      | Swift | inet_pton/ntop | Speedup |
 | ------------------------------------------- | ----------- | ----- | -------------- | ------- |
-| IPv4_String_Encoding_Mixed                  | 15 Millions | 190ms | 1570ms         | 8.26x   |
-| IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 180ms | 240ms          | 1.33x   |
-| IPv6_String_Encoding_Mixed                  | 4 Millions  | 200ms | 1830ms         | 9.15x   |
-| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 130ms | 100ms          | 0.77x  |
+| IPv4_String_Encoding_Mixed                  | 15 Millions | 200ms | 1910ms         | 9.55x   |
+| IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 180ms | 200ms          | 1.11x   |
+| IPv6_String_Encoding_Mixed                  | 4 Millions  | 190ms | 940ms          | 4.95x   |
+| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 160ms | 120ms          | 0.75x   |
 
 #### Notes
 

@@ -137,7 +137,7 @@ In [this post](https://forums.swift.org/t/pitch-standard-network-address-types/8
 Here's the result ~~at that point in time~~ (Last update: Jun 13, 2026). Note that I made a lot of effort to make sure the C related functions are performing at their best.
 
 In 7 out of the 8 benchmarks this library performs better than the C libraries.
-In the "IPv6 string decoding" benchmark it performs only 30% worse than Glibc, at ~23 millions rounds per second.
+In the "IPv6 string decoding" benchmark it performs only 30% worse than glibc, at ~23 millions rounds per second.
 
 #### Against Darwin
 
@@ -150,7 +150,7 @@ These were performed on my M1 Pro MacBook, on macOS 27.0 (beta 1).
 | IPv6_String_Encoding_Mixed                  | 4 Millions  | 321ms | 1658ms         | 5.17x   |
 | IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 229ms | 400ms          | 1.75x   |
 
-#### Against Glibc
+#### Against glibc
 
 These were performed on a dedicated-cpu-core machine from Hetzner in the Falkenstein region.
 

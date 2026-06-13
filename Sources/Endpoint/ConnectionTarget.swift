@@ -12,8 +12,8 @@ public struct ConnectionTarget: Sendable, Hashable {
     /// The target of a connection.
     @nonexhaustive
     public enum Target: Sendable, Hashable {
-        case ipAddress(AnyIPAddress, port: UInt16)
-        case domainName(DomainName, port: UInt16)
+        case ipAddress(AnyIPAddress, port: Port)
+        case domainName(DomainName, port: Port)
         case unixDomainSocketAddress(String)
     }
 
@@ -26,7 +26,7 @@ public struct ConnectionTarget: Sendable, Hashable {
     /// Create a ``ConnectionTarget`` from an IP address string and the port number.
     public static func ipAddress(
         _ ipAddress: String,
-        port: UInt16
+        port: Port
     ) throws(ConnectionTarget.Error) -> Self {
         guard let ipAddress = AnyIPAddress(ipAddress) else {
             throw Error.invalidIPAddressString(ipAddress)
@@ -35,24 +35,24 @@ public struct ConnectionTarget: Sendable, Hashable {
     }
 
     /// Create a ``ConnectionTarget`` from an IP address and the port number.
-    public static func ipAddress(_ ipAddress: AnyIPAddress, port: UInt16) -> Self {
+    public static func ipAddress(_ ipAddress: AnyIPAddress, port: Port) -> Self {
         Self(target: .ipAddress(ipAddress, port: port))
     }
 
     /// Create a ``ConnectionTarget`` from an IP address and the port number.
-    public static func ipAddress(_ ipv4Address: IPv4Address, port: UInt16) -> Self {
+    public static func ipAddress(_ ipv4Address: IPv4Address, port: Port) -> Self {
         Self(target: .ipAddress(.v4(ipv4Address), port: port))
     }
 
     /// Create a ``ConnectionTarget`` from an IP address and the port number.
-    public static func ipAddress(_ ipv6Address: IPv6Address, port: UInt16) -> Self {
+    public static func ipAddress(_ ipv6Address: IPv6Address, port: Port) -> Self {
         Self(target: .ipAddress(.v6(ipv6Address), port: port))
     }
 
     /// Create a ``ConnectionTarget`` from a domain name string and the port number.
     public static func domainName(
         _ domainName: String,
-        port: UInt16,
+        port: Port,
         idnaConfiguration: IDNA.Configuration = .default
     ) throws -> Self {
         do {
@@ -64,7 +64,7 @@ public struct ConnectionTarget: Sendable, Hashable {
     }
 
     /// Create a ``ConnectionTarget`` from a domain name and the port number.
-    public static func domainName(_ domainName: DomainName, port: UInt16) -> Self {
+    public static func domainName(_ domainName: DomainName, port: Port) -> Self {
         if let ip = AnyIPAddress(domainName: domainName) {
             return Self.ipAddress(ip, port: port)
         } else {

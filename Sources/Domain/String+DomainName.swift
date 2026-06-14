@@ -87,11 +87,13 @@ extension DomainName {
         }
 
         if format == .unicode {
-            do {
-                domainName = try IDNA(configuration: .mostLax)
-                    .toUnicode(domainName: domainName)
-            } catch {
-                domainName = "invalid-domain.\(domainName)"
+            if let conversion = try? IDNA(configuration: .mostLax)
+                .toUnicode(domainName: domainName)
+            {
+                domainName = conversion
+            } else {
+                // FIXME: Handle error?
+                // Do nothing for now
             }
         }
 

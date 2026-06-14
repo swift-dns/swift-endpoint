@@ -262,6 +262,61 @@ struct DomainNameTests {
         try #expect(DomainName(domainName).isWildcard == isWildcard)
     }
 
+    @Test(
+        arguments: [
+            (domainName: "a", labels: [ByteBuffer([97])]),
+            (domainName: "*.b", labels: [ByteBuffer([42]), ByteBuffer([98])]),
+            (domainName: "a.b.c", labels: [ByteBuffer([97]), ByteBuffer([98]), ByteBuffer([99])]),
+            (
+                domainName: "_25._tcp.mail.example.com",
+                labels: [
+                    ByteBuffer([95, 50, 53]),
+                    ByteBuffer([95, 116, 99, 112]),
+                    ByteBuffer([109, 97, 105, 108]),
+                    ByteBuffer([101, 120, 97, 109, 112, 108, 101]),
+                    ByteBuffer([99, 111, 109]),
+                ]
+            ),
+        ]
+    )
+    func `iterating yields the expected labels`(domainName: String, labels: [ByteBuffer]) throws {
+        let domainName = try DomainName(domainName)
+        #expect(domainName.map(\._data) == labels)
+        #expect(domainName.labelsCount == labels.count)
+    }
+
+    @available(swiftEndpointApplePlatforms 10.15, *)
+    @Test(
+        arguments: [
+            (ascii: "mahdibm", unicode: "mahdibm"),
+            (ascii: "co", unicode: "co"),
+            (ascii: "xn--hello-pqa", unicode: "helloß"),
+            (ascii: "xn--1lq90ic7f1rc", unicode: "\u{5317}\u{4eac}\u{5927}\u{5b78}"),
+            (ascii: "xn--36c-tfa", unicode: "36°c"),
+        ]
+    )
+    func `label description`(ascii: String, unicode: String) throws {
+        let label = try #require(Array(try DomainName(ascii)).first)
+        #expect(label.debugDescription == ascii)
+        #expect(label.description(format: .ascii) == ascii)
+        #expect(label.description == unicode)
+        #expect(label.description(format: .unicode) == unicode)
+    }
+
+    @Test(
+        arguments: [
+            (lhs: "a", rhs: "a", areEqual: true),
+            (lhs: "mahdibm", rhs: "mahdibm", areEqual: true),
+            (lhs: "a", rhs: "b", areEqual: false),
+            (lhs: "co", rhs: "uk", areEqual: false),
+        ]
+    )
+    func `label equality`(lhs: String, rhs: String, areEqual: Bool) throws {
+        let lhsLabel = try #require(Array(try DomainName(lhs)).first)
+        let rhsLabel = try #require(Array(try DomainName(rhs)).first)
+        #expect((lhsLabel == rhsLabel) == areEqual)
+    }
+
     @available(swiftEndpointApplePlatforms 10.15, *)
     @Test func ipv4AddressToName() throws {
         let ipAddress = IPv4Address(192, 168, 1, 1)

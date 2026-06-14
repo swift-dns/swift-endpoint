@@ -9,22 +9,23 @@ public struct Port: Sendable, Hashable {
     }
 
     /// Create a new port with the given canonical value.
-    public init(_ canonicalValue: UInt16) {
+    public init(canonicalValue: UInt16) {
         self.canonicalValue = canonicalValue
     }
 
     /// Create a new port with the given value.
-    /// Precondition: the value must be between 0 and 65535.
-    @_disfavoredOverload
+    /// Precondition: the value must be inclusively between 0 and 65535.
     public init(_ value: Int) {
-        precondition(value >= 0 && value <= 65535, "Port must be between 0 and 65535")
-        self.canonicalValue = UInt16(value)
+        guard let canonicalValue = UInt16(exactly: value) else {
+            preconditionFailure("Port must be inclusively between 0 and 65535")
+        }
+        self.canonicalValue = canonicalValue
     }
 }
 
 extension Port: ExpressibleByIntegerLiteral {
     /// Create a new port with the given canonical value.
     public init(integerLiteral value: UInt16) {
-        self.init(value)
+        self.init(canonicalValue: value)
     }
 }

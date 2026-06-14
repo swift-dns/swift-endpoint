@@ -152,16 +152,16 @@ public struct DomainName: Sendable {
         assert(self._data.readableBytes <= Self.maxLength)
         debugOnly {
             for label in self {
-                let labelLength = label.readableBytes
+                let labelLength = label._data.readableBytes
                 precondition(
                     labelLength > 0 && labelLength <= Self.maxLabelLength,
-                    "Label was longer than \(Self.maxLabelLength) bytes:\n\(label.hexDump(format: .detailed))"
+                    "Label was longer than \(Self.maxLabelLength) bytes:\n\(label._data.hexDump(format: .detailed))"
                 )
 
-                for byte in label.readableBytesView {
+                for byte in label._data.readableBytesView {
                     precondition(
                         byte.isAcceptableDomainNameCharacter,
-                        "Label contained invalid byte: \(byte)\nLabel:\n\(label.hexDump(format: .detailed))"
+                        "Label contained invalid byte: \(byte)\nLabel:\n\(label._data.hexDump(format: .detailed))"
                     )
                 }
             }
@@ -292,9 +292,6 @@ extension DomainName: Sequence {
     }
 
     public struct Iterator: Sendable, IteratorProtocol {
-        /// TODO: dedicated label type?
-        public typealias Label = ByteBuffer
-
         @usableFromInline
         var positionIterator: PositionIterator
 
@@ -315,10 +312,11 @@ extension DomainName: Sequence {
             }
 
             /// Such invalid data should never get to here so we consider this safe to force-unwrap
-            return self.positionIterator.domainName._data.getSlice(
+            let bytes = self.positionIterator.domainName._data.getSlice(
                 at: labelPosition.startIndex,
                 length: labelPosition.length
             )!
+            return Label(_uncheckedAssumingValidBytes: bytes)
         }
     }
 

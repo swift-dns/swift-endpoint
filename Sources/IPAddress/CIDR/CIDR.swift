@@ -9,10 +9,11 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     /// new IP version is adopted, and at that point we'll just have released a new major version.
     public typealias AddressValueType = IPAddressType.AddressValueType
 
-    /// The IP address that is desired after the masking happens.
+    /// The IP address exactly as it was provided, without normalizing away the host bits.
     /// Of type `IPv4Address` or `IPv6Address`.
-    /// Example: in 127.0.0.1/8, the prefix is 127.0.0.0 (notice last segment is 0, not 1).
+    /// Example: in 127.0.0.18/8, the prefix is 127.0.0.18 (the host bits are preserved, not zeroed).
     /// in 0xFF00::/8, the prefix is 0xFF00::.
+    /// Note that the host bits are still ignored when computing containment, see ``contains(_:)-(IPAddressType)``.
     public let prefix: IPAddressType
     /// The masked part of the address.
     /// Of type `UInt32` for `IPv4Address` or `UInt128` for `IPv6Address`.
@@ -39,9 +40,10 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     /// In 0xFE80::/10, `0xFE80::` is the prefix, and `0b1111111111(118 zeros)` == `0xFFC0::` is the mask.
     ///
     /// - Parameters:
-    ///   - prefix: The IP address that is desired after the masking happens.
-    ///     Extra bits that are not needed for the mask, will be truncated.
-    ///     Example: 192.168.1.1/24 will be truncated to 192.168.1.0 since the trailing 1 is insignificant.
+    ///   - prefix: The IP address, stored exactly as provided.
+    ///     The host bits are preserved, not truncated.
+    ///     Example: 192.168.1.1/24 keeps 192.168.1.1, even though the trailing 1 is insignificant
+    ///     for containment.
     ///   - uncheckedMask: The masked part of the address.
     ///     The mask will not be verified by the initializer in optimized builds, and MUST be
     ///     in a "continuous" form.
@@ -52,7 +54,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     public init(prefix: IPAddressType, uncheckedMask mask: IPAddressType) {
         assert(Self.makeMaskBasedOn(countOfTrailingZerosOf: mask) == mask)
 
-        self.prefix = IPAddressType(prefix.address & mask.address)
+        self.prefix = prefix
         self.mask = mask
     }
 
@@ -85,9 +87,10 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     /// In 0xFE80::/10, `0xFE80::` is the prefix, and `0b1111111111(118 zeros)` == `0xFFC0::` is the mask.
     ///
     /// - Parameters:
-    ///   - prefix: The IP address that is desired after the masking happens.
-    ///     Extra bits that are not needed for the mask, will be truncated.
-    ///     Example: 192.168.1.1/24 will be truncated to 192.168.1.0 since the trailing 1 is insignificant.
+    ///   - prefix: The IP address, stored exactly as provided.
+    ///     The host bits are preserved, not truncated.
+    ///     Example: 192.168.1.1/24 keeps 192.168.1.1, even though the trailing 1 is insignificant
+    ///     for containment.
     ///   - prefixLength: The number of leading bits to mask.
     ///     This shouldn't be greater than 32 for IPv4 or 128 for IPv6. The extra bits will be ignored.
     ///     Example: in 192.168.1.0/24, the prefix length is 24.
@@ -135,7 +138,8 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     /// Complexity: O(1)
     @inlinable
     public func contains(_ other: IPAddressType) -> Bool {
-        other.address & self.mask.address == self.prefix.address
+        /// Mask the prefix too, since it is stored un-normalized and may carry host bits.
+        other.address & self.mask.address == self.prefix.address & self.mask.address
     }
 
     /// Whether or not the given AnyIPAddress is within this CIDR block.

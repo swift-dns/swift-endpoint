@@ -20,11 +20,11 @@ extension CIDR: CustomDebugStringConvertible {
 extension CIDR {
     /// Initialize an CIDR from a `UTF8Span` of its textual representation.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
-    /// This initializer tolerates and repairs the CIDR range if needed.
-    /// For example it'll ignore if the mask is greater than the address size, and it'll
-    /// repair the prefix if it contains bits that don't matter.
-    /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
-    /// 2001::/220 will be repaired to 2001::/128.
+    /// This initializer tolerates and clamps the prefix length if needed.
+    /// For example it'll ignore if the mask is greater than the address size.
+    /// e.g. 2001::/220 will be clamped to 2001::/128.
+    /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
+    /// e.g. 192.168.1.98/24 stays 192.168.1.98/24.
     @inlinable
     public init?(textualRepresentation utf8Span: UTF8Span) {
         var utf8Span = utf8Span
@@ -40,11 +40,11 @@ extension CIDR {
 extension CIDR: LosslessStringConvertible {
     /// Initialize an CIDR from its textual representation.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
-    /// This initializer tolerates and repairs the CIDR range if needed.
-    /// For example it'll ignore if the mask is greater than the address size, and it'll
-    /// repair the prefix if it contains bits that don't matter.
-    /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
-    /// 2001::/220 will be repaired to 2001::/128.
+    /// This initializer tolerates and clamps the prefix length if needed.
+    /// For example it'll ignore if the mask is greater than the address size.
+    /// e.g. 2001::/220 will be clamped to 2001::/128.
+    /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
+    /// e.g. 192.168.1.98/24 stays 192.168.1.98/24.
     public init?(_ description: String) {
         var description = description
         guard
@@ -59,11 +59,11 @@ extension CIDR: LosslessStringConvertible {
 
     /// Initialize an CIDR from its textual representation.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
-    /// This initializer tolerates and repairs the CIDR range if needed.
-    /// For example it'll ignore if the mask is greater than the address size, and it'll
-    /// repair the prefix if it contains bits that don't matter.
-    /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
-    /// 2001::/220 will be repaired to 2001::/128.
+    /// This initializer tolerates and clamps the prefix length if needed.
+    /// For example it'll ignore if the mask is greater than the address size.
+    /// e.g. 2001::/220 will be clamped to 2001::/128.
+    /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
+    /// e.g. 192.168.1.98/24 stays 192.168.1.98/24.
     public init?(_ description: Substring) {
         var description = description
         guard
@@ -78,11 +78,11 @@ extension CIDR: LosslessStringConvertible {
 
     /// Initialize an CIDR from a `Span<UInt8>` of its textual representation.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
-    /// This initializer tolerates and repairs the CIDR range if needed.
-    /// For example it'll ignore if the mask is greater than the address size, and it'll
-    /// repair the prefix if it contains bits that don't matter.
-    /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
-    /// 2001::/220 will be repaired to 2001::/128.
+    /// This initializer tolerates and clamps the prefix length if needed.
+    /// For example it'll ignore if the mask is greater than the address size.
+    /// e.g. 2001::/220 will be clamped to 2001::/128.
+    /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
+    /// e.g. 192.168.1.98/24 stays 192.168.1.98/24.
     @inlinable
     public init?(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
         if !span.isASCII { return nil }
@@ -93,11 +93,11 @@ extension CIDR: LosslessStringConvertible {
     /// Initialize an CIDR from a `Span<UInt8>` of its textual representation.
     /// The provided **span is required to be ASCII**.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
-    /// This initializer tolerates and repairs the CIDR range if needed.
-    /// For example it'll ignore if the mask is greater than the address size, and it'll
-    /// repair the prefix if it contains bits that don't matter.
-    /// e.g. 192.168.1.98/24 will be repaired to 192.168.1.0/24, and
-    /// 2001::/220 will be repaired to 2001::/128.
+    /// This initializer tolerates and clamps the prefix length if needed.
+    /// For example it'll ignore if the mask is greater than the address size.
+    /// e.g. 2001::/220 will be clamped to 2001::/128.
+    /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
+    /// e.g. 192.168.1.98/24 stays 192.168.1.98/24.
     @inlinable
     init?(_uncheckedAssumingValidASCII span: Span<UInt8>) {
         debugOnly {

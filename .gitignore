@@ -9,5 +9,6 @@ DerivedData/
 .vscode/settings.json
 *.vsix
 __LocalProfilingTests.swift
-
 .vscode/tasks.json
+AGENTS.md
+.claude/

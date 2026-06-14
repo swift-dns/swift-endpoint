@@ -2,9 +2,10 @@
 /// It is used to represent a range of IP addresses.
 /// For example, 192.168.1.0/24 represents the range of IP addresses from 192.168.1.0 to 192.168.1.255.
 ///
-/// This types stores the raw `mask` as provided, but for most purposes other than computing a string
-/// representation, the extra bits are ignored.
-/// For example, 127.0.0.100/8 and 127.0.0.0/8 represent the same network.
+/// This types stores the raw `prefix` as provided, but for most purposes other than computing a string
+/// representation, the host bits are ignored.
+/// For example, 127.0.0.100/8 and 127.0.0.0/8 represent the same network, but their prefixes
+/// are stored as `127.0.0.100` and `127.0.0.0` respectively, regardless of their equivalence.
 @available(swiftEndpointApplePlatforms 10.15, *)
 public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
 
@@ -18,9 +19,12 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
 
     /// The IP address exactly as it was provided, without normalizing away the host bits.
     /// Of type `IPv4Address` or `IPv6Address`.
-    /// Example: in 127.0.0.100/8, the prefix is 127.0.0.100 (the host bits are preserved, not zeroed).
+    /// Example: in 127.0.0.100/8, the prefix is 127.0.0.100.
     /// in 0xFF00::/8, the prefix is 0xFF00::.
-    /// Note that the host bits are still ignored when computing containment, see ``contains(_:)-(IPAddressType)``.
+    ///
+    /// Note that this can contain host bits although nonsignificant in context of a CIDR block.
+    /// For example, 127.0.0.100/8 and 127.0.0.1/8 represent the same network, but their prefix
+    /// would be stored as `127.0.0.100` and `127.0.0.1` respectively, regardless of their equivalence.
     public let prefix: IPAddressType
     /// The masked part of the address.
     /// Of type `UInt32` for `IPv4Address` or `UInt128` for `IPv6Address`.
@@ -36,8 +40,18 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     /// Example: in 127.0.0.0/8, the prefix length is 8, which means any address that has matching
     /// initial 8 bits, is within this CIDR block. In other words, any address starting with `127`.
     /// in 0xFF00::/120, the prefix length is 120.
+    @inlinable
     public var prefixLength: Int {
         AddressValueType.bitWidth &- self.mask.address.trailingZeroBitCount
+    }
+
+    /// The network address of the CIDR block.
+    /// This is the canonical prefix with the host bits masked off.
+    /// For example, in 127.0.0.100/8, the network address is 127.0.0.0.
+    /// In 0xFF00::/8, the network address is 0xFF00::.
+    @inlinable
+    public var networkAddress: IPAddressType {
+        IPAddressType(self.prefix.address & self.mask.address)
     }
 
     /// Create a new CIDR with the given prefix and mask.
@@ -99,7 +113,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     ///     Example: 192.168.1.1/24 keeps 192.168.1.1, even though the trailing 1 is insignificant
     ///     for containment.
     ///   - prefixLength: The number of leading bits to mask.
-    ///     This shouldn't be greater than 32 for IPv4 or 128 for IPv6. The extra bits will be ignored.
+    ///     This shouldn't be greater than 32 for IPv4 or 128 for IPv6. The host bits will be ignored.
     ///     Example: in 192.168.1.0/24, the prefix length is 24.
     @inlinable
     public init(prefix: IPAddressType, prefixLength: UInt8) {
@@ -145,8 +159,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     /// Complexity: O(1)
     @inlinable
     public func contains(_ other: IPAddressType) -> Bool {
-        /// Mask the prefix too, since it is stored un-normalized and may carry host bits.
-        other.address & self.mask.address == self.prefix.address & self.mask.address
+        other.address & self.mask.address == self.networkAddress.address
     }
 
     /// Whether or not the given AnyIPAddress is within this CIDR block.
@@ -167,7 +180,7 @@ extension CIDR: Hashable {
     @inlinable
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.mask.address == rhs.mask.address
-            && (lhs.prefix.address & lhs.mask.address) == (rhs.prefix.address & rhs.mask.address)
+            && lhs.networkAddress.address == rhs.networkAddress.address
     }
 
     /// Hashes the network this CIDR describes, consistent with ``==(_:_:)``.
@@ -176,6 +189,6 @@ extension CIDR: Hashable {
     @inlinable
     public func hash(into hasher: inout Hasher) {
         hasher.combine(self.mask.address)
-        hasher.combine(self.prefix.address & self.mask.address)
+        hasher.combine(self.networkAddress.address)
     }
 }

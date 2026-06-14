@@ -1,5 +1,12 @@
+/// A CIDR block is a network address and a prefix length.
+/// It is used to represent a range of IP addresses.
+/// For example, 192.168.1.0/24 represents the range of IP addresses from 192.168.1.0 to 192.168.1.255.
+///
+/// This types stores the raw `mask` as provided, but for most purposes other than computing a string
+/// representation, the extra bits are ignored.
+/// For example, 127.0.0.100/8 and 127.0.0.0/8 represent the same network.
 @available(swiftEndpointApplePlatforms 10.15, *)
-public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
+public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
 
     /// The underlying type of the IP address.
     /// This is always either `UInt32` or `UInt128`.
@@ -11,7 +18,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
 
     /// The IP address exactly as it was provided, without normalizing away the host bits.
     /// Of type `IPv4Address` or `IPv6Address`.
-    /// Example: in 127.0.0.18/8, the prefix is 127.0.0.18 (the host bits are preserved, not zeroed).
+    /// Example: in 127.0.0.100/8, the prefix is 127.0.0.100 (the host bits are preserved, not zeroed).
     /// in 0xFF00::/8, the prefix is 0xFF00::.
     /// Note that the host bits are still ignored when computing containment, see ``contains(_:)-(IPAddressType)``.
     public let prefix: IPAddressType
@@ -30,7 +37,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
     /// initial 8 bits, is within this CIDR block. In other words, any address starting with `127`.
     /// in 0xFF00::/120, the prefix length is 120.
     public var prefixLength: Int {
-        AddressValueType.bitWidth - self.mask.address.trailingZeroBitCount
+        AddressValueType.bitWidth &- self.mask.address.trailingZeroBitCount
     }
 
     /// Create a new CIDR with the given prefix and mask.
@@ -150,5 +157,25 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable, Hashable {
             return false
         }
         return self.contains(ip)
+    }
+}
+
+@available(swiftEndpointApplePlatforms 10.15, *)
+extension CIDR: Hashable {
+    /// Whether or now 2 CIDR blocks represent the same network.
+    /// For example, 127.0.0.100/8 and 127.0.0.0/8 represent the same network.
+    @inlinable
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.mask.address == rhs.mask.address
+            && (lhs.prefix.address & lhs.mask.address) == (rhs.prefix.address & rhs.mask.address)
+    }
+
+    /// Hashes the network this CIDR describes, consistent with ``==(_:_:)``.
+    /// The host bits of ``prefix`` are masked off so equal CIDRs hash equally.
+    /// For example, 127.0.0.100/8 and 127.0.0.0/8 represent the same network.
+    @inlinable
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(self.mask.address)
+        hasher.combine(self.prefix.address & self.mask.address)
     }
 }

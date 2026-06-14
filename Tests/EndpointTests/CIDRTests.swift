@@ -153,6 +153,46 @@ struct CIDRTests {
         )
     }
 
+    @available(swiftEndpointApplePlatforms 10.15, *)
+    @Test func `contains ignores the CIDR prefix host bits`() {
+        /// The prefix is stored un-normalized (127.0.0.18, not 127.0.0.0), yet containment must
+        /// behave as if the host bits were masked off. This would fail if `contains` compared
+        /// against the raw prefix instead of `prefix & mask`.
+        let cidr = CIDR(prefix: IPv4Address(127, 0, 0, 18), prefixLength: 8)
+        #expect(cidr.prefix == IPv4Address(127, 0, 0, 18))
+        #expect(cidr.contains(IPv4Address(127, 0, 0, 0)))
+        #expect(cidr.contains(IPv4Address(127, 0, 0, 1)))
+        #expect(cidr.contains(IPv4Address(127, 0, 0, 18)))
+        #expect(cidr.contains(IPv4Address(127, 255, 255, 255)))
+        #expect(!cidr.contains(IPv4Address(128, 0, 0, 18)))
+        /// Same through the AnyIPAddress overload.
+        #expect(cidr.contains(AnyIPAddress.v4(IPv4Address(127, 0, 0, 1))))
+        #expect(!cidr.contains(AnyIPAddress.v4(IPv4Address(128, 0, 0, 18))))
+    }
+
+    @available(swiftEndpointApplePlatforms 10.15, *)
+    @Test func `CIDR equality and hashing ignore the prefix host bits`() {
+        /// Same network, different host bits: must be equal and hash equally.
+        let a = CIDR(prefix: IPv4Address(127, 0, 0, 18), prefixLength: 8)
+        let b = CIDR(prefix: IPv4Address(127, 0, 0, 0), prefixLength: 8)
+        #expect(a == b)
+        #expect(a.hashValue == b.hashValue)
+        /// But the un-normalized prefix is still preserved for display.
+        #expect(a.prefix == IPv4Address(127, 0, 0, 18))
+        #expect(a.description == "127.0.0.18/8")
+
+        /// Different mask, same masked prefix: must not be equal.
+        #expect(
+            CIDR(prefix: IPv4Address(127, 0, 0, 0), prefixLength: 8)
+                != CIDR(prefix: IPv4Address(127, 0, 0, 0), prefixLength: 16)
+        )
+        /// Different network: must not be equal.
+        #expect(
+            CIDR(prefix: IPv4Address(127, 0, 0, 18), prefixLength: 8)
+                != CIDR(prefix: IPv4Address(128, 0, 0, 18), prefixLength: 8)
+        )
+    }
+
     @available(swiftEndpointApplePlatforms 15, *)
     @Test func `randomly generated ipv4 CIDR containment checks work as expected`() {
         for (cidr, containsIP, result) in Self.makeRandom(
@@ -505,7 +545,7 @@ struct CIDRTests {
 
     @available(swiftEndpointApplePlatforms 15, *)
     @Test(
-        arguments: ipv6CIDRtruncationArguments
+        arguments: ipv6CIDRTruncationArguments
     ) func `ipv6 CIDR standard initializer preserves the prefix without truncating`(
         prefixLength: UInt8,
         ip: IPv6Address,
@@ -710,7 +750,7 @@ extension String {
 }
 
 @available(swiftEndpointApplePlatforms 15, *)
-let ipv6CIDRtruncationArguments: [(prefixLength: UInt8, ip: IPv6Address, expectedIP: IPv6Address)] =
+let ipv6CIDRTruncationArguments: [(prefixLength: UInt8, ip: IPv6Address, expectedIP: IPv6Address)] =
     [
         (
             prefixLength: 0 as UInt8,

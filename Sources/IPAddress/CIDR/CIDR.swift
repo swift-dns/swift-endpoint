@@ -179,8 +179,8 @@ extension CIDR: Hashable {
     /// For example, 127.0.0.100/8 and 127.0.0.0/8 represent the same network.
     @inlinable
     public static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.mask.address == rhs.mask.address
-            && lhs.networkAddress.address == rhs.networkAddress.address
+        lhs.mask == rhs.mask
+            && lhs.networkAddress == rhs.networkAddress
     }
 
     /// Hashes the network this CIDR describes, consistent with ``==(_:_:)``.
@@ -188,7 +188,7 @@ extension CIDR: Hashable {
     /// For example, 127.0.0.100/8 and 127.0.0.0/8 represent the same network.
     @inlinable
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(self.mask.address)
-        hasher.combine(self.networkAddress.address)
+        hasher.combine(self.mask)
+        hasher.combine(self.networkAddress)
     }
 }

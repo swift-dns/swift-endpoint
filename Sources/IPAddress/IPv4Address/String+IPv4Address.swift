@@ -8,36 +8,46 @@ extension IPv4Address: CustomStringConvertible {
         /// Coincidentally, Swift's `_SmallString` supports up to 15 bytes, which helps make this
         /// implementation as efficient as possible.
         String(unsafeUninitializedCapacity_Compatibility: 15) { buffer in
-            var resultIdx = 0
+            self.writeTextualRepresentation(into: buffer)
+        }
+    }
 
-            withUnsafeBytes(of: self.address.littleEndian) { addressBytes in
-                let range = 1..<4
-                var iterator = range.makeIterator()
+    /// Writes the textual representation of this address into `buffer` and returns the number of
+    /// bytes written. `buffer` must have a capacity of at least 15 bytes.
+    @inlinable
+    @inline(__always)
+    func writeTextualRepresentation(into buffer: UnsafeMutableBufferPointer<UInt8>) -> Int {
+        assert(buffer.count >= 15)
 
-                let byte = addressBytes[3]
+        var resultIdx = 0
+
+        withUnsafeBytes(of: self.address.littleEndian) { addressBytes in
+            let range = 1..<4
+            var iterator = range.makeIterator()
+
+            let byte = addressBytes[3]
+            byte.asDecimal(
+                writeUTF8Byte: {
+                    buffer[resultIdx] = $0
+                    resultIdx &+= 1
+                }
+            )
+
+            while let idx = iterator.next() {
+                buffer[resultIdx] = .asciiDot
+                resultIdx &+= 1
+
+                let byte = addressBytes[3 &- idx]
                 byte.asDecimal(
                     writeUTF8Byte: {
                         buffer[resultIdx] = $0
                         resultIdx &+= 1
                     }
                 )
-
-                while let idx = iterator.next() {
-                    buffer[resultIdx] = .asciiDot
-                    resultIdx &+= 1
-
-                    let byte = addressBytes[3 &- idx]
-                    byte.asDecimal(
-                        writeUTF8Byte: {
-                            buffer[resultIdx] = $0
-                            resultIdx &+= 1
-                        }
-                    )
-                }
             }
-
-            return resultIdx
         }
+
+        return resultIdx
     }
 }
 
@@ -75,7 +85,7 @@ extension IPv4Address: LosslessStringConvertible {
         var description = description
         guard
             let result = description.withSpan_Compatibility({
-                IPv4Address(_uncheckedAssumingValidUTF8: $0)
+                IPv4Address(textualRepresentation: $0)
             })
         else {
             return nil
@@ -90,7 +100,7 @@ extension IPv4Address: LosslessStringConvertible {
         var description = description
         guard
             let result = description.withSpan_Compatibility({
-                IPv4Address(_uncheckedAssumingValidUTF8: $0)
+                IPv4Address(textualRepresentation: $0)
             })
         else {
             return nil
@@ -102,7 +112,7 @@ extension IPv4Address: LosslessStringConvertible {
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
     @inlinable
-    public init?(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
+    public init?(textualRepresentation span: Span<UInt8>) {
         if !span.isASCII { return nil }
 
         self.init(_uncheckedAssumingValidASCII: span)
@@ -114,7 +124,7 @@ extension IPv4Address: LosslessStringConvertible {
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
     ///
     /// You should usually use `init?(textualRepresentation: UTF8Span)`, or
-    /// `init?(_uncheckedAssumingValidUTF8:)` instead.
+    /// `init?(textualRepresentation: Span<UInt8>)` instead.
     /// This initializer must only be used when you are 100% sure the span only contains ASCII characters.
     @inlinable
     public init?(_uncheckedAssumingValidASCII span: Span<UInt8>) {

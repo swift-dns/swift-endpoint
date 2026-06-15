@@ -1,6 +1,26 @@
 import Endpoint
 import Testing
 
+#if os(Linux) || os(FreeBSD) || os(Android)
+
+#if canImport(Glibc)
+@preconcurrency import Glibc
+#elseif canImport(Musl)
+@preconcurrency import Musl
+#elseif canImport(Android)
+@preconcurrency import Android
+#endif
+
+#elseif os(Windows)
+import ucrt
+#elseif canImport(Darwin)
+import Darwin
+#elseif canImport(WASILibc)
+@preconcurrency import WASILibc
+#else
+#error("The IPAddressTests module was unable to identify your C library.")
+#endif
+
 @Suite
 struct IPAddressTests {
     @Test func ipv4Address() {
@@ -53,6 +73,12 @@ struct IPAddressTests {
     )
     func ipv4AddressDescription(ip: IPv4Address, expectedDescription: String) {
         #expect(ip.description == expectedDescription)
+
+        let produced = ip.withCString { span in
+            #expect(span.count == expectedDescription.utf8.count + 1)
+            return span.withUnsafeBufferPointer { String(cString: $0.baseAddress!) }
+        }
+        #expect(produced == expectedDescription)
     }
 
     @available(swiftEndpointApplePlatforms 26, *)
@@ -68,19 +94,28 @@ struct IPAddressTests {
         #expect(IPv4Address(string) == expectedAddress)
         #expect(IPv4Address(Substring(string)) == expectedAddress)
         #expect(IPv4Address(textualRepresentation: string.utf8Span) == expectedAddress)
-        #expect(IPv4Address(_uncheckedAssumingValidUTF8: string.utf8Span.span) == expectedAddress)
+        #expect(IPv4Address(textualRepresentation: string.utf8Span.span) == expectedAddress)
 
         if isValidIPv6 {
             #expect(AnyIPAddress(string)?.isIPv6 == true)
             #expect(AnyIPAddress(Substring(string))?.isIPv6 == true)
             #expect(AnyIPAddress(textualRepresentation: string.utf8Span)?.isIPv6 == true)
-            #expect(AnyIPAddress(_uncheckedAssumingValidUTF8: string.utf8Span.span)?.isIPv6 == true)
+            #expect(AnyIPAddress(textualRepresentation: string.utf8Span.span)?.isIPv6 == true)
         } else {
             let expectedIPv4: AnyIPAddress? = expectedAddress.map { .v4($0) }
             #expect(AnyIPAddress(string) == expectedIPv4)
             #expect(AnyIPAddress(Substring(string)) == expectedIPv4)
             #expect(AnyIPAddress(textualRepresentation: string.utf8Span) == expectedIPv4)
-            #expect(AnyIPAddress(_uncheckedAssumingValidUTF8: string.utf8Span.span) == expectedIPv4)
+            #expect(AnyIPAddress(textualRepresentation: string.utf8Span.span) == expectedIPv4)
+        }
+
+        string.withCString { cString in
+            #expect(IPv4Address(cString: cString) == expectedAddress)
+            if isValidIPv6 {
+                #expect(AnyIPAddress(cString: cString)?.isIPv6 == true)
+            } else {
+                #expect(AnyIPAddress(cString: cString) == expectedAddress.map { .v4($0) })
+            }
         }
     }
 
@@ -330,7 +365,15 @@ struct IPAddressTests {
         ]
     )
     func ipv6AddressDescription(ip: UInt128, expectedDescription: String) {
-        #expect(IPv6Address(ip).description == expectedDescription)
+        let ipv6 = IPv6Address(ip)
+        #expect(ipv6.description == expectedDescription)
+
+        let bracketLess = String(expectedDescription.dropFirst().dropLast())
+        let produced = ipv6.withCString { span in
+            #expect(span.count - 1 == bracketLess.utf8.count)
+            return span.withUnsafeBufferPointer { String(cString: $0.baseAddress!) }
+        }
+        #expect(produced == bracketLess)
     }
 
     @available(swiftEndpointApplePlatforms 26, *)
@@ -346,21 +389,28 @@ struct IPAddressTests {
         #expect(IPv6Address(string) == expectedAddress)
         #expect(IPv6Address(Substring(string)) == expectedAddress)
         #expect(IPv6Address(textualRepresentation: string.utf8Span) == expectedAddress)
-        #expect(
-            IPv6Address(_uncheckedAssumingValidUTF8: string.utf8Span.span) == expectedAddress
-        )
+        #expect(IPv6Address(textualRepresentation: string.utf8Span.span) == expectedAddress)
 
         if isValidIPv4 {
             #expect(AnyIPAddress(string)?.isIPv4 == true)
             #expect(AnyIPAddress(Substring(string))?.isIPv4 == true)
             #expect(AnyIPAddress(textualRepresentation: string.utf8Span)?.isIPv4 == true)
-            #expect(AnyIPAddress(_uncheckedAssumingValidUTF8: string.utf8Span.span)?.isIPv4 == true)
+            #expect(AnyIPAddress(textualRepresentation: string.utf8Span.span)?.isIPv4 == true)
         } else {
             let expectedIPv6: AnyIPAddress? = expectedAddress.map { .v6($0) }
             #expect(AnyIPAddress(string) == expectedIPv6)
             #expect(AnyIPAddress(Substring(string)) == expectedIPv6)
             #expect(AnyIPAddress(textualRepresentation: string.utf8Span) == expectedIPv6)
-            #expect(AnyIPAddress(_uncheckedAssumingValidUTF8: string.utf8Span.span) == expectedIPv6)
+            #expect(AnyIPAddress(textualRepresentation: string.utf8Span.span) == expectedIPv6)
+        }
+
+        string.withCString { cString in
+            #expect(IPv6Address(cString: cString) == expectedAddress)
+            if isValidIPv4 {
+                #expect(AnyIPAddress(cString: cString)?.isIPv4 == true)
+            } else {
+                #expect(AnyIPAddress(cString: cString) == expectedAddress.map { .v6($0) })
+            }
         }
     }
 
@@ -465,6 +515,13 @@ struct IPAddressTests {
     )
     func ipAddressDescription(ip: AnyIPAddress, expectedDescription: String) {
         #expect(ip.description == expectedDescription)
+
+        let droppedFirstLast = String(expectedDescription.dropFirst().dropLast())
+        let bracketLess = ip.isIPv6 ? droppedFirstLast : expectedDescription
+        let produced = ip.withCString { span in
+            span.withUnsafeBufferPointer { String(cString: $0.baseAddress!) }
+        }
+        #expect(produced == bracketLess)
     }
 
     @available(swiftEndpointApplePlatforms 26, *)
@@ -478,6 +535,8 @@ struct IPAddressTests {
     )
     func ipAddressFromString(string: String, expectedAddress: AnyIPAddress?) {
         #expect(AnyIPAddress(string) == expectedAddress)
+
+        string.withCString { #expect(AnyIPAddress(cString: $0) == expectedAddress) }
     }
 
     @available(swiftEndpointApplePlatforms 26, *)
@@ -532,6 +591,48 @@ struct IPAddressTests {
         predicate: @Sendable (AnyIPAddress) -> Bool
     ) throws {
         #expect(predicate(ip), "\(testCaseDescription)")
+    }
+
+    @available(swiftEndpointApplePlatforms 10.15, *)
+    @Test(arguments: ipv4StringAndAddressTestCases.compactMap(\.1))
+    func `IPv4Address cString APIs compatibility with C`(ip: IPv4Address) {
+        let expectedBytes = [ip.bytes.0, ip.bytes.1, ip.bytes.2, ip.bytes.3]
+
+        var inAddress = in_addr()
+        let pton = ip.withCString { span in
+            span.withUnsafeBufferPointer { inet_pton(AF_INET, $0.baseAddress!, &inAddress) }
+        }
+        #expect(pton == 1)
+        #expect(withUnsafeBytes(of: inAddress) { Array($0) } == expectedBytes)
+
+        var buffer = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
+        let ntop = inet_ntop(AF_INET, &inAddress, &buffer, socklen_t(INET_ADDRSTRLEN))
+        #expect(ntop != nil)
+        #expect(IPv4Address(cString: buffer) == ip)
+    }
+
+    @available(swiftEndpointApplePlatforms 15, *)
+    @Test(arguments: ipv6StringAndAddressTestCases.compactMap(\.1))
+    func `IPv6Address cString APIs compatibility with C`(ip: IPv6Address) {
+        let bytes = ip.bytes
+        let expectedBytes = [
+            bytes.0, bytes.1, bytes.2, bytes.3, bytes.4, bytes.5, bytes.6, bytes.7,
+            bytes.8, bytes.9, bytes.10, bytes.11, bytes.12, bytes.13, bytes.14, bytes.15,
+        ]
+
+        var in6Address = in6_addr()
+        let pton = ip.withCString { span in
+            span.withUnsafeBufferPointer {
+                inet_pton(AF_INET6, $0.baseAddress!, &in6Address)
+            }
+        }
+        #expect(pton == 1)
+        #expect(withUnsafeBytes(of: in6Address) { Array($0) } == expectedBytes)
+
+        var buffer = [CChar](repeating: 0, count: Int(INET6_ADDRSTRLEN))
+        let ntop = inet_ntop(AF_INET6, &in6Address, &buffer, socklen_t(INET6_ADDRSTRLEN))
+        #expect(ntop != nil)
+        #expect(IPv6Address(cString: buffer) == ip)
     }
 }
 

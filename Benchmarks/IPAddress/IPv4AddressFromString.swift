@@ -93,11 +93,11 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<10_000_000 {
-            var ipv4SocketAddress = sockaddr_in()
+            var ipv4Address = in_addr()
             _ = "255.255.255.255".withCString { p in
-                inet_pton(AF_INET, p, &ipv4SocketAddress.sin_addr)
+                inet_pton(AF_INET, p, &ipv4Address)
             }
-            blackHole(ipv4SocketAddress)
+            blackHole(ipv4Address)
         }
     }
 
@@ -109,10 +109,10 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        var ipv4SocketAddress = sockaddr_in()
+        var ipv4Address = in_addr()
         _ = "255.255.255.255".withCString { p in
-            inet_pton(AF_INET, p, &ipv4SocketAddress.sin_addr)
+            inet_pton(AF_INET, p, &ipv4Address)
         }
-        blackHole(ipv4SocketAddress)
+        blackHole(ipv4Address)
     }
 }

@@ -49,7 +49,7 @@ extension CIDR: LosslessStringConvertible {
         var description = description
         guard
             let result = description.withSpan_Compatibility({
-                CIDR(_uncheckedAssumingValidUTF8: $0)
+                CIDR(textualRepresentation: $0)
             })
         else {
             return nil
@@ -68,7 +68,7 @@ extension CIDR: LosslessStringConvertible {
         var description = description
         guard
             let result = description.withSpan_Compatibility({
-                CIDR(_uncheckedAssumingValidUTF8: $0)
+                CIDR(textualRepresentation: $0)
             })
         else {
             return nil
@@ -84,7 +84,7 @@ extension CIDR: LosslessStringConvertible {
     /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
     @inlinable
-    public init?(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
+    public init?(textualRepresentation span: Span<UInt8>) {
         if !span.isASCII { return nil }
 
         self.init(_uncheckedAssumingValidASCII: span)

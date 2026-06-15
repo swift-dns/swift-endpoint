@@ -85,7 +85,7 @@ struct CIDRTests {
         #expect(CIDR<IPv4Address>(text) == expectedCIDR)
         #expect(CIDR<IPv4Address>(Substring(text)) == expectedCIDR)
         #expect(CIDR<IPv4Address>(textualRepresentation: text.utf8Span) == expectedCIDR)
-        #expect(CIDR<IPv4Address>(_uncheckedAssumingValidUTF8: text.utf8Span.span) == expectedCIDR)
+        #expect(CIDR<IPv4Address>(textualRepresentation: text.utf8Span.span) == expectedCIDR)
     }
 
     @available(swiftEndpointApplePlatforms 10.15, *)
@@ -451,7 +451,7 @@ struct CIDRTests {
         #expect(CIDR<IPv6Address>(text) == expectedCIDR)
         #expect(CIDR<IPv6Address>(Substring(text)) == expectedCIDR)
         #expect(CIDR<IPv6Address>(textualRepresentation: text.utf8Span) == expectedCIDR)
-        #expect(CIDR<IPv6Address>(_uncheckedAssumingValidUTF8: text.utf8Span.span) == expectedCIDR)
+        #expect(CIDR<IPv6Address>(textualRepresentation: text.utf8Span.span) == expectedCIDR)
     }
 
     @available(swiftEndpointApplePlatforms 26, *)

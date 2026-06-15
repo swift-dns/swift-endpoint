@@ -28,8 +28,6 @@ extension DomainName.Label: CustomDebugStringConvertible {
 extension DomainName.Label {
     @inlinable
     public func description(format: DomainName.DescriptionFormat) -> String {
-        let label: String
-
         if format == .unicode {
             let conversion = try? IDNA(configuration: .mostLax).toUnicode(
                 _uncheckedAssumingValidUTF8: self._data.readableBytesUInt8Span

@@ -8,36 +8,44 @@ extension IPv4Address: CustomStringConvertible {
         /// Coincidentally, Swift's `_SmallString` supports up to 15 bytes, which helps make this
         /// implementation as efficient as possible.
         String(unsafeUninitializedCapacity_Compatibility: 15) { buffer in
-            var resultIdx = 0
+            self.writeTextualRepresentation(into: buffer.mutableSpan)
+        }
+    }
 
-            withUnsafeBytes(of: self.address.littleEndian) { addressBytes in
-                let range = 1..<4
-                var iterator = range.makeIterator()
+    /// Writes the textual representation of this address into `buffer` and returns the number of
+    /// bytes written. `span` must have a capacity of at least 15 bytes.
+    @inlinable
+    @inline(__always)
+    func writeTextualRepresentation(into span: consuming MutableSpan<UInt8>) -> Int {
+        var resultIdx = 0
 
-                let byte = addressBytes[3]
+        withUnsafeBytes(of: self.address.littleEndian) { addressBytes in
+            let range = 1..<4
+            var iterator = range.makeIterator()
+
+            let byte = addressBytes[3]
+            byte.asDecimal(
+                writeUTF8Byte: {
+                    span[unchecked: resultIdx] = $0
+                    resultIdx &+= 1
+                }
+            )
+
+            while let idx = iterator.next() {
+                span[unchecked: resultIdx] = .asciiDot
+                resultIdx &+= 1
+
+                let byte = addressBytes[3 &- idx]
                 byte.asDecimal(
                     writeUTF8Byte: {
-                        buffer[resultIdx] = $0
+                        span[unchecked: resultIdx] = $0
                         resultIdx &+= 1
                     }
                 )
-
-                while let idx = iterator.next() {
-                    buffer[resultIdx] = .asciiDot
-                    resultIdx &+= 1
-
-                    let byte = addressBytes[3 &- idx]
-                    byte.asDecimal(
-                        writeUTF8Byte: {
-                            buffer[resultIdx] = $0
-                            resultIdx &+= 1
-                        }
-                    )
-                }
             }
-
-            return resultIdx
         }
+
+        return resultIdx
     }
 }
 

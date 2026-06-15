@@ -27,7 +27,7 @@ extension IPv6Address: CustomStringConvertible {
     /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://tools.ietf.org/html/rfc5952).
     @inlinable
     public var description: String {
-        self.makeDescription { (maxWriteableBytes, callback) in
+        self.makeDescription(enclosingInSquareBrackets: true) { (maxWriteableBytes, callback) in
             String(unsafeUninitializedCapacity_Compatibility: maxWriteableBytes) { buffer in
                 callback(buffer)
             }
@@ -53,23 +53,30 @@ extension IPv6Address {
     @inlinable
     @inline(__always)
     package func makeDescription<Buffer>(
+        enclosingInSquareBrackets: Bool,
         writingToUnsafeMutableBufferPointerOfUInt8: (
             _ maxWriteableBytes: Int,
             _ callbackReturningBytesWritten: (UnsafeMutableBufferPointer<UInt8>) -> Int
-        ) -> Buffer
-    ) -> Buffer {
+        ) throws -> Buffer
+    ) rethrows -> Buffer {
         /// Short-circuit "0".
         if self.address == .zero {
-            return writingToUnsafeMutableBufferPointerOfUInt8(4) { ptr in
-                ptr[0] = .asciiLeftSquareBracket
-                ptr[1] = .asciiColon
-                ptr[2] = .asciiColon
-                ptr[3] = .asciiRightSquareBracket
-                return 4
+            let toReserve = enclosingInSquareBrackets ? 4 : 2
+            return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { ptr in
+                if enclosingInSquareBrackets {
+                    ptr[0] = .asciiLeftSquareBracket
+                    ptr[1] = .asciiColon
+                    ptr[2] = .asciiColon
+                    ptr[3] = .asciiRightSquareBracket
+                } else {
+                    ptr[0] = .asciiColon
+                    ptr[1] = .asciiColon
+                }
+                return toReserve
             }
         }
 
-        return withUnsafeBytes(of: self.address.littleEndian) { ptr in
+        return try withUnsafeBytes(of: self.address.littleEndian) { ptr in
             func isZero(octalIdx idx: Int) -> Bool {
                 let doubled = idx &* 2
                 return ptr[15 &- doubled] == 0 && ptr[14 &- doubled] == 0
@@ -115,21 +122,24 @@ extension IPv6Address {
             assert(rangeToCompress?.isEmpty != true)
 
             /// Reserve the max possibly needed capacity.
+            let bracketsCount = enclosingInSquareBrackets ? 2 : 0
             let toReserve: Int
             if let rangeToCompress {
                 let segmentsCount = 8 &- rangeToCompress.count
                 let colonsCount = max(segmentsCount &- 1, 2)
-                let bracketsCount = 2
                 toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4)
             } else {
-                toReserve = 41
+                /// 39 bytes for 8 uncompressed segments plus the 7 colons separating them.
+                toReserve = bracketsCount &+ 39
             }
 
-            return writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
+            return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
                 var writeIdx = 0
 
-                buffer[0] = .asciiLeftSquareBracket
-                writeIdx &+= 1
+                if enclosingInSquareBrackets {
+                    buffer[0] = .asciiLeftSquareBracket
+                    writeIdx &+= 1
+                }
 
                 /// Reset `idx`. It was used in a loop above.
                 idx = 0
@@ -167,8 +177,10 @@ extension IPv6Address {
                     idx &+= 1
                 }
 
-                buffer[writeIdx] = .asciiRightSquareBracket
-                writeIdx &+= 1
+                if enclosingInSquareBrackets {
+                    buffer[writeIdx] = .asciiRightSquareBracket
+                    writeIdx &+= 1
+                }
 
                 return writeIdx
             }

@@ -24,8 +24,7 @@ extension IPv6Address {
                 capacity: maxWriteableBytes &+ 1
             ) { buffer in
                 let count = writeBytes(buffer)
-                /// Ensure the null terminator is present.
-                assert(buffer[count] == 0)
+                buffer[count] = 0
                 return try unsafe buffer.withMemoryRebound(to: CChar.self) { cBuffer in
                     let range = ClosedRange<Span<CChar>.Index>(uncheckedBounds: (0, count))
                     let limitedSpan = cBuffer.span.extracting(unchecked: range)

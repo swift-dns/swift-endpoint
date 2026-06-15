@@ -63,6 +63,10 @@ extension IPv6Address {
         if self.address == .zero {
             let toReserve = enclosingInSquareBrackets ? 4 : 2
             return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { ptr in
+                /// A bit of branching here, and in the rest of the function for `enclosingInSquareBrackets`,
+                /// but theoretically shouldn't matter as `enclosingInSquareBrackets` is always known
+                /// at compile time and the compiler should be able to optimize it away considering
+                /// this function is internal and `inline(__always)`.
                 if enclosingInSquareBrackets {
                     ptr[0] = .asciiLeftSquareBracket
                     ptr[1] = .asciiColon
@@ -256,7 +260,7 @@ extension IPv6Address: LosslessStringConvertible {
         var description = description
         guard
             let result = description.withSpan_Compatibility({
-                IPv6Address(_uncheckedAssumingValidUTF8: $0)
+                IPv6Address(textualRepresentation: $0)
             })
         else {
             return nil
@@ -272,7 +276,7 @@ extension IPv6Address: LosslessStringConvertible {
         var description = description
         guard
             let result = description.withSpan_Compatibility({
-                IPv6Address(_uncheckedAssumingValidUTF8: $0)
+                IPv6Address(textualRepresentation: $0)
             })
         else {
             return nil
@@ -285,7 +289,7 @@ extension IPv6Address: LosslessStringConvertible {
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     @inlinable
-    public init?(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
+    public init?(textualRepresentation span: Span<UInt8>) {
         if !span.isASCII { return nil }
 
         self.init(_uncheckedAssumingValidASCII: span)
@@ -298,7 +302,7 @@ extension IPv6Address: LosslessStringConvertible {
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     ///
     /// You should usually use `init?(textualRepresentation: UTF8Span)`, or
-    /// `init?(_uncheckedAssumingValidUTF8:)` instead.
+    /// `init?(textualRepresentation: Span<UInt8>)` instead.
     /// This initializer must only be used when you are 100% sure the span only contains ASCII characters.
     @inlinable
     public init?(_uncheckedAssumingValidASCII span: Span<UInt8>) {

@@ -9,7 +9,8 @@ extension IPv6Address {
     ///
     /// Parameters:
     /// - `body`: A closure that allows access to a `Span<CChar>` of the address's textual representation.
-    ///    You can call `withUnsafeBytes()` on the span if you need to, for C interoperability.
+    ///    You can use `span.withUnsafeBufferPointer { $0.baseAddress! /*UnsafePointer<CChar>*/ }` on the
+    ///    span if you need to, for C interoperability.
     /// - Returns: The result of the closure.
     @inlinable
     public func withCString<Result>(
@@ -26,7 +27,7 @@ extension IPv6Address {
                 let count = writeBytes(buffer)
                 buffer[count] = 0
                 return try unsafe buffer.withMemoryRebound(to: CChar.self) { cBuffer in
-                    let range = ClosedRange<Span<CChar>.Index>(uncheckedBounds: (0, count))
+                    let range = ClosedRange<Int>(uncheckedBounds: (0, count))
                     let limitedSpan = cBuffer.span.extracting(unchecked: range)
                     return try body(limitedSpan)
                 }
@@ -48,7 +49,7 @@ extension IPv6Address {
         let length = CCalls.c_strlen(cString)
         let buffer = UnsafeBufferPointer(start: cString, count: length)
         let result = buffer.withMemoryRebound(to: UInt8.self) {
-            IPv6Address(_uncheckedAssumingValidUTF8: $0.span)
+            IPv6Address(textualRepresentation: $0.span)
         }
         guard let result else {
             return nil

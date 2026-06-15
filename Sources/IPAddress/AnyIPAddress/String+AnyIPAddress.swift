@@ -49,7 +49,7 @@ extension AnyIPAddress: LosslessStringConvertible {
         var description = description
         guard
             let result = description.withSpan_Compatibility({
-                AnyIPAddress(_uncheckedAssumingValidUTF8: $0)
+                AnyIPAddress(textualRepresentation: $0)
             })
         else {
             return nil
@@ -65,7 +65,7 @@ extension AnyIPAddress: LosslessStringConvertible {
         var description = description
         guard
             let result = description.withSpan_Compatibility({
-                AnyIPAddress(_uncheckedAssumingValidUTF8: $0)
+                AnyIPAddress(textualRepresentation: $0)
             })
         else {
             return nil
@@ -78,7 +78,7 @@ extension AnyIPAddress: LosslessStringConvertible {
     /// and `"[2001:db8:1111::]"` will parse into `.v6(2001:DB8:1111:0:0:0:0:0)`,
     /// or in other words `.v6(0x2001_0DB8_1111_0000_0000_0000_0000_0000)`.
     @inlinable
-    public init?(_uncheckedAssumingValidUTF8 span: Span<UInt8>) {
+    public init?(textualRepresentation span: Span<UInt8>) {
         if !span.isASCII { return nil }
 
         self.init(_uncheckedAssumingValidASCII: span)
@@ -91,7 +91,7 @@ extension AnyIPAddress: LosslessStringConvertible {
     /// or in other words `.v6(0x2001_0DB8_1111_0000_0000_0000_0000_0000)`.
     ///
     /// You should usually use `init?(textualRepresentation: UTF8Span)`, or
-    /// `init?(_uncheckedAssumingValidUTF8:)` instead.
+    /// `init?(textualRepresentation: Span<UInt8>)` instead.
     /// This initializer must only be used when you are 100% sure the span only contains ASCII characters.
     @inlinable
     public init?(_uncheckedAssumingValidASCII span: Span<UInt8>) {

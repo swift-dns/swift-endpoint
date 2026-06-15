@@ -157,11 +157,11 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<3_000_000 {
-            var ipv6SocketAddress = sockaddr_in6()
+            var ipv6Address = in6_addr()
             _ = "2001:0db8:85a3::8a2e:0370:7334".withCString { p in
-                inet_pton(AF_INET6, p, &ipv6SocketAddress.sin6_addr)
+                inet_pton(AF_INET6, p, &ipv6Address)
             }
-            blackHole(ipv6SocketAddress)
+            blackHole(ipv6Address)
         }
     }
 
@@ -173,10 +173,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        var ipv6SocketAddress = sockaddr_in6()
+        var ipv6Address = in6_addr()
         _ = "2001:0db8:85a3::8a2e:0370:7334".withCString { p in
-            inet_pton(AF_INET6, p, &ipv6SocketAddress.sin6_addr)
+            inet_pton(AF_INET6, p, &ipv6Address)
         }
-        blackHole(ipv6SocketAddress)
+        blackHole(ipv6Address)
     }
 }

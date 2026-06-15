@@ -8,7 +8,7 @@ extension IPv4Address: CustomStringConvertible {
         /// Coincidentally, Swift's `_SmallString` supports up to 15 bytes, which helps make this
         /// implementation as efficient as possible.
         String(unsafeUninitializedCapacity_Compatibility: 15) { buffer in
-            self.writeTextualRepresentation(into: buffer.mutableSpan)
+            self.writeTextualRepresentation(into: buffer)
         }
     }
 
@@ -16,7 +16,7 @@ extension IPv4Address: CustomStringConvertible {
     /// bytes written. `span` must have a capacity of at least 15 bytes.
     @inlinable
     @inline(__always)
-    func writeTextualRepresentation(into span: consuming MutableSpan<UInt8>) -> Int {
+    func writeTextualRepresentation(into buffer: UnsafeMutableBufferPointer<UInt8>) -> Int {
         var resultIdx = 0
 
         withUnsafeBytes(of: self.address.littleEndian) { addressBytes in
@@ -26,19 +26,19 @@ extension IPv4Address: CustomStringConvertible {
             let byte = addressBytes[3]
             byte.asDecimal(
                 writeUTF8Byte: {
-                    span[unchecked: resultIdx] = $0
+                    buffer[resultIdx] = $0
                     resultIdx &+= 1
                 }
             )
 
             while let idx = iterator.next() {
-                span[unchecked: resultIdx] = .asciiDot
+                buffer[resultIdx] = .asciiDot
                 resultIdx &+= 1
 
                 let byte = addressBytes[3 &- idx]
                 byte.asDecimal(
                     writeUTF8Byte: {
-                        span[unchecked: resultIdx] = $0
+                        buffer[resultIdx] = $0
                         resultIdx &+= 1
                     }
                 )

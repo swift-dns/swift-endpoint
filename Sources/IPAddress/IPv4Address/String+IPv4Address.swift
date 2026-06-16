@@ -20,31 +20,26 @@ extension IPv4Address: CustomStringConvertible {
         assert(buffer.count >= 15)
 
         var resultIdx = 0
+        var addressByte = address.byteSwapped
 
-        withUnsafeBytes(of: self.address.littleEndian) { addressBytes in
-            let range = 1..<4
-            var iterator = range.makeIterator()
+        UInt8(addressByte & 0xFF).asDecimal(
+            writeUTF8Byte: {
+                buffer[resultIdx] = $0
+                resultIdx &+= 1
+            }
+        )
 
-            let byte = addressBytes[3]
-            byte.asDecimal(
+        for _ in 1..<4 {
+            buffer[resultIdx] = .asciiDot
+            resultIdx &+= 1
+
+            addressByte >>= 8
+            UInt8(addressByte & 0xFF).asDecimal(
                 writeUTF8Byte: {
                     buffer[resultIdx] = $0
                     resultIdx &+= 1
                 }
             )
-
-            while let idx = iterator.next() {
-                buffer[resultIdx] = .asciiDot
-                resultIdx &+= 1
-
-                let byte = addressBytes[3 &- idx]
-                byte.asDecimal(
-                    writeUTF8Byte: {
-                        buffer[resultIdx] = $0
-                        resultIdx &+= 1
-                    }
-                )
-            }
         }
 
         return resultIdx

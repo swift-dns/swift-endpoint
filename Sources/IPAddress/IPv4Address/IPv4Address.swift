@@ -66,13 +66,11 @@ public struct IPv4Address: Sendable, Hashable {
     /// For example `IPv4Address(127, 0, 0, 1)` will result in an IP address equal to `127.0.0.1`.
     @inlinable
     public init(_ _1: UInt8, _ _2: UInt8, _ _3: UInt8, _ _4: UInt8) {
-        self.address = 0
-        withUnsafeMutableBytes(of: &self.address) { ptr in
-            ptr[3] = _1
-            ptr[2] = _2
-            ptr[1] = _3
-            ptr[0] = _4
-        }
+        self.address =
+            UInt32(_1) &<< 24
+            | UInt32(_2) &<< 16
+            | UInt32(_3) &<< 8
+            | UInt32(_4)
     }
 }
 
@@ -91,8 +89,11 @@ extension IPv4Address: ExpressibleByIntegerLiteral {
 extension IPv4Address {
     /// The 4 bytes representing this IPv4 address.
     public var bytes: (UInt8, UInt8, UInt8, UInt8) {
-        withUnsafeBytes(of: self.address.littleEndian) { ptr in
-            (ptr[3], ptr[2], ptr[1], ptr[0])
-        }
+        (
+            UInt8(truncatingIfNeeded: self.address &>> 24),
+            UInt8(truncatingIfNeeded: self.address &>> 16),
+            UInt8(truncatingIfNeeded: self.address &>> 8),
+            UInt8(truncatingIfNeeded: self.address)
+        )
     }
 }

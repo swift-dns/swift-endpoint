@@ -80,114 +80,122 @@ extension IPv6Address {
             }
         }
 
-        return try withUnsafeBytes(of: self.address.littleEndian) { ptr in
-            func isZero(octalIdx idx: Int) -> Bool {
-                let doubled = idx &* 2
-                return ptr[15 &- doubled] == 0 && ptr[14 &- doubled] == 0
+        let hi = self.address._high
+        let lo = self.address._low
+
+        func segment(octalIdx idx: Int) -> UInt16 {
+            let word = idx < 4 ? hi : lo
+            let shift = (3 &- (idx & 3)) &* 16
+            return UInt16(truncatingIfNeeded: word &>> shift)
+        }
+
+        func isZero(octalIdx idx: Int) -> Bool {
+            segment(octalIdx: idx) == 0
+        }
+
+        var rangeToCompress: Range<Int>? = nil
+        var idx = 0
+        /// idx < `7` instead of `8` because even if 7 is a zero it'll be a lone zero and
+        /// we won't compress it anyway.
+        while idx < 7 {
+            guard isZero(octalIdx: idx) else {
+                idx &+= 1
+                continue
             }
-            var rangeToCompress: Range<Int>? = nil
-            var idx = 0
-            /// idx < `7` instead of `8` because even if 7 is a zero it'll be a lone zero and
-            /// we won't compress it anyway.
-            while idx < 7 {
-                guard isZero(octalIdx: idx) else {
-                    idx &+= 1
+
+            var endIndex = idx
+
+            /// This range is guaranteed to be non-empty because we know idx < 7 (6 max)
+            /// and (6+1)..<8 is still a range with 1 number in it.
+            for nextIdx in (idx + 1)..<8 {
+                guard isZero(octalIdx: nextIdx) else {
+                    break
+                }
+                endIndex = nextIdx
+            }
+
+            if endIndex != idx {
+                /// If a `rangeToCompress` already exists and is not smaller than the new range,
+                /// then don't do anything.
+                /// Otherwise use the `newRange` as the `rangeToCompress`.
+                let newRange = idx..<endIndex
+                if let existingRange = rangeToCompress {
+                    if existingRange.count < newRange.count {
+                        rangeToCompress = newRange
+                    }
+                } else {
+                    rangeToCompress = newRange
+                }
+            }
+
+            idx = endIndex &+ 1
+        }
+
+        assert(rangeToCompress?.isEmpty != true)
+
+        /// Reserve the max possibly needed capacity.
+        let bracketsCount = enclosingInSquareBrackets ? 2 : 0
+        let toReserve: Int
+        if let rangeToCompress {
+            let segmentsCount = 8 &- rangeToCompress.count
+            let colonsCount = max(segmentsCount &- 1, 2)
+            toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4)
+        } else {
+            /// 39 bytes for 8 uncompressed segments plus the 7 colons separating them.
+            toReserve = bracketsCount &+ 39
+        }
+
+        return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
+            var writeIdx = 0
+
+            if enclosingInSquareBrackets {
+                buffer[0] = .asciiLeftSquareBracket
+                writeIdx &+= 1
+            }
+
+            /// Reset `idx`. It was used in a loop above.
+            idx = 0
+            while idx < 8 {
+                if let rangeToCompress,
+                    idx == rangeToCompress.lowerBound
+                {
+                    buffer[writeIdx] = .asciiColon
+                    writeIdx &+= 1
+
+                    if idx == 0 {
+                        /// Need 2 colons in this case, so '::'
+                        buffer[writeIdx] = .asciiColon
+                        writeIdx &+= 1
+                    }
+
+                    idx = rangeToCompress.upperBound &+ 1
                     continue
                 }
 
-                var endIndex = idx
-
-                /// This range is guaranteed to be non-empty because we know idx < 7 (6 max)
-                /// and (6+1)..<8 is still a range with 1 number in it.
-                for nextIdx in (idx + 1)..<8 {
-                    guard isZero(octalIdx: nextIdx) else {
-                        break
-                    }
-                    endIndex = nextIdx
-                }
-
-                if endIndex != idx {
-                    /// If a `rangeToCompress` already exists and is not smaller than the new range,
-                    /// then don't do anything.
-                    /// Otherwise use the `newRange` as the `rangeToCompress`.
-                    let newRange = idx..<endIndex
-                    if let existingRange = rangeToCompress {
-                        if existingRange.count < newRange.count {
-                            rangeToCompress = newRange
-                        }
-                    } else {
-                        rangeToCompress = newRange
-                    }
-                }
-
-                idx = endIndex &+ 1
-            }
-
-            assert(rangeToCompress?.isEmpty != true)
-
-            /// Reserve the max possibly needed capacity.
-            let bracketsCount = enclosingInSquareBrackets ? 2 : 0
-            let toReserve: Int
-            if let rangeToCompress {
-                let segmentsCount = 8 &- rangeToCompress.count
-                let colonsCount = max(segmentsCount &- 1, 2)
-                toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4)
-            } else {
-                /// 39 bytes for 8 uncompressed segments plus the 7 colons separating them.
-                toReserve = bracketsCount &+ 39
-            }
-
-            return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
-                var writeIdx = 0
-
-                if enclosingInSquareBrackets {
-                    buffer[0] = .asciiLeftSquareBracket
-                    writeIdx &+= 1
-                }
-
-                /// Reset `idx`. It was used in a loop above.
-                idx = 0
-                while idx < 8 {
-                    if let rangeToCompress,
-                        idx == rangeToCompress.lowerBound
-                    {
-                        buffer[writeIdx] = .asciiColon
-                        writeIdx &+= 1
-
-                        if idx == 0 {
-                            /// Need 2 colons in this case, so '::'
-                            buffer[writeIdx] = .asciiColon
-                            writeIdx &+= 1
-                        }
-
-                        idx = rangeToCompress.upperBound &+ 1
-                        continue
-                    }
-
-                    let doubled = idx &* 2
-                    let left = ptr[15 &- doubled]
-                    let right = ptr[14 &- doubled]
-                    IPv6Address._writeUInt16AsLowercasedASCII(
-                        into: buffer,
-                        advancingIdx: &writeIdx,
-                        bytePair: (left, right)
+                let value = segment(octalIdx: idx)
+                IPv6Address._writeUInt16AsLowercasedASCII(
+                    into: buffer,
+                    advancingIdx: &writeIdx,
+                    bytePair: (
+                        UInt8(truncatingIfNeeded: value &>> 8),
+                        UInt8(truncatingIfNeeded: value)
                     )
+                )
 
-                    if idx < 7 {
-                        buffer[writeIdx] = .asciiColon
-                        writeIdx &+= 1
-                    }
-
-                    idx &+= 1
-                }
-
-                if enclosingInSquareBrackets {
-                    buffer[writeIdx] = .asciiRightSquareBracket
+                if idx < 7 {
+                    buffer[writeIdx] = .asciiColon
                     writeIdx &+= 1
                 }
 
-                return writeIdx
+                idx &+= 1
             }
+
+            if enclosingInSquareBrackets {
+                buffer[writeIdx] = .asciiRightSquareBracket
+                writeIdx &+= 1
+            }
+
+            return writeIdx
         }
     }
 

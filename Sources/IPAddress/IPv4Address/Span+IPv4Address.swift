@@ -6,13 +6,12 @@ extension IPv4Address {
             return nil
         }
 
-        self.init(0)
-        withUnsafeMutableBytes(of: &self.address) { ptr in
-            for idx in 0..<4 {
-                let reverseIdx = 3 &- idx
-                ptr[reverseIdx] = span[unchecked: idx]
-            }
-        }
+        self.init(
+            UInt32(span[unchecked: 0]) &<< 24
+                | UInt32(span[unchecked: 1]) &<< 16
+                | UInt32(span[unchecked: 2]) &<< 8
+                | UInt32(span[unchecked: 3])
+        )
     }
 
     /// Encode the address into the provided span.
@@ -22,12 +21,10 @@ extension IPv4Address {
             return false
         }
 
-        withUnsafeBytes(of: self.address.littleEndian) { ptr in
-            for idx in 0..<4 {
-                let reverseIdx = 3 &- idx
-                span.append(ptr[reverseIdx])
-            }
-        }
+        span.append(UInt8(truncatingIfNeeded: self.address &>> 24))
+        span.append(UInt8(truncatingIfNeeded: self.address &>> 16))
+        span.append(UInt8(truncatingIfNeeded: self.address &>> 8))
+        span.append(UInt8(truncatingIfNeeded: self.address))
 
         return true
     }

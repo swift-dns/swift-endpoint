@@ -122,25 +122,16 @@ public struct IPv6Address: Sendable, Hashable {
         _ _7: UInt16,
         _ _8: UInt16
     ) {
-        self.address = .zero
-        withUnsafeMutableBytes(of: &self.address) { ptr in
-            ptr[15] = UInt8(_1 &>> 8)
-            ptr[14] = UInt8(truncatingIfNeeded: _1)
-            ptr[13] = UInt8(_2 &>> 8)
-            ptr[12] = UInt8(truncatingIfNeeded: _2)
-            ptr[11] = UInt8(_3 &>> 8)
-            ptr[10] = UInt8(truncatingIfNeeded: _3)
-            ptr[9] = UInt8(_4 &>> 8)
-            ptr[8] = UInt8(truncatingIfNeeded: _4)
-            ptr[7] = UInt8(_5 &>> 8)
-            ptr[6] = UInt8(truncatingIfNeeded: _5)
-            ptr[5] = UInt8(_6 &>> 8)
-            ptr[4] = UInt8(truncatingIfNeeded: _6)
-            ptr[3] = UInt8(_7 &>> 8)
-            ptr[2] = UInt8(truncatingIfNeeded: _7)
-            ptr[1] = UInt8(_8 &>> 8)
-            ptr[0] = UInt8(truncatingIfNeeded: _8)
-        }
+        self.address = UnsignedInt128(
+            _low: UInt64(_5) &<< 48
+                | UInt64(_6) &<< 32
+                | UInt64(_7) &<< 16
+                | UInt64(_8),
+            _high: UInt64(_1) &<< 48
+                | UInt64(_2) &<< 32
+                | UInt64(_3) &<< 16
+                | UInt64(_4)
+        )
     }
 
     /// Initialize an IPv6 from the 16 bytes representing it.
@@ -165,25 +156,24 @@ public struct IPv6Address: Sendable, Hashable {
         _ _15: UInt8,
         _ _16: UInt8
     ) {
-        self.address = .zero
-        withUnsafeMutableBytes(of: &self.address) { ptr in
-            ptr[15] = _1
-            ptr[14] = _2
-            ptr[13] = _3
-            ptr[12] = _4
-            ptr[11] = _5
-            ptr[10] = _6
-            ptr[9] = _7
-            ptr[8] = _8
-            ptr[7] = _9
-            ptr[6] = _10
-            ptr[5] = _11
-            ptr[4] = _12
-            ptr[3] = _13
-            ptr[2] = _14
-            ptr[1] = _15
-            ptr[0] = _16
-        }
+        self.address = UnsignedInt128(
+            _low: UInt64(_9) &<< 56
+                | UInt64(_10) &<< 48
+                | UInt64(_11) &<< 40
+                | UInt64(_12) &<< 32
+                | UInt64(_13) &<< 24
+                | UInt64(_14) &<< 16
+                | UInt64(_15) &<< 8
+                | UInt64(_16),
+            _high: UInt64(_1) &<< 56
+                | UInt64(_2) &<< 48
+                | UInt64(_3) &<< 40
+                | UInt64(_4) &<< 32
+                | UInt64(_5) &<< 24
+                | UInt64(_6) &<< 16
+                | UInt64(_7) &<< 8
+                | UInt64(_8)
+        )
     }
 }
 
@@ -211,29 +201,43 @@ extension IPv6Address {
             UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8
         )
     {
-        withUnsafeBytes(of: self.address.littleEndian) { ptr in
-            (
-                ptr[15], ptr[14], ptr[13], ptr[12], ptr[11], ptr[10], ptr[9], ptr[8],
-                ptr[7], ptr[6], ptr[5], ptr[4], ptr[3], ptr[2], ptr[1], ptr[0]
-            )
-        }
+        let hi = self.address._high
+        let lo = self.address._low
+        return (
+            UInt8(truncatingIfNeeded: hi &>> 56),
+            UInt8(truncatingIfNeeded: hi &>> 48),
+            UInt8(truncatingIfNeeded: hi &>> 40),
+            UInt8(truncatingIfNeeded: hi &>> 32),
+            UInt8(truncatingIfNeeded: hi &>> 24),
+            UInt8(truncatingIfNeeded: hi &>> 16),
+            UInt8(truncatingIfNeeded: hi &>> 8),
+            UInt8(truncatingIfNeeded: hi),
+            UInt8(truncatingIfNeeded: lo &>> 56),
+            UInt8(truncatingIfNeeded: lo &>> 48),
+            UInt8(truncatingIfNeeded: lo &>> 40),
+            UInt8(truncatingIfNeeded: lo &>> 32),
+            UInt8(truncatingIfNeeded: lo &>> 24),
+            UInt8(truncatingIfNeeded: lo &>> 16),
+            UInt8(truncatingIfNeeded: lo &>> 8),
+            UInt8(truncatingIfNeeded: lo)
+        )
     }
 
     /// The 8 segments representing this IPv6 address, each being 2 bytes / 16 bits.
     /// The same as 8-segments / groups divided by colons (`:`) in the textual representation.
     @inlinable
     public var segments: (UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16) {
-        withUnsafeBytes(of: self.address.littleEndian) { ptr in
-            (
-                UInt16(ptr[15]) &<< 8 | UInt16(ptr[14]),
-                UInt16(ptr[13]) &<< 8 | UInt16(ptr[12]),
-                UInt16(ptr[11]) &<< 8 | UInt16(ptr[10]),
-                UInt16(ptr[9]) &<< 8 | UInt16(ptr[8]),
-                UInt16(ptr[7]) &<< 8 | UInt16(ptr[6]),
-                UInt16(ptr[5]) &<< 8 | UInt16(ptr[4]),
-                UInt16(ptr[3]) &<< 8 | UInt16(ptr[2]),
-                UInt16(ptr[1]) &<< 8 | UInt16(ptr[0])
-            )
-        }
+        let hi = self.address._high
+        let lo = self.address._low
+        return (
+            UInt16(truncatingIfNeeded: hi &>> 48),
+            UInt16(truncatingIfNeeded: hi &>> 32),
+            UInt16(truncatingIfNeeded: hi &>> 16),
+            UInt16(truncatingIfNeeded: hi),
+            UInt16(truncatingIfNeeded: lo &>> 48),
+            UInt16(truncatingIfNeeded: lo &>> 32),
+            UInt16(truncatingIfNeeded: lo &>> 16),
+            UInt16(truncatingIfNeeded: lo)
+        )
     }
 }

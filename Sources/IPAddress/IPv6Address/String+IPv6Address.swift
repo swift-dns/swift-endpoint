@@ -80,115 +80,121 @@ extension IPv6Address {
             }
         }
 
-        return try withUnsafeBytes(of: self.address.littleEndian) { ptr in
-            func isZero(octalIdx idx: Int) -> Bool {
-                let doubled = idx &* 2
-                return ptr[15 &- doubled] == 0 && ptr[14 &- doubled] == 0
+        func isZero(octalIdx idx: Int) -> Bool {
+            self.segment(octalIdx: idx) == 0
+        }
+
+        var rangeToCompress: Range<Int>? = nil
+        var idx = 0
+        /// idx < `7` instead of `8` because even if 7 is a zero it'll be a lone zero and
+        /// we won't compress it anyway.
+        while idx < 7 {
+            guard isZero(octalIdx: idx) else {
+                idx &+= 1
+                continue
             }
-            var rangeToCompress: Range<Int>? = nil
-            var idx = 0
-            /// idx < `7` instead of `8` because even if 7 is a zero it'll be a lone zero and
-            /// we won't compress it anyway.
-            while idx < 7 {
-                guard isZero(octalIdx: idx) else {
-                    idx &+= 1
+
+            var endIndex = idx
+
+            /// This range is guaranteed to be non-empty because we know idx < 7 (6 max)
+            /// and (6+1)..<8 is still a range with 1 number in it.
+            for nextIdx in (idx + 1)..<8 {
+                guard isZero(octalIdx: nextIdx) else {
+                    break
+                }
+                endIndex = nextIdx
+            }
+
+            if endIndex != idx {
+                /// If a `rangeToCompress` already exists and is not smaller than the new range,
+                /// then don't do anything.
+                /// Otherwise use the `newRange` as the `rangeToCompress`.
+                let newRange = idx..<endIndex
+                if let existingRange = rangeToCompress {
+                    if existingRange.count < newRange.count {
+                        rangeToCompress = newRange
+                    }
+                } else {
+                    rangeToCompress = newRange
+                }
+            }
+
+            idx = endIndex &+ 1
+        }
+
+        assert(rangeToCompress?.isEmpty != true)
+
+        /// Reserve the max possibly needed capacity.
+        let bracketsCount = enclosingInSquareBrackets ? 2 : 0
+        let toReserve: Int
+        if let rangeToCompress {
+            let segmentsCount = 8 &- rangeToCompress.count
+            let colonsCount = max(segmentsCount &- 1, 2)
+            toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4)
+        } else {
+            /// 39 bytes for 8 uncompressed segments plus the 7 colons separating them.
+            toReserve = bracketsCount &+ 39
+        }
+
+        return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
+            var writeIdx = 0
+
+            if enclosingInSquareBrackets {
+                buffer[0] = .asciiLeftSquareBracket
+                writeIdx &+= 1
+            }
+
+            /// Reset `idx`. It was used in a loop above.
+            idx = 0
+            while idx < 8 {
+                if let rangeToCompress,
+                    idx == rangeToCompress.lowerBound
+                {
+                    buffer[writeIdx] = .asciiColon
+                    writeIdx &+= 1
+
+                    if idx == 0 {
+                        /// Need 2 colons in this case, so '::'
+                        buffer[writeIdx] = .asciiColon
+                        writeIdx &+= 1
+                    }
+
+                    idx = rangeToCompress.upperBound &+ 1
                     continue
                 }
 
-                var endIndex = idx
+                let value = self.segment(octalIdx: idx)
+                IPv6Address._writeUInt16AsLowercasedASCII(
+                    into: buffer,
+                    advancingIdx: &writeIdx,
+                    bytePair: value
+                )
 
-                /// This range is guaranteed to be non-empty because we know idx < 7 (6 max)
-                /// and (6+1)..<8 is still a range with 1 number in it.
-                for nextIdx in (idx + 1)..<8 {
-                    guard isZero(octalIdx: nextIdx) else {
-                        break
-                    }
-                    endIndex = nextIdx
-                }
-
-                if endIndex != idx {
-                    /// If a `rangeToCompress` already exists and is not smaller than the new range,
-                    /// then don't do anything.
-                    /// Otherwise use the `newRange` as the `rangeToCompress`.
-                    let newRange = idx..<endIndex
-                    if let existingRange = rangeToCompress {
-                        if existingRange.count < newRange.count {
-                            rangeToCompress = newRange
-                        }
-                    } else {
-                        rangeToCompress = newRange
-                    }
-                }
-
-                idx = endIndex &+ 1
-            }
-
-            assert(rangeToCompress?.isEmpty != true)
-
-            /// Reserve the max possibly needed capacity.
-            let bracketsCount = enclosingInSquareBrackets ? 2 : 0
-            let toReserve: Int
-            if let rangeToCompress {
-                let segmentsCount = 8 &- rangeToCompress.count
-                let colonsCount = max(segmentsCount &- 1, 2)
-                toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4)
-            } else {
-                /// 39 bytes for 8 uncompressed segments plus the 7 colons separating them.
-                toReserve = bracketsCount &+ 39
-            }
-
-            return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
-                var writeIdx = 0
-
-                if enclosingInSquareBrackets {
-                    buffer[0] = .asciiLeftSquareBracket
+                if idx < 7 {
+                    buffer[writeIdx] = .asciiColon
                     writeIdx &+= 1
                 }
 
-                /// Reset `idx`. It was used in a loop above.
-                idx = 0
-                while idx < 8 {
-                    if let rangeToCompress,
-                        idx == rangeToCompress.lowerBound
-                    {
-                        buffer[writeIdx] = .asciiColon
-                        writeIdx &+= 1
-
-                        if idx == 0 {
-                            /// Need 2 colons in this case, so '::'
-                            buffer[writeIdx] = .asciiColon
-                            writeIdx &+= 1
-                        }
-
-                        idx = rangeToCompress.upperBound &+ 1
-                        continue
-                    }
-
-                    let doubled = idx &* 2
-                    let left = ptr[15 &- doubled]
-                    let right = ptr[14 &- doubled]
-                    IPv6Address._writeUInt16AsLowercasedASCII(
-                        into: buffer,
-                        advancingIdx: &writeIdx,
-                        bytePair: (left, right)
-                    )
-
-                    if idx < 7 {
-                        buffer[writeIdx] = .asciiColon
-                        writeIdx &+= 1
-                    }
-
-                    idx &+= 1
-                }
-
-                if enclosingInSquareBrackets {
-                    buffer[writeIdx] = .asciiRightSquareBracket
-                    writeIdx &+= 1
-                }
-
-                return writeIdx
+                idx &+= 1
             }
+
+            if enclosingInSquareBrackets {
+                buffer[writeIdx] = .asciiRightSquareBracket
+                writeIdx &+= 1
+            }
+
+            return writeIdx
         }
+    }
+
+    @inlinable
+    @inline(__always)
+    func segment(octalIdx idx: Int) -> UInt16 {
+        let hi = self.address._high
+        let lo = self.address._low
+        let word = idx < 4 ? hi : lo
+        let shift = (3 &- (idx & 3)) &* 16
+        return UInt16(truncatingIfNeeded: word &>> shift)
     }
 
     /// Equivalent to `String(bytePairAsUInt16, radix: 16, uppercase: false)`, but faster.
@@ -196,14 +202,14 @@ extension IPv6Address {
     static func _writeUInt16AsLowercasedASCII(
         into buffer: UnsafeMutableBufferPointer<UInt8>,
         advancingIdx idx: inout Int,
-        bytePair: (left: UInt8, right: UInt8)
+        bytePair: UInt16
     ) {
         var soFarAllZeros = true
 
-        let _1 = bytePair.left &>> 4
-        let _2 = bytePair.left & 0x0F
-        let _3 = bytePair.right &>> 4
-        let _4 = bytePair.right & 0x0F
+        let _1 = UInt8(truncatingIfNeeded: bytePair &>> 8) &>> 4
+        let _2 = UInt8(truncatingIfNeeded: bytePair &>> 8) & 0x0F
+        let _3 = UInt8(truncatingIfNeeded: bytePair) &>> 4
+        let _4 = UInt8(truncatingIfNeeded: bytePair) & 0x0F
 
         if _1 != 0 {
             soFarAllZeros = false
@@ -306,27 +312,6 @@ extension IPv6Address: LosslessStringConvertible {
     /// This initializer must only be used when you are 100% sure the span only contains ASCII characters.
     @inlinable
     public init?(_uncheckedAssumingValidASCII span: Span<UInt8>) {
-        self.init(_uncheckedAssumingValidASCII: span, preParsedIPv4MappedSegment: nil)
-    }
-
-    /// Initialize an IPv6 address from a `Span<UInt8>` of its textual representation.
-    /// The provided **span is required to be ASCII**.
-    /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
-    /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
-    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
-    ///
-    /// `preParsedIPv4MappedSegment` is helpful when redirecting a domain name parsing to this
-    /// initializer. Because a `.` is a label separator in domain names, and because this library's
-    /// `DomainName` type stores wire-format character-strings in its storage, the efficient way
-    /// to parse an IPv4-mapped IPv6 address is to first parse the IPv4 address using ipv4
-    /// initializers, then pass that ipv4 to this initializer.
-    /// This helps us avoid reallocating memory, which would happen if we wanted to convert the
-    /// domain name to a proper ipv6 address.
-    @inlinable
-    package init?(
-        _uncheckedAssumingValidASCII span: Span<UInt8>,
-        preParsedIPv4MappedSegment: IPv4Address?
-    ) {
         debugOnly {
             if !span.isASCII {
                 fatalError(
@@ -344,8 +329,7 @@ extension IPv6Address: LosslessStringConvertible {
             IPv6Address.parseIPv6(
                 span: span,
                 addressBufferPtr: addressPtr,
-                noIPv4MappedSegments: &noIPv4MappedSegments,
-                preParsedIPv4MappedSegment: preParsedIPv4MappedSegment
+                noIPv4MappedSegments: &noIPv4MappedSegments
             )
         }
 
@@ -360,8 +344,7 @@ extension IPv6Address: LosslessStringConvertible {
     static func parseIPv6(
         span: Span<UInt8>,
         addressBufferPtr: UnsafeMutableRawBufferPointer,
-        noIPv4MappedSegments: inout Bool,
-        preParsedIPv4MappedSegment: IPv4Address?
+        noIPv4MappedSegments: inout Bool
     ) -> Bool {
         let addressPtr = addressBufferPtr.baseAddress.unsafelyUnwrapped
         var span = span
@@ -438,12 +421,11 @@ extension IPv6Address: LosslessStringConvertible {
                 }
 
                 remainingBytesCount &-= 2
-                withUnsafeBytes(of: &currentSegmentValue) {
-                    addressPtr.advanced(by: remainingBytesCount).copyMemory(
-                        from: $0.baseAddress.unsafelyUnwrapped,
-                        byteCount: 2
-                    )
-                }
+                addressPtr.storeBytes(
+                    of: currentSegmentValue,
+                    toByteOffset: remainingBytesCount,
+                    as: UInt16.self
+                )
 
                 segmentDigitIdx = 0
                 currentSegmentValue = 0
@@ -454,8 +436,7 @@ extension IPv6Address: LosslessStringConvertible {
             if byte == .asciiDot {
                 guard
                     remainingBytesCount >= 4,
-                    preParsedIPv4MappedSegment == nil,
-                    var ipv4 = IPv4Address(
+                    let ipv4 = IPv4Address(
                         _uncheckedAssumingValidASCII: span.extracting(
                             unchecked: Range(
                                 uncheckedBounds: (latestColonIdx &+ 1, span.count)
@@ -467,7 +448,7 @@ extension IPv6Address: LosslessStringConvertible {
                 }
 
                 remainingBytesCount &-= 4
-                withUnsafeBytes(of: &ipv4.address) {
+                withUnsafeBytes(of: ipv4.address) {
                     addressPtr.advanced(by: remainingBytesCount).copyMemory(
                         from: $0.baseAddress.unsafelyUnwrapped,
                         byteCount: 4
@@ -490,27 +471,11 @@ extension IPv6Address: LosslessStringConvertible {
                 return false
             }
             remainingBytesCount &-= 2
-            withUnsafeBytes(of: &currentSegmentValue) {
-                addressPtr.advanced(by: remainingBytesCount).copyMemory(
-                    from: $0.baseAddress.unsafelyUnwrapped,
-                    byteCount: 2
-                )
-            }
-        }
-
-        if var ipv4 = preParsedIPv4MappedSegment {
-            guard remainingBytesCount >= 4 else {
-                return false
-            }
-            remainingBytesCount &-= 4
-            withUnsafeBytes(of: &ipv4.address) {
-                addressPtr.advanced(by: remainingBytesCount).copyMemory(
-                    from: $0.baseAddress.unsafelyUnwrapped,
-                    byteCount: 4
-                )
-            }
-
-            noIPv4MappedSegments = false
+            addressPtr.storeBytes(
+                of: currentSegmentValue,
+                toByteOffset: remainingBytesCount,
+                as: UInt16.self
+            )
         }
 
         if beforeCsBytesCountRemaining != -1 {

@@ -19,25 +19,27 @@ extension DomainName {
         buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 73) { bufferPtr in
             var bufferIdx = 0
 
-            withUnsafeBytes(of: ipv6.address) { bytes in
-                for idx in 0..<16 {
-                    let num1 = bytes[idx] &>> 4
-                    let num2 = bytes[idx] & 0x0F
+            let lo = ipv6.address._low
+            let hi = ipv6.address._high
+            for idx in 0..<16 {
+                let word = idx < 8 ? lo : hi
+                let byte = UInt8(truncatingIfNeeded: word &>> ((idx & 7) &* 8))
+                let num1 = byte &>> 4
+                let num2 = byte & 0x0F
 
-                    bufferPtr[bufferIdx] = 1
-                    bufferPtr[bufferIdx &+ 1] =
-                        num2 > 9
-                        ? num2 &+ UInt8.asciiLowercasedA &- 10
-                        : num2 &+ UInt8.ascii0
+                bufferPtr[bufferIdx] = 1
+                bufferPtr[bufferIdx &+ 1] =
+                    num2 > 9
+                    ? num2 &+ UInt8.asciiLowercasedA &- 10
+                    : num2 &+ UInt8.ascii0
 
-                    bufferPtr[bufferIdx &+ 2] = 1
-                    bufferPtr[bufferIdx &+ 3] =
-                        num1 > 9
-                        ? num1 &+ UInt8.asciiLowercasedA &- 10
-                        : num1 &+ UInt8.ascii0
+                bufferPtr[bufferIdx &+ 2] = 1
+                bufferPtr[bufferIdx &+ 3] =
+                    num1 > 9
+                    ? num1 &+ UInt8.asciiLowercasedA &- 10
+                    : num1 &+ UInt8.ascii0
 
-                    bufferIdx &+= 4
-                }
+                bufferIdx &+= 4
             }
 
             bufferPtr[bufferIdx] = 3

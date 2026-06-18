@@ -6,13 +6,26 @@ extension IPv6Address {
             return nil
         }
 
-        self.init(.zero)
-        withUnsafeMutableBytes(of: &self.address) { ptr in
-            for idx in 0..<16 {
-                let reverseIdx = 15 &- idx
-                ptr[reverseIdx] = span[unchecked: idx]
-            }
-        }
+        self.init(
+            UnsignedInt128(
+                _low: UInt64(span[unchecked: 8]) &<< 56
+                    | UInt64(span[unchecked: 9]) &<< 48
+                    | UInt64(span[unchecked: 10]) &<< 40
+                    | UInt64(span[unchecked: 11]) &<< 32
+                    | UInt64(span[unchecked: 12]) &<< 24
+                    | UInt64(span[unchecked: 13]) &<< 16
+                    | UInt64(span[unchecked: 14]) &<< 8
+                    | UInt64(span[unchecked: 15]),
+                _high: UInt64(span[unchecked: 0]) &<< 56
+                    | UInt64(span[unchecked: 1]) &<< 48
+                    | UInt64(span[unchecked: 2]) &<< 40
+                    | UInt64(span[unchecked: 3]) &<< 32
+                    | UInt64(span[unchecked: 4]) &<< 24
+                    | UInt64(span[unchecked: 5]) &<< 16
+                    | UInt64(span[unchecked: 6]) &<< 8
+                    | UInt64(span[unchecked: 7])
+            )
+        )
     }
 
     /// Encode the address into the provided span.
@@ -22,12 +35,24 @@ extension IPv6Address {
             return false
         }
 
-        withUnsafeBytes(of: self.address.littleEndian) { ptr in
-            for idx in 0..<16 {
-                let reverseIdx = 15 &- idx
-                span.append(ptr[reverseIdx])
-            }
-        }
+        let hi = self.address._high
+        let lo = self.address._low
+        span.append(UInt8(truncatingIfNeeded: hi &>> 56))
+        span.append(UInt8(truncatingIfNeeded: hi &>> 48))
+        span.append(UInt8(truncatingIfNeeded: hi &>> 40))
+        span.append(UInt8(truncatingIfNeeded: hi &>> 32))
+        span.append(UInt8(truncatingIfNeeded: hi &>> 24))
+        span.append(UInt8(truncatingIfNeeded: hi &>> 16))
+        span.append(UInt8(truncatingIfNeeded: hi &>> 8))
+        span.append(UInt8(truncatingIfNeeded: hi))
+        span.append(UInt8(truncatingIfNeeded: lo &>> 56))
+        span.append(UInt8(truncatingIfNeeded: lo &>> 48))
+        span.append(UInt8(truncatingIfNeeded: lo &>> 40))
+        span.append(UInt8(truncatingIfNeeded: lo &>> 32))
+        span.append(UInt8(truncatingIfNeeded: lo &>> 24))
+        span.append(UInt8(truncatingIfNeeded: lo &>> 16))
+        span.append(UInt8(truncatingIfNeeded: lo &>> 8))
+        span.append(UInt8(truncatingIfNeeded: lo))
 
         return true
     }

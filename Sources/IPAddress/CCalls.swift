@@ -1,19 +1,19 @@
 #if os(Linux) || os(FreeBSD) || os(Android)
 
 #if canImport(Glibc)
-@preconcurrency public import Glibc
+@preconcurrency import Glibc
 #elseif canImport(Musl)
-@preconcurrency public import Musl
+@preconcurrency import Musl
 #elseif canImport(Android)
-@preconcurrency public import Android
+@preconcurrency import Android
 #endif
 
 #elseif os(Windows)
-public import ucrt
+import ucrt
 #elseif canImport(Darwin)
-public import Darwin
+import Darwin
 #elseif canImport(WASILibc)
-@preconcurrency public import WASILibc
+@preconcurrency import WASILibc
 #else
 #error("The CCalls module was unable to identify your C library.")
 #endif

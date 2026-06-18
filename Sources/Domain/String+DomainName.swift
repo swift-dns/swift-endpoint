@@ -414,7 +414,7 @@ extension DomainName {
             }
         }
 
-        var labelLength = range.count
+        let labelLength = range.count
         if labelLength == 0 {
             throw ValidationError.labelMustNotBeEmpty(
                 in: ByteBuffer(swift_endpoint_copying: span)
@@ -428,14 +428,9 @@ extension DomainName {
             )
         }
 
-        withUnsafeBytes(of: &labelLength) {
-            dataPtr.copyMemory(
-                from: $0.baseAddress.unsafelyUnwrapped,
-                /// Label length is 1 byte (even less than 255, 63 max)
-                byteCount: 1
-            )
-            dataPtr = dataPtr.advanced(by: 1)
-        }
+        /// Label length is 1 byte (even less than 255, 63 max)
+        dataPtr.storeBytes(of: UInt8(truncatingIfNeeded: labelLength), as: UInt8.self)
+        dataPtr = dataPtr.advanced(by: 1)
 
         chunk.withUnsafeBytes { chunkPtr in
             dataPtr.copyMemory(

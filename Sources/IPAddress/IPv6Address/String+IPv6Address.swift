@@ -80,17 +80,8 @@ extension IPv6Address {
             }
         }
 
-        let hi = self.address._high
-        let lo = self.address._low
-
-        func segment(octalIdx idx: Int) -> UInt16 {
-            let word = idx < 4 ? hi : lo
-            let shift = (3 &- (idx & 3)) &* 16
-            return UInt16(truncatingIfNeeded: word &>> shift)
-        }
-
         func isZero(octalIdx idx: Int) -> Bool {
-            segment(octalIdx: idx) == 0
+            self.segment(octalIdx: idx) == 0
         }
 
         var rangeToCompress: Range<Int>? = nil
@@ -172,7 +163,7 @@ extension IPv6Address {
                     continue
                 }
 
-                let value = segment(octalIdx: idx)
+                let value = self.segment(octalIdx: idx)
                 IPv6Address._writeUInt16AsLowercasedASCII(
                     into: buffer,
                     advancingIdx: &writeIdx,
@@ -194,6 +185,16 @@ extension IPv6Address {
 
             return writeIdx
         }
+    }
+
+    @inlinable
+    @inline(__always)
+    func segment(octalIdx idx: Int) -> UInt16 {
+        let hi = self.address._high
+        let lo = self.address._low
+        let word = idx < 4 ? hi : lo
+        let shift = (3 &- (idx & 3)) &* 16
+        return UInt16(truncatingIfNeeded: word &>> shift)
     }
 
     /// Equivalent to `String(bytePairAsUInt16, radix: 16, uppercase: false)`, but faster.

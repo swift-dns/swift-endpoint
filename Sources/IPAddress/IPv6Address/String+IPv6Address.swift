@@ -176,10 +176,7 @@ extension IPv6Address {
                 IPv6Address._writeUInt16AsLowercasedASCII(
                     into: buffer,
                     advancingIdx: &writeIdx,
-                    bytePair: (
-                        UInt8(truncatingIfNeeded: value &>> 8),
-                        UInt8(truncatingIfNeeded: value)
-                    )
+                    bytePair: value
                 )
 
                 if idx < 7 {
@@ -204,14 +201,14 @@ extension IPv6Address {
     static func _writeUInt16AsLowercasedASCII(
         into buffer: UnsafeMutableBufferPointer<UInt8>,
         advancingIdx idx: inout Int,
-        bytePair: (left: UInt8, right: UInt8)
+        bytePair: UInt16
     ) {
         var soFarAllZeros = true
 
-        let _1 = bytePair.left &>> 4
-        let _2 = bytePair.left & 0x0F
-        let _3 = bytePair.right &>> 4
-        let _4 = bytePair.right & 0x0F
+        let _1 = UInt8(truncatingIfNeeded: bytePair &>> 8) &>> 4
+        let _2 = UInt8(truncatingIfNeeded: bytePair &>> 8) & 0x0F
+        let _3 = UInt8(truncatingIfNeeded: bytePair) &>> 4
+        let _4 = UInt8(truncatingIfNeeded: bytePair) & 0x0F
 
         if _1 != 0 {
             soFarAllZeros = false
@@ -446,12 +443,11 @@ extension IPv6Address: LosslessStringConvertible {
                 }
 
                 remainingBytesCount &-= 2
-                withUnsafeBytes(of: &currentSegmentValue) {
-                    addressPtr.advanced(by: remainingBytesCount).copyMemory(
-                        from: $0.baseAddress.unsafelyUnwrapped,
-                        byteCount: 2
-                    )
-                }
+                addressPtr.storeBytes(
+                    of: currentSegmentValue,
+                    toByteOffset: remainingBytesCount,
+                    as: UInt16.self
+                )
 
                 segmentDigitIdx = 0
                 currentSegmentValue = 0
@@ -463,7 +459,7 @@ extension IPv6Address: LosslessStringConvertible {
                 guard
                     remainingBytesCount >= 4,
                     preParsedIPv4MappedSegment == nil,
-                    var ipv4 = IPv4Address(
+                    let ipv4 = IPv4Address(
                         _uncheckedAssumingValidASCII: span.extracting(
                             unchecked: Range(
                                 uncheckedBounds: (latestColonIdx &+ 1, span.count)
@@ -475,7 +471,7 @@ extension IPv6Address: LosslessStringConvertible {
                 }
 
                 remainingBytesCount &-= 4
-                withUnsafeBytes(of: &ipv4.address) {
+                withUnsafeBytes(of: ipv4.address) {
                     addressPtr.advanced(by: remainingBytesCount).copyMemory(
                         from: $0.baseAddress.unsafelyUnwrapped,
                         byteCount: 4
@@ -498,20 +494,19 @@ extension IPv6Address: LosslessStringConvertible {
                 return false
             }
             remainingBytesCount &-= 2
-            withUnsafeBytes(of: &currentSegmentValue) {
-                addressPtr.advanced(by: remainingBytesCount).copyMemory(
-                    from: $0.baseAddress.unsafelyUnwrapped,
-                    byteCount: 2
-                )
-            }
+            addressPtr.storeBytes(
+                of: currentSegmentValue,
+                toByteOffset: remainingBytesCount,
+                as: UInt16.self
+            )
         }
 
-        if var ipv4 = preParsedIPv4MappedSegment {
+        if let ipv4 = preParsedIPv4MappedSegment {
             guard remainingBytesCount >= 4 else {
                 return false
             }
             remainingBytesCount &-= 4
-            withUnsafeBytes(of: &ipv4.address) {
+            withUnsafeBytes(of: ipv4.address) {
                 addressPtr.advanced(by: remainingBytesCount).copyMemory(
                     from: $0.baseAddress.unsafelyUnwrapped,
                     byteCount: 4

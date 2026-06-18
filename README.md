@@ -123,21 +123,23 @@ print(anyIPAddress)/// prints "1.2.3.4"
 ```
 
 For `IPv4Address`, the `DomainName` conversions are possible to/from:
-* Dotted-quad notation, for example: "1.2.3.4"
-* Arpa domain name format, for example: "4.3.2.1.in-addr.arpa."
+
+- Dotted-quad notation, for example: "1.2.3.4"
+- Arpa domain name format, for example: "4.3.2.1.in-addr.arpa."
 
 For `IPv6Address`, the Arpa domain name format is supported. For example the followings are equivalent:
-* `IPv6Address`: 4321::1:2:3:4:567:89ab
-* `DomainName`: "b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6.arpa."
+
+- `IPv6Address`: 4321::1:2:3:4:567:89ab
+- `DomainName`: "b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6.arpa."
 
 ## Performance
 
 In [this post](https://forums.swift.org/t/pitch-standard-network-address-types/82288/11) on the Swift forums I was asked to compare IP parsing implementations with the native C libraries which provide functions such as `inet_ntop` and `inet_pton` which are commonly used by everyone, including swift-nio.
 
-Here's the result ~~at that point in time~~ (Last update: Jun 13, 2026). Note that I made a lot of effort to make sure the C related functions are performing at their best.
+Here's the result ~~at that point in time~~ (Last update: Jun 18, 2026):
 
-In 7 out of the 8 benchmarks this library performs better than the C libraries.
-In the "IPv6 string decoding" benchmark it performs only 30% worse than glibc, at ~23 millions rounds per second.
+In 7 out of the 8 benchmarks this library performs better than the C libraries when called from Swift.
+In the "IPv6 string decoding" benchmark it performs only 8% worse than glibc, at ~25 millions rounds per second.
 
 #### Against Darwin
 
@@ -145,10 +147,10 @@ These were performed on my M1 Pro MacBook, on macOS 27.0 (beta 1).
 
 | Benchmark Name                              | Rounds      | Swift | inet_pton/ntop | Speedup |
 | ------------------------------------------- | ----------- | ----- | -------------- | ------- |
-| IPv4_String_Encoding_Mixed                  | 15 Millions | 196ms | 3670ms         | 18.72x  |
-| IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 289ms | 529ms          | 1.83x   |
-| IPv6_String_Encoding_Mixed                  | 4 Millions  | 321ms | 1658ms         | 5.17x   |
-| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 229ms | 400ms          | 1.75x   |
+| IPv4_String_Encoding_Mixed                  | 15 Millions | 126ms | 3761ms         | 29.85x  |
+| IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 286ms | 584ms          | 2.04x   |
+| IPv6_String_Encoding_Mixed                  | 4 Millions  | 315ms | 1664ms         | 5.28x   |
+| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 189ms | 398ms          | 2.11x   |
 
 #### Against glibc
 
@@ -158,14 +160,14 @@ These were performed on a dedicated-cpu-core machine from Hetzner in the Falkens
 
 | Benchmark Name                              | Rounds      | Swift | inet_pton/ntop | Speedup |
 | ------------------------------------------- | ----------- | ----- | -------------- | ------- |
-| IPv4_String_Encoding_Mixed                  | 15 Millions | 200ms | 1910ms         | 9.55x   |
+| IPv4_String_Encoding_Mixed                  | 15 Millions | 130ms | 1540ms         | 11.85x  |
 | IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 180ms | 200ms          | 1.11x   |
-| IPv6_String_Encoding_Mixed                  | 4 Millions  | 190ms | 940ms          | 4.95x   |
-| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 160ms | 120ms          | 0.75x   |
+| IPv6_String_Encoding_Mixed                  | 4 Millions  | 200ms | 820ms          | 4.10x   |
+| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 130ms | 120ms          | 0.92x   |
 
 #### Notes
 
-* To see up to date information about performance of this package, please go to this [benchmarks list](https://github.com/swift-dns/swift-endpoint/actions/workflows/benchmarks.yml?query=branch%3Amain), and choose the most recent benchmark. You'll see a summary of the benchmark there.
-* The results above are all reproducible by simply running `scripts/benchmark.bash` on a machine of your own.
-* All benchmarks on all platforms commit similar allocations.
-* 3 of the benchmarks always do `0`, `IPv6_String_Encoding_Mixed` always does `1`.
+- To see up to date information about performance of this package, please go to this [benchmarks list](https://github.com/swift-dns/swift-endpoint/actions/workflows/benchmarks.yml?query=branch%3Amain), and choose the most recent benchmark. You'll see a summary of the benchmark there.
+- The results above are all reproducible by simply running `scripts/benchmark.bash` on a machine of your own.
+- All benchmarks on all platforms commit similar allocations.
+- 3 of the benchmarks always do `0`, `IPv6_String_Encoding_Mixed` always does `1`.

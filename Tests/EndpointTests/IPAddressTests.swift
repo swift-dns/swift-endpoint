@@ -513,7 +513,7 @@ struct IPAddressTests {
             ),
         ]
     )
-    func ipAddressDescription(ip: AnyIPAddress, expectedDescription: String) {
+    func `AnyIPAddress description`(ip: AnyIPAddress, expectedDescription: String) {
         #expect(ip.description == expectedDescription)
 
         let droppedFirstLast = String(expectedDescription.dropFirst().dropLast())
@@ -530,10 +530,14 @@ struct IPAddressTests {
             ("192.168.1.1", .v4(IPv4Address(192, 168, 1, 1))),
             ("[192.168.1.256]", nil),
             ("[2001:0:0:1::]", .v6(IPv6Address(0x2001_0000_0000_0001_0000_0000_0000_0000))),
+            (
+                "0:0:0:0:0:FFFF:204.152.189.116",
+                .v6(IPv6Address(0x0000_0000_0000_0000_0000_FFFF_CC98_BD74))
+            ),
             ("[0:1:2:3:4:0:5:6::]", nil),
         ])
     )
-    func ipAddressFromString(string: String, expectedAddress: AnyIPAddress?) {
+    func `AnyIPAddress from string`(string: String, expectedAddress: AnyIPAddress?) {
         #expect(AnyIPAddress(string) == expectedAddress)
 
         string.withCString { #expect(AnyIPAddress(cString: $0) == expectedAddress) }

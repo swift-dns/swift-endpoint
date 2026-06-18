@@ -312,27 +312,6 @@ extension IPv6Address: LosslessStringConvertible {
     /// This initializer must only be used when you are 100% sure the span only contains ASCII characters.
     @inlinable
     public init?(_uncheckedAssumingValidASCII span: Span<UInt8>) {
-        self.init(_uncheckedAssumingValidASCII: span, preParsedIPv4MappedSegment: nil)
-    }
-
-    /// Initialize an IPv6 address from a `Span<UInt8>` of its textual representation.
-    /// The provided **span is required to be ASCII**.
-    /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
-    /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
-    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
-    ///
-    /// `preParsedIPv4MappedSegment` is helpful when redirecting a domain name parsing to this
-    /// initializer. Because a `.` is a label separator in domain names, and because this library's
-    /// `DomainName` type stores wire-format character-strings in its storage, the efficient way
-    /// to parse an IPv4-mapped IPv6 address is to first parse the IPv4 address using ipv4
-    /// initializers, then pass that ipv4 to this initializer.
-    /// This helps us avoid reallocating memory, which would happen if we wanted to convert the
-    /// domain name to a proper ipv6 address.
-    @inlinable
-    package init?(
-        _uncheckedAssumingValidASCII span: Span<UInt8>,
-        preParsedIPv4MappedSegment: IPv4Address?
-    ) {
         debugOnly {
             if !span.isASCII {
                 fatalError(
@@ -350,8 +329,7 @@ extension IPv6Address: LosslessStringConvertible {
             IPv6Address.parseIPv6(
                 span: span,
                 addressBufferPtr: addressPtr,
-                noIPv4MappedSegments: &noIPv4MappedSegments,
-                preParsedIPv4MappedSegment: preParsedIPv4MappedSegment
+                noIPv4MappedSegments: &noIPv4MappedSegments
             )
         }
 
@@ -366,8 +344,7 @@ extension IPv6Address: LosslessStringConvertible {
     static func parseIPv6(
         span: Span<UInt8>,
         addressBufferPtr: UnsafeMutableRawBufferPointer,
-        noIPv4MappedSegments: inout Bool,
-        preParsedIPv4MappedSegment: IPv4Address?
+        noIPv4MappedSegments: inout Bool
     ) -> Bool {
         let addressPtr = addressBufferPtr.baseAddress.unsafelyUnwrapped
         var span = span
@@ -459,7 +436,6 @@ extension IPv6Address: LosslessStringConvertible {
             if byte == .asciiDot {
                 guard
                     remainingBytesCount >= 4,
-                    preParsedIPv4MappedSegment == nil,
                     let ipv4 = IPv4Address(
                         _uncheckedAssumingValidASCII: span.extracting(
                             unchecked: Range(
@@ -500,21 +476,6 @@ extension IPv6Address: LosslessStringConvertible {
                 toByteOffset: remainingBytesCount,
                 as: UInt16.self
             )
-        }
-
-        if let ipv4 = preParsedIPv4MappedSegment {
-            guard remainingBytesCount >= 4 else {
-                return false
-            }
-            remainingBytesCount &-= 4
-            withUnsafeBytes(of: ipv4.address) {
-                addressPtr.advanced(by: remainingBytesCount).copyMemory(
-                    from: $0.baseAddress.unsafelyUnwrapped,
-                    byteCount: 4
-                )
-            }
-
-            noIPv4MappedSegments = false
         }
 
         if beforeCsBytesCountRemaining != -1 {

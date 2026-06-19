@@ -1,4 +1,4 @@
-name: nightly-tests
+name: integration-tests
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -13,12 +13,12 @@ defaults:
     shell: bash --noprofile --norc -Eeuo pipefail {0}
 
 jobs:
-  linux-nightly-tests:
+  linux-integration-tests:
     strategy:
       fail-fast: false
       matrix:
         swift-image:
-          - name: swiftlang/swift:nightly-main-noble
+          - name: swift:6.3-noble
         config:
           - mode: "debug"
           - mode: "release"
@@ -33,10 +33,13 @@ jobs:
       - name: Check out ${{ github.event.repository.name }}
         uses: actions/checkout@v7
 
-      - name: Install zstd for faster caching, and curl for codecov action
+      - name: Install dependencies
         run: |
           apt-get update -y
           apt-get install -y zstd curl
+          if [[ "${{ github.event.repository.name }}" == 'swift-dns' ]]; then
+            apt-get install -y tcpdump
+          fi
 
       - name: Restore .build
         if: ${{ runner.debug != '1' }}
@@ -44,15 +47,13 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: .build
-          key: "${{ github.event.repository.name }}-nightly-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
-          restore-keys: "${{ github.event.repository.name }}-nightly-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-"
+          key: "${{ github.event.repository.name }}-integration-tests-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
+          restore-keys: "${{ github.event.repository.name }}-integration-tests-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-"
 
       - name: Build ${{ github.event.repository.name }}
         run: |
-          # keeping code coverage flag to check for regressions
           swift build \
             --build-tests \
-            --enable-code-coverage \
             --explicit-target-dependency-import-check error \
             -Xswiftc -require-explicit-sendable \
             -c ${{ matrix.config.mode }}
@@ -62,24 +63,60 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: .build
-          key: "${{ github.event.repository.name }}-nightly-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
+          key: "${{ github.event.repository.name }}-integration-tests-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
 
       - name: Run tests
+        id: tests-run
         run: |
-          # keeping code coverage flag to check for regressions
+          if [[ "${{ github.event.repository.name }}" == 'swift-dns' ]]; then
+            tcpdump -w dns.pcap 'port 53 and (host 8.8.4.4 or host 240.1.2.3)' &
+            TCPDUMP_PID=$!
+          fi
+
+          # Disable 'set -e' to prevent the script from exiting on non-zero exit codes
+          set +e
           swift test \
-            --skip "IntegrationTests." \
+            --filter "IntegrationTests." \
             --skip-build \
-            --enable-code-coverage \
             -Xswiftc -require-explicit-sendable \
             -c ${{ matrix.config.mode }}
+          echo "exit-status=$?" >> $GITHUB_OUTPUT
+          set -e
+
+          if [[ "${{ github.event.repository.name }}" == 'swift-dns' ]]; then
+            kill $TCPDUMP_PID
+          fi
+
+      - name: Calculate capture file name
+        id: calculate-capture-file-name
+        if: ${{ github.event.repository.name == 'swift-dns' }}
+        run: |
+          RESULT="${{ steps.tests-run.outputs.exit-status == 0 && 'success' || 'failure' }}"
+          TIMESTAMP="$(date -u +"%Y-%m-%d-%H-%M-%S")"
+          SHORT_SHA="$(echo '${{ github.sha }}' | cut -c 1-7)"
+          FILE_NAME="swift-dns_dns_capture_${TIMESTAMP}_${RESULT}_Linux_${{ matrix.swift-image.name }}_${{ matrix.config.mode }}_${SHORT_SHA}"
+          FILE_NAME="${FILE_NAME//:/_}"
+
+          echo "file_name=${FILE_NAME}" >> "${GITHUB_OUTPUT}"
+
+          mv dns.pcap "${FILE_NAME}.pcap"
+
+      - name: Archive packet capture
+        if: ${{ github.event.repository.name == 'swift-dns' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: "${{ steps.calculate-capture-file-name.outputs.file_name }}"
+          path: "${{ steps.calculate-capture-file-name.outputs.file_name }}.pcap"
+
+      - name: Exit with correct status
+        run: exit ${{ steps.tests-run.outputs.exit-status }}
 
   cache-swiftly-toolchain-for-macos:
     strategy:
       fail-fast: false
       matrix:
         swift:
-          - version: main-snapshot
+          - version: 6.3
 
     runs-on: macos-26
 
@@ -91,16 +128,13 @@ jobs:
       SWIFTLY_TOOLCHAINS_DIR: "/Users/runner/Library/Developer/Toolchains"
 
     steps:
-      - name: Set today's date
-        run: echo "TODAY=$(date "+%Y-%m-%d")" >> $GITHUB_ENV
-
       - name: Restore swiftly home
         if: ${{ runner.debug != '1' }}
         id: "restore-home"
         uses: actions/cache/restore@v5
         with:
           path: "${{ env.SWIFTLY_HOME_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-home-${{ matrix.swift.version }}-${{ env.TODAY }}-${{ runner.os }}"
+          key: "${{ github.event.repository.name }}-swiftly-home-integration-tests-${{ matrix.swift.version }}-${{ runner.os }}"
 
       - name: Restore swiftly bin
         if: ${{ runner.debug != '1' }}
@@ -108,7 +142,7 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: "${{ env.SWIFTLY_BIN_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-bin-${{ matrix.swift.version }}-${{ env.TODAY }}-${{ runner.os }}"
+          key: "${{ github.event.repository.name }}-swiftly-bin-integration-tests-${{ matrix.swift.version }}-${{ runner.os }}"
 
       - name: Restore swiftly toolchains
         if: ${{ runner.debug != '1' }}
@@ -116,7 +150,7 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: "${{ env.SWIFTLY_TOOLCHAINS_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-toolchain-${{ matrix.swift.version }}-${{ env.TODAY }}-${{ runner.os }}"
+          key: "${{ github.event.repository.name }}-swiftly-toolchain-integration-tests-${{ matrix.swift.version }}-${{ runner.os }}"
 
       - name: Update swift via Swiftly
         run: |
@@ -138,23 +172,23 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: "${{ env.SWIFTLY_HOME_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-home-${{ matrix.swift.version }}-${{ env.TODAY }}-${{ runner.os }}"
+          key: "${{ github.event.repository.name }}-swiftly-home-integration-tests-${{ matrix.swift.version }}-${{ runner.os }}"
 
       - name: Cache swiftly bin
         if: steps.restore-bin.outputs.cache-hit != 'true'
         uses: actions/cache/save@v5
         with:
           path: "${{ env.SWIFTLY_BIN_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-bin-${{ matrix.swift.version }}-${{ env.TODAY }}-${{ runner.os }}"
+          key: "${{ github.event.repository.name }}-swiftly-bin-integration-tests-${{ matrix.swift.version }}-${{ runner.os }}"
 
       - name: Cache swiftly toolchains
         if: steps.restore-toolchains.outputs.cache-hit != 'true'
         uses: actions/cache/save@v5
         with:
           path: "${{ env.SWIFTLY_TOOLCHAINS_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-toolchain-${{ matrix.swift.version }}-${{ env.TODAY }}-${{ runner.os }}"
+          key: "${{ github.event.repository.name }}-swiftly-toolchain-integration-tests-${{ matrix.swift.version }}-${{ runner.os }}"
 
-  macos-nightly-tests:
+  macos-integration-tests:
     strategy:
       fail-fast: false
       matrix:
@@ -164,16 +198,16 @@ jobs:
         xcode:
           - version: latest-stable
         swift:
-          - version: main-snapshot
+          - version: 6.3
         config:
           - mode: "debug"
           - mode: "release"
 
     runs-on: ${{ matrix.macos.version }}
 
-    needs: cache-swiftly-toolchain-for-macos
-
     timeout-minutes: 20
+
+    needs: cache-swiftly-toolchain-for-macos
 
     env:
       SWIFTLY_HOME_DIR: "/Users/runner/.swiftly"
@@ -186,32 +220,32 @@ jobs:
         with:
           xcode-version: ${{ matrix.xcode.version }}
 
+      - name: Install tcpdump for packet capture
+        run: brew install tcpdump
+
       - name: Check out ${{ github.event.repository.name }}
         uses: actions/checkout@v7
-
-      - name: Set today's date
-        run: echo "TODAY=$(date "+%Y-%m-%d")" >> $GITHUB_ENV
 
       - name: Restore swiftly home
         id: "restore-home"
         uses: actions/cache/restore@v5
         with:
           path: "${{ env.SWIFTLY_HOME_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-home-${{ matrix.swift.version }}-${{ env.TODAY }}-${{ runner.os }}"
+          key: "${{ github.event.repository.name }}-swiftly-home-integration-tests-${{ matrix.swift.version }}-${{ runner.os }}"
 
       - name: Restore swiftly bin
         id: "restore-bin"
         uses: actions/cache/restore@v5
         with:
           path: "${{ env.SWIFTLY_BIN_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-bin-${{ matrix.swift.version }}-${{ env.TODAY }}-${{ runner.os }}"
+          key: "${{ github.event.repository.name }}-swiftly-bin-integration-tests-${{ matrix.swift.version }}-${{ runner.os }}"
 
       - name: Restore swiftly toolchains
         id: "restore-toolchains"
         uses: actions/cache/restore@v5
         with:
           path: "${{ env.SWIFTLY_TOOLCHAINS_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-toolchain-${{ matrix.swift.version }}-${{ env.TODAY }}-${{ runner.os }}"
+          key: "${{ github.event.repository.name }}-swiftly-toolchain-integration-tests-${{ matrix.swift.version }}-${{ runner.os }}"
 
       - name: Update swift via Swiftly
         run: |
@@ -243,8 +277,8 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: .build
-          key: "${{ github.event.repository.name }}-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ matrix.macos.version }}-${{ hashFiles('./Package.resolved') }}"
-          restore-keys: "${{ github.event.repository.name }}-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ matrix.macos.version }}-"
+          key: "${{ github.event.repository.name }}-integration-tests-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ matrix.macos.version }}-${{ hashFiles('./Package.resolved') }}"
+          restore-keys: "${{ github.event.repository.name }}-integration-tests-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ matrix.macos.version }}-"
 
       - name: Build ${{ github.event.repository.name }}
         run: |
@@ -260,19 +294,49 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: .build
-          key: "${{ github.event.repository.name }}-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ matrix.macos.version }}-${{ hashFiles('./Package.resolved') }}"
+          key: "${{ github.event.repository.name }}-integration-tests-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ matrix.macos.version }}-${{ hashFiles('./Package.resolved') }}"
 
-      - name: Run tests
+      - name: Run tests while capturing packets
+        id: tests-run
         run: |
-          # keeping code coverage flag to check for regressions
+          sudo tcpdump -w dns.pcap 'port 53 and (host 8.8.4.4 or host 240.1.2.3)' &
+          TCPDUMP_PID=$!
+
+          # Disable 'set -e' to prevent the script from exiting on non-zero exit codes
+          set +e
           swift test \
-            --skip "IntegrationTests." \
+            --filter "IntegrationTests." \
             --skip-build \
-            --enable-code-coverage \
             -Xswiftc -require-explicit-sendable \
             -c ${{ matrix.config.mode }}
+          echo "exit-status=$?" >> $GITHUB_OUTPUT
+          set -e
 
-  android-nightly-tests:
+          kill $TCPDUMP_PID
+
+      - name: Calculate capture file name
+        id: calculate-capture-file-name
+        run: |
+          RESULT="${{ steps.tests-run.outputs.exit-status == 0 && 'success' || 'failure' }}"
+          TIMESTAMP="$(date -u +"%Y-%m-%d-%H-%M-%S")"
+          SHORT_SHA="$(echo '${{ github.sha }}' | cut -c 1-7)"
+          FILE_NAME="swift-dns_dns_capture_${TIMESTAMP}_${RESULT}_${{ matrix.macos.version }}_${{ matrix.swift.version }}_${{ matrix.config.mode }}_${{ matrix.xcode.version }}_${SHORT_SHA}"
+          FILE_NAME="${FILE_NAME//:/_}"
+
+          echo "file_name=${FILE_NAME}" >> "${GITHUB_OUTPUT}"
+
+          mv dns.pcap "${FILE_NAME}.pcap"
+
+      - name: Archive packet capture
+        uses: actions/upload-artifact@v7
+        with:
+          name: "${{ steps.calculate-capture-file-name.outputs.file_name }}"
+          path: "${{ steps.calculate-capture-file-name.outputs.file_name }}.pcap"
+
+      - name: Exit with correct status
+        run: exit ${{ steps.tests-run.outputs.exit-status }}
+
+  android-integration-tests:
     strategy:
       fail-fast: false
       matrix:
@@ -313,4 +377,4 @@ jobs:
           swift-build-flags: >-
             --build-tests
             --explicit-target-dependency-import-check error
-          swift-test-flags: --skip "IntegrationTests."
+          swift-test-flags: --filter "IntegrationTests."

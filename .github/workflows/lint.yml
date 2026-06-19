@@ -8,7 +8,7 @@ on:
 
 defaults:
   run:
-    shell: bash --noprofile --norc -e -u -o pipefail {0}
+    shell: bash --noprofile --norc -Eeuo pipefail {0}
 
 jobs:
   lint:
@@ -34,8 +34,6 @@ jobs:
 
       - name: Check out ${{ github.event.repository.name }}
         uses: actions/checkout@v7
-        with:
-          persist-credentials: false
 
       - name: Check config file
         run: |

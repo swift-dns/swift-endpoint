@@ -10,7 +10,7 @@ on:
 
 defaults:
   run:
-    shell: bash --noprofile --norc -e -u -o pipefail {0}
+    shell: bash --noprofile --norc -Eeuo pipefail {0}
 
 jobs:
   linux-unit:
@@ -32,8 +32,6 @@ jobs:
     steps:
       - name: Check out ${{ github.event.repository.name }}
         uses: actions/checkout@v7
-        with:
-          persist-credentials: false
 
       - name: Install zstd for faster caching, and curl for codecov action
         run: |
@@ -68,6 +66,7 @@ jobs:
       - name: Run tests
         run: |
           swift test \
+            --skip "IntegrationTests." \
             --skip-build \
             --enable-code-coverage \
             -Xswiftc -require-explicit-sendable \
@@ -190,8 +189,6 @@ jobs:
 
       - name: Check out ${{ github.event.repository.name }}
         uses: actions/checkout@v7
-        with:
-          persist-credentials: false
 
       - name: Restore swiftly home
         id: "restore-home"
@@ -266,6 +263,7 @@ jobs:
       - name: Run tests
         run: |
           swift test \
+            --skip "IntegrationTests." \
             --skip-build \
             --enable-code-coverage \
             -Xswiftc -require-explicit-sendable \

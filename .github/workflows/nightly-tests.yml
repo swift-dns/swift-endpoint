@@ -31,7 +31,7 @@ jobs:
 
     steps:
       - name: Check out ${{ github.event.repository.name }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -188,7 +188,7 @@ jobs:
           xcode-version: ${{ matrix.xcode.version }}
 
       - name: Check out ${{ github.event.repository.name }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -299,7 +299,7 @@ jobs:
         run: sudo apt-get update -yq && sudo apt-get install -yq zstd
 
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Replace symlinks with the actual files
         run: find . -type l -exec sh -c 'LINKED="$(readlink -f "{}")"; rm "{}"; cp -a "$LINKED" "{}"' \;

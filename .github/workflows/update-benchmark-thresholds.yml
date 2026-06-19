@@ -68,7 +68,7 @@ jobs:
           comment-tag: benchmark-thresholds-update-comment
 
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}

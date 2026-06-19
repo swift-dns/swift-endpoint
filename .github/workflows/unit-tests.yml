@@ -31,7 +31,7 @@ jobs:
 
     steps:
       - name: Check out ${{ github.event.repository.name }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 
@@ -189,7 +189,7 @@ jobs:
           xcode-version: ${{ matrix.xcode.version }}
 
       - name: Check out ${{ github.event.repository.name }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 

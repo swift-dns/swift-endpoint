@@ -80,7 +80,7 @@ jobs:
           comment-tag: benchmark-ci-comment
 
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: "${{ steps.commit-info.outputs.ref }}"
           fetch-depth: 0

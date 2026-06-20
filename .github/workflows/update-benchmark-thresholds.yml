@@ -64,7 +64,7 @@ jobs:
 
       - name: Comment in PR
         if: ${{ inputs.pr_number != '' }}
-        uses: thollander/actions-comment-pull-request@v3
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           pr-number: ${{ inputs.pr_number }}
@@ -191,7 +191,7 @@ jobs:
       - name: Update comment in PR
         if: always() && (inputs.pr_number != '')
         id: pr-comment
-        uses: thollander/actions-comment-pull-request@v3
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
         with:
           github-token: ${{ steps.app-token.outputs.token }}
           pr-number: ${{ inputs.pr_number }}

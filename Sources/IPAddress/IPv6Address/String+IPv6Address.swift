@@ -127,14 +127,9 @@ extension IPv6Address {
         /// Reserve the max possibly needed capacity.
         let bracketsCount = enclosingInSquareBrackets ? 2 : 0
         let toReserve: Int
-        if let rangeToCompress {
-            let segmentsCount = 8 &- rangeToCompress.count
-            let colonsCount = max(segmentsCount &- 1, 2)
-            toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4)
-        } else {
-            /// 39 bytes for 8 uncompressed segments plus the 7 colons separating them.
-            toReserve = bracketsCount &+ 39
-        }
+        let segmentsCount = 8 &- (rangeToCompress?.count ?? 0)
+        let colonsCount = max(segmentsCount &- 1, 2)
+        toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4)
 
         return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
             var writeIdx = 0

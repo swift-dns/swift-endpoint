@@ -5,7 +5,7 @@ extension UnsignedInt128: CustomStringConvertible {
         /// Accurate approx amount of base-10 digits, based on the number of bits
         /// Simple logarithm trick:
         /// `2^x = 10^y` -> `x * log10(2) = y` -> `log10(2) = y / x` -> `0.301 ~= y / x`
-        let significantBits = 128 - Double(self.leadingZeroBitCount)
+        let significantBits = Double(128 - self.leadingZeroBitCount)
         /// This could possibly be 1 more than needed
         let approximation = Int((significantBits * 301 / 1000).rounded(.up))
         let toReserve = Swift.max(approximation, 1)

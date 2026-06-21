@@ -1,23 +1,3 @@
-#if os(Linux) || os(FreeBSD) || os(Android)
-
-#if canImport(Glibc)
-@preconcurrency public import Glibc
-#elseif canImport(Musl)
-@preconcurrency public import Musl
-#elseif canImport(Android)
-@preconcurrency public import Android
-#endif
-
-#elseif os(Windows)
-public import ucrt
-#elseif canImport(Darwin)
-public import Darwin
-#elseif canImport(WASILibc)
-@preconcurrency public import WASILibc
-#else
-#error("The String+IPv6Address module was unable to identify your C library.")
-#endif
-
 @available(SwiftStdlib 5.1, *)
 extension IPv6Address: CustomStringConvertible {
     /// The textual representation of an IPv6 address.
@@ -502,7 +482,7 @@ extension IPv6Address: LosslessStringConvertible {
             /// into this:
             /// 0x0020 0100 0000 0020 0100 85a3 0db8 2001
             ///   ~~^  ~~^
-            memmove(
+            CCalls.c_memmove(
                 addressPtr,
                 addressPtr.advanced(by: beforeCsBytesCountRemaining &- afterCsBytesCount),
                 afterCsBytesCount
@@ -514,7 +494,7 @@ extension IPv6Address: LosslessStringConvertible {
             /// We set the middle 0020 0100 to zeros:
             /// 0x0020 0100 0000 0000 0000 85a3 0db8 2001
             ///                  ~~^  ~~^
-            memset(
+            CCalls.c_memset(
                 addressPtr.advanced(by: beforeCsBytesCountRemaining &- remainingBytesCount),
                 0,
                 remainingBytesCount

@@ -128,11 +128,14 @@ extension IPv6Address {
         let bracketsCount = enclosingInSquareBrackets ? 2 : 0
         let segmentsCount = 8 &- (rangeToCompress?.count ?? 0)
         let colonsCount = max(segmentsCount &- 1, 2)
-        let toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4)
+        /// If no brackets, we need 1 extra byte for the possible colon that we speculatively write
+        let speculativeBytes = enclosingInSquareBrackets ? 0 : 1
+        let toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4) &+ speculativeBytes
 
         return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
             var writeIdx = 0
 
+            /// `enclosingInSquareBrackets` is always known at compile time so should result in no branches
             if enclosingInSquareBrackets {
                 buffer[0] = .asciiLeftSquareBracket
                 writeIdx &+= 1
@@ -164,14 +167,15 @@ extension IPv6Address {
                     bytePair: value
                 )
 
-                if idx < 7 {
-                    buffer[writeIdx] = .asciiColon
-                    writeIdx &+= 1
-                }
+                /// Speculative write, but we've already made sure we have the extra 1 byte capacity if needed
+                buffer[writeIdx] = .asciiColon
+                writeIdx &+= idx < 7 ? 1 : 0
+                assert(writeIdx < buffer.count)
 
                 idx &+= 1
             }
 
+            /// `enclosingInSquareBrackets` is always known at compile time so should result in no branches
             if enclosingInSquareBrackets {
                 buffer[writeIdx] = .asciiRightSquareBracket
                 writeIdx &+= 1

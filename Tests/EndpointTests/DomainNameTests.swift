@@ -4,7 +4,7 @@ import Testing
 
 @Suite
 struct DomainNameTests {
-    @available(swiftEndpointApplePlatforms 10.15, *)
+    @available(SwiftStdlib 5.1, *)
     @Test(
         arguments: [
             (domainName: "*", isFQDN: false, data: ByteBuffer([1, 42])),
@@ -78,7 +78,7 @@ struct DomainNameTests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 10.15, *)
+    @available(SwiftStdlib 5.1, *)
     @Test(
         arguments: [
             (
@@ -143,7 +143,7 @@ struct DomainNameTests {
         )
     }
 
-    @available(swiftEndpointApplePlatforms 10.15, *)
+    @available(SwiftStdlib 5.1, *)
     @Test func equalityWhichMustBeCaseInsensitive() throws {
         let domainName = try DomainName("example.com.")
         let duplicate = try DomainName("example.com.")
@@ -179,7 +179,7 @@ struct DomainNameTests {
         #expect(weirdPartiallyUppercaseDomain == weirdUppercaseDomain)
     }
 
-    @available(swiftEndpointApplePlatforms 10.15, *)
+    @available(SwiftStdlib 5.1, *)
     @Test(
         arguments: [
             (domainName: ".", isFQDN: true),
@@ -285,7 +285,7 @@ struct DomainNameTests {
         #expect(domainName.labelsCount == labels.count)
     }
 
-    @available(swiftEndpointApplePlatforms 10.15, *)
+    @available(SwiftStdlib 5.1, *)
     @Test(
         arguments: [
             (ascii: "mahdibm", unicode: "mahdibm"),
@@ -317,7 +317,7 @@ struct DomainNameTests {
         #expect((lhsLabel == rhsLabel) == areEqual)
     }
 
-    @available(swiftEndpointApplePlatforms 10.15, *)
+    @available(SwiftStdlib 5.1, *)
     @Test func ipv4AddressToName() throws {
         let ipAddress = IPv4Address(192, 168, 1, 1)
         let name1 = DomainName(ipv4: ipAddress, format: .arpa)
@@ -330,7 +330,7 @@ struct DomainNameTests {
         #expect(name1InDottedQuad.debugDescription == "192.168.1.1.")
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func ipv6AddressToName() {
         let ipAddress: IPv6Address = 0x2a01_5cc0_0001_0002_0000_0000_0000_0004
         let name1 = DomainName(ipv6: ipAddress)

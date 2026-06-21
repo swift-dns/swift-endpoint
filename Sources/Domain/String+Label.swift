@@ -2,7 +2,7 @@ public import SwiftIDNA
 
 public import struct NIOCore.ByteBuffer
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension DomainName.Label: CustomStringConvertible {
     /// Unicode-friendly description of the label.
     /// Example: `"mahdibm"`
@@ -13,7 +13,7 @@ extension DomainName.Label: CustomStringConvertible {
     }
 }
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension DomainName.Label: CustomDebugStringConvertible {
     /// Source-accurate, ASCII description of the label, as in the wire format and IDNA.
     /// Example: `"mahdibm"`
@@ -24,7 +24,7 @@ extension DomainName.Label: CustomDebugStringConvertible {
     }
 }
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension DomainName.Label {
     @inlinable
     public func description(format: DomainName.DescriptionFormat) -> String {

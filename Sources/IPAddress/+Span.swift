@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension Span<UInt8> {
     @inlinable
     var isASCII: Bool {

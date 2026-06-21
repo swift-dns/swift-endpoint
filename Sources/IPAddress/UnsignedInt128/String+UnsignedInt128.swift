@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension UnsignedInt128: CustomStringConvertible {
     @inlinable
     public var description: String {

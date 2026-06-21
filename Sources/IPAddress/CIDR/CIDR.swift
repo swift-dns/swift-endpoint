@@ -6,7 +6,7 @@
 /// representation, the host bits are ignored.
 /// For example, 127.0.0.100/8 and 127.0.0.0/8 represent the same network, but their prefixes
 /// are stored as `127.0.0.100` and `127.0.0.0` respectively, regardless of their equivalence.
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
 
     /// The underlying type of the IP address.
@@ -173,7 +173,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     }
 }
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension CIDR: Hashable {
     /// Whether or now 2 CIDR blocks represent the same network.
     /// For example, 127.0.0.100/8 and 127.0.0.0/8 represent the same network.

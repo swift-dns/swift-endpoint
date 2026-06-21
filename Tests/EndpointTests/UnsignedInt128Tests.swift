@@ -4,7 +4,7 @@ import Testing
 
 @Suite
 struct UnsignedInt128Tests {
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify static properties against UInt128`() {
         #expect(UnsignedInt128.bitWidth == UInt128.bitWidth)
         #expect(UnsignedInt128.max == UInt128.max)
@@ -13,7 +13,7 @@ struct UnsignedInt128Tests {
         #expect(UnsignedInt128.isSigned == UInt128.isSigned)
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify integer literal init against UInt128`() {
         for lhs in generateRandomUInt128s() {
             let uint128 = UInt128(integerLiteral: lhs)
@@ -22,7 +22,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify instance properties against UInt128`() {
         for lhs in generateRandomUInt128s() {
             let uint128 = UInt128(lhs)
@@ -45,7 +45,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify description against UInt128`() {
         let randomUInt128s: [UInt128] = (4..<512).map {
             let bitCount = $0 / 4
@@ -62,7 +62,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify words against UInt128`() {
         for lhs in generateRandomUInt128s() {
             let uint128 = UInt128(lhs)
@@ -93,7 +93,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify init(_ description: String) against UInt128`() throws {
         for lhs in generateRandomUInt128s() {
             let desc = lhs.description
@@ -104,7 +104,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify init(big/littleEndian:) against UInt128`() throws {
         for lhs in generateRandomUInt128s() {
             do {
@@ -121,7 +121,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify integer initializers against UInt128`() {
         for lhs in generateRandomUInt128s() {
             do {
@@ -154,7 +154,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify float initializers against UInt128`() {
         for lhs in generateRandomDoubles() {
             do {
@@ -173,7 +173,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify equality-operator against UInt128`() {
         #expect(UnsignedInt128(_low: 0, _high: 0) == UnsignedInt128(_low: 0, _high: 0))
         #expect(UnsignedInt128(_low: .max, _high: .max) == UnsignedInt128(_low: .max, _high: .max))
@@ -211,7 +211,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify strideable conformance against UInt128`() {
         for (lhs, rhs) in generateRandomUInt128Pairs(range: 0...UInt128(Int32.max)) {
             do {
@@ -228,7 +228,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify comparison-operators against UInt128`() {
         for (lhs, rhs) in generateRandomUInt128Pairs() {
             #expect(lhs <= lhs)
@@ -251,7 +251,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify addition against UInt128`() {
         for (lhs, rhs) in generateRandomUInt128Pairs() {
             let uint128 = lhs.addingReportingOverflow(rhs)
@@ -291,7 +291,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify subtraction against UInt128`() {
         for (lhs, rhs) in generateRandomUInt128Pairs() {
             let uint128 = lhs.subtractingReportingOverflow(rhs)
@@ -333,7 +333,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify multiplication against UInt128`() {
         for (lhs, rhs) in generateRandomUInt128Pairs() {
             let uint128 = lhs.multipliedReportingOverflow(by: rhs)
@@ -384,7 +384,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify division against UInt128`() {
         for (lhs, rhs) in generateRandomUInt128Pairs() {
             let uint128 = lhs.dividedReportingOverflow(by: rhs)
@@ -412,7 +412,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify modulo against UInt128`() {
         for (lhs, rhs) in generateRandomUInt128Pairs() {
             let uint128 = lhs.remainderReportingOverflow(dividingBy: rhs)
@@ -440,7 +440,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify not-operator against UInt128`() {
         for lhs in generateRandomUInt128s() {
             let uint128 = ~lhs
@@ -449,7 +449,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify or-operator against UInt128`() {
         for (lhs, rhs) in generateRandomUInt128Pairs() {
             do {
@@ -468,7 +468,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify and-operator against UInt128`() {
         for (lhs, rhs) in generateRandomUInt128Pairs() {
             do {
@@ -487,7 +487,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify xor-operator against UInt128`() {
         for (lhs, rhs) in generateRandomUInt128Pairs() {
             do {
@@ -506,7 +506,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify left bit-shift against UInt128`() {
         for (lhs, rhs) in generateRandomUInt128Pairs() {
             do {
@@ -549,7 +549,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `verify right bit-shift against UInt128`() {
         for (lhs, rhs) in generateRandomUInt128Pairs() {
             do {
@@ -592,7 +592,7 @@ struct UnsignedInt128Tests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     private func generateRandomUInt128Pairs(
         range: ClosedRange<UInt128> = .min ... .max
     ) -> some Sequence<(UInt128, UInt128)> {
@@ -622,7 +622,7 @@ struct UnsignedInt128Tests {
         return result
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     private func generateRandomUInt128s() -> some Sequence<UInt128> {
         let randomPairs: [UInt128] = (0..<10_000).map { _ in
             UInt128.random(in: .min ... .max)
@@ -632,7 +632,7 @@ struct UnsignedInt128Tests {
         return result
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     private func generateRandomDoubles(
         randomCount: Int = 10_000
     ) -> some Sequence<Double> {

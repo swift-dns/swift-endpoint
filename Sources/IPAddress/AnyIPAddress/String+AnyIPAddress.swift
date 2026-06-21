@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension AnyIPAddress: CustomStringConvertible {
     public var description: String {
         switch self {
@@ -10,7 +10,7 @@ extension AnyIPAddress: CustomStringConvertible {
     }
 }
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension AnyIPAddress: CustomDebugStringConvertible {
     public var debugDescription: String {
         switch self {
@@ -22,7 +22,7 @@ extension AnyIPAddress: CustomDebugStringConvertible {
     }
 }
 
-@available(swiftEndpointApplePlatforms 26, *)
+@available(SwiftStdlib 6.2, *)
 extension AnyIPAddress {
     /// Initialize an IP address from a `UTF8Span` of its textual representation.
     /// For example `"192.168.1.98"` will parse into `.v4(192.168.1.98)`.
@@ -39,7 +39,7 @@ extension AnyIPAddress {
     }
 }
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension AnyIPAddress: LosslessStringConvertible {
     /// Initialize an IP address from its textual representation.
     /// For example `"192.168.1.98"` will parse into `.v4(192.168.1.98)`.

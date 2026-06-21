@@ -3,7 +3,7 @@ public import IPAddress
 
 public import struct NIOCore.ByteBuffer
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension IPv4Address {
     /// Initialize an `IPv4Address` from a `DomainName` which is in the special arpa domain name format,
     /// according to [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://tools.ietf.org/html/rfc1035#section-3.5)

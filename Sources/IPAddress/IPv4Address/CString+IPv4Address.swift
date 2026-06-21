@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension IPv4Address {
     /// Calls `body` with a pointer to a null-terminated C string of this address's textual
     /// representation, in dot-decimal notation. For example `IPv4Address(127, 0, 0, 1)` results

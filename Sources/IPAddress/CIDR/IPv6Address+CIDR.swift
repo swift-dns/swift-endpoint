@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension CIDR<IPv6Address> {
     /// Representing ::1/128
     @inlinable

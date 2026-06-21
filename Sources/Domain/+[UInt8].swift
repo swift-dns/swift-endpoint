@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension [UInt8] {
     @inlinable
     init(copying span: Span<UInt8>) {

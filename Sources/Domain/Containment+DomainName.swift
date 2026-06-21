@@ -1,6 +1,6 @@
 public import struct NIOCore.ByteBuffer
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension DomainName {
     /// Returns a Boolean value that indicates whether this domain name is a
     /// subdomain of the given domain name.

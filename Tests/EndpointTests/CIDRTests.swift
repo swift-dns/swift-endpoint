@@ -3,7 +3,7 @@ import Testing
 
 @Suite
 struct CIDRTests {
-    @available(swiftEndpointApplePlatforms 10.15, *)
+    @available(SwiftStdlib 5.1, *)
     @Test(
         arguments: [(cidr: CIDR<IPv4Address>, expectedDescription: String)]([
             (
@@ -35,7 +35,7 @@ struct CIDRTests {
         #expect(cidr.description == expectedDescription)
     }
 
-    @available(swiftEndpointApplePlatforms 26, *)
+    @available(SwiftStdlib 6.2, *)
     @Test(
         arguments: [(text: String, expectedCIDR: CIDR<IPv4Address>?)]([
             (
@@ -88,7 +88,7 @@ struct CIDRTests {
         #expect(CIDR<IPv4Address>(textualRepresentation: text.utf8Span.span) == expectedCIDR)
     }
 
-    @available(swiftEndpointApplePlatforms 10.15, *)
+    @available(SwiftStdlib 5.1, *)
     @Test(
         arguments: [(cidr: CIDR<IPv4Address>, containsIP: IPv4Address, result: Bool)]([
             (
@@ -153,7 +153,7 @@ struct CIDRTests {
         )
     }
 
-    @available(swiftEndpointApplePlatforms 10.15, *)
+    @available(SwiftStdlib 5.1, *)
     @Test func `contains ignores the CIDR prefix host bits`() {
         /// The prefix is stored un-normalized (127.0.0.18, not 127.0.0.0), yet containment must
         /// behave as if the host bits were masked off. This would fail if `contains` compared
@@ -170,7 +170,7 @@ struct CIDRTests {
         #expect(!cidr.contains(AnyIPAddress.v4(IPv4Address(128, 0, 0, 18))))
     }
 
-    @available(swiftEndpointApplePlatforms 10.15, *)
+    @available(SwiftStdlib 5.1, *)
     @Test func `CIDR equality and hashing ignore the prefix host bits`() {
         /// Same network, different host bits: must be equal and hash equally.
         let a = CIDR(prefix: IPv4Address(127, 0, 0, 18), prefixLength: 8)
@@ -193,7 +193,7 @@ struct CIDRTests {
         )
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `randomly generated ipv4 CIDR containment checks work as expected`() {
         for (cidr, containsIP, result) in Self.makeRandom(
             ofType: IPv4Address.self,
@@ -220,7 +220,7 @@ struct CIDRTests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 10.15, *)
+    @available(SwiftStdlib 5.1, *)
     @Test(
         arguments: [(prefixLength: UInt8, ip: IPv4Address, expectedIP: IPv4Address)]([
             (
@@ -321,7 +321,7 @@ struct CIDRTests {
         #expect(cidr.contains(expectedIP))
     }
 
-    @available(swiftEndpointApplePlatforms 10.15, *)
+    @available(SwiftStdlib 5.1, *)
     @Test(
         arguments: [(prefixLength: UInt8, expectedMask: UInt32)]([
             (0 as UInt8, 0b00000000_00000000_00000000_00000000 as UInt32),
@@ -358,7 +358,7 @@ struct CIDRTests {
         )
     }
 
-    @available(swiftEndpointApplePlatforms 26, *)
+    @available(SwiftStdlib 6.2, *)
     @Test(
         arguments: [(cidr: CIDR<IPv6Address>, expectedDescription: String)]([
             (
@@ -396,7 +396,7 @@ struct CIDRTests {
         #expect(cidr.description == expectedDescription)
     }
 
-    @available(swiftEndpointApplePlatforms 26, *)
+    @available(SwiftStdlib 6.2, *)
     @Test(
         arguments: [(text: String, expectedCIDR: CIDR<IPv6Address>?)]([
             (
@@ -454,7 +454,7 @@ struct CIDRTests {
         #expect(CIDR<IPv6Address>(textualRepresentation: text.utf8Span.span) == expectedCIDR)
     }
 
-    @available(swiftEndpointApplePlatforms 26, *)
+    @available(SwiftStdlib 6.2, *)
     @Test(
         arguments: [(cidr: CIDR<IPv6Address>, containsIP: IPv6Address, result: Bool)]([
             (
@@ -516,7 +516,7 @@ struct CIDRTests {
         )
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func `randomly generated ipv6 CIDR containment checks work as expected`() {
         for (cidr, containsIP, result) in Self.makeRandom(
             ofType: IPv6Address.self,
@@ -543,7 +543,7 @@ struct CIDRTests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test(
         arguments: ipv6CIDRTruncationArguments
     ) func `ipv6 CIDR standard initializer preserves the prefix without truncating`(
@@ -566,7 +566,7 @@ struct CIDRTests {
         #expect(cidr.contains(expectedIP))
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test(
         arguments: [(prefixLength: UInt8, expectedMask: UInt128)]([
             (0 as UInt8, (0b0 << 128) as UInt128),
@@ -646,7 +646,7 @@ struct CIDRTests {
         )
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     /// We intentionally don't use much math operators here like bit-shift, to keep things
     /// simpler for tests.
     static func makeRandom<IPAddressType: _IPAddressProtocol>(
@@ -706,7 +706,7 @@ struct CIDRTests {
     }
 }
 
-@available(swiftEndpointApplePlatforms 15, *)
+@available(SwiftStdlib 6.0, *)
 extension _IPAddressProtocolAddressValueType {
     fileprivate static func anyRandom() -> Self {
         switch Self.self {
@@ -734,7 +734,7 @@ extension _IPAddressProtocolAddressValueType {
     }
 }
 
-@available(swiftEndpointApplePlatforms 15, *)
+@available(SwiftStdlib 6.0, *)
 extension String {
     @_disfavoredOverload
     fileprivate init<T: _IPAddressProtocolAddressValueType>(value: T, radix: Int) {
@@ -749,7 +749,7 @@ extension String {
     }
 }
 
-@available(swiftEndpointApplePlatforms 15, *)
+@available(SwiftStdlib 6.0, *)
 let ipv6CIDRTruncationArguments: [(prefixLength: UInt8, ip: IPv6Address, expectedIP: IPv6Address)] =
     [
         (

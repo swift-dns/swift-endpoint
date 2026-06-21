@@ -1,6 +1,6 @@
 public import struct NIOCore.ByteBuffer
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension ByteBuffer {
     @inlinable
     init(swift_endpoint_copying span: Span<UInt8>) {

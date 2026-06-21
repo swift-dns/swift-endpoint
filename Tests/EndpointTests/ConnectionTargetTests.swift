@@ -3,7 +3,7 @@ import Testing
 
 @Suite
 struct ConnectionTargetTests {
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test(
         arguments: [(target: ConnectionTarget?, expected: ConnectionTarget.Target?)]([
             (
@@ -67,7 +67,7 @@ struct ConnectionTargetTests {
         #expect(target?.target == expected)
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test(
         arguments: [(target: ConnectionTarget, expected: String)]([
             (

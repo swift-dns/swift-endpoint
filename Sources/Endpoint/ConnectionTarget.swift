@@ -1,7 +1,7 @@
 public import SwiftIDNA
 
 /// A target for a connection.
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 public struct ConnectionTarget: Sendable, Hashable {
     @nonexhaustive
     public enum Error: Swift.Error {

@@ -29,3 +29,10 @@ extension Port: ExpressibleByIntegerLiteral {
         self.init(canonicalValue: value)
     }
 }
+
+extension Port: CustomStringConvertible {
+    /// The textual representation of a port, for example `Port(324)`.
+    public var description: String {
+        "Port(\(self.canonicalValue))"
+    }
+}

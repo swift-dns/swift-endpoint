@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension IPv6Address {
     /// Calls `body` with a pointer to a null-terminated C string of this address's textual
     /// representation. For example `IPv6Address(0x2001, 0x0DB8, 0, 0, 0, 0, 0, 1)`

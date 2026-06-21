@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension IPv4Address {
     /// Initialize an `IPv4Address` from the 4 bytes representing it.
     public init?(from span: Span<UInt8>) {

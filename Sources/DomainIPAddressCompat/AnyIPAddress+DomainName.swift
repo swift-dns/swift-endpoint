@@ -3,7 +3,7 @@ public import IPAddress
 
 import struct NIOCore.ByteBuffer
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension DomainName {
     /// Initialize an `DomainName` from a `AnyIPAddress`.
     ///

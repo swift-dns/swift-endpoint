@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension String {
     #if canImport(Darwin)
     @usableFromInline
@@ -17,7 +17,7 @@ extension String {
             fatalError("Unreachable code path")
         }
 
-        if #available(swiftEndpointApplePlatforms 26, *) {
+        if #available(SwiftStdlib 6.2, *) {
             return try body(self.utf8Span.span)
         }
 
@@ -49,7 +49,7 @@ extension String {
             _ buffer: UnsafeMutableBufferPointer<UInt8>
         ) throws -> Int
     ) rethrows {
-        if #available(swiftEndpointApplePlatforms 11, *) {
+        if #available(SwiftStdlib 5.3, *) {
             try self.init(unsafeUninitializedCapacity: capacity) { buffer in
                 try initializer(buffer)
             }
@@ -80,7 +80,7 @@ extension String {
     #endif
 }
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension Substring {
     #if canImport(Darwin)
     @usableFromInline
@@ -99,7 +99,7 @@ extension Substring {
             fatalError("Unreachable code path")
         }
 
-        if #available(swiftEndpointApplePlatforms 26, *) {
+        if #available(SwiftStdlib 6.2, *) {
             return try body(self.utf8Span.span)
         }
 

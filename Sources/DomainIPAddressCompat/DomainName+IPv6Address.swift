@@ -1,6 +1,6 @@
 public import struct NIOCore.ByteBuffer
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension IPv6Address {
     /// Initialize an `IPv6Address` from a `DomainName` which is in the special arpa domain name format,
     /// according to [RFC 3596, DNS Extensions to Support IP Version 6, October 2003](https://tools.ietf.org/html/rfc3596#section-2.5).

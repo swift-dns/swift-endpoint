@@ -81,7 +81,7 @@ struct IPAddressTests {
         #expect(produced == expectedDescription)
     }
 
-    @available(swiftEndpointApplePlatforms 26, *)
+    @available(SwiftStdlib 6.2, *)
     @Test(
         arguments: ipv4StringAndAddressTestCases
             + ipv4IDNAStringAndAddressTestCases.map { ($0.0, nil, $0.2) }
@@ -119,7 +119,7 @@ struct IPAddressTests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 26, *)
+    @available(SwiftStdlib 6.2, *)
     @Test(
         arguments: ipv4StringAndAddressTestCases
             + ipv4IDNAStringAndAddressTestCases
@@ -147,7 +147,7 @@ struct IPAddressTests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 26, *)
+    @available(SwiftStdlib 6.2, *)
     @Test(arguments: ipv4StringAndAddressTestCases)
     func ipv4AddressFromStringThroughArpaDomainName(
         string: String,
@@ -184,7 +184,7 @@ struct IPAddressTests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 26, *)
+    @available(SwiftStdlib 6.2, *)
     @Test(
         arguments: [(IPv4Address?, String)]([
             (IPv4Address(192, 0, 2, 128), "::ffff:c000:0280"),
@@ -202,7 +202,7 @@ struct IPAddressTests {
         #expect(ipv4 == IPv4Address(ipv6: ipv6))
     }
 
-    @available(swiftEndpointApplePlatforms 10.15, *)
+    @available(SwiftStdlib 5.1, *)
     @Test(
         arguments: [(IPv4Address, String, (@Sendable (IPv4Address) -> Bool))]([
             (IPv4Address(127, 0, 0, 0), "isLoopback", \.isLoopback),
@@ -244,7 +244,7 @@ struct IPAddressTests {
         #expect(predicate(ip), "\(testCaseDescription)")
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test func ipv6Address() {
         let ipWithUInt16 = IPv6Address(
             0x0102,
@@ -339,7 +339,7 @@ struct IPAddressTests {
         #expect(decodedIP == ip)
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test(
         arguments: [
             (
@@ -376,7 +376,7 @@ struct IPAddressTests {
         #expect(produced == bracketLess)
     }
 
-    @available(swiftEndpointApplePlatforms 26, *)
+    @available(SwiftStdlib 6.2, *)
     @Test(
         arguments: ipv6StringAndAddressTestCases
             + ipv6IDNAStringAndAddressTestCases.map { ($0.0, nil, $0.2) }
@@ -414,7 +414,7 @@ struct IPAddressTests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 26, *)
+    @available(SwiftStdlib 6.2, *)
     @Test(
         arguments: [
             (
@@ -436,7 +436,7 @@ struct IPAddressTests {
         #expect(ipv6Address2 == expectedAddress)
     }
 
-    @available(swiftEndpointApplePlatforms 26, *)
+    @available(SwiftStdlib 6.2, *)
     @Test(arguments: ipv6StringAndAddressTestCases)
     func ipv6AddressFromStringThroughArpaDomainName(
         string: String,
@@ -503,7 +503,7 @@ struct IPAddressTests {
         }
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test(
         arguments: [
             (AnyIPAddress.v4(IPv4Address(192, 168, 1, 1)), "192.168.1.1"),
@@ -524,7 +524,7 @@ struct IPAddressTests {
         #expect(produced == bracketLess)
     }
 
-    @available(swiftEndpointApplePlatforms 26, *)
+    @available(SwiftStdlib 6.2, *)
     @Test(
         arguments: [(String, AnyIPAddress?)]([
             ("192.168.1.1", .v4(IPv4Address(192, 168, 1, 1))),
@@ -543,7 +543,7 @@ struct IPAddressTests {
         string.withCString { #expect(AnyIPAddress(cString: $0) == expectedAddress) }
     }
 
-    @available(swiftEndpointApplePlatforms 26, *)
+    @available(SwiftStdlib 6.2, *)
     @Test(
         arguments: [(String, IPv4Address)]([
             ("::ffff:c000:0280", IPv4Address(192, 0, 2, 128)),
@@ -560,7 +560,7 @@ struct IPAddressTests {
         #expect(ipv6 == IPv6Address(ipv4: expectedIPv4))
     }
 
-    @available(swiftEndpointApplePlatforms 26, *)
+    @available(SwiftStdlib 6.2, *)
     @Test(
         arguments: [(String, String, (@Sendable (IPv6Address) -> Bool))]([
             ("::1", "isLoopback", \.isLoopback),
@@ -587,7 +587,7 @@ struct IPAddressTests {
         #expect(predicate(ip), "\(testCaseDescription)")
     }
 
-    @available(swiftEndpointApplePlatforms 10.15, *)
+    @available(SwiftStdlib 5.1, *)
     @Test(arguments: anyIPAddressCIDRRelatedPropertiesTestCases)
     func `AnyIPAddress CIDR-related properties work correctly`(
         ip: AnyIPAddress,
@@ -597,7 +597,7 @@ struct IPAddressTests {
         #expect(predicate(ip), "\(testCaseDescription)")
     }
 
-    @available(swiftEndpointApplePlatforms 10.15, *)
+    @available(SwiftStdlib 5.1, *)
     @Test(arguments: ipv4StringAndAddressTestCases.compactMap(\.1))
     func `IPv4Address cString APIs compatibility with C`(ip: IPv4Address) {
         let expectedBytes = [ip.bytes.0, ip.bytes.1, ip.bytes.2, ip.bytes.3]
@@ -615,7 +615,7 @@ struct IPAddressTests {
         #expect(IPv4Address(cString: buffer) == ip)
     }
 
-    @available(swiftEndpointApplePlatforms 15, *)
+    @available(SwiftStdlib 6.0, *)
     @Test(arguments: ipv6StringAndAddressTestCases.compactMap(\.1))
     func `IPv6Address cString APIs compatibility with C`(ip: IPv6Address) {
         let bytes = ip.bytes
@@ -703,7 +703,7 @@ private let ipv4IDNAStringAndAddressTestCases: [(String, IPv4Address?, Bool)] = 
 ]
 
 /// (IPv6String, IPv6Address, isValidIPv4)
-@available(swiftEndpointApplePlatforms 15, *)
+@available(SwiftStdlib 6.0, *)
 private let ipv6StringAndAddressTestCases: [(String, IPv6Address?, Bool)] = [
     ("1111:2222:3333:4444:5555:6666:7777:8888", 0x1111_2222_3333_4444_5555_6666_7777_8888, false),
     ("[FF::]", 0x00FF_0000_0000_0000_0000_0000_0000_0000, false),
@@ -827,7 +827,7 @@ private let ipv6StringAndAddressTestCases: [(String, IPv6Address?, Bool)] = [
 ]
 
 /// (IPv6String, IPv6Address, isValidIPv4)
-@available(swiftEndpointApplePlatforms 15, *)
+@available(SwiftStdlib 6.0, *)
 private let ipv6IDNAStringAndAddressTestCases: [(String, IPv6Address?, Bool)] = [
     /// Contains weird characters that are mapped to the correct characters in IDNA
     /// These all should work based on IDNA.

@@ -83,7 +83,7 @@ extension UnsignedInt128: Equatable {
     }
 }
 
-@available(swiftEndpointApplePlatforms 15, *)
+@available(SwiftStdlib 6.0, *)
 extension UnsignedInt128: ExpressibleByIntegerLiteral {
     @inlinable
     public init(integerLiteral value: UInt128) {

@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension AnyIPAddress {
     /// Calls `body` with a pointer to a null-terminated C string of this address's textual
     /// representation. The `v4` case is formatted in dot-decimal notation, and the `v6` case is

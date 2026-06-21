@@ -93,16 +93,16 @@ var settings: [SwiftSetting] {
         .enableUpcomingFeature("ExistentialAny"),
         .enableUpcomingFeature("StrictMemorySafety"),
         .enableExperimentalFeature(
-            "AvailabilityMacro=swiftEndpointApplePlatforms 26:macOS 26, iOS 26, tvOS 26, watchOS 26, visionOS 26"
+            "AvailabilityMacro=SwiftStdlib 6.2:macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0"
         ),
         .enableExperimentalFeature(
-            "AvailabilityMacro=swiftEndpointApplePlatforms 15:macOS 15, iOS 18, tvOS 18, watchOS 11, visionOS 2"
+            "AvailabilityMacro=SwiftStdlib 6.0:macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0"
         ),
         .enableExperimentalFeature(
-            "AvailabilityMacro=swiftEndpointApplePlatforms 11:macOS 11, iOS 14, tvOS 14, watchOS 7"
+            "AvailabilityMacro=SwiftStdlib 5.3:macOS 11.0, iOS 14.0, watchOS 7.0, tvOS 14.0"
         ),
         .enableExperimentalFeature(
-            "AvailabilityMacro=swiftEndpointApplePlatforms 10.15:macOS 10.15, iOS 13, tvOS 13, watchOS 6"
+            "AvailabilityMacro=SwiftStdlib 5.1:macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0"
         ),
     ]
 }

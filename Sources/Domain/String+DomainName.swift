@@ -2,7 +2,7 @@ public import SwiftIDNA
 
 public import struct NIOCore.ByteBuffer
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension DomainName: CustomStringConvertible {
     /// Unicode-friendly description of the domain name, excluding the possible root label separator.
     /// Example: `"mahdibm.com"`
@@ -13,7 +13,7 @@ extension DomainName: CustomStringConvertible {
     }
 }
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension DomainName: CustomDebugStringConvertible {
     /// Source-accurate description of the domain name, including the possible root label separator.
     /// Example: `"mahdibm.com."`
@@ -24,7 +24,7 @@ extension DomainName: CustomDebugStringConvertible {
     }
 }
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension DomainName {
     @nonexhaustive
     public enum DescriptionFormat: Sendable {
@@ -122,7 +122,7 @@ extension DomainName {
     }
 }
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension DomainName {
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName("mahdibm.com")
@@ -151,7 +151,7 @@ extension DomainName {
     }
 }
 
-@available(swiftEndpointApplePlatforms 26, *)
+@available(SwiftStdlib 6.2, *)
 extension DomainName {
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName(textualRepresentation: "mahdibm.com".utf8Span)
@@ -168,7 +168,7 @@ extension DomainName {
     }
 }
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension DomainName {
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName(textualRepresentation: "mahdibm.com".utf8Span.span)
@@ -323,7 +323,7 @@ extension DomainName {
     }
 }
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension DomainName {
     /// `span` must be an already-validated domain name span.
     /// ASCII characters only.

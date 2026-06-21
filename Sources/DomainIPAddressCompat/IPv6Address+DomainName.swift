@@ -1,6 +1,6 @@
 public import struct NIOCore.ByteBuffer
 
-@available(swiftEndpointApplePlatforms 10.15, *)
+@available(SwiftStdlib 5.1, *)
 extension DomainName {
     /// Initialize a `DomainName` from an `IPv6Address`.
     ///

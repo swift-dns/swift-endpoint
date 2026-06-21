@@ -1,4 +1,4 @@
-@available(swiftEndpointApplePlatforms 15, *)
+@available(SwiftStdlib 6.0, *)
 extension UnsignedInt128: Numeric {}
 
 /// Numeric conformance

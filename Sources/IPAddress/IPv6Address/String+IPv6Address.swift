@@ -126,10 +126,9 @@ extension IPv6Address {
 
         /// Reserve the max possibly needed capacity.
         let bracketsCount = enclosingInSquareBrackets ? 2 : 0
-        let toReserve: Int
         let segmentsCount = 8 &- (rangeToCompress?.count ?? 0)
         let colonsCount = max(segmentsCount &- 1, 2)
-        toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4)
+        let toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4)
 
         return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
             var writeIdx = 0
@@ -199,38 +198,34 @@ extension IPv6Address {
         advancingIdx idx: inout Int,
         bytePair: UInt16
     ) {
-        var soFarAllZeros = true
-
         let _1 = UInt8(truncatingIfNeeded: bytePair &>> 8) &>> 4
         let _2 = UInt8(truncatingIfNeeded: bytePair &>> 8) & 0x0F
         let _3 = UInt8(truncatingIfNeeded: bytePair) &>> 4
         let _4 = UInt8(truncatingIfNeeded: bytePair) & 0x0F
 
-        if _1 != 0 {
-            soFarAllZeros = false
-            _writeLowercasedASCII(into: buffer, idx: &idx, byte: _1)
-        }
-        if !(_2 == 0 && soFarAllZeros) {
-            soFarAllZeros = false
-            _writeLowercasedASCII(into: buffer, idx: &idx, byte: _2)
-        }
-        if !(_3 == 0 && soFarAllZeros) {
-            _writeLowercasedASCII(into: buffer, idx: &idx, byte: _3)
-        }
-        _writeLowercasedASCII(into: buffer, idx: &idx, byte: _4)
+        /// Always write, but only advance past it when it should be kept.
+        var notAllZerosSoFar = _1 != 0
+        buffer[idx] = _lowercasedHexASCII(nibble: _1)
+        idx &+= notAllZerosSoFar ? 1 : 0
+
+        notAllZerosSoFar = notAllZerosSoFar || _2 != 0
+        buffer[idx] = _lowercasedHexASCII(nibble: _2)
+        idx &+= notAllZerosSoFar ? 1 : 0
+
+        notAllZerosSoFar = notAllZerosSoFar || _3 != 0
+        buffer[idx] = _lowercasedHexASCII(nibble: _3)
+        idx &+= notAllZerosSoFar ? 1 : 0
+
+        buffer[idx] = _lowercasedHexASCII(nibble: _4)
+        idx &+= 1
     }
 
+    /// Maps a single hex nibble (0...15) to its lowercased ASCII byte.
     @inlinable
-    static func _writeLowercasedASCII(
-        into buffer: UnsafeMutableBufferPointer<UInt8>,
-        idx: inout Int,
-        byte: UInt8
-    ) {
-        buffer[idx] =
-            byte > 9
-            ? byte &+ UInt8.asciiLowercasedA &- 10
-            : byte &+ UInt8.ascii0
-        idx &+= 1
+    static func _lowercasedHexASCII(nibble: UInt8) -> UInt8 {
+        nibble > 9
+            ? nibble &+ UInt8.asciiLowercasedA &- 10
+            : nibble &+ UInt8.ascii0
     }
 }
 

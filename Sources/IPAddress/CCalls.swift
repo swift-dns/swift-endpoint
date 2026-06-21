@@ -24,6 +24,15 @@ enum CCalls {
     static func c_strlen(_ s: UnsafePointer<CChar>) -> Int {
         strlen(s)
     }
+
+    @usableFromInline
+    static func c_memmove(
+        _ dest: UnsafeMutableRawPointer,
+        _ src: UnsafeRawPointer,
+        _ count: Int
+    ) {
+        _ = memmove(dest, src, count)
+    }
 }
 
 @available(*, unavailable)

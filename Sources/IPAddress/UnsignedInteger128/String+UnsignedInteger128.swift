@@ -11,26 +11,26 @@ extension UnsignedInteger128: CustomStringConvertible {
         let toReserve = Swift.max(approximation, 1)
         var value = self
         let _10 = Self(_low: 10, _high: 0)
-        var idx = toReserve &- 1
-        var string = String(unsafeUninitializedCapacity_Compatibility: toReserve) { buffer in
-            while value >= _10 {
+        return String(unsafeUninitializedCapacity_Compatibility: toReserve) { buffer in
+            var idx = toReserve
+            repeat {
                 let tenth = value / _10
                 let remainder = value &- (tenth &* _10)
-                let digit = remainder._low
-                let ascii = UInt8(digit) &+ UInt8.ascii0
-                value = tenth
-                buffer[idx] = ascii
                 idx &-= 1
+                buffer[idx] = UInt8(remainder._low) &+ UInt8.ascii0
+                value = tenth
+            } while value != .zero
+
+            /// `approximation` can over-reserve by one, leaving a leading gap. Close
+            /// it so the initialized digits start at offset 0 and the returned count
+            /// covers only initialized bytes. `memmove` handles the overlap.
+            let count = toReserve &- idx
+            if idx != 0 {
+                let base = buffer.baseAddress.unsafelyUnwrapped
+                CCalls.c_memmove(base, base + idx, count)
             }
-            let ascii = UInt8(value._low) &+ UInt8.ascii0
-            buffer[idx] = ascii
-            idx &-= 1
-            return toReserve - Swift.max(idx, 0)
+            return count
         }
-        if idx == 0 {
-            string.removeFirst()
-        }
-        return string
     }
 
     public init?(_ description: String) {
@@ -60,9 +60,10 @@ extension UnsignedInteger128: CustomStringConvertible {
         }
 
         var multiplier = UnsignedInteger128(_low: 1, _high: 0)
+        let _10 = Self(_low: 10, _high: 0)
 
         while let idx = iterator.next() {
-            multiplier &*= Self(_low: 10, _high: 0)
+            multiplier &*= _10
             let reversedIdx = lastIndex &- idx
             let byte = span[unchecked: reversedIdx]
             guard let number = UInt8.mapUTF8ByteToUInt8(byte) else {

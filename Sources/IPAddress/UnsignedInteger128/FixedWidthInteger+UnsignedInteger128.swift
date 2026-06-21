@@ -1,8 +1,8 @@
 @available(SwiftStdlib 6.0, *)
-extension UnsignedInt128: FixedWidthInteger {}
+extension UnsignedInteger128: FixedWidthInteger {}
 
 /// FixedWidthInteger conformance
-extension UnsignedInt128 {
+extension UnsignedInteger128 {
     @inlinable
     public static var bitWidth: Int {
         128

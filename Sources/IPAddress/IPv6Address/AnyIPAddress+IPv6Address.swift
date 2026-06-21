@@ -34,7 +34,7 @@ extension IPv6Address {
     /// ```
     @inlinable
     public init(ipv4: IPv4Address) {
-        self.address = UnsignedInt128(
+        self.address = UnsignedInteger128(
             _low: 0x0000_FFFF_0000_0000 | UInt64(ipv4.address),
             _high: 0
         )

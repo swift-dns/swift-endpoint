@@ -1,5 +1,5 @@
 @available(SwiftStdlib 5.1, *)
-extension UnsignedInt128: CustomStringConvertible {
+extension UnsignedInteger128: CustomStringConvertible {
     @inlinable
     public var description: String {
         /// Accurate approx amount of base-10 digits, based on the number of bits
@@ -56,10 +56,10 @@ extension UnsignedInt128: CustomStringConvertible {
             guard let number = UInt8.mapUTF8ByteToUInt8(byte) else {
                 return nil
             }
-            result = UnsignedInt128(number)
+            result = UnsignedInteger128(number)
         }
 
-        var multiplier = UnsignedInt128(_low: 1, _high: 0)
+        var multiplier = UnsignedInteger128(_low: 1, _high: 0)
 
         while let idx = iterator.next() {
             multiplier &*= Self(_low: 10, _high: 0)
@@ -68,7 +68,7 @@ extension UnsignedInt128: CustomStringConvertible {
             guard let number = UInt8.mapUTF8ByteToUInt8(byte) else {
                 return nil
             }
-            result += UnsignedInt128(number) &* multiplier
+            result += UnsignedInteger128(number) &* multiplier
         }
 
         return result

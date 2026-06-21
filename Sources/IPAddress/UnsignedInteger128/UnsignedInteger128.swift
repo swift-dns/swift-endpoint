@@ -21,15 +21,15 @@
 ///
 /// ```swift
 /// /// On macOS 15 or higher:
-/// let value: UnsignedInt128 = 0x11223344556677889900665544332211
+/// let value: UnsignedInteger128 = 0x11223344556677889900665544332211
 ///
 /// /// On macOS 14 or lower:
-/// let value = UnsignedInt128(
+/// let value = UnsignedInteger128(
 ///     _low: 0x9900665544332211, /// The least significant half of the value
 ///     _high: 0x1122334455667788 /// The most significant half of the value
 /// )
 /// ```
-public struct UnsignedInt128 {
+public struct UnsignedInteger128 {
     // There is a half-implemented big-endian support below.
     // big-endian is pretty much extinct nowadays but I'm going to let this be.
     // Swift itself doesn't properly support big-endian either so ...
@@ -46,13 +46,13 @@ public struct UnsignedInt128 {
     public var _low: UInt64
     #endif
 
-    /// Initializes a new `UnsignedInt128` value given the least significant 64 bits and the most significant 64 bits.
+    /// Initializes a new `UnsignedInteger128` value given the least significant 64 bits and the most significant 64 bits.
     ///
     /// For example these 2 are equivalent:
     /// ```swift
-    /// let value: UnsignedInt128 = 0x11223344556677889900665544332211
+    /// let value: UnsignedInteger128 = 0x11223344556677889900665544332211
     ///
-    /// let value = UnsignedInt128(
+    /// let value = UnsignedInteger128(
     ///     _low: 0x9900665544332211, /// The least significant half of the value
     ///     _high: 0x1122334455667788 /// The most significant half of the value
     /// )
@@ -62,9 +62,9 @@ public struct UnsignedInt128 {
     }
 }
 
-extension UnsignedInt128: Sendable, SendableMetatype, Hashable, BitwiseCopyable {}
+extension UnsignedInteger128: Sendable, SendableMetatype, Hashable, BitwiseCopyable {}
 
-extension UnsignedInt128: Equatable {
+extension UnsignedInteger128: Equatable {
     @inlinable
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs._low == rhs._low && lhs._high == rhs._high
@@ -84,14 +84,14 @@ extension UnsignedInt128: Equatable {
 }
 
 @available(SwiftStdlib 6.0, *)
-extension UnsignedInt128: ExpressibleByIntegerLiteral {
+extension UnsignedInteger128: ExpressibleByIntegerLiteral {
     @inlinable
     public init(integerLiteral value: UInt128) {
         self.init(_low: value._low, _high: value._high)
     }
 }
 
-extension UnsignedInt128: CustomReflectable {
+extension UnsignedInteger128: CustomReflectable {
     @inlinable
     public var customMirror: Mirror {
         Mirror(self, unlabeledChildren: EmptyCollection<Void>())

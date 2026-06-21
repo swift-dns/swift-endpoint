@@ -29,7 +29,7 @@ extension IPv6Address {
         guard
             let result = domainName._data.withUnsafeReadableBytes({ ptr -> IPv6Address? in
                 ptr.withMemoryRebound(to: UInt8.self) { ptr -> IPv6Address? in
-                    var ipv6 = IPv6Address(.zero)
+                    var ipv6Address = _CompatibilityUInt128Typealias.zero
                     var iterator = domainName.makePositionIterator()
 
                     /// `DomainName.data` always only contains ASCII bytes
@@ -46,7 +46,7 @@ extension IPv6Address {
                             return nil
                         }
                         let shift = 4 &* idx
-                        ipv6.address |= UnsignedInt128(byte) &<< shift
+                        ipv6Address |= _CompatibilityUInt128Typealias(byte) &<< shift
                     }
 
                     guard let ip6Range = iterator.next()?.range,
@@ -70,7 +70,7 @@ extension IPv6Address {
                         return nil
                     }
 
-                    return ipv6
+                    return IPv6Address(ipv6Address)
                 }
             })
         else {

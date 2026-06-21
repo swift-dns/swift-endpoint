@@ -1,14 +1,14 @@
 @available(SwiftStdlib 6.0, *)
-extension UnsignedInt128: BinaryInteger {}
+extension UnsignedInteger128: BinaryInteger {}
 
 /// BinaryInteger conformance
-extension UnsignedInt128 {
+extension UnsignedInteger128 {
     public struct Words {
         @usableFromInline
-        let _value: UnsignedInt128
+        let _value: UnsignedInteger128
 
         @inlinable
-        public init(_value: UnsignedInt128) {
+        public init(_value: UnsignedInteger128) {
             self._value = _value
         }
     }
@@ -264,9 +264,9 @@ extension UnsignedInt128 {
     }
 }
 
-extension UnsignedInt128.Words: Sendable, SendableMetatype {}
+extension UnsignedInteger128.Words: Sendable, SendableMetatype {}
 
-extension UnsignedInt128.Words: RandomAccessCollection {
+extension UnsignedInteger128.Words: RandomAccessCollection {
     public typealias Element = UInt
 
     public typealias Index = Int

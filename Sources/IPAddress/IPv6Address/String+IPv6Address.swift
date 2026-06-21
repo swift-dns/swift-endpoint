@@ -98,7 +98,7 @@ extension IPv6Address {
 
             /// This range is guaranteed to be non-empty because we know idx < 7 (6 max)
             /// and (6+1)..<8 is still a range with 1 number in it.
-            for nextIdx in (idx + 1)..<8 {
+            for nextIdx in (idx &+ 1)..<8 {
                 guard isZero(octalIdx: nextIdx) else {
                     break
                 }
@@ -311,15 +311,16 @@ extension IPv6Address: LosslessStringConvertible {
             "IPv6Address initializer should not be used with non-ASCII character: \([UInt8](copying: span))"
         )
 
-        self.init(.zero)
-
         /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics here
         /// and write backwards.
         var noIPv4MappedSegments = true
-        let success = self.parseIPv6(
+        var address = _CompatibilityUInt128Typealias.zero
+        let success = IPv6Address.parseIPv6(
             span: span,
+            address: &address,
             noIPv4MappedSegments: &noIPv4MappedSegments
         )
+        self.init(address)
 
         guard success,
             noIPv4MappedSegments || CIDR<IPv6Address>.ipv4Mapped.contains(self)
@@ -330,7 +331,11 @@ extension IPv6Address: LosslessStringConvertible {
 
     @inlinable
     @inline(__always)
-    mutating func parseIPv6(span: Span<UInt8>, noIPv4MappedSegments: inout Bool) -> Bool {
+    static func parseIPv6(
+        span: Span<UInt8>,
+        address: inout _CompatibilityUInt128Typealias,
+        noIPv4MappedSegments: inout Bool
+    ) -> Bool {
         var span = span
 
         /// 2 == "::".count
@@ -378,7 +383,11 @@ extension IPv6Address: LosslessStringConvertible {
         var remainingBytesCount = 16
         /// cs == compression sign
         var beforeCsBytesCountRemaining = -1
-        for idx in span.indices {
+
+        var idx = 0
+        while idx < span.count {
+            defer { idx &+= 1 }
+
             let byte = span[unchecked: idx]
 
             if let digit = UInt8.mapHexadecimalByteToUInt8(byte) {
@@ -412,7 +421,7 @@ extension IPv6Address: LosslessStringConvertible {
 
                 remainingBytesCount &-= 2
                 let shift = remainingBytesCount &* 8
-                self.address |= UnsignedInt128(currentSegmentValue) &<< shift
+                address |= _CompatibilityUInt128Typealias(currentSegmentValue) &<< shift
 
                 segmentDigitIdx = 0
                 currentSegmentValue = 0
@@ -436,7 +445,7 @@ extension IPv6Address: LosslessStringConvertible {
 
                 remainingBytesCount &-= 4
                 let shift = remainingBytesCount &* 8
-                self.address |= UnsignedInt128(ipv4.address) &<< shift
+                address |= _CompatibilityUInt128Typealias(ipv4.address) &<< shift
 
                 noIPv4MappedSegments = false
                 segmentDigitIdx = 0
@@ -455,7 +464,7 @@ extension IPv6Address: LosslessStringConvertible {
             }
             remainingBytesCount &-= 2
             let shift = remainingBytesCount &* 8
-            self.address |= UnsignedInt128(currentSegmentValue) &<< shift
+            address |= _CompatibilityUInt128Typealias(currentSegmentValue) &<< shift
         }
 
         if beforeCsBytesCountRemaining == -1 {
@@ -468,7 +477,7 @@ extension IPv6Address: LosslessStringConvertible {
 
         /// cs == compression sign
         let afterCsBytesCount = beforeCsBytesCountRemaining &- remainingBytesCount
-        withUnsafeMutableBytes(of: &self.address) { addressBufferPtr in
+        withUnsafeMutableBytes(of: &address) { addressBufferPtr in
             let addressPtr = addressBufferPtr.baseAddress.unsafelyUnwrapped
             /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics.
             ///

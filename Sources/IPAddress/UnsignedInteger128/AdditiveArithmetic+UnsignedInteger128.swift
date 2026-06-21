@@ -1,4 +1,4 @@
-extension UnsignedInt128: AdditiveArithmetic {
+extension UnsignedInteger128: AdditiveArithmetic {
     @inlinable
     public static func + (lhs: Self, rhs: Self) -> Self {
         let (partialValue, overflow) = lhs.addingReportingOverflow(rhs)

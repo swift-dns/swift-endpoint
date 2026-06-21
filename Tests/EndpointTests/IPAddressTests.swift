@@ -275,7 +275,7 @@ struct IPAddressTests {
             0x11,
         )
         #expect(ip.address == ipWithUInt16.address)
-        let expectedAddress: UnsignedInt128 = 0x0102_F3F4_1516_7080_90A0_CBBC_0D0E_0F11
+        let expectedAddress: UnsignedInteger128 = 0x0102_F3F4_1516_7080_90A0_CBBC_0D0E_0F11
         #expect(ip.address == expectedAddress)
 
         #expect(ip.bytes.0 == 0x01)

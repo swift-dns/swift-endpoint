@@ -312,26 +312,20 @@ extension IPv6Address: LosslessStringConvertible {
     /// This initializer must only be used when you are 100% sure the span only contains ASCII characters.
     @inlinable
     public init?(_uncheckedAssumingValidASCII span: Span<UInt8>) {
-        debugOnly {
-            if !span.isASCII {
-                fatalError(
-                    "IPv6Address initializer should not be used with non-ASCII character: \([UInt8](copying: span))"
-                )
-            }
-        }
+        assert(
+            span.isASCII,
+            "IPv6Address initializer should not be used with non-ASCII character: \([UInt8](copying: span))"
+        )
 
         self.init(.zero)
 
         /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics here
         /// and write backwards.
         var noIPv4MappedSegments = true
-        let success = withUnsafeMutableBytes(of: &self.address) { addressPtr -> Bool in
-            IPv6Address.parseIPv6(
-                span: span,
-                addressBufferPtr: addressPtr,
-                noIPv4MappedSegments: &noIPv4MappedSegments
-            )
-        }
+        let success = self.parseIPv6(
+            span: span,
+            noIPv4MappedSegments: &noIPv4MappedSegments
+        )
 
         guard success,
             noIPv4MappedSegments || CIDR<IPv6Address>.ipv4Mapped.contains(self)
@@ -341,15 +335,11 @@ extension IPv6Address: LosslessStringConvertible {
     }
 
     @inlinable
-    static func parseIPv6(
-        span: Span<UInt8>,
-        addressBufferPtr: UnsafeMutableRawBufferPointer,
-        noIPv4MappedSegments: inout Bool
-    ) -> Bool {
-        let addressPtr = addressBufferPtr.baseAddress.unsafelyUnwrapped
+    @inline(__always)
+    mutating func parseIPv6(span: Span<UInt8>, noIPv4MappedSegments: inout Bool) -> Bool {
         var span = span
 
-        guard span.count >= "::".count else {
+        guard span.count >= 2 /*"::".count*/ else {
             return false
         }
 
@@ -364,18 +354,22 @@ extension IPv6Address: LosslessStringConvertible {
             break
         case (true, true):
             /// Unchecked because we just checked count > 1 above
-            span = span.extracting(Range(uncheckedBounds: (1, span.count &- 1)))
+            span = span.extracting(
+                unchecked: Range(uncheckedBounds: (1, span.count &- 1))
+            )
         case (true, false), (false, true):
             return false
         }
 
-        guard span.count >= "::".count else {
+        guard span.count >= 2 /*"::".count*/ else {
             return false
         }
 
         /// Special-case handling for when there is a compression sign at the beginning
         if span[unchecked: 0] == .asciiColon {
-            span = span.extracting(Range(uncheckedBounds: (1, span.count)))
+            span = span.extracting(
+                unchecked: Range(uncheckedBounds: (1, span.count))
+            )
             if span[unchecked: 0] != .asciiColon {
                 return false
             }
@@ -421,11 +415,8 @@ extension IPv6Address: LosslessStringConvertible {
                 }
 
                 remainingBytesCount &-= 2
-                addressPtr.storeBytes(
-                    of: currentSegmentValue,
-                    toByteOffset: remainingBytesCount,
-                    as: UInt16.self
-                )
+                let shift = remainingBytesCount &* 8
+                self.address |= UnsignedInt128(currentSegmentValue) &<< shift
 
                 segmentDigitIdx = 0
                 currentSegmentValue = 0
@@ -448,12 +439,8 @@ extension IPv6Address: LosslessStringConvertible {
                 }
 
                 remainingBytesCount &-= 4
-                withUnsafeBytes(of: ipv4.address) {
-                    addressPtr.advanced(by: remainingBytesCount).copyMemory(
-                        from: $0.baseAddress.unsafelyUnwrapped,
-                        byteCount: 4
-                    )
-                }
+                let shift = remainingBytesCount &* 8
+                self.address |= UnsignedInt128(ipv4.address) &<< shift
 
                 noIPv4MappedSegments = false
                 segmentDigitIdx = 0
@@ -471,11 +458,8 @@ extension IPv6Address: LosslessStringConvertible {
                 return false
             }
             remainingBytesCount &-= 2
-            addressPtr.storeBytes(
-                of: currentSegmentValue,
-                toByteOffset: remainingBytesCount,
-                as: UInt16.self
-            )
+            let shift = remainingBytesCount &* 8
+            self.address |= UnsignedInt128(currentSegmentValue) &<< shift
         }
 
         if beforeCsBytesCountRemaining != -1 {
@@ -485,46 +469,49 @@ extension IPv6Address: LosslessStringConvertible {
             /// cs == compression sign
             let afterCsBytesCount = beforeCsBytesCountRemaining &- remainingBytesCount
 
-            /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics.
-            ///
-            /// Example:
-            /// Assume at the end of this parsing process we need to have:
-            /// 0x2001 0db8 85a3 0000 0000 0000 0100 0020
-            ///
-            /// For that, at this point in the process, the `self.address` looks like this:
-            /// 0x2001 0db8 85a3 0100 0020 0000 0000 0000
-            ///
-            /// We need to move the bytes so it becomes like the first one.
-            ///
-            /// In little endian the integer we have right here looks like:
-            /// 0x0000 0000 0000 0200 0010 3a58 08bd 1002
-            ///
-            /// For clearer demonstration, i'll use the big-endian representation in each ipv6 segment.
-            /// So we assume in little-endian the integer looks like this:
-            /// 0x0000 0000 0000 0020 0100 85a3 0db8 2001
+            withUnsafeMutableBytes(of: &self.address) { addressBufferPtr in
+                let addressPtr = addressBufferPtr.baseAddress.unsafelyUnwrapped
+                /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics.
+                ///
+                /// Example:
+                /// Assume at the end of this parsing process we need to have:
+                /// 0x2001 0db8 85a3 0000 0000 0000 0100 0020
+                ///
+                /// For that, at this point in the process, the `self.address` looks like this:
+                /// 0x2001 0db8 85a3 0100 0020 0000 0000 0000
+                ///
+                /// We need to move the bytes so it becomes like the first one.
+                ///
+                /// In little endian the integer we have right here looks like:
+                /// 0x0000 0000 0000 0200 0010 3a58 08bd 1002
+                ///
+                /// For clearer demonstration, I'll use the big-endian representation in each ipv6 segment.
+                /// So we assume in little-endian the integer looks like this:
+                /// 0x0000 0000 0000 0020 0100 85a3 0db8 2001
 
-            /// In this example, the memmove below will turn this:
-            /// 0x0000 0000 0000 0020 0100 85a3 0db8 2001
-            /// into this:
-            /// 0x0020 0100 0000 0020 0100 85a3 0db8 2001
-            ///   ~~^  ~~^
-            memmove(
-                addressPtr,
-                addressPtr.advanced(by: beforeCsBytesCountRemaining &- afterCsBytesCount),
-                afterCsBytesCount
-            )
+                /// In this example, the memmove below will turn this:
+                /// 0x0000 0000 0000 0020 0100 85a3 0db8 2001
+                /// into this:
+                /// 0x0020 0100 0000 0020 0100 85a3 0db8 2001
+                ///   ~~^  ~~^
+                memmove(
+                    addressPtr,
+                    addressPtr.advanced(by: beforeCsBytesCountRemaining &- afterCsBytesCount),
+                    afterCsBytesCount
+                )
 
-            /// Now that we have:
-            /// 0x0020 0100 0000 0020 0100 85a3 0db8 2001
-            ///
-            /// We set the middle 0020 0100 to zeros:
-            /// 0x0020 0100 0000 0000 0000 85a3 0db8 2001
-            ///                  ~~^  ~~^
-            memset(
-                addressPtr.advanced(by: beforeCsBytesCountRemaining &- remainingBytesCount),
-                0,
-                remainingBytesCount
-            )
+                /// Now that we have:
+                /// 0x0020 0100 0000 0020 0100 85a3 0db8 2001
+                ///
+                /// We set the middle 0020 0100 to zeros:
+                /// 0x0020 0100 0000 0000 0000 85a3 0db8 2001
+                ///                  ~~^  ~~^
+                memset(
+                    addressPtr.advanced(by: beforeCsBytesCountRemaining &- remainingBytesCount),
+                    0,
+                    remainingBytesCount
+                )
+            }
             /// Hurray! Now we have the correct ipv6 address!
             /// Swift will read this as:
             /// 0x2001 0db8 85a3 0000 0000 0000 0100 0020

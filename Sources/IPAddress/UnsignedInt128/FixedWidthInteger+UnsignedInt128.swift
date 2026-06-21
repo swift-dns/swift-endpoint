@@ -266,7 +266,7 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func &<< (lhs: Self, rhs: Self) -> Self {
-        lhs << (rhs % Self(_low: 128, _high: 0))
+        lhs._shiftedLeft(by: rhs._low & 127)
     }
 
     @inlinable
@@ -276,7 +276,7 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func &>> (lhs: Self, rhs: Self) -> Self {
-        lhs >> (rhs % Self(_low: 128, _high: 0))
+        lhs._shiftedRight(by: rhs._low & 127)
     }
 
     @inlinable
@@ -288,7 +288,7 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func &<< (lhs: Self, rhs: some BinaryInteger) -> Self {
-        lhs << (rhs % 128)
+        lhs._shiftedLeft(by: UInt64(truncatingIfNeeded: rhs) & 127)
     }
 
     @inlinable
@@ -298,7 +298,7 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func &>> (lhs: Self, rhs: some BinaryInteger) -> Self {
-        lhs >> (rhs % 128)
+        lhs._shiftedRight(by: UInt64(truncatingIfNeeded: rhs) & 127)
     }
 
     @inlinable

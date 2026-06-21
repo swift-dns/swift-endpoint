@@ -339,7 +339,8 @@ extension IPv6Address: LosslessStringConvertible {
     mutating func parseIPv6(span: Span<UInt8>, noIPv4MappedSegments: inout Bool) -> Bool {
         var span = span
 
-        guard span.count >= 2 /*"::".count*/ else {
+        /// 2 == "::".count
+        guard span.count >= 2 else {
             return false
         }
 
@@ -361,7 +362,8 @@ extension IPv6Address: LosslessStringConvertible {
             return false
         }
 
-        guard span.count >= 2 /*"::".count*/ else {
+        /// 2 == "::".count
+        guard span.count >= 2 else {
             return false
         }
 

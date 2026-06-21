@@ -458,63 +458,63 @@ extension IPv6Address: LosslessStringConvertible {
             self.address |= UnsignedInt128(currentSegmentValue) &<< shift
         }
 
-        if beforeCsBytesCountRemaining != -1 {
-            guard remainingBytesCount >= 4 else {
-                return false
-            }
-            /// cs == compression sign
-            let afterCsBytesCount = beforeCsBytesCountRemaining &- remainingBytesCount
-
-            withUnsafeMutableBytes(of: &self.address) { addressBufferPtr in
-                let addressPtr = addressBufferPtr.baseAddress.unsafelyUnwrapped
-                /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics.
-                ///
-                /// Example:
-                /// Assume at the end of this parsing process we need to have:
-                /// 0x2001 0db8 85a3 0000 0000 0000 0100 0020
-                ///
-                /// For that, at this point in the process, the `self.address` looks like this:
-                /// 0x2001 0db8 85a3 0100 0020 0000 0000 0000
-                ///
-                /// We need to move the bytes so it becomes like the first one.
-                ///
-                /// In little endian the integer we have right here looks like:
-                /// 0x0000 0000 0000 0200 0010 3a58 08bd 1002
-                ///
-                /// For clearer demonstration, I'll use the big-endian representation in each ipv6 segment.
-                /// So we assume in little-endian the integer looks like this:
-                /// 0x0000 0000 0000 0020 0100 85a3 0db8 2001
-
-                /// In this example, the memmove below will turn this:
-                /// 0x0000 0000 0000 0020 0100 85a3 0db8 2001
-                /// into this:
-                /// 0x0020 0100 0000 0020 0100 85a3 0db8 2001
-                ///   ~~^  ~~^
-                memmove(
-                    addressPtr,
-                    addressPtr.advanced(by: beforeCsBytesCountRemaining &- afterCsBytesCount),
-                    afterCsBytesCount
-                )
-
-                /// Now that we have:
-                /// 0x0020 0100 0000 0020 0100 85a3 0db8 2001
-                ///
-                /// We set the middle 0020 0100 to zeros:
-                /// 0x0020 0100 0000 0000 0000 85a3 0db8 2001
-                ///                  ~~^  ~~^
-                memset(
-                    addressPtr.advanced(by: beforeCsBytesCountRemaining &- remainingBytesCount),
-                    0,
-                    remainingBytesCount
-                )
-            }
-            /// Hurray! Now we have the correct ipv6 address!
-            /// Swift will read this as:
-            /// 0x2001 0db8 85a3 0000 0000 0000 0100 0020
-            /// which is what we aimed for.
-            return true
-        } else {
+        if beforeCsBytesCountRemaining == -1 {
             return remainingBytesCount == 0
         }
+
+        guard remainingBytesCount >= 4 else {
+            return false
+        }
+
+        /// cs == compression sign
+        let afterCsBytesCount = beforeCsBytesCountRemaining &- remainingBytesCount
+        withUnsafeMutableBytes(of: &self.address) { addressBufferPtr in
+            let addressPtr = addressBufferPtr.baseAddress.unsafelyUnwrapped
+            /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics.
+            ///
+            /// Example:
+            /// Assume at the end of this parsing process we need to have:
+            /// 0x2001 0db8 85a3 0000 0000 0000 0100 0020
+            ///
+            /// For that, at this point in the process, the `self.address` looks like this:
+            /// 0x2001 0db8 85a3 0100 0020 0000 0000 0000
+            ///
+            /// We need to move the bytes so it becomes like the first one.
+            ///
+            /// In little endian the integer we have right here looks like:
+            /// 0x0000 0000 0000 0200 0010 3a58 08bd 1002
+            ///
+            /// For clearer demonstration, I'll use the big-endian representation in each ipv6 segment.
+            /// So we assume in little-endian the integer looks like this:
+            /// 0x0000 0000 0000 0020 0100 85a3 0db8 2001
+
+            /// In this example, the memmove below will turn this:
+            /// 0x0000 0000 0000 0020 0100 85a3 0db8 2001
+            /// into this:
+            /// 0x0020 0100 0000 0020 0100 85a3 0db8 2001
+            ///   ~~^  ~~^
+            memmove(
+                addressPtr,
+                addressPtr.advanced(by: beforeCsBytesCountRemaining &- afterCsBytesCount),
+                afterCsBytesCount
+            )
+
+            /// Now that we have:
+            /// 0x0020 0100 0000 0020 0100 85a3 0db8 2001
+            ///
+            /// We set the middle 0020 0100 to zeros:
+            /// 0x0020 0100 0000 0000 0000 85a3 0db8 2001
+            ///                  ~~^  ~~^
+            memset(
+                addressPtr.advanced(by: beforeCsBytesCountRemaining &- remainingBytesCount),
+                0,
+                remainingBytesCount
+            )
+        }
+        /// Hurray! Now we have the correct ipv6 address!
+        /// Swift will read this as:
+        /// 0x2001 0db8 85a3 0000 0000 0000 0100 0020
+        /// which is what we aimed for.
+        return true
     }
 }

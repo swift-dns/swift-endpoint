@@ -41,10 +41,11 @@ extension DomainName {
             bufferPtr[bufferIdx] = .zero
             bufferIdx &+= 1
             var segmentStartIndex = bufferIdx
-            bytes.0.asDecimal(writeUTF8Byte: {
-                bufferPtr[bufferIdx] = $0
-                bufferIdx &+= 1
-            })
+            /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
+            bytes.0.asDecimal_RequiringMinimumCapacityOf3(
+                buffer: bufferPtr,
+                advancingIdx: &bufferIdx
+            )
             bufferPtr[segmentStartIndex &- 1] = UInt8(
                 truncatingIfNeeded: bufferIdx &- segmentStartIndex
             )
@@ -52,10 +53,11 @@ extension DomainName {
             bufferPtr[bufferIdx] = .zero
             bufferIdx &+= 1
             segmentStartIndex = bufferIdx
-            bytes.1.asDecimal(writeUTF8Byte: {
-                bufferPtr[bufferIdx] = $0
-                bufferIdx &+= 1
-            })
+            /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
+            bytes.1.asDecimal_RequiringMinimumCapacityOf3(
+                buffer: bufferPtr,
+                advancingIdx: &bufferIdx
+            )
             bufferPtr[segmentStartIndex &- 1] = UInt8(
                 truncatingIfNeeded: bufferIdx &- segmentStartIndex
             )
@@ -63,10 +65,11 @@ extension DomainName {
             bufferPtr[bufferIdx] = .zero
             bufferIdx &+= 1
             segmentStartIndex = bufferIdx
-            bytes.2.asDecimal(writeUTF8Byte: {
-                bufferPtr[bufferIdx] = $0
-                bufferIdx &+= 1
-            })
+            /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
+            bytes.2.asDecimal_RequiringMinimumCapacityOf3(
+                buffer: bufferPtr,
+                advancingIdx: &bufferIdx
+            )
             bufferPtr[segmentStartIndex &- 1] = UInt8(
                 truncatingIfNeeded: bufferIdx &- segmentStartIndex
             )
@@ -74,10 +77,11 @@ extension DomainName {
             bufferPtr[bufferIdx] = .zero
             bufferIdx &+= 1
             segmentStartIndex = bufferIdx
-            bytes.3.asDecimal(writeUTF8Byte: {
-                bufferPtr[bufferIdx] = $0
-                bufferIdx &+= 1
-            })
+            /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
+            bytes.3.asDecimal_RequiringMinimumCapacityOf3(
+                buffer: bufferPtr,
+                advancingIdx: &bufferIdx
+            )
             bufferPtr[segmentStartIndex &- 1] = UInt8(
                 truncatingIfNeeded: bufferIdx &- segmentStartIndex
             )
@@ -100,10 +104,11 @@ extension DomainName {
             bufferPtr[bufferIdx] = .zero
             bufferIdx &+= 1
             var segmentStartIndex = bufferIdx
-            bytes.3.asDecimal(writeUTF8Byte: {
-                bufferPtr[bufferIdx] = $0
-                bufferIdx &+= 1
-            })
+            /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
+            bytes.3.asDecimal_RequiringMinimumCapacityOf3(
+                buffer: bufferPtr,
+                advancingIdx: &bufferIdx
+            )
             bufferPtr[segmentStartIndex &- 1] = UInt8(
                 truncatingIfNeeded: bufferIdx &- segmentStartIndex
             )
@@ -111,10 +116,11 @@ extension DomainName {
             bufferPtr[bufferIdx] = .zero
             bufferIdx &+= 1
             segmentStartIndex = bufferIdx
-            bytes.2.asDecimal(writeUTF8Byte: {
-                bufferPtr[bufferIdx] = $0
-                bufferIdx &+= 1
-            })
+            /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
+            bytes.2.asDecimal_RequiringMinimumCapacityOf3(
+                buffer: bufferPtr,
+                advancingIdx: &bufferIdx
+            )
             bufferPtr[segmentStartIndex &- 1] = UInt8(
                 truncatingIfNeeded: bufferIdx &- segmentStartIndex
             )
@@ -122,10 +128,11 @@ extension DomainName {
             bufferPtr[bufferIdx] = .zero
             bufferIdx &+= 1
             segmentStartIndex = bufferIdx
-            bytes.1.asDecimal(writeUTF8Byte: {
-                bufferPtr[bufferIdx] = $0
-                bufferIdx &+= 1
-            })
+            /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
+            bytes.1.asDecimal_RequiringMinimumCapacityOf3(
+                buffer: bufferPtr,
+                advancingIdx: &bufferIdx
+            )
             bufferPtr[segmentStartIndex &- 1] = UInt8(
                 truncatingIfNeeded: bufferIdx &- segmentStartIndex
             )
@@ -133,10 +140,11 @@ extension DomainName {
             bufferPtr[bufferIdx] = .zero
             bufferIdx &+= 1
             segmentStartIndex = bufferIdx
-            bytes.0.asDecimal(writeUTF8Byte: {
-                bufferPtr[bufferIdx] = $0
-                bufferIdx &+= 1
-            })
+            /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
+            bytes.0.asDecimal_RequiringMinimumCapacityOf3(
+                buffer: bufferPtr,
+                advancingIdx: &bufferIdx
+            )
             bufferPtr[segmentStartIndex &- 1] = UInt8(
                 truncatingIfNeeded: bufferIdx &- segmentStartIndex
             )

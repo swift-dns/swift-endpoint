@@ -5,7 +5,7 @@ extension CIDR<IPv6Address> {
     public static var loopback: Self {
         Self(
             prefix: IPv6Address(
-                UnsignedInt128(
+                UnsignedInteger128(
                     _low: 0x0000_0000_0000_0001,
                     _high: 0x0000_0000_0000_0000
                 )
@@ -19,7 +19,7 @@ extension CIDR<IPv6Address> {
     public static var multicast: Self {
         Self(
             prefix: IPv6Address(
-                UnsignedInt128(
+                UnsignedInteger128(
                     _low: 0x0000_0000_0000_0000,
                     _high: 0xFF00_0000_0000_0000
                 )
@@ -33,7 +33,7 @@ extension CIDR<IPv6Address> {
     public static var linkLocalUnicast: Self {
         Self(
             prefix: IPv6Address(
-                UnsignedInt128(
+                UnsignedInteger128(
                     _low: 0x0000_0000_0000_0000,
                     _high: 0xFE80_0000_0000_0000
                 )
@@ -47,7 +47,7 @@ extension CIDR<IPv6Address> {
     public static var ipv4Mapped: Self {
         Self(
             prefix: IPv6Address(
-                UnsignedInt128(
+                UnsignedInteger128(
                     _low: 0x0000_FFFF_0000_0000,
                     _high: 0x0000_0000_0000_0000
                 )

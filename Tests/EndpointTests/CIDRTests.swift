@@ -712,8 +712,8 @@ extension _IPAddressProtocolAddressValueType {
         switch Self.self {
         case is UInt32.Type:
             return UInt32.random(in: .min ... .max) as! Self
-        case is UnsignedInt128.Type:
-            return UnsignedInt128.random(in: .min ... .max) as! Self
+        case is UnsignedInteger128.Type:
+            return UnsignedInteger128.random(in: .min ... .max) as! Self
         default:
             fatalError("Unsupported type: \(Self.self)")
         }
@@ -725,8 +725,8 @@ extension _IPAddressProtocolAddressValueType {
         case is UInt32.Type:
             guard let value = UInt32(value, radix: radix) else { return nil }
             self = value as! Self
-        case is UnsignedInt128.Type:
-            guard let value = UnsignedInt128(value, radix: radix) else { return nil }
+        case is UnsignedInteger128.Type:
+            guard let value = UnsignedInteger128(value, radix: radix) else { return nil }
             self = value as! Self
         default:
             fatalError("Unsupported type: \(Self.self)")
@@ -741,8 +741,8 @@ extension String {
         switch T.self {
         case is UInt32.Type:
             self = String(value as! UInt32, radix: radix)
-        case is UnsignedInt128.Type:
-            self = String(value as! UnsignedInt128, radix: radix)
+        case is UnsignedInteger128.Type:
+            self = String(value as! UnsignedInteger128, radix: radix)
         default:
             fatalError("Unsupported type: \(T.self)")
         }

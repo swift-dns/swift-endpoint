@@ -1,8 +1,8 @@
-extension UnsignedInt128: Strideable {
+extension UnsignedInteger128: Strideable {
     public typealias Stride = Int
 
     @inlinable
-    public func distance(to other: UnsignedInt128) -> Int {
+    public func distance(to other: UnsignedInteger128) -> Int {
         let diff = other > self ? other - self : self - other
         let sign = other > self ? 1 : -1
         precondition(
@@ -13,7 +13,7 @@ extension UnsignedInt128: Strideable {
     }
 
     @inlinable
-    public func advanced(by n: Int) -> UnsignedInt128 {
-        self + UnsignedInt128(n)
+    public func advanced(by n: Int) -> UnsignedInteger128 {
+        self + UnsignedInteger128(n)
     }
 }

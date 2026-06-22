@@ -1,4 +1,4 @@
-extension UnsignedInt128: Comparable {
+extension UnsignedInteger128: Comparable {
     @inlinable
     public static func < (lhs: Self, rhs: Self) -> Bool {
         if lhs._high == rhs._high {

@@ -136,10 +136,9 @@ For `IPv6Address`, the Arpa domain name format is supported. For example the fol
 
 In [this post](https://forums.swift.org/t/pitch-standard-network-address-types/82288/11) on the Swift forums I was asked to compare IP parsing implementations with the native C libraries which provide functions such as `inet_ntop` and `inet_pton` which are commonly used by everyone, including swift-nio.
 
-Here's the result ~~at that point in time~~ (Last update: Jun 18, 2026):
+Here's the result ~~at that point in time~~ (Last update: Jun 22, 2026):
 
-In 7 out of the 8 benchmarks this library performs better than the C libraries when called from Swift.
-In the "IPv6 string decoding" benchmark it performs only 8% worse than glibc, at ~25 millions rounds per second.
+In all 8 benchmarks this library performs better than the C libraries when called from Swift.
 
 #### Against Darwin
 
@@ -147,10 +146,10 @@ These were performed on my M1 Pro MacBook, on macOS 27.0 (beta 1).
 
 | Benchmark Name                              | Rounds      | Swift | inet_pton/ntop | Speedup |
 | ------------------------------------------- | ----------- | ----- | -------------- | ------- |
-| IPv4_String_Encoding_Mixed                  | 15 Millions | 126ms | 3761ms         | 29.85x  |
-| IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 286ms | 584ms          | 2.04x   |
-| IPv6_String_Encoding_Mixed                  | 4 Millions  | 315ms | 1664ms         | 5.28x   |
-| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 189ms | 398ms          | 2.11x   |
+| IPv4_String_Encoding_Mixed                  | 15 Millions | 121ms | 3696ms         | 30.55x  |
+| IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 273ms | 517ms          | 1.89x   |
+| IPv6_String_Encoding_Mixed                  | 4 Millions  | 341ms | 1655ms         | 4.85x   |
+| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 121ms | 396ms          | 3.27x   |
 
 #### Against glibc
 
@@ -160,10 +159,10 @@ These were performed on a dedicated-cpu-core machine from Hetzner in the Falkens
 
 | Benchmark Name                              | Rounds      | Swift | inet_pton/ntop | Speedup |
 | ------------------------------------------- | ----------- | ----- | -------------- | ------- |
-| IPv4_String_Encoding_Mixed                  | 15 Millions | 130ms | 1540ms         | 11.85x  |
+| IPv4_String_Encoding_Mixed                  | 15 Millions | 130ms | 1520ms         | 11.69x  |
 | IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 180ms | 200ms          | 1.11x   |
 | IPv6_String_Encoding_Mixed                  | 4 Millions  | 200ms | 820ms          | 4.10x   |
-| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 130ms | 120ms          | 0.92x   |
+| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 90ms  | 120ms          | 1.33x   |
 
 #### Notes
 

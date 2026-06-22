@@ -1,23 +1,3 @@
-#if os(Linux) || os(FreeBSD) || os(Android)
-
-#if canImport(Glibc)
-@preconcurrency public import Glibc
-#elseif canImport(Musl)
-@preconcurrency public import Musl
-#elseif canImport(Android)
-@preconcurrency public import Android
-#endif
-
-#elseif os(Windows)
-public import ucrt
-#elseif canImport(Darwin)
-public import Darwin
-#elseif canImport(WASILibc)
-@preconcurrency public import WASILibc
-#else
-#error("The String+IPv6Address module was unable to identify your C library.")
-#endif
-
 @available(SwiftStdlib 5.1, *)
 extension IPv6Address: CustomStringConvertible {
     /// The textual representation of an IPv6 address.
@@ -98,7 +78,7 @@ extension IPv6Address {
 
             /// This range is guaranteed to be non-empty because we know idx < 7 (6 max)
             /// and (6+1)..<8 is still a range with 1 number in it.
-            for nextIdx in (idx + 1)..<8 {
+            for nextIdx in (idx &+ 1)..<8 {
                 guard isZero(octalIdx: nextIdx) else {
                     break
                 }
@@ -126,19 +106,16 @@ extension IPv6Address {
 
         /// Reserve the max possibly needed capacity.
         let bracketsCount = enclosingInSquareBrackets ? 2 : 0
-        let toReserve: Int
-        if let rangeToCompress {
-            let segmentsCount = 8 &- rangeToCompress.count
-            let colonsCount = max(segmentsCount &- 1, 2)
-            toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4)
-        } else {
-            /// 39 bytes for 8 uncompressed segments plus the 7 colons separating them.
-            toReserve = bracketsCount &+ 39
-        }
+        let segmentsCount = 8 &- (rangeToCompress?.count ?? 0)
+        let colonsCount = max(segmentsCount &- 1, 2)
+        /// If no brackets, we need 1 extra byte for the possible colon that we speculatively write
+        let speculativeBytes = enclosingInSquareBrackets ? 0 : 1
+        let toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4) &+ speculativeBytes
 
         return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
             var writeIdx = 0
 
+            /// `enclosingInSquareBrackets` is always known at compile time so should result in no branches
             if enclosingInSquareBrackets {
                 buffer[0] = .asciiLeftSquareBracket
                 writeIdx &+= 1
@@ -170,14 +147,15 @@ extension IPv6Address {
                     bytePair: value
                 )
 
-                if idx < 7 {
-                    buffer[writeIdx] = .asciiColon
-                    writeIdx &+= 1
-                }
+                /// Speculative write, but we've already made sure we have the extra 1 byte capacity if needed
+                buffer[writeIdx] = .asciiColon
+                writeIdx &+= idx < 7 ? 1 : 0
+                assert(writeIdx < buffer.count)
 
                 idx &+= 1
             }
 
+            /// `enclosingInSquareBrackets` is always known at compile time so should result in no branches
             if enclosingInSquareBrackets {
                 buffer[writeIdx] = .asciiRightSquareBracket
                 writeIdx &+= 1
@@ -204,38 +182,34 @@ extension IPv6Address {
         advancingIdx idx: inout Int,
         bytePair: UInt16
     ) {
-        var soFarAllZeros = true
-
         let _1 = UInt8(truncatingIfNeeded: bytePair &>> 8) &>> 4
         let _2 = UInt8(truncatingIfNeeded: bytePair &>> 8) & 0x0F
         let _3 = UInt8(truncatingIfNeeded: bytePair) &>> 4
         let _4 = UInt8(truncatingIfNeeded: bytePair) & 0x0F
 
-        if _1 != 0 {
-            soFarAllZeros = false
-            _writeLowercasedASCII(into: buffer, idx: &idx, byte: _1)
-        }
-        if !(_2 == 0 && soFarAllZeros) {
-            soFarAllZeros = false
-            _writeLowercasedASCII(into: buffer, idx: &idx, byte: _2)
-        }
-        if !(_3 == 0 && soFarAllZeros) {
-            _writeLowercasedASCII(into: buffer, idx: &idx, byte: _3)
-        }
-        _writeLowercasedASCII(into: buffer, idx: &idx, byte: _4)
+        /// Always write, but only advance past it when it should be kept.
+        var notAllZerosSoFar = _1 != 0
+        buffer[idx] = _lowercasedHexASCII(nibble: _1)
+        idx &+= notAllZerosSoFar ? 1 : 0
+
+        notAllZerosSoFar = notAllZerosSoFar || _2 != 0
+        buffer[idx] = _lowercasedHexASCII(nibble: _2)
+        idx &+= notAllZerosSoFar ? 1 : 0
+
+        notAllZerosSoFar = notAllZerosSoFar || _3 != 0
+        buffer[idx] = _lowercasedHexASCII(nibble: _3)
+        idx &+= notAllZerosSoFar ? 1 : 0
+
+        buffer[idx] = _lowercasedHexASCII(nibble: _4)
+        idx &+= 1
     }
 
+    /// Maps a single hex nibble (0...15) to its lowercased ASCII byte.
     @inlinable
-    static func _writeLowercasedASCII(
-        into buffer: UnsafeMutableBufferPointer<UInt8>,
-        idx: inout Int,
-        byte: UInt8
-    ) {
-        buffer[idx] =
-            byte > 9
-            ? byte &+ UInt8.asciiLowercasedA &- 10
-            : byte &+ UInt8.ascii0
-        idx &+= 1
+    static func _lowercasedHexASCII(nibble: UInt8) -> UInt8 {
+        nibble > 9
+            ? nibble &+ UInt8.asciiLowercasedA &- 10
+            : nibble &+ UInt8.ascii0
     }
 }
 
@@ -312,26 +286,21 @@ extension IPv6Address: LosslessStringConvertible {
     /// This initializer must only be used when you are 100% sure the span only contains ASCII characters.
     @inlinable
     public init?(_uncheckedAssumingValidASCII span: Span<UInt8>) {
-        debugOnly {
-            if !span.isASCII {
-                fatalError(
-                    "IPv6Address initializer should not be used with non-ASCII character: \([UInt8](copying: span))"
-                )
-            }
-        }
-
-        self.init(.zero)
+        assert(
+            span.isASCII,
+            "IPv6Address initializer should not be used with non-ASCII character: \([UInt8](copying: span))"
+        )
 
         /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics here
         /// and write backwards.
         var noIPv4MappedSegments = true
-        let success = withUnsafeMutableBytes(of: &self.address) { addressPtr -> Bool in
-            IPv6Address.parseIPv6(
-                span: span,
-                addressBufferPtr: addressPtr,
-                noIPv4MappedSegments: &noIPv4MappedSegments
-            )
-        }
+        var address = _CompatibilityUInt128Typealias.zero
+        let success = IPv6Address.parseIPv6(
+            span: span,
+            address: &address,
+            noIPv4MappedSegments: &noIPv4MappedSegments
+        )
+        self.init(address)
 
         guard success,
             noIPv4MappedSegments || CIDR<IPv6Address>.ipv4Mapped.contains(self)
@@ -341,15 +310,16 @@ extension IPv6Address: LosslessStringConvertible {
     }
 
     @inlinable
+    @inline(__always)
     static func parseIPv6(
         span: Span<UInt8>,
-        addressBufferPtr: UnsafeMutableRawBufferPointer,
+        address: inout _CompatibilityUInt128Typealias,
         noIPv4MappedSegments: inout Bool
     ) -> Bool {
-        let addressPtr = addressBufferPtr.baseAddress.unsafelyUnwrapped
         var span = span
 
-        guard span.count >= "::".count else {
+        /// 2 == "::".count
+        guard span.count >= 2 else {
             return false
         }
 
@@ -364,18 +334,23 @@ extension IPv6Address: LosslessStringConvertible {
             break
         case (true, true):
             /// Unchecked because we just checked count > 1 above
-            span = span.extracting(Range(uncheckedBounds: (1, span.count &- 1)))
+            span = span.extracting(
+                unchecked: Range(uncheckedBounds: (1, span.count &- 1))
+            )
         case (true, false), (false, true):
             return false
         }
 
-        guard span.count >= "::".count else {
+        /// 2 == "::".count
+        guard span.count >= 2 else {
             return false
         }
 
         /// Special-case handling for when there is a compression sign at the beginning
         if span[unchecked: 0] == .asciiColon {
-            span = span.extracting(Range(uncheckedBounds: (1, span.count)))
+            span = span.extracting(
+                unchecked: Range(uncheckedBounds: (1, span.count))
+            )
             if span[unchecked: 0] != .asciiColon {
                 return false
             }
@@ -388,7 +363,11 @@ extension IPv6Address: LosslessStringConvertible {
         var remainingBytesCount = 16
         /// cs == compression sign
         var beforeCsBytesCountRemaining = -1
-        for idx in span.indices {
+
+        var idx = 0
+        while idx < span.count {
+            defer { idx &+= 1 }
+
             let byte = span[unchecked: idx]
 
             if let digit = UInt8.mapHexadecimalByteToUInt8(byte) {
@@ -421,11 +400,8 @@ extension IPv6Address: LosslessStringConvertible {
                 }
 
                 remainingBytesCount &-= 2
-                addressPtr.storeBytes(
-                    of: currentSegmentValue,
-                    toByteOffset: remainingBytesCount,
-                    as: UInt16.self
-                )
+                let shift = remainingBytesCount &* 8
+                address |= _CompatibilityUInt128Typealias(currentSegmentValue) &<< shift
 
                 segmentDigitIdx = 0
                 currentSegmentValue = 0
@@ -448,12 +424,8 @@ extension IPv6Address: LosslessStringConvertible {
                 }
 
                 remainingBytesCount &-= 4
-                withUnsafeBytes(of: ipv4.address) {
-                    addressPtr.advanced(by: remainingBytesCount).copyMemory(
-                        from: $0.baseAddress.unsafelyUnwrapped,
-                        byteCount: 4
-                    )
-                }
+                let shift = remainingBytesCount &* 8
+                address |= _CompatibilityUInt128Typealias(ipv4.address) &<< shift
 
                 noIPv4MappedSegments = false
                 segmentDigitIdx = 0
@@ -471,20 +443,22 @@ extension IPv6Address: LosslessStringConvertible {
                 return false
             }
             remainingBytesCount &-= 2
-            addressPtr.storeBytes(
-                of: currentSegmentValue,
-                toByteOffset: remainingBytesCount,
-                as: UInt16.self
-            )
+            let shift = remainingBytesCount &* 8
+            address |= _CompatibilityUInt128Typealias(currentSegmentValue) &<< shift
         }
 
-        if beforeCsBytesCountRemaining != -1 {
-            guard remainingBytesCount >= 4 else {
-                return false
-            }
-            /// cs == compression sign
-            let afterCsBytesCount = beforeCsBytesCountRemaining &- remainingBytesCount
+        if beforeCsBytesCountRemaining == -1 {
+            return remainingBytesCount == 0
+        }
 
+        guard remainingBytesCount >= 4 else {
+            return false
+        }
+
+        /// cs == compression sign
+        let afterCsBytesCount = beforeCsBytesCountRemaining &- remainingBytesCount
+        withUnsafeMutableBytes(of: &address) { addressBufferPtr in
+            let addressPtr = addressBufferPtr.baseAddress.unsafelyUnwrapped
             /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics.
             ///
             /// Example:
@@ -499,7 +473,7 @@ extension IPv6Address: LosslessStringConvertible {
             /// In little endian the integer we have right here looks like:
             /// 0x0000 0000 0000 0200 0010 3a58 08bd 1002
             ///
-            /// For clearer demonstration, i'll use the big-endian representation in each ipv6 segment.
+            /// For clearer demonstration, I'll use the big-endian representation in each ipv6 segment.
             /// So we assume in little-endian the integer looks like this:
             /// 0x0000 0000 0000 0020 0100 85a3 0db8 2001
 
@@ -508,7 +482,7 @@ extension IPv6Address: LosslessStringConvertible {
             /// into this:
             /// 0x0020 0100 0000 0020 0100 85a3 0db8 2001
             ///   ~~^  ~~^
-            memmove(
+            CCalls.c_memmove(
                 addressPtr,
                 addressPtr.advanced(by: beforeCsBytesCountRemaining &- afterCsBytesCount),
                 afterCsBytesCount
@@ -520,18 +494,16 @@ extension IPv6Address: LosslessStringConvertible {
             /// We set the middle 0020 0100 to zeros:
             /// 0x0020 0100 0000 0000 0000 85a3 0db8 2001
             ///                  ~~^  ~~^
-            memset(
+            CCalls.c_memset(
                 addressPtr.advanced(by: beforeCsBytesCountRemaining &- remainingBytesCount),
                 0,
                 remainingBytesCount
             )
-            /// Hurray! Now we have the correct ipv6 address!
-            /// Swift will read this as:
-            /// 0x2001 0db8 85a3 0000 0000 0000 0100 0020
-            /// which is what we aimed for.
-            return true
-        } else {
-            return remainingBytesCount == 0
         }
+        /// Hurray! Now we have the correct ipv6 address!
+        /// Swift will read this as:
+        /// 0x2001 0db8 85a3 0000 0000 0000 0100 0020
+        /// which is what we aimed for.
+        return true
     }
 }

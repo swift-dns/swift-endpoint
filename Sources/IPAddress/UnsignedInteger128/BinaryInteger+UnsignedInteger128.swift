@@ -1,14 +1,14 @@
 @available(SwiftStdlib 6.0, *)
-extension UnsignedInt128: BinaryInteger {}
+extension UnsignedInteger128: BinaryInteger {}
 
 /// BinaryInteger conformance
-extension UnsignedInt128 {
+extension UnsignedInteger128 {
     public struct Words {
         @usableFromInline
-        let _value: UnsignedInt128
+        let _value: UnsignedInteger128
 
         @inlinable
-        public init(_value: UnsignedInt128) {
+        public init(_value: UnsignedInteger128) {
             self._value = _value
         }
     }
@@ -182,21 +182,39 @@ extension UnsignedInt128 {
     }
 
     @inlinable
+    func _shiftedLeft(by count: UInt64) -> Self {
+        if count >= 64 {
+            return Self(_low: 0, _high: self._low &<< (count &- 64))
+        }
+        if count == 0 {
+            return self
+        }
+        return Self(
+            _low: self._low &<< count,
+            _high: (self._high &<< count) | (self._low &>> (64 &- count))
+        )
+    }
+
+    @inlinable
+    func _shiftedRight(by count: UInt64) -> Self {
+        if count >= 64 {
+            return Self(_low: self._high &>> (count &- 64), _high: 0)
+        }
+        if count == 0 {
+            return self
+        }
+        return Self(
+            _low: (self._low &>> count) | (self._high &<< (64 &- count)),
+            _high: self._high &>> count
+        )
+    }
+
+    @inlinable
     public static func << (lhs: Self, rhs: Self) -> Self {
-        if rhs > Self(_low: 128, _high: 0) {
+        if rhs._high != 0 || rhs._low >= 128 {
             return .zero
         }
-        let shift = rhs._low
-        var shifted = Self(
-            _low: lhs._low << shift,
-            _high: lhs._high << shift
-        )
-        let lowMovedToHigh =
-            shift > 64
-            ? lhs._low << (shift - 64)
-            : lhs._low >> (64 - shift)
-        shifted._high |= lowMovedToHigh
-        return shifted
+        return lhs._shiftedLeft(by: rhs._low)
     }
 
     @inlinable
@@ -206,20 +224,10 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func >> (lhs: Self, rhs: Self) -> Self {
-        if rhs > Self(_low: 128, _high: 0) {
+        if rhs._high != 0 || rhs._low >= 128 {
             return .zero
         }
-        let shift = rhs._low
-        var shifted = Self(
-            _low: lhs._low >> shift,
-            _high: lhs._high >> shift
-        )
-        let highMovedToLow =
-            shift > 64
-            ? lhs._high >> (shift - 64)
-            : lhs._high << (64 - shift)
-        shifted._low |= highMovedToLow
-        return shifted
+        return lhs._shiftedRight(by: rhs._low)
     }
 
     @inlinable
@@ -231,20 +239,10 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func << (lhs: Self, rhs: some BinaryInteger) -> Self {
-        if rhs > 128 {
+        if rhs < 0 || rhs >= 128 {
             return .zero
         }
-        let shift = rhs
-        var shifted = Self(
-            _low: lhs._low << shift,
-            _high: lhs._high << shift
-        )
-        let lowMovedToHigh =
-            shift > 64
-            ? lhs._low << (shift - 64)
-            : lhs._low >> (64 - shift)
-        shifted._high |= lowMovedToHigh
-        return shifted
+        return lhs._shiftedLeft(by: UInt64(truncatingIfNeeded: rhs))
     }
 
     @inlinable
@@ -254,20 +252,10 @@ extension UnsignedInt128 {
 
     @inlinable
     public static func >> (lhs: Self, rhs: some BinaryInteger) -> Self {
-        if rhs > 128 || rhs < 0 {
+        if rhs < 0 || rhs >= 128 {
             return .zero
         }
-        let shift = rhs
-        var shifted = Self(
-            _low: lhs._low >> shift,
-            _high: lhs._high >> shift
-        )
-        let highMovedToLow =
-            shift > 64
-            ? lhs._high >> (shift - 64)
-            : lhs._high << (64 - shift)
-        shifted._low |= highMovedToLow
-        return shifted
+        return lhs._shiftedRight(by: UInt64(truncatingIfNeeded: rhs))
     }
 
     @inlinable
@@ -276,9 +264,9 @@ extension UnsignedInt128 {
     }
 }
 
-extension UnsignedInt128.Words: Sendable, SendableMetatype {}
+extension UnsignedInteger128.Words: Sendable, SendableMetatype {}
 
-extension UnsignedInt128.Words: RandomAccessCollection {
+extension UnsignedInteger128.Words: RandomAccessCollection {
     public typealias Element = UInt
 
     public typealias Index = Int

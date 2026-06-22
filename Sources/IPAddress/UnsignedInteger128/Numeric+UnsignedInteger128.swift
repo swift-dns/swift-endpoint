@@ -1,8 +1,8 @@
 @available(SwiftStdlib 6.0, *)
-extension UnsignedInt128: Numeric {}
+extension UnsignedInteger128: Numeric {}
 
 /// Numeric conformance
-extension UnsignedInt128 {
+extension UnsignedInteger128 {
     @inlinable
     public init?(exactly source: some BinaryInteger) {
         guard let high = UInt64(exactly: source >> 64) else { return nil }
@@ -14,7 +14,7 @@ extension UnsignedInt128 {
     public init(_ source: some BinaryInteger) {
         guard let value = Self(exactly: source) else {
             fatalError(
-                "value cannot be converted to UnsignedInt128 because it is outside the representable range"
+                "value cannot be converted to UnsignedInteger128 because it is outside the representable range"
             )
         }
         self = value

@@ -8,7 +8,9 @@ extension IPv4Address: CustomStringConvertible {
         /// Coincidentally, Swift's `_SmallString` supports up to 15 bytes, which helps make this
         /// implementation as efficient as possible.
         String(unsafeUninitializedCapacity_Compatibility: 15) { buffer in
-            self.writeTextualRepresentation(into: buffer)
+            self.writeTextualRepresentation_RequiringMinimumCapacityOf15(
+                into: UnsafeMutableRawBufferPointer(buffer)
+            )
         }
     }
 
@@ -16,18 +18,16 @@ extension IPv4Address: CustomStringConvertible {
     /// bytes written. `buffer` must have a capacity of at least 15 bytes.
     @inlinable
     @inline(__always)
-    func writeTextualRepresentation(into buffer: UnsafeMutableBufferPointer<UInt8>) -> Int {
+    func writeTextualRepresentation_RequiringMinimumCapacityOf15(
+        into buffer: UnsafeMutableRawBufferPointer
+    ) -> Int {
         assert(buffer.count >= 15)
 
         var resultIdx = 0
 
         let byte = UInt8(truncatingIfNeeded: self.address &>> 24)
-        byte.asDecimal(
-            writeUTF8Byte: {
-                buffer[resultIdx] = $0
-                resultIdx &+= 1
-            }
-        )
+        /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
+        byte.asDecimal_RequiringMinimumCapacityOf3(buffer: buffer, advancingIdx: &resultIdx)
 
         for idx in 1..<4 {
             buffer[resultIdx] = .asciiDot
@@ -35,12 +35,8 @@ extension IPv4Address: CustomStringConvertible {
 
             let shift = 24 &- idx &* 8
             let byte = UInt8(truncatingIfNeeded: self.address &>> shift)
-            byte.asDecimal(
-                writeUTF8Byte: {
-                    buffer[resultIdx] = $0
-                    resultIdx &+= 1
-                }
-            )
+            /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
+            byte.asDecimal_RequiringMinimumCapacityOf3(buffer: buffer, advancingIdx: &resultIdx)
         }
 
         return resultIdx
@@ -139,8 +135,11 @@ extension IPv4Address: LosslessStringConvertible {
         var segmentIdx: UInt8 = 0
 
         let spanLastIdx = span.count &- 1
-        for idx in span.indices {
-            /// Unchecked because `idx` comes right from `span.indices`
+        var idx = 0
+        while idx <= spanLastIdx {
+            defer { idx &+= 1 }
+
+            /// Unchecked because `idx` is in `0...spanLastIdx`
             let backwardsIdx = spanLastIdx &- idx
             /// Unchecked because `backwardsIdx` is guaranteed to be in range of `0...spanLastIdx`
             let byte = span[unchecked: backwardsIdx]

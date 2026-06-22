@@ -1,1 +1,1 @@
-extension UnsignedInt128: _IPAddressProtocolAddressValueType {}
+extension UnsignedInteger128: _IPAddressProtocolAddressValueType {}

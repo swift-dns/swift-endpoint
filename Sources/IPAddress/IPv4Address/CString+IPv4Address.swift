@@ -16,8 +16,8 @@ extension IPv4Address {
         _ body: (Span<CChar>) throws -> Result
     ) rethrows -> Result {
         /// 15 bytes for the biggest possible textual representation, plus 1 for the null terminator.
-        try withUnsafeTemporaryAllocation(of: UInt8.self, capacity: 16) { buffer in
-            let count = self.writeTextualRepresentation(into: buffer)
+        try withUnsafeTemporaryAllocation(byteCount: 16, alignment: 1) { buffer in
+            let count = self.writeTextualRepresentation_RequiringMinimumCapacityOf15(into: buffer)
             buffer[count] = 0
             return try unsafe buffer.withMemoryRebound(to: CChar.self) { cBuffer in
                 let range = ClosedRange<Int>(uncheckedBounds: (0, count))

@@ -31,6 +31,16 @@ swift-endpoint is a high-performance package containing types representing an en
 
 The package contains a great amount of unit tests as well as benchmarks to ensure correctness and high performance.
 
+## Table of Contents
+
+- [Implementations](#implementations)
+- [Usage](#usage)
+- [Type Conversions](#type-conversions)
+- [Performance](#performance)
+  - [Against Darwin](#against-darwin)
+  - [Against glibc](#against-glibc)
+  - [Notes](#notes)
+
 ## Implementations
 
 - [x] `ConnectionTarget`

@@ -47,29 +47,17 @@ extension UnsignedInteger128: CustomStringConvertible {
 
     @inlinable
     static func parse(textualRepresentationSpan span: Span<UInt8>) -> Self? {
-        var result = Self.zero
-        var iterator = span.indices.makeIterator()
-        let lastIndex = span.count - 1
-
-        if iterator.next() != nil {
-            let byte = span[unchecked: lastIndex]
-            guard let number = UInt8.mapUTF8ByteToUInt8(byte) else {
-                return nil
-            }
-            result = UnsignedInteger128(number)
-        }
-
-        var multiplier = UnsignedInteger128(_low: 1, _high: 0)
         let _10 = Self(_low: 10, _high: 0)
+        var result = Self.zero
 
-        while let idx = iterator.next() {
-            multiplier &*= _10
-            let reversedIdx = lastIndex &- idx
-            let byte = span[unchecked: reversedIdx]
+        var idx = 0
+        while idx < span.count {
+            let byte = span[unchecked: idx]
             guard let number = UInt8.mapUTF8ByteToUInt8(byte) else {
                 return nil
             }
-            result += UnsignedInteger128(number) &* multiplier
+            result = result &* _10 &+ UnsignedInteger128(number)
+            idx &+= 1
         }
 
         return result

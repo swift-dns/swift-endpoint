@@ -1,5 +1,5 @@
 {
-  "originHash" : "d57481be00464761cfbd9549794fcd399431f1db3abd381cf797ec5785f4e1e4",
+  "originHash" : "00d4e5091a54aefdba55fc470b230e76b3e4c5eb21f540f2bacca92deb11090c",
   "pins" : [
     {
       "identity" : "hdrhistogram-swift",
@@ -87,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-system.git",
       "state" : {
-        "revision" : "666fba77fc401d8e63aa37435b1257fc88c40518",
-        "version" : "1.7.1"
+        "revision" : "7502b711c92a17741fa625d722b0ccbd595d8ed1",
+        "version" : "1.7.2"
       }
     },
     {

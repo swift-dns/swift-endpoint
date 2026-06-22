@@ -111,10 +111,8 @@ extension CIDR: LosslessStringConvertible {
         let count = span.count
         /// Unchecked because `count` is `span.count`
         let maxIdx = count &- 1
-        var idx = 0
-        while idx < count {
-            defer { idx &+= 1 }
-            /// Unchecked because `idx` is in `0..<span.count`
+        for idx in span.indices {
+            /// Unchecked because `idx` comes right from `span.indices`
             let backwardsIdx = maxIdx &- idx
             /// Unchecked because `backwardsIdx` is guaranteed to be in range of `0...maxIdx`
             let utf8Byte = span[unchecked: backwardsIdx]

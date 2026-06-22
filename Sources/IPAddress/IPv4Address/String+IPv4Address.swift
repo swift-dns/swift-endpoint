@@ -135,11 +135,8 @@ extension IPv4Address: LosslessStringConvertible {
         var segmentIdx: UInt8 = 0
 
         let spanLastIdx = span.count &- 1
-        var idx = 0
-        while idx <= spanLastIdx {
-            defer { idx &+= 1 }
-
-            /// Unchecked because `idx` is in `0...spanLastIdx`
+        for idx in span.indices {
+            /// Unchecked because `idx` comes right from `span.indices`
             let backwardsIdx = spanLastIdx &- idx
             /// Unchecked because `backwardsIdx` is guaranteed to be in range of `0...spanLastIdx`
             let byte = span[unchecked: backwardsIdx]

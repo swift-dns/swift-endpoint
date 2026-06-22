@@ -3,11 +3,8 @@ extension Span<UInt8> {
     @inlinable
     var isASCII: Bool {
         var result: UInt8 = 0
-        var idx = 0
-        let count = self.count
-        while idx < count {
+        for idx in self.indices {
             result |= self[unchecked: idx]
-            idx &+= 1
         }
         return result <= 127
     }

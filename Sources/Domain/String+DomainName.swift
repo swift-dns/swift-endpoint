@@ -360,9 +360,7 @@ extension DomainName {
         ) { dataPtr in
             var dataPtr = dataPtr.baseAddress.unsafelyUnwrapped
             var startIndex = 0
-            var idx = 0
-            let count = span.count
-            while idx < count {
+            for idx in span.indices {
                 let byte = span[unchecked: idx]
                 switch byte {
                 case .asciiDot:
@@ -376,7 +374,6 @@ extension DomainName {
                 default:
                     break
                 }
-                idx &+= 1
             }
 
             try Self._writeLabel(
@@ -405,9 +402,7 @@ extension DomainName {
         /// We tolerate underscores for domain names like "_sip._tcp.example.com" which are service names.
         /// We tolerate stars for domain names like "*.example.com" which are wildcards.
         /// We tolerate whitespaces for labels like "Mijia Cloud" which Xiaomi devices use.
-        var idx = 0
-        let count = chunk.count
-        while idx < count {
+        for idx in chunk.indices {
             let byte = chunk[unchecked: idx]
             assert(!byte.isUppercasedASCIILetter)
 
@@ -417,7 +412,6 @@ extension DomainName {
                     in: ByteBuffer(swift_endpoint_copying: chunk)
                 )
             }
-            idx &+= 1
         }
 
         let labelLength = range.count
@@ -473,16 +467,13 @@ extension DomainName {
                 "DomainName initializer should not be used with non-ASCII character: \([UInt8](copying: span))"
             )
         }
-        var idx = 0
-        let count = span.count
-        while idx < count {
-            /// Unchecked because `idx` is in `0..<span.count`
+        for idx in span.indices {
+            /// Unchecked because `idx` comes right from `span.indices`
             if span[unchecked: idx].isUppercasedASCIILetter {
                 fatalError(
                     "DomainName initializer should not be used with uppercased ASCII characters: \(span[unchecked: idx])"
                 )
             }
-            idx &+= 1
         }
 
         let endIndex = span.count &- 1

@@ -139,7 +139,7 @@ extension IPv4Address: LosslessStringConvertible {
         while idx <= spanLastIdx {
             defer { idx &+= 1 }
 
-            /// Unchecked because `idx` comes from `span.indices`
+            /// Unchecked because `idx` is in `0...spanLastIdx`
             let backwardsIdx = spanLastIdx &- idx
             /// Unchecked because `backwardsIdx` is guaranteed to be in range of `0...spanLastIdx`
             let byte = span[unchecked: backwardsIdx]

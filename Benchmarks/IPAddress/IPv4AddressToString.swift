@@ -93,7 +93,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     Benchmark(
         "IPv4_String_Encoding_Mixed_Malloc",
         configuration: .init(
-            metrics: [.mallocCountTotal],
+            metrics: [.mallocCountTotal, .instructions],
             warmupIterations: 1,
             maxIterations: 10
         )
@@ -137,7 +137,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     Benchmark(
         "IPv4_String_Encoding_Mixed_inet_ntop_Malloc",
         configuration: .init(
-            metrics: [.mallocCountTotal],
+            metrics: [.mallocCountTotal, .instructions],
             warmupIterations: 1,
             maxIterations: 10
         )

@@ -41,7 +41,7 @@ let cidrBenchmarks: @Sendable () -> Void = {
     Benchmark(
         "IPv4_CIDR_Create_Then_Check_Is_Multicast_Malloc",
         configuration: .init(
-            metrics: [.mallocCountTotal],
+            metrics: [.mallocCountTotal, .instructions],
             warmupIterations: 1,
             maxIterations: 10
         )
@@ -89,7 +89,7 @@ let cidrBenchmarks: @Sendable () -> Void = {
     Benchmark(
         "IPv6_CIDR_Create_Then_Check_Is_Multicast_Malloc",
         configuration: .init(
-            metrics: [.mallocCountTotal],
+            metrics: [.mallocCountTotal, .instructions],
             warmupIterations: 1,
             maxIterations: 10
         )

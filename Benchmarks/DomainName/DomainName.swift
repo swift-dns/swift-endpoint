@@ -22,7 +22,7 @@ let benchmarks: @Sendable () -> Void = {
     Benchmark(
         "google_dot_com_String_Parsing_Malloc",
         configuration: .init(
-            metrics: [.mallocCountTotal],
+            metrics: [.mallocCountTotal, .instructions],
             warmupIterations: 1,
             maxIterations: 10,
         )
@@ -49,7 +49,7 @@ let benchmarks: @Sendable () -> Void = {
     Benchmark(
         "app-analytics-services_dot_com_String_Parsing_Malloc",
         configuration: .init(
-            metrics: [.mallocCountTotal],
+            metrics: [.mallocCountTotal, .instructions],
             warmupIterations: 1,
             maxIterations: 10,
         )
@@ -76,7 +76,7 @@ let benchmarks: @Sendable () -> Void = {
     Benchmark(
         "Equality_Check_Malloc",
         configuration: .init(
-            metrics: [.mallocCountTotal],
+            metrics: [.mallocCountTotal, .instructions],
             warmupIterations: 1,
             maxIterations: 10,
         )

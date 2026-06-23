@@ -105,7 +105,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     Benchmark(
         "IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets_Malloc",
         configuration: .init(
-            metrics: [.mallocCountTotal],
+            metrics: [.mallocCountTotal, .instructions],
             warmupIterations: 1,
             maxIterations: 10
         )
@@ -168,7 +168,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     Benchmark(
         "IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton_Malloc",
         configuration: .init(
-            metrics: [.mallocCountTotal],
+            metrics: [.mallocCountTotal, .instructions],
             warmupIterations: 1,
             maxIterations: 10
         )

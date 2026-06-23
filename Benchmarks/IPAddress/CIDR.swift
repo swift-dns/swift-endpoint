@@ -41,7 +41,19 @@ let cidrBenchmarks: @Sendable () -> Void = {
     Benchmark(
         "IPv4_CIDR_Create_Then_Check_Is_Multicast_Malloc",
         configuration: .init(
-            metrics: [.mallocCountTotal, .instructions],
+            metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        let isMulticast = ipv4Multicast.isMulticast
+        blackHole(isMulticast)
+    }
+
+    Benchmark(
+        "IPv4_CIDR_Create_Then_Check_Is_Multicast_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
             warmupIterations: 1,
             maxIterations: 10
         )
@@ -89,7 +101,19 @@ let cidrBenchmarks: @Sendable () -> Void = {
     Benchmark(
         "IPv6_CIDR_Create_Then_Check_Is_Multicast_Malloc",
         configuration: .init(
-            metrics: [.mallocCountTotal, .instructions],
+            metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        let isMulticast = ipv6Multicast.isMulticast
+        blackHole(isMulticast)
+    }
+
+    Benchmark(
+        "IPv6_CIDR_Create_Then_Check_Is_Multicast_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
             warmupIterations: 1,
             maxIterations: 10
         )

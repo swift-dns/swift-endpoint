@@ -73,7 +73,19 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     Benchmark(
         "IPv4_String_Decoding_Local_Broadcast_Malloc",
         configuration: .init(
-            metrics: [.mallocCountTotal, .instructions],
+            metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        let ip = IPv4Address("255.255.255.255").unsafelyUnwrapped
+        blackHole(ip)
+    }
+
+    Benchmark(
+        "IPv4_String_Decoding_Local_Broadcast_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
             warmupIterations: 1,
             maxIterations: 10
         )
@@ -104,7 +116,22 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     Benchmark(
         "IPv4_String_Decoding_Local_Broadcast_inet_pton_Malloc",
         configuration: .init(
-            metrics: [.mallocCountTotal, .instructions],
+            metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        var ipv4Address = in_addr()
+        _ = "255.255.255.255".withCString { p in
+            inet_pton(AF_INET, p, &ipv4Address)
+        }
+        blackHole(ipv4Address)
+    }
+
+    Benchmark(
+        "IPv4_String_Decoding_Local_Broadcast_inet_pton_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
             warmupIterations: 1,
             maxIterations: 10
         )

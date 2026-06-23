@@ -114,6 +114,18 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         blackHole(ip)
     }
 
+    Benchmark(
+        "IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 1,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        let ip = IPv6Address("2001:0db8:85a3::8a2e:0370:7334").unsafelyUnwrapped
+        blackHole(ip)
+    }
+
     // MARK: - IPv6_String_Decoding_2_Groups_Compressed_At_The_End
 
     Benchmark(
@@ -169,6 +181,21 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         "IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        var ipv6Address = in6_addr()
+        _ = "2001:0db8:85a3::8a2e:0370:7334".withCString { p in
+            inet_pton(AF_INET6, p, &ipv6Address)
+        }
+        blackHole(ipv6Address)
+    }
+
+    Benchmark(
+        "IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
             warmupIterations: 1,
             maxIterations: 10
         )

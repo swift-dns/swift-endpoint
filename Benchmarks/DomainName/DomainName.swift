@@ -31,6 +31,18 @@ let benchmarks: @Sendable () -> Void = {
         blackHole(domainName)
     }
 
+    Benchmark(
+        "google_dot_com_String_Parsing_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 1,
+            maxIterations: 10,
+        )
+    ) { benchmark in
+        let domainName = try! DomainName(google)
+        blackHole(domainName)
+    }
+
     let appAnalyticsServices = "app-analytics-services.com"
     Benchmark(
         "app-analytics-services_dot_com_String_Parsing_CPU_1M",
@@ -58,6 +70,18 @@ let benchmarks: @Sendable () -> Void = {
         blackHole(domainName)
     }
 
+    Benchmark(
+        "app-analytics-services_dot_com_String_Parsing_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 1,
+            maxIterations: 10,
+        )
+    ) { benchmark in
+        let domainName = try! DomainName(appAnalyticsServices)
+        blackHole(domainName)
+    }
+
     let name1 = try! DomainName("google.com.")
     let name2 = try! DomainName("google.com.")
     Benchmark(
@@ -77,6 +101,17 @@ let benchmarks: @Sendable () -> Void = {
         "Equality_Check_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10,
+        )
+    ) { benchmark in
+        blackHole(name1 == name2)
+    }
+
+    Benchmark(
+        "Equality_Check_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
             warmupIterations: 1,
             maxIterations: 10,
         )

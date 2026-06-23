@@ -102,6 +102,18 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         blackHole(description)
     }
 
+    Benchmark(
+        "IPv6_String_Encoding_Mixed_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 1,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        let description = ipv6Mixed.description
+        blackHole(description)
+    }
+
     // MARK: IPv6_String_Encoding_Mixed_inet_ntop
 
     var ipv6MixedInetNtop = ipv6Mixed.address
@@ -138,6 +150,36 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         "IPv6_String_Encoding_Mixed_inet_ntop_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        var addressBytes: [Int8] = [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ]
+        let description = addressBytes.withUnsafeMutableBufferPointer {
+            (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) -> String in
+            inet_ntop(
+                AF_INET6,
+                &ipv6MixedInetNtop,
+                addressBytesPtr.baseAddress!,
+                50
+            )
+            return addressBytesPtr.baseAddress!.withMemoryRebound(
+                to: UInt8.self,
+                capacity: 50
+            ) {
+                String(cString: $0)
+            }
+        }
+        blackHole(description)
+    }
+
+    Benchmark(
+        "IPv6_String_Encoding_Mixed_inet_ntop_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
             warmupIterations: 1,
             maxIterations: 10
         )

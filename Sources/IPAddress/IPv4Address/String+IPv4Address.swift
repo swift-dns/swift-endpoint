@@ -60,7 +60,7 @@ extension IPv4Address {
     @inlinable
     public init?(textualRepresentation utf8Span: UTF8Span) {
         var utf8Span = utf8Span
-        guard utf8Span.checkForASCII() else {
+        guard _fastPath(utf8Span.checkForASCII()) else {
             return nil
         }
 
@@ -105,7 +105,7 @@ extension IPv4Address: LosslessStringConvertible {
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
-        if !span.isASCII { return nil }
+        if _slowPath(!span.isASCII) { return nil }
 
         self.init(_uncheckedAssumingValidASCII: span)
     }
@@ -143,7 +143,7 @@ extension IPv4Address: LosslessStringConvertible {
 
             switch byte {
             case .asciiDot:
-                if segmentIdx > 3 || digitIdx == 0 {
+                if _slowPath(segmentIdx > 3 || digitIdx == 0) {
                     return nil
                 }
 
@@ -170,14 +170,14 @@ extension IPv4Address: LosslessStringConvertible {
                 let (multipliedByte, overflew1) = byte.multipliedReportingOverflow(
                     by: multiplier
                 )
-                if overflew1 {
+                if _slowPath(overflew1) {
                     return nil
                 }
 
                 let (newSegment, overflew2) = multipliedByte.addingReportingOverflow(
                     currentSegment
                 )
-                if overflew2 {
+                if _slowPath(overflew2) {
                     return nil
                 }
 

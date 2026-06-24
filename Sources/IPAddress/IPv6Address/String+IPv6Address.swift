@@ -404,7 +404,7 @@ extension IPv6Address: LosslessStringConvertible {
                 continue
             }
 
-            if byte == .asciiDot {
+            if _slowPath(byte == .asciiDot) {
                 guard
                     remainingBytesCount >= 4,
                     let ipv4 = IPv4Address(

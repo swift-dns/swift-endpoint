@@ -33,15 +33,6 @@ enum CCalls {
     ) {
         _ = memmove(dest, src, count)
     }
-
-    @usableFromInline
-    static func c_memset(
-        _ dest: UnsafeMutableRawPointer,
-        _ value: Int32,
-        _ count: Int
-    ) {
-        _ = memset(dest, value, count)
-    }
 }
 
 @available(*, unavailable)

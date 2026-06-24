@@ -39,27 +39,6 @@ extension IPv6Address {
             _ callbackReturningBytesWritten: (UnsafeMutableBufferPointer<UInt8>) -> Int
         ) throws -> Buffer
     ) rethrows -> Buffer {
-        /// Short-circuit "0".
-        if self.address == .zero {
-            let toReserve = enclosingInSquareBrackets ? 4 : 2
-            return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { ptr in
-                /// A bit of branching here, and in the rest of the function for `enclosingInSquareBrackets`,
-                /// but theoretically shouldn't matter as `enclosingInSquareBrackets` is always known
-                /// at compile time and the compiler should be able to optimize it away considering
-                /// this function is internal and `inline(__always)`.
-                if enclosingInSquareBrackets {
-                    ptr[0] = .asciiLeftSquareBracket
-                    ptr[1] = .asciiColon
-                    ptr[2] = .asciiColon
-                    ptr[3] = .asciiRightSquareBracket
-                } else {
-                    ptr[0] = .asciiColon
-                    ptr[1] = .asciiColon
-                }
-                return toReserve
-            }
-        }
-
         func isZero(octalIdx idx: Int) -> Bool {
             self.segment(octalIdx: idx) == 0
         }

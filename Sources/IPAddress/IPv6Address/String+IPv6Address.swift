@@ -293,18 +293,14 @@ extension IPv6Address: LosslessStringConvertible {
 
         /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics here
         /// and write backwards.
-        var noIPv4MappedSegments = true
         var address = _CompatibilityUInt128Typealias.zero
         let success = IPv6Address.parseIPv6(
             span: span,
-            address: &address,
-            noIPv4MappedSegments: &noIPv4MappedSegments
+            address: &address
         )
         self.init(address)
 
-        guard success,
-            noIPv4MappedSegments || CIDR<IPv6Address>.ipv4Mapped.contains(self)
-        else {
+        guard success else {
             return nil
         }
     }
@@ -313,8 +309,7 @@ extension IPv6Address: LosslessStringConvertible {
     @inline(__always)
     static func parseIPv6(
         span: Span<UInt8>,
-        address: inout _CompatibilityUInt128Typealias,
-        noIPv4MappedSegments: inout Bool
+        address: inout _CompatibilityUInt128Typealias
     ) -> Bool {
         var span = span
 
@@ -427,7 +422,6 @@ extension IPv6Address: LosslessStringConvertible {
                 let shift = remainingBytesCount &* 8
                 address |= _CompatibilityUInt128Typealias(ipv4.address) &<< shift
 
-                noIPv4MappedSegments = false
                 segmentDigitIdx = 0
                 currentSegmentValue = 0
 

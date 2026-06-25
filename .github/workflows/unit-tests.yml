@@ -54,6 +54,7 @@ jobs:
         id: decide
         env:
           GITHUB_OBJECT: ${{ toJson(github) }}
+          WORKFLOW_FILE: .github/workflows/unit-tests.yml
         run: |
           SHOULD_RUN="$(.github/scripts/check-tests-relevance.sh)"
           printf '%s\n' "should-run=${SHOULD_RUN}" >> "${GITHUB_OUTPUT}"
@@ -98,9 +99,9 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install zstd for faster caching, and curl for codecov action
+      - name: Install dependencies
         run: |
-          apt-get update -y
+          apt-get update
           apt-get install -y zstd curl
 
       - name: Restore .build

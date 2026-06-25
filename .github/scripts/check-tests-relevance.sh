@@ -4,10 +4,10 @@ set -Eeuo pipefail
 
 script_dir="$(dirname "${BASH_SOURCE[0]}")"
 
+workflow_file="${WORKFLOW_FILE:?the repo-relative path of the calling workflow file, e.g. '.github/workflows/unit-tests.yml'}"
+
 force_run_paths=(
-  ".github/workflows/unit-tests.yml"
-  ".github/workflows/integration-tests.yml"
-  ".github/workflows/nightly-tests.yml"
+  "${workflow_file}"
   ".github/scripts/check-tests-relevance.sh"
 )
 

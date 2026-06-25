@@ -6,7 +6,7 @@ public import struct NIOCore.ByteBuffer
 @available(SwiftStdlib 5.1, *)
 extension IPv4Address {
     /// Initialize an `IPv4Address` from a `DomainName` which is in the special arpa domain name format,
-    /// according to [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://tools.ietf.org/html/rfc1035#section-3.5)
+    /// according to [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://datatracker.ietf.org/doc/html/rfc1035#section-3.5)
     /// or is a simple IPv4 Address encoded in dotted quad notation like `"127.0.0.1"`.
     ///
     /// For a arpa-formatted domain name, it must contain exactly 4 UInt8 labels containing the ipv4 address's
@@ -83,7 +83,7 @@ extension IPv4Address {
     }
 
     /// Initialize an `IPv4Address` from a `DomainName` which is in the special arpa domain name format,
-    /// according to [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://tools.ietf.org/html/rfc1035#section-3.5).
+    /// according to [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://datatracker.ietf.org/doc/html/rfc1035#section-3.5).
     ///
     /// The domain name must contain exactly 4 UInt8 labels containing the ipv4 address's value in reverse,
     /// followed by `in-addr.arpa`.

@@ -4,7 +4,7 @@ extension IPv6Address: CustomStringConvertible {
     /// That is, 8 16-bits (2-bytes) separated by `:`, enclosed in `[]`, while using
     /// the compression sign (`::`) when possible.
     ///
-    /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://tools.ietf.org/html/rfc5952).
+    /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
     @inlinable
     public var description: String {
         self.makeDescription(enclosingInSquareBrackets: true) { (maxWriteableBytes, callback) in
@@ -21,7 +21,7 @@ extension IPv6Address: CustomDebugStringConvertible {
     /// That is, 8 16-bits (2-bytes) separated by `:`, enclosed in `[]`, while using
     /// the compression sign (`::`) when possible. Enclosed in `IPv6Address(` and `)`.
     ///
-    /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://tools.ietf.org/html/rfc5952).
+    /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
     @inlinable
     public var debugDescription: String {
         "IPv6Address(\(self.description))"

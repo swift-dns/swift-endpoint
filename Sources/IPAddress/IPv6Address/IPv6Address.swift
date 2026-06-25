@@ -3,7 +3,7 @@
 /// IPv6 addresses are defined as 128-bit integers in [IETF RFC 4291].
 /// They are usually represented as eight 16-bit segments.
 ///
-/// [IETF RFC 4291]: https://tools.ietf.org/html/rfc4291
+/// [IETF RFC 4291]: https://datatracker.ietf.org/doc/html/rfc4291
 ///
 /// # Embedding IPv4 Addresses
 ///
@@ -54,7 +54,7 @@
 /// notation, and segments are separated by `:`. For more information, see
 /// [IETF RFC 5952].
 ///
-/// [IETF RFC 5952]: https://tools.ietf.org/html/rfc5952
+/// [IETF RFC 5952]: https://datatracker.ietf.org/doc/html/rfc5952
 @available(SwiftStdlib 5.1, *)
 public struct IPv6Address: Sendable, Hashable {
     /// The byte size of an IPv6.
@@ -67,6 +67,10 @@ public struct IPv6Address: Sendable, Hashable {
 
     /// Whether this address is the IPv6 Loopback address, known as localhost, or not.
     /// Equivalent to `::1` or `0:0:0:0:0:0:0:1` in IPv6 description format.
+    ///
+    /// Defined in [IETF RFC 4291].
+    ///
+    /// [IETF RFC 4291]: https://datatracker.ietf.org/doc/html/rfc4291
     @inlinable
     public var isLoopback: Bool {
         CIDR<Self>.loopback.contains(self)
@@ -77,6 +81,10 @@ public struct IPv6Address: Sendable, Hashable {
     /// That is, any IPv6 address starting with this sequence of bits: `11111111`.
     /// In other words, any IPv6 address starting with `FFxx`. This does not include an address like
     /// `FF::` which is equivalent to `00FF::` and does not start with `FF`.
+    ///
+    /// Defined in [IETF RFC 4291].
+    ///
+    /// [IETF RFC 4291]: https://datatracker.ietf.org/doc/html/rfc4291
     @inlinable
     public var isMulticast: Bool {
         CIDR<Self>.multicast.contains(self)
@@ -85,9 +93,47 @@ public struct IPv6Address: Sendable, Hashable {
     /// Whether this address is an IPv6 Link Local Unicast address, or not.
     /// Equivalent to `FE80::/10` in CIDR notation.
     /// That is, any IPv6 address starting with this sequence of bits: `1111111010`.
+    ///
+    /// Defined in [IETF RFC 4291].
+    ///
+    /// [IETF RFC 4291]: https://datatracker.ietf.org/doc/html/rfc4291
     @inlinable
     public var isLinkLocalUnicast: Bool {
         CIDR<Self>.linkLocalUnicast.contains(self)
+    }
+
+    /// Whether this address is the IPv6 unspecified address, or not.
+    /// Equivalent to `::` or `0:0:0:0:0:0:0:0` in IPv6 description format.
+    ///
+    /// Defined in [IETF RFC 4291].
+    ///
+    /// [IETF RFC 4291]: https://datatracker.ietf.org/doc/html/rfc4291
+    @inlinable
+    public var isUnspecified: Bool {
+        self.address == .zero
+    }
+
+    /// Whether this address is an IPv6 Unique Local address, or not.
+    /// Equivalent to `FC00::/7` in CIDR notation.
+    /// That is, any IPv6 address starting with this sequence of bits: `1111110`.
+    ///
+    /// Defined in [IETF RFC 4193].
+    ///
+    /// [IETF RFC 4193]: https://datatracker.ietf.org/doc/html/rfc4193
+    @inlinable
+    public var isUniqueLocal: Bool {
+        CIDR<Self>.uniqueLocal.contains(self)
+    }
+
+    /// Whether this address is reserved for use in documentation, or not.
+    /// Equivalent to `2001:DB8::/32` in CIDR notation.
+    ///
+    /// Defined in [IETF RFC 3849].
+    ///
+    /// [IETF RFC 3849]: https://datatracker.ietf.org/doc/html/rfc3849
+    @inlinable
+    public var isDocumentation: Bool {
+        CIDR<Self>.documentation.contains(self)
     }
 
     /// Initialize an `IPv6Address` from its raw 128-bit unsigned integer representation.

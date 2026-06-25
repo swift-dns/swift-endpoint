@@ -7,8 +7,8 @@ import struct NIOCore.ByteBuffer
 extension DomainName {
     /// Initialize an `DomainName` from a `AnyIPAddress`.
     ///
-    /// For ipv4, the address will follow the format specified in [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://tools.ietf.org/html/rfc1035#section-3.5).
-    /// For ipv6, the address will follow the format specified in [RFC 3596, DNS Extensions to Support IP Version 6, October 2003](https://tools.ietf.org/html/rfc3596#section-2.5).
+    /// For ipv4, the address will follow the format specified in [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://datatracker.ietf.org/doc/html/rfc1035#section-3.5).
+    /// For ipv6, the address will follow the format specified in [RFC 3596, DNS Extensions to Support IP Version 6, October 2003](https://datatracker.ietf.org/doc/html/rfc3596#section-2.5).
     ///
     /// For example an IPv4Address like `1.2.3.4` will turn into the domain name `"4.3.2.1.in-addr.arpa"`.
     /// Or an IPv6Address like `[4321:0:1:2:3:4:567:89ab]` will turn into the

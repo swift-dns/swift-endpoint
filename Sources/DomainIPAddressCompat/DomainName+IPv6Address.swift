@@ -3,7 +3,7 @@ public import struct NIOCore.ByteBuffer
 @available(SwiftStdlib 5.1, *)
 extension IPv6Address {
     /// Initialize an `IPv6Address` from a `DomainName` which is in the special arpa domain name format,
-    /// according to [RFC 3596, DNS Extensions to Support IP Version 6, October 2003](https://tools.ietf.org/html/rfc3596#section-2.5).
+    /// according to [RFC 3596, DNS Extensions to Support IP Version 6, October 2003](https://datatracker.ietf.org/doc/html/rfc3596#section-2.5).
     ///
     /// The domain name must contain exactly 32 hexadecimal integer labels containing the ipv6 address's value in reverse,
     /// followed by `ipv6.arpa`.
@@ -18,7 +18,7 @@ extension IPv6Address {
     }
 
     /// Initialize an `IPv6Address` from a `DomainName` which is in the special arpa domain name format,
-    /// according to [RFC 3596, DNS Extensions to Support IP Version 6, October 2003](https://tools.ietf.org/html/rfc3596#section-2.5).
+    /// according to [RFC 3596, DNS Extensions to Support IP Version 6, October 2003](https://datatracker.ietf.org/doc/html/rfc3596#section-2.5).
     ///
     /// The domain name must contain exactly 32 hexadecimal integer labels containing the ipv6 address's value in reverse,
     /// followed by `ipv6.arpa`.

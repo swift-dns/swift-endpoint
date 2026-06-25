@@ -3,7 +3,7 @@ public import struct NIOCore.ByteBuffer
 extension DomainName {
     /// A single label of a domain name.
     ///
-    /// [RFC 9499, DNS Terminology, March 2024](https://tools.ietf.org/html/rfc9499)
+    /// [RFC 9499, DNS Terminology, March 2024](https://datatracker.ietf.org/doc/html/rfc9499)
     ///
     /// ```text
     /// 2.1.12 Label
@@ -23,8 +23,8 @@ extension DomainName {
         /// Only lowercased letter, digits, hyphen-minus, underscores, stars, and whitespaces will ever make it to this property.
         ///
         /// Underscores are allowed for "underbar" service names like "_sip._tcp.example.com" according
-        /// to [RFC 8552](https://tools.ietf.org/html/rfc8552) and [RFC 8553](https://tools.ietf.org/html/rfc8553).
-        /// Stars are allowed for wildcards like "*.example.com" according to [RFC 4592](https://tools.ietf.org/html/rfc4592).
+        /// to [RFC 8552](https://datatracker.ietf.org/doc/html/rfc8552) and [RFC 8553](https://datatracker.ietf.org/doc/html/rfc8553).
+        /// Stars are allowed for wildcards like "*.example.com" according to [RFC 4592](https://datatracker.ietf.org/doc/html/rfc4592).
         /// Whitespaces are allowed for labels like "Mijia Cloud" which some Xiaomi devices use.
         /// Non-ASCII names are converted to ASCII based on the IDNA spec, in the ``DomainName`` initializers.
         /// Non-lowercased ASCII names are converted to lowercased ASCII in the ``DomainName`` initializers.

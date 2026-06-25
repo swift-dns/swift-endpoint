@@ -1,4 +1,8 @@
 /// A port number for networking operations.
+///
+/// Port numbers are 16-bit values, inclusively between 0 and 65535, as defined in [IETF RFC 6335].
+///
+/// [IETF RFC 6335]: https://datatracker.ietf.org/doc/html/rfc6335
 public struct Port: Sendable, Hashable {
     /// The canonical value of the port.
     public let canonicalValue: UInt16

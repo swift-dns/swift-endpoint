@@ -2,6 +2,12 @@
 /// It is used to represent a range of IP addresses.
 /// For example, 192.168.1.0/24 represents the range of IP addresses from 192.168.1.0 to 192.168.1.255.
 ///
+/// Classless Inter-Domain Routing for IPv4 is defined in [IETF RFC 4632].
+/// The address-prefix text representation for IPv6 is defined in [IETF RFC 4291].
+///
+/// [IETF RFC 4632]: https://datatracker.ietf.org/doc/html/rfc4632
+/// [IETF RFC 4291]: https://datatracker.ietf.org/doc/html/rfc4291
+///
 /// This types stores the raw `prefix` as provided, but for most purposes other than computing a string
 /// representation, the host bits are ignored.
 /// For example, 127.0.0.100/8 and 127.0.0.0/8 represent the same network, but their prefixes

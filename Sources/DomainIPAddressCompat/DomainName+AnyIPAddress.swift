@@ -6,9 +6,9 @@ public import struct NIOCore.ByteBuffer
 @available(SwiftStdlib 5.1, *)
 extension AnyIPAddress {
     /// Initialize an `AnyIPAddress` from a `DomainName` which is in the special arpa domain name format.
-    /// For ipv4, the address must follow the format specified in [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://tools.ietf.org/html/rfc1035#section-3.5)
+    /// For ipv4, the address must follow the format specified in [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://datatracker.ietf.org/doc/html/rfc1035#section-3.5)
     /// or it must be a simple IPv4 Address encoded in dotted quad notation like `"127.0.0.1"`.
-    /// For ipv6, the address must follow the format specified in [RFC 3596, DNS Extensions to Support IP Version 6, October 2003](https://tools.ietf.org/html/rfc3596#section-2.5).
+    /// For ipv6, the address must follow the format specified in [RFC 3596, DNS Extensions to Support IP Version 6, October 2003](https://datatracker.ietf.org/doc/html/rfc3596#section-2.5).
     ///
     /// For example a domain name like `"4.3.2.1.in-addr.arpa"` will parse into the IPv4 address `1.2.3.4`.
     /// Or a domain name like `"127.0.0.1"` will parse into the IPv4 address `127.0.0.1`.
@@ -58,8 +58,8 @@ extension AnyIPAddress {
     }
 
     /// Initialize an `AnyIPAddress` from a `DomainName` which is in the special arpa domain name format.
-    /// For ipv4, the address must follow the format specified in [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://tools.ietf.org/html/rfc1035#section-3.5).
-    /// For ipv6, the address must follow the format specified in [RFC 3596, DNS Extensions to Support IP Version 6, October 2003](https://tools.ietf.org/html/rfc3596#section-2.5).
+    /// For ipv4, the address must follow the format specified in [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://datatracker.ietf.org/doc/html/rfc1035#section-3.5).
+    /// For ipv6, the address must follow the format specified in [RFC 3596, DNS Extensions to Support IP Version 6, October 2003](https://datatracker.ietf.org/doc/html/rfc3596#section-2.5).
     ///
     /// For example a domain name like `"4.3.2.1.in-addr.arpa"` will parse into the IPv4 address `1.2.3.4`.
     /// Or a domain name like `"b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6.arpa."` will

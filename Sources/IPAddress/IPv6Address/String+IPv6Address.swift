@@ -4,7 +4,7 @@ extension IPv6Address: CustomStringConvertible {
     /// That is, 8 16-bits (2-bytes) separated by `:`, enclosed in `[]`, while using
     /// the compression sign (`::`) when possible.
     ///
-    /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://tools.ietf.org/html/rfc5952).
+    /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
     @inlinable
     public var description: String {
         self.makeDescription(enclosingInSquareBrackets: true) { (maxWriteableBytes, callback) in
@@ -21,7 +21,7 @@ extension IPv6Address: CustomDebugStringConvertible {
     /// That is, 8 16-bits (2-bytes) separated by `:`, enclosed in `[]`, while using
     /// the compression sign (`::`) when possible. Enclosed in `IPv6Address(` and `)`.
     ///
-    /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://tools.ietf.org/html/rfc5952).
+    /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
     @inlinable
     public var debugDescription: String {
         "IPv6Address(\(self.description))"
@@ -39,27 +39,6 @@ extension IPv6Address {
             _ callbackReturningBytesWritten: (UnsafeMutableBufferPointer<UInt8>) -> Int
         ) throws -> Buffer
     ) rethrows -> Buffer {
-        /// Short-circuit "0".
-        if self.address == .zero {
-            let toReserve = enclosingInSquareBrackets ? 4 : 2
-            return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { ptr in
-                /// A bit of branching here, and in the rest of the function for `enclosingInSquareBrackets`,
-                /// but theoretically shouldn't matter as `enclosingInSquareBrackets` is always known
-                /// at compile time and the compiler should be able to optimize it away considering
-                /// this function is internal and `inline(__always)`.
-                if enclosingInSquareBrackets {
-                    ptr[0] = .asciiLeftSquareBracket
-                    ptr[1] = .asciiColon
-                    ptr[2] = .asciiColon
-                    ptr[3] = .asciiRightSquareBracket
-                } else {
-                    ptr[0] = .asciiColon
-                    ptr[1] = .asciiColon
-                }
-                return toReserve
-            }
-        }
-
         func isZero(octalIdx idx: Int) -> Bool {
             self.segment(octalIdx: idx) == 0
         }
@@ -293,18 +272,14 @@ extension IPv6Address: LosslessStringConvertible {
 
         /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics here
         /// and write backwards.
-        var noIPv4MappedSegments = true
         var address = _CompatibilityUInt128Typealias.zero
         let success = IPv6Address.parseIPv6(
             span: span,
-            address: &address,
-            noIPv4MappedSegments: &noIPv4MappedSegments
+            address: &address
         )
         self.init(address)
 
-        guard success,
-            noIPv4MappedSegments || CIDR<IPv6Address>.ipv4Mapped.contains(self)
-        else {
+        guard success else {
             return nil
         }
     }
@@ -313,8 +288,7 @@ extension IPv6Address: LosslessStringConvertible {
     @inline(__always)
     static func parseIPv6(
         span: Span<UInt8>,
-        address: inout _CompatibilityUInt128Typealias,
-        noIPv4MappedSegments: inout Bool
+        address: inout _CompatibilityUInt128Typealias
     ) -> Bool {
         var span = span
 
@@ -427,7 +401,6 @@ extension IPv6Address: LosslessStringConvertible {
                 let shift = remainingBytesCount &* 8
                 address |= _CompatibilityUInt128Typealias(ipv4.address) &<< shift
 
-                noIPv4MappedSegments = false
                 segmentDigitIdx = 0
                 currentSegmentValue = 0
 
@@ -455,55 +428,13 @@ extension IPv6Address: LosslessStringConvertible {
             return false
         }
 
-        /// cs == compression sign
-        let afterCsBytesCount = beforeCsBytesCountRemaining &- remainingBytesCount
-        withUnsafeMutableBytes(of: &address) { addressBufferPtr in
-            let addressPtr = addressBufferPtr.baseAddress.unsafelyUnwrapped
-            /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics.
-            ///
-            /// Example:
-            /// Assume at the end of this parsing process we need to have:
-            /// 0x2001 0db8 85a3 0000 0000 0000 0100 0020
-            ///
-            /// For that, at this point in the process, the `self.address` looks like this:
-            /// 0x2001 0db8 85a3 0100 0020 0000 0000 0000
-            ///
-            /// We need to move the bytes so it becomes like the first one.
-            ///
-            /// In little endian the integer we have right here looks like:
-            /// 0x0000 0000 0000 0200 0010 3a58 08bd 1002
-            ///
-            /// For clearer demonstration, I'll use the big-endian representation in each ipv6 segment.
-            /// So we assume in little-endian the integer looks like this:
-            /// 0x0000 0000 0000 0020 0100 85a3 0db8 2001
+        let beforeBits = beforeCsBytesCountRemaining &* 8
+        let aboveBits = _CompatibilityUInt128Typealias.bitWidth &- beforeBits
+        let afterShift = remainingBytesCount &* 8
+        let beforeSegments = (address &>> beforeBits) << beforeBits
+        let afterSegments = ((address &<< aboveBits) &>> aboveBits) &>> afterShift
+        address = beforeSegments | afterSegments
 
-            /// In this example, the memmove below will turn this:
-            /// 0x0000 0000 0000 0020 0100 85a3 0db8 2001
-            /// into this:
-            /// 0x0020 0100 0000 0020 0100 85a3 0db8 2001
-            ///   ~~^  ~~^
-            CCalls.c_memmove(
-                addressPtr,
-                addressPtr.advanced(by: beforeCsBytesCountRemaining &- afterCsBytesCount),
-                afterCsBytesCount
-            )
-
-            /// Now that we have:
-            /// 0x0020 0100 0000 0020 0100 85a3 0db8 2001
-            ///
-            /// We set the middle 0020 0100 to zeros:
-            /// 0x0020 0100 0000 0000 0000 85a3 0db8 2001
-            ///                  ~~^  ~~^
-            CCalls.c_memset(
-                addressPtr.advanced(by: beforeCsBytesCountRemaining &- remainingBytesCount),
-                0,
-                remainingBytesCount
-            )
-        }
-        /// Hurray! Now we have the correct ipv6 address!
-        /// Swift will read this as:
-        /// 0x2001 0db8 85a3 0000 0000 0000 0100 0020
-        /// which is what we aimed for.
         return true
     }
 }

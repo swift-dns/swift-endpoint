@@ -4,7 +4,7 @@ public import struct NIOCore.ByteBuffer
 
 /// A domain name. A sequence of labels.
 ///
-/// [RFC 9499, DNS Terminology, March 2024](https://tools.ietf.org/html/rfc9499)
+/// [RFC 9499, DNS Terminology, March 2024](https://datatracker.ietf.org/doc/html/rfc9499)
 ///
 /// ```text
 /// 2.1.6 Domain name
@@ -17,8 +17,8 @@ public import struct NIOCore.ByteBuffer
 ///
 /// Only lowercased letter, digits, hyphen-minus, underscores, stars, and whitespaces are allowed in this implementation.
 /// Underscores are allowed for "underbar" service names like "_sip._tcp.example.com" according
-/// to [RFC 8552](https://tools.ietf.org/html/rfc8552) and [RFC 8553](https://tools.ietf.org/html/rfc8553).
-/// Stars are allowed for wildcards like "*.example.com" according to [RFC 4592](https://tools.ietf.org/html/rfc4592).
+/// to [RFC 8552](https://datatracker.ietf.org/doc/html/rfc8552) and [RFC 8553](https://datatracker.ietf.org/doc/html/rfc8553).
+/// Stars are allowed for wildcards like "*.example.com" according to [RFC 4592](https://datatracker.ietf.org/doc/html/rfc4592).
 /// Whitespaces are allowed for labels like "Mijia Cloud" which some Xiaomi devices use.
 public struct DomainName: Sendable {
     /// Maximum allowed domain name length.
@@ -33,7 +33,7 @@ public struct DomainName: Sendable {
 
     /// is Fully Qualified Domain DomainName.
     ///
-    /// [RFC 9499, DNS Terminology, March 2024](https://tools.ietf.org/html/rfc9499)
+    /// [RFC 9499, DNS Terminology, March 2024](https://datatracker.ietf.org/doc/html/rfc9499)
     ///
     /// ```text
     /// 2.1.6 Domain name
@@ -56,8 +56,8 @@ public struct DomainName: Sendable {
     /// Only lowercased letter, digits, hyphen-minus, underscores, stars, and whitespaces will ever make it to this property.
     ///
     /// Underscores are allowed for "underbar" service names like "_sip._tcp.example.com" according
-    /// to [RFC 8552](https://tools.ietf.org/html/rfc8552) and [RFC 8553](https://tools.ietf.org/html/rfc8553).
-    /// Stars are allowed for wildcards like "*.example.com" according to [RFC 4592](https://tools.ietf.org/html/rfc4592).
+    /// to [RFC 8552](https://datatracker.ietf.org/doc/html/rfc8552) and [RFC 8553](https://datatracker.ietf.org/doc/html/rfc8553).
+    /// Stars are allowed for wildcards like "*.example.com" according to [RFC 4592](https://datatracker.ietf.org/doc/html/rfc4592).
     /// Whitespaces are allowed for labels like "Mijia Cloud" which some Xiaomi devices use.
     /// Non-ASCII names are converted to ASCII based on the IDNA spec, in the initializers.
     /// Non-lowercased ASCII names are converted to lowercased ASCII in the initializers.
@@ -65,7 +65,7 @@ public struct DomainName: Sendable {
     /// Based on the DNS spec, all names are case-insensitive.
     /// This package goes further and normalizes every domainName to lowercase to avoid inconsistencies.
     ///
-    /// [RFC 9499, DNS Terminology, March 2024](https://tools.ietf.org/html/rfc9499)
+    /// [RFC 9499, DNS Terminology, March 2024](https://datatracker.ietf.org/doc/html/rfc9499)
     ///
     /// ```text
     /// 2.1.12 Label
@@ -92,7 +92,7 @@ public struct DomainName: Sendable {
 
     /// Whether the domainName is a wildcard domainName.
     ///
-    /// Per [RFC 4592](https://tools.ietf.org/html/rfc4592):
+    /// Per [RFC 4592](https://datatracker.ietf.org/doc/html/rfc4592):
     ///
     /// ```text
     /// 2.1.1.  Wildcard Domain Name and Asterisk Label

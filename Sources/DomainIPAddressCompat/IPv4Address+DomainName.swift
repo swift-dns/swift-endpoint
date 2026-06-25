@@ -7,7 +7,7 @@ extension DomainName {
         /// For example `127.0.0.1` will turn into the domain name `"127.0.0.1"`.
         case dottedQuad
         /// The IPv4 address format for representation in the arpa format, according to
-        /// [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://tools.ietf.org/html/rfc1035#section-3.5).
+        /// [RFC 1035, DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION, November 1987](https://datatracker.ietf.org/doc/html/rfc1035#section-3.5).
         ///
         /// For example `127.0.0.1` will turn into the domain name `"1.0.0.127.in-addr.arpa"`.
         case arpa

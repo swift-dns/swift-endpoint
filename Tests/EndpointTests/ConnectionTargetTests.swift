@@ -89,6 +89,7 @@ struct ConnectionTargetTests {
         ])
     )
     func `description works as expected`(target: ConnectionTarget, expected: String) throws {
+        #expect(target.description == expected)
         #expect(target.description == target.target.description)
     }
 }

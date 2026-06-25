@@ -21,9 +21,8 @@ extension UnsignedInteger128: CustomStringConvertible {
                 value = tenth
             } while value != .zero
 
-            /// `approximation` can over-reserve by one, leaving a leading gap. Close
-            /// it so the initialized digits start at offset 0 and the returned count
-            /// covers only initialized bytes. `memmove` handles the overlap.
+            /// `approximation` can over-reserve by one, leaving a leading gap.
+            /// Use `memmove` to close the gap if needed.
             let count = toReserve &- idx
             if idx != 0 {
                 let base = buffer.baseAddress.unsafelyUnwrapped

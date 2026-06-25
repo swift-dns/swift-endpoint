@@ -10,9 +10,9 @@ extension ConnectionTarget.Target: CustomStringConvertible {
     public var description: String {
         switch self {
         case .ipAddress(let ipAddress, let port):
-            return "\(ipAddress.description):\(port)"
+            return "\(ipAddress.description):\(port.value)"
         case .domainName(let domainName, let port):
-            return "\(domainName.description):\(port)"
+            return "\(domainName.description):\(port.value)"
         case .unixDomainSocketAddress(let unixDomainSocketAddress):
             return unixDomainSocketAddress
         }

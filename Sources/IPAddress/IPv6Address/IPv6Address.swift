@@ -110,7 +110,7 @@ public struct IPv6Address: Sendable, Hashable {
     /// [IETF RFC 4291]: https://datatracker.ietf.org/doc/html/rfc4291
     @inlinable
     public var isUnspecified: Bool {
-        self.address == .zero
+        CIDR<Self>.unspecified.contains(self)
     }
 
     /// Whether this address is an IPv6 Unique Local address, or not.

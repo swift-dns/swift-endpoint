@@ -51,4 +51,30 @@ extension CIDR<IPv4Address> {
             prefixLength: 32
         )
     }
+
+    /// Representing 100.64.0.0/10
+    ///
+    /// Defined in [IETF RFC 6598].
+    ///
+    /// [IETF RFC 6598]: https://datatracker.ietf.org/doc/html/rfc6598
+    @inlinable
+    public static var shared: Self {
+        Self(
+            prefix: 0x64_40_00_00,
+            prefixLength: 10
+        )
+    }
+
+    /// Representing 0.0.0.0/32
+    ///
+    /// Defined in [IETF RFC 1122].
+    ///
+    /// [IETF RFC 1122]: https://datatracker.ietf.org/doc/html/rfc1122
+    @inlinable
+    public static var unspecified: Self {
+        Self(
+            prefix: 0x00_00_00_00,
+            prefixLength: 32
+        )
+    }
 }

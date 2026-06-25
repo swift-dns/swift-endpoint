@@ -73,9 +73,10 @@ public struct IPv4Address: Sendable, Hashable {
     /// Defined in [IETF RFC 1122].
     ///
     /// [IETF RFC 1122]: https://datatracker.ietf.org/doc/html/rfc1122
+    @available(SwiftStdlib 5.1, *)
     @inlinable
     public var isUnspecified: Bool {
-        self.address == 0
+        CIDR<Self>.unspecified.contains(self)
     }
 
     /// Whether this address is the IPv4 limited broadcast address, or not.
@@ -84,9 +85,10 @@ public struct IPv4Address: Sendable, Hashable {
     /// Defined in [IETF RFC 919].
     ///
     /// [IETF RFC 919]: https://datatracker.ietf.org/doc/html/rfc919
+    @available(SwiftStdlib 5.1, *)
     @inlinable
     public var isBroadcast: Bool {
-        self.address == 0xFF_FF_FF_FF
+        CIDR<Self>.broadcast.contains(self)
     }
 
     /// Whether this address is an IPv4 Private-Use address, or not.
@@ -112,7 +114,7 @@ public struct IPv4Address: Sendable, Hashable {
     @available(SwiftStdlib 5.1, *)
     @inlinable
     public var isShared: Bool {
-        CIDR<Self>(prefix: 0x64_40_00_00, prefixLength: 10).contains(self)
+        CIDR<Self>.shared.contains(self)
     }
 
     /// Whether this address is reserved for use in documentation, or not.

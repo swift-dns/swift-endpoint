@@ -107,4 +107,22 @@ extension CIDR<IPv6Address> {
             prefixLength: 32
         )
     }
+
+    /// Representing ::/128
+    ///
+    /// Defined in [IETF RFC 4291].
+    ///
+    /// [IETF RFC 4291]: https://datatracker.ietf.org/doc/html/rfc4291
+    @inlinable
+    public static var unspecified: Self {
+        Self(
+            prefix: IPv6Address(
+                UnsignedInteger128(
+                    _low: 0x0000_0000_0000_0000,
+                    _high: 0x0000_0000_0000_0000
+                )
+            ),
+            prefixLength: 128
+        )
+    }
 }

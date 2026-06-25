@@ -7,7 +7,13 @@ extension IPv6Address: CustomStringConvertible {
     /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
     @inlinable
     public var description: String {
-        self.makeDescription(enclosingInSquareBrackets: true) { (maxWriteableBytes, callback) in
+        IPv6Address.makeDescription(
+            address: _CompatibilityUInt128Typealias(
+                _low: self.address._low,
+                _high: self.address._high
+            ),
+            enclosingInSquareBrackets: true
+        ) { (maxWriteableBytes, callback) in
             String(unsafeUninitializedCapacity_Compatibility: maxWriteableBytes) { buffer in
                 callback(buffer)
             }
@@ -32,23 +38,20 @@ extension IPv6Address: CustomDebugStringConvertible {
 extension IPv6Address {
     @inlinable
     @inline(__always)
-    package func makeDescription<Buffer>(
+    package static func makeDescription<Buffer>(
+        address: _CompatibilityUInt128Typealias,
         enclosingInSquareBrackets: Bool,
         writingToUnsafeMutableBufferPointerOfUInt8: (
             _ maxWriteableBytes: Int,
             _ callbackReturningBytesWritten: (UnsafeMutableBufferPointer<UInt8>) -> Int
         ) throws -> Buffer
     ) rethrows -> Buffer {
-        func isZero(octalIdx idx: Int) -> Bool {
-            self.segment(octalIdx: idx) == 0
-        }
-
         var rangeToCompress: Range<Int>? = nil
         var idx = 0
         /// idx < `7` instead of `8` because even if 7 is a zero it'll be a lone zero and
         /// we won't compress it anyway.
         while idx < 7 {
-            guard isZero(octalIdx: idx) else {
+            guard isZero(address, octalIdx: idx) else {
                 idx &+= 1
                 continue
             }
@@ -58,7 +61,7 @@ extension IPv6Address {
             /// This range is guaranteed to be non-empty because we know idx < 7 (6 max)
             /// and (6+1)..<8 is still a range with 1 number in it.
             for nextIdx in (idx &+ 1)..<8 {
-                guard isZero(octalIdx: nextIdx) else {
+                guard isZero(address, octalIdx: nextIdx) else {
                     break
                 }
                 endIndex = nextIdx
@@ -92,103 +95,142 @@ extension IPv6Address {
         let toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4) &+ speculativeBytes
 
         return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
-            var writeIdx = 0
-
-            /// `enclosingInSquareBrackets` is always known at compile time so should result in no branches
-            if enclosingInSquareBrackets {
-                buffer[0] = .asciiLeftSquareBracket
-                writeIdx &+= 1
-            }
-
-            /// Reset `idx`. It was used in a loop above.
-            idx = 0
-            while idx < 8 {
-                if let rangeToCompress,
-                    idx == rangeToCompress.lowerBound
-                {
-                    buffer[writeIdx] = .asciiColon
-                    writeIdx &+= 1
-
-                    if idx == 0 {
-                        /// Need 2 colons in this case, so '::'
-                        buffer[writeIdx] = .asciiColon
-                        writeIdx &+= 1
-                    }
-
-                    idx = rangeToCompress.upperBound &+ 1
-                    continue
-                }
-
-                let value = self.segment(octalIdx: idx)
-                IPv6Address._writeUInt16AsLowercasedASCII(
-                    into: buffer,
-                    advancingIdx: &writeIdx,
-                    bytePair: value
+            var hexStorage: (UInt64, UInt64, UInt64, UInt64) = (0, 0, 0, 0)
+            return withUnsafeMutableBytes(of: &hexStorage) { hexBytes in
+                IPv6Address._expandLowercasedHexASCII(
+                    address: address,
+                    into: hexBytes
                 )
 
-                /// Speculative write, but we've already made sure we have the extra 1 byte capacity if needed
-                buffer[writeIdx] = .asciiColon
-                writeIdx &+= idx < 7 ? 1 : 0
-                assert(writeIdx < buffer.count)
+                var writeIdx = 0
 
-                idx &+= 1
+                /// `enclosingInSquareBrackets` is always known at compile time so should result in no branches
+                if enclosingInSquareBrackets {
+                    buffer[0] = .asciiLeftSquareBracket
+                    writeIdx &+= 1
+                }
+
+                /// Reset `idx`. It was used in a loop above.
+                idx = 0
+                while idx < 8 {
+                    if let rangeToCompress,
+                        idx == rangeToCompress.lowerBound
+                    {
+                        buffer[writeIdx] = .asciiColon
+                        writeIdx &+= 1
+
+                        if idx == 0 {
+                            /// Need 2 colons in this case, so '::'
+                            buffer[writeIdx] = .asciiColon
+                            writeIdx &+= 1
+                        }
+
+                        idx = rangeToCompress.upperBound &+ 1
+                        continue
+                    }
+
+                    IPv6Address._writeSegmentFromHex(
+                        into: buffer,
+                        advancingIdx: &writeIdx,
+                        hexBytes: hexBytes,
+                        octalIdx: idx
+                    )
+
+                    /// Speculative write, but we've already made sure we have the extra 1 byte capacity if needed
+                    buffer[writeIdx] = .asciiColon
+                    writeIdx &+= idx < 7 ? 1 : 0
+                    assert(writeIdx < buffer.count)
+
+                    idx &+= 1
+                }
+
+                /// `enclosingInSquareBrackets` is always known at compile time so should result in no branches
+                if enclosingInSquareBrackets {
+                    buffer[writeIdx] = .asciiRightSquareBracket
+                    writeIdx &+= 1
+                }
+
+                return writeIdx
             }
-
-            /// `enclosingInSquareBrackets` is always known at compile time so should result in no branches
-            if enclosingInSquareBrackets {
-                buffer[writeIdx] = .asciiRightSquareBracket
-                writeIdx &+= 1
-            }
-
-            return writeIdx
         }
     }
 
     @inlinable
+    static func isZero(_ address: _CompatibilityUInt128Typealias, octalIdx idx: Int) -> Bool {
+        self.segment(address, octalIdx: idx) == 0
+    }
+
+    @inlinable
     @inline(__always)
-    func segment(octalIdx idx: Int) -> UInt16 {
-        let hi = self.address._high
-        let lo = self.address._low
+    static func segment(_ address: _CompatibilityUInt128Typealias, octalIdx idx: Int) -> UInt16 {
+        let hi = address._high
+        let lo = address._low
         let word = idx < 4 ? hi : lo
         let shift = (3 &- (idx & 3)) &* 16
         return UInt16(truncatingIfNeeded: word &>> shift)
     }
 
-    /// Equivalent to `String(bytePairAsUInt16, radix: 16, uppercase: false)`, but faster.
+    /// Expands the 16 address bytes into 32 lowercased hex ASCII bytes, most significant nibble first.
+    /// Written as a flat, branch-free loop so LLVM auto-vectorizes it, like `Span.isASCII`.
     @inlinable
-    static func _writeUInt16AsLowercasedASCII(
-        into buffer: UnsafeMutableBufferPointer<UInt8>,
-        advancingIdx idx: inout Int,
-        bytePair: UInt16
+    static func _expandLowercasedHexASCII(
+        address: _CompatibilityUInt128Typealias,
+        into hexStorage: UnsafeMutableRawBufferPointer
     ) {
-        let _1 = UInt8(truncatingIfNeeded: bytePair &>> 8) &>> 4
-        let _2 = UInt8(truncatingIfNeeded: bytePair &>> 8) & 0x0F
-        let _3 = UInt8(truncatingIfNeeded: bytePair) &>> 4
-        let _4 = UInt8(truncatingIfNeeded: bytePair) & 0x0F
+        let big = address.bigEndian
+        for idx in 0..<16 {
+            let shift = idx &* 8
+            let _byte = (big &>> shift)._low
+            let byte = UInt8(truncatingIfNeeded: _byte)
 
-        /// Always write, but only advance past it when it should be kept.
-        var notAllZerosSoFar = _1 != 0
-        buffer[idx] = _lowercasedHexASCII(nibble: _1)
-        idx &+= notAllZerosSoFar ? 1 : 0
-
-        notAllZerosSoFar = notAllZerosSoFar || _2 != 0
-        buffer[idx] = _lowercasedHexASCII(nibble: _2)
-        idx &+= notAllZerosSoFar ? 1 : 0
-
-        notAllZerosSoFar = notAllZerosSoFar || _3 != 0
-        buffer[idx] = _lowercasedHexASCII(nibble: _3)
-        idx &+= notAllZerosSoFar ? 1 : 0
-
-        buffer[idx] = _lowercasedHexASCII(nibble: _4)
-        idx &+= 1
+            let high = byte &>> 4
+            let low = byte & 0x0F
+            let startOffset = 2 &* idx
+            hexStorage[startOffset] = _lowercasedHexASCII(nibble: high)
+            hexStorage[startOffset &+ 1] = _lowercasedHexASCII(nibble: low)
+        }
     }
 
     /// Maps a single hex nibble (0...15) to its lowercased ASCII byte.
     @inlinable
     static func _lowercasedHexASCII(nibble: UInt8) -> UInt8 {
-        nibble > 9
+        assert(nibble < 16)
+        return nibble > 9
             ? nibble &+ UInt8.asciiLowercasedA &- 10
             : nibble &+ UInt8.ascii0
+    }
+
+    /// Equivalent to `String(bytePairAsUInt16, radix: 16, uppercase: false)`, but faster, reading
+    /// the already-expanded chars for `octalIdx` from `hex` and suppressing leading zeros.
+    @inlinable
+    @inline(__always)
+    static func _writeSegmentFromHex(
+        into buffer: UnsafeMutableBufferPointer<UInt8>,
+        advancingIdx idx: inout Int,
+        hexBytes: UnsafeMutableRawBufferPointer,
+        octalIdx: Int
+    ) {
+        let base = octalIdx &* 4
+        let _1 = hexBytes[base]
+        let _2 = hexBytes[base &+ 1]
+        let _3 = hexBytes[base &+ 2]
+        let _4 = hexBytes[base &+ 3]
+
+        /// Always write, but only advance past it when it should be kept.
+        var notAllZerosSoFar = _1 != UInt8.ascii0
+        buffer[idx] = _1
+        idx &+= notAllZerosSoFar ? 1 : 0
+
+        notAllZerosSoFar = notAllZerosSoFar || _2 != UInt8.ascii0
+        buffer[idx] = _2
+        idx &+= notAllZerosSoFar ? 1 : 0
+
+        notAllZerosSoFar = notAllZerosSoFar || _3 != UInt8.ascii0
+        buffer[idx] = _3
+        idx &+= notAllZerosSoFar ? 1 : 0
+
+        buffer[idx] = _4
+        idx &+= 1
     }
 }
 

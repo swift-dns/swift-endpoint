@@ -16,7 +16,11 @@ extension IPv6Address {
     public func withCString<Result>(
         _ body: (Span<CChar>) throws -> Result
     ) rethrows -> Result {
-        try self.makeDescription(
+        try IPv6Address.makeDescription(
+            address: _CompatibilityUInt128Typealias(
+                _low: self.address._low,
+                _high: self.address._high
+            ),
             enclosingInSquareBrackets: false
         ) { (maxWriteableBytes, writeBytes) in
             try withUnsafeTemporaryAllocation(

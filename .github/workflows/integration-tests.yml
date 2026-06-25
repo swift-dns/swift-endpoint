@@ -13,45 +13,8 @@ defaults:
     shell: bash --noprofile --norc -Eeuo pipefail {0}
 
 jobs:
-  check-tests-relevance:
-    if: github.event.repository.name == 'swift-dns'
-    runs-on: ubuntu-latest
-
-    container: swift:6.3-noble
-
-    timeout-minutes: 10
-
-    permissions:
-      contents: read
-
-    outputs:
-      should-run: ${{ steps.decide.outputs.should-run }}
-
-    steps:
-      - name: Install jq
-        run: apt-get update -y && apt-get install -y jq
-
-      - name: Check out code
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Configure git
-        run: git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-
-      - name: Decide whether tests must run
-        id: decide
-        env:
-          GITHUB_OBJECT: ${{ toJson(github) }}
-          WORKFLOW_FILE: .github/workflows/integration-tests.yml
-        run: |
-          SHOULD_RUN="$(.github/scripts/check-tests-relevance.sh)"
-          printf '%s\n' "should-run=${SHOULD_RUN}" >> "${GITHUB_OUTPUT}"
-
   linux-integration-tests:
-    needs: check-tests-relevance
-    if: ${{ !cancelled() && github.event.repository.name == 'swift-dns' && needs.check-tests-relevance.outputs.should-run != 'false' }}
+    if: ${{ github.event.repository.name == 'swift-dns' }}
 
     strategy:
       fail-fast: false
@@ -123,7 +86,6 @@ jobs:
 
       - name: Calculate capture file name
         id: calculate-capture-file-name
-        if: ${{ github.event.repository.name == 'swift-dns' }}
         run: |
           RESULT="${{ steps.tests-run.outputs.exit-status == 0 && 'success' || 'failure' }}"
           TIMESTAMP="$(date -u +"%Y-%m-%d-%H-%M-%S")"
@@ -136,7 +98,6 @@ jobs:
           mv dns.pcap "${FILE_NAME}.pcap"
 
       - name: Archive packet capture
-        if: ${{ github.event.repository.name == 'swift-dns' }}
         uses: actions/upload-artifact@v7
         with:
           name: "${{ steps.calculate-capture-file-name.outputs.file_name }}"
@@ -146,8 +107,7 @@ jobs:
         run: exit ${{ steps.tests-run.outputs.exit-status }}
 
   cache-swiftly-toolchain-for-macos:
-    needs: check-tests-relevance
-    if: ${{ !cancelled() && needs.check-tests-relevance.outputs.should-run != 'false' }}
+    if: ${{ github.event.repository.name == 'swift-dns' }}
 
     strategy:
       fail-fast: false
@@ -226,6 +186,8 @@ jobs:
           key: "${{ github.event.repository.name }}-swiftly-toolchain-integration-tests-${{ matrix.swift.version }}-${{ runner.os }}"
 
   macos-integration-tests:
+    if: ${{ github.event.repository.name == 'swift-dns' }}
+
     strategy:
       fail-fast: false
       matrix:
@@ -244,8 +206,7 @@ jobs:
 
     timeout-minutes: 20
 
-    needs: [cache-swiftly-toolchain-for-macos, check-tests-relevance]
-    if: ${{ !cancelled() && needs.check-tests-relevance.outputs.should-run != 'false' }}
+    needs: cache-swiftly-toolchain-for-macos
 
     env:
       SWIFTLY_HOME_DIR: "/Users/runner/.swiftly"
@@ -259,7 +220,6 @@ jobs:
           xcode-version: ${{ matrix.xcode.version }}
 
       - name: Install tcpdump for packet capture
-        if: ${{ github.event.repository.name == 'swift-dns' }}
         run: brew install tcpdump
 
       - name: Check out ${{ github.event.repository.name }}
@@ -378,8 +338,7 @@ jobs:
         run: exit ${{ steps.tests-run.outputs.exit-status }}
 
   android-integration-tests:
-    needs: check-tests-relevance
-    if: ${{ !cancelled() && needs.check-tests-relevance.outputs.should-run != 'false' }}
+    if: ${{ github.event.repository.name == 'swift-dns' }}
 
     strategy:
       fail-fast: false

@@ -114,7 +114,7 @@ package.platforms = [.macOS(.v26)]
 
 package.dependencies.append(
     .package(
-        url: "https://github.com/MahdiBM/package-benchmark.git",
+        url: "https://github.com/MahdiBM/benchmark.git",
         branch: "mmbm-range-relative-thresholds-options"
     ),
 )
@@ -123,25 +123,25 @@ package.targets += [
     .executableTarget(
         name: "DomainNameBenchs",
         dependencies: [
-            .product(name: "Benchmark", package: "package-benchmark"),
+            .product(name: "Benchmark", package: "benchmark"),
             "Domain",
         ],
         path: "DomainName",
         swiftSettings: settings,
         plugins: [
-            .plugin(name: "BenchmarkPlugin", package: "package-benchmark")
+            .plugin(name: "BenchmarkPlugin", package: "benchmark")
         ]
     ),
     .executableTarget(
         name: "IPAddressBenchs",
         dependencies: [
             "Endpoint",
-            .product(name: "Benchmark", package: "package-benchmark"),
+            .product(name: "Benchmark", package: "benchmark"),
         ],
         path: "IPAddress",
         swiftSettings: settings,
         plugins: [
-            .plugin(name: "BenchmarkPlugin", package: "package-benchmark")
+            .plugin(name: "BenchmarkPlugin", package: "benchmark")
         ]
     ),
 ]

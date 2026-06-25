@@ -1,6 +1,15 @@
 {
-  "originHash" : "00d4e5091a54aefdba55fc470b230e76b3e4c5eb21f540f2bacca92deb11090c",
+  "originHash" : "e7f81f3327bc504a913a2bf4fd509ef286c2ec328932f79fc7ffa50bc81ec30a",
   "pins" : [
+    {
+      "identity" : "benchmark",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/MahdiBM/benchmark.git",
+      "state" : {
+        "branch" : "mmbm-range-relative-thresholds-options",
+        "revision" : "591c22f4ce6087b0642ff1b37ac65092ca3ecc21"
+      }
+    },
     {
       "identity" : "hdrhistogram-swift",
       "kind" : "remoteSourceControl",
@@ -11,21 +20,12 @@
       }
     },
     {
-      "identity" : "package-benchmark",
+      "identity" : "malloc-interposer",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/MahdiBM/package-benchmark.git",
+      "location" : "https://github.com/ordo-one/malloc-interposer.git",
       "state" : {
-        "branch" : "mmbm-range-relative-thresholds-options",
-        "revision" : "89835dec0d0a22c8713e9b86a6190886f7ee0b6f"
-      }
-    },
-    {
-      "identity" : "package-jemalloc",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ordo-one/package-jemalloc.git",
-      "state" : {
-        "revision" : "e8a5db026963f5bfeac842d9d3f2cc8cde323b49",
-        "version" : "1.0.0"
+        "revision" : "8ce418ba70e494577fdc046be8c8ddb5216f16e5",
+        "version" : "1.3.1"
       }
     },
     {
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-atomics.git",
       "state" : {
-        "revision" : "b601256eab081c0f92f059e12818ac1d4f178ff7",
-        "version" : "1.3.0"
+        "revision" : "0442cb5a3f98ab802acb777929fdb446bda11a34",
+        "version" : "1.3.1"
       }
     },
     {
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-nio.git",
       "state" : {
-        "revision" : "77b84ac2cd2ac9e4ac67d19f045fd5b434f56967",
-        "version" : "2.101.0"
+        "revision" : "cd3e1152083706d77b223fb29110e590efcc70c0",
+        "version" : "2.101.2"
       }
     },
     {

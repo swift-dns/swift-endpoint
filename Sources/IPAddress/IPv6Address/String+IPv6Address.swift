@@ -201,7 +201,7 @@ extension IPv6Address {
     @inlinable
     public init?(textualRepresentation utf8Span: UTF8Span) {
         var utf8Span = utf8Span
-        guard _fastPath(utf8Span.checkForASCII()) else {
+        guard utf8Span.checkForASCII() else {
             return nil
         }
 
@@ -249,7 +249,7 @@ extension IPv6Address: LosslessStringConvertible {
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
-        if _slowPath(!span.isASCII) { return nil }
+        if !span.isASCII { return nil }
 
         self.init(_uncheckedAssumingValidASCII: span)
     }
@@ -279,7 +279,7 @@ extension IPv6Address: LosslessStringConvertible {
         )
         self.init(address)
 
-        guard _fastPath(success) else {
+        guard success else {
             return nil
         }
     }
@@ -293,7 +293,7 @@ extension IPv6Address: LosslessStringConvertible {
         var span = span
 
         /// 2 == "::".count
-        guard _fastPath(span.count >= 2) else {
+        guard span.count >= 2 else {
             return false
         }
 
@@ -316,7 +316,7 @@ extension IPv6Address: LosslessStringConvertible {
         }
 
         /// 2 == "::".count
-        guard _fastPath(span.count >= 2) else {
+        guard span.count >= 2 else {
             return false
         }
 
@@ -325,7 +325,7 @@ extension IPv6Address: LosslessStringConvertible {
             span = span.extracting(
                 unchecked: Range(uncheckedBounds: (1, span.count))
             )
-            if _slowPath(span[unchecked: 0] != .asciiColon) {
+            if span[unchecked: 0] != .asciiColon {
                 return false
             }
         }
@@ -345,7 +345,7 @@ extension IPv6Address: LosslessStringConvertible {
             let byte = span[unchecked: idx]
 
             if let digit = UInt8.mapHexadecimalByteToUInt8(byte) {
-                if _slowPath(segmentDigitIdx == 4) {
+                if segmentDigitIdx == 4 {
                     return false
                 }
 
@@ -356,20 +356,20 @@ extension IPv6Address: LosslessStringConvertible {
                 continue
             }
 
-            if _fastPath(byte == .asciiColon) {
+            if byte == .asciiColon {
                 latestColonIdx = idx
                 if segmentDigitIdx == 0 {
-                    if _slowPath(beforeCsBytesCountRemaining != -1) {
+                    if beforeCsBytesCountRemaining != -1 {
                         return false
                     }
                     beforeCsBytesCountRemaining = remainingBytesCount
                     continue
-                } else if _slowPath(idx == endIdx) {
+                } else if idx == endIdx {
                     return false
                 }
 
                 /// We only do decrements of 2x to remainingBytesCount so it can't be 1.
-                if _slowPath(remainingBytesCount == 0) {
+                if remainingBytesCount == 0 {
                     return false
                 }
 

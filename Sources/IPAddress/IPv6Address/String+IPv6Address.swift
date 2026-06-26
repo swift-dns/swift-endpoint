@@ -177,17 +177,15 @@ extension IPv6Address {
         address: _CompatibilityUInt128Typealias,
         into hexStorage: UnsafeMutableRawBufferPointer
     ) {
-        let big = address.bigEndian
-        for idx in 0..<16 {
-            let shift = idx &* 8
-            let _byte = (big &>> shift)._low
-            let byte = UInt8(truncatingIfNeeded: _byte)
-
-            let high = byte &>> 4
-            let low = byte & 0x0F
-            let startOffset = 2 &* idx
-            hexStorage[startOffset] = _lowercasedHexASCII(nibble: high)
-            hexStorage[startOffset &+ 1] = _lowercasedHexASCII(nibble: low)
+        withUnsafeBytes(of: address.bigEndian) { bigBytes in
+            for idx in 0..<16 {
+                let byte = bigBytes[idx]
+                let high = byte &>> 4
+                let low = byte & 0x0F
+                let startOffset = 2 &* idx
+                hexStorage[startOffset] = _lowercasedHexASCII(nibble: high)
+                hexStorage[startOffset &+ 1] = _lowercasedHexASCII(nibble: low)
+            }
         }
     }
 

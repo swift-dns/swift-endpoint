@@ -93,7 +93,7 @@ extension IPv6Address {
     @inlinable
     @inline(__always)
     func findCompressionSignRange() -> Range<Int> {
-        let zeroSegments = self.zeroSegmentMask()
+        let zeroSegments = self.makeSegmentsMask()
         var runStarts = zeroSegments
         var longestRunStarts = zeroSegments
         var longestRunLength = 0
@@ -110,25 +110,38 @@ extension IPv6Address {
         return Range(uncheckedBounds: (lowerBound, upperBound))
     }
 
+    /// Returns a UInt8, each bit representing whether
+    /// the corresponding IPv6 segment is zero (0) or not (1).
     @inlinable
     @inline(__always)
-    func zeroSegmentMask() -> UInt8 {
-        IPv6Address.zeroSegmentNibble(self.address._high)
-            | (IPv6Address.zeroSegmentNibble(self.address._low) &<< 4)
+    func makeSegmentsMask() -> UInt8 {
+        let highNibble = IPv6Address.makeNibbleFor4Segments(of: self.address._high)
+        let lowNibble = IPv6Address.makeNibbleFor4Segments(of: self.address._low)
+        return highNibble | (lowNibble &<< 4)
     }
 
+    /// Makes a nibble for 4 segments of a 64-bit word,
+    /// each bit representing whether the segment is zero (0) or not (1).
     @inlinable
     @inline(__always)
-    static func zeroSegmentNibble(_ word: UInt64) -> UInt8 {
-        let lowFifteenBits: UInt64 = 0x7FFF_7FFF_7FFF_7FFF
-        let lowBitsOverflow = (word & lowFifteenBits) &+ lowFifteenBits
-        let nonzeroSegmentTopBits = lowBitsOverflow | word
-        let zeroSegmentTopBits = ~(nonzeroSegmentTopBits | lowFifteenBits)
+    static func makeNibbleFor4Segments(of word: UInt64) -> UInt8 {
+        /// 4x 16 bits, each for a segment
+        let m: UInt64 = 0x7FFF_7FFF_7FFF_7FFF
+        /// For each 16-bit (a segment), if the 16-bit is all zeros, it will result in a 0x7FFF.
+        /// Else it'll result in a value with the 15th bit set to 1, example: 0b1000_0010_1001_0100.
+        /// The only exception is when the segment value is 0b1000_0000_0000_0000 which will be counted as zero.
+        let partial_topBitsOneIfSegmentsNonZero = (word & m) &+ m
+        /// Now we remove that exception by ORing the original word with the result.
+        /// Now if a 15th bit in a segment is set to 1, then the segment is not zero.
+        let topBitsOneIfSegmentsNonZero = partial_topBitsOneIfSegmentsNonZero | word
+        /// Make sure all bits are set to 0, other than the 15th bits, which are set to 1 if it was a non-zero segment.
+        let topBitsZero_IfSegmentsZero = ~topBitsOneIfSegmentsNonZero
 
-        let _0IsZero = (zeroSegmentTopBits &>> 63) & 1
-        let _1IsZero = (zeroSegmentTopBits &>> 47) & 1
-        let _2IsZero = (zeroSegmentTopBits &>> 31) & 1
-        let _3IsZero = (zeroSegmentTopBits &>> 15) & 1
+        let _0IsZero = (topBitsZero_IfSegmentsZero &>> 63) & 1
+        let _1IsZero = (topBitsZero_IfSegmentsZero &>> 47) & 1
+        let _2IsZero = (topBitsZero_IfSegmentsZero &>> 31) & 1
+        let _3IsZero = (topBitsZero_IfSegmentsZero &>> 15) & 1
+
         return UInt8(
             truncatingIfNeeded:
                 _0IsZero

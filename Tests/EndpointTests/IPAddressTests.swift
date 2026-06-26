@@ -640,6 +640,45 @@ struct IPAddressTests {
         #expect(ntop != nil)
         #expect(IPv6Address(cString: buffer) == ip)
     }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test(arguments: Array(0..<256))
+    func `IPv6Address compression-sign lookup table contains correct values`(index: Int) {
+        let mask = UInt8(index)
+
+        var bestStart = -1
+        var bestLength = 0
+        var segment = 0
+        while segment < 8 {
+            if (mask >> segment) & 1 == 1 {
+                var runEnd = segment
+                while runEnd < 8 && (mask >> runEnd) & 1 == 1 {
+                    runEnd += 1
+                }
+                let length = runEnd - segment
+                if length > bestLength {
+                    bestLength = length
+                    bestStart = segment
+                }
+                segment = runEnd
+            } else {
+                segment += 1
+            }
+        }
+
+        let expected: (Int, Int)
+        if bestLength >= 2 {
+            expected = (bestStart, bestStart + bestLength - 1)
+        } else {
+            expected = (16, 16)
+        }
+
+        let actual = IPv6Address._compressionRangeTable[index]
+        #expect(
+            actual == expected,
+            "mask \(index) (0b\(String(mask, radix: 2))): got \(actual), expected \(expected)"
+        )
+    }
 }
 
 /// (IPv4String, IPv4Address, isValidIPv6)

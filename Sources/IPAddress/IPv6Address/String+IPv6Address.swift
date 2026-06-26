@@ -95,8 +95,8 @@ extension IPv6Address {
         let toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4) &+ speculativeBytes
 
         return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
-            withUnsafeTemporaryAllocation(of: UInt8.self, capacity: 32) { hexBytes in
-                IPv6Address._expandLowercasedHexASCII(
+            withUnsafeTemporaryAllocation(byteCount: 32, alignment: 1) { hexBytes in
+                IPv6Address._expandToLowercasedHexASCII(
                     address: address,
                     into: hexBytes
                 )
@@ -172,9 +172,9 @@ extension IPv6Address {
     /// Expands the 16 address bytes into 32 lowercased hex ASCII bytes, most significant nibble first.
     /// Written as a flat, branch-free loop so LLVM auto-vectorizes it, like `Span.isASCII`.
     @inlinable
-    static func _expandLowercasedHexASCII(
+    static func _expandToLowercasedHexASCII(
         address: _CompatibilityUInt128Typealias,
-        into hexStorage: UnsafeMutableBufferPointer<UInt8>
+        into hexStorage: UnsafeMutableRawBufferPointer
     ) {
         withUnsafeBytes(of: address.bigEndian) { bigBytes in
             for idx in 0..<16 {
@@ -202,7 +202,7 @@ extension IPv6Address {
     static func _writeSegmentFromHex(
         into buffer: UnsafeMutableBufferPointer<UInt8>,
         advancingIdx idx: inout Int,
-        hexBytes: UnsafeMutableBufferPointer<UInt8>,
+        hexBytes: UnsafeMutableRawBufferPointer,
         octalIdx: Int
     ) {
         let base = octalIdx &* 4

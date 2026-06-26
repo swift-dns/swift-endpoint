@@ -39,13 +39,16 @@ extension IPv6Address {
             _ callbackReturningBytesWritten: (UnsafeMutableBufferPointer<UInt8>) -> Int
         ) throws -> Buffer
     ) rethrows -> Buffer {
-        let rangeToCompress = self.findCompressionSignRange()
+        let compressionRange = self.findCompressionSignRange()
 
-        assert(rangeToCompress?.isEmpty != true)
+        assert(
+            compressionRange.lowerBound < compressionRange.upperBound
+                || compressionRange.upperBound == 16
+        )
 
         /// Reserve the max possibly needed capacity.
         let bracketsCount = enclosingInSquareBrackets ? 2 : 0
-        let segmentsCount = 8 &- (rangeToCompress?.count ?? 0)
+        let segmentsCount = 8 &- compressionRange.count
         let colonsCount = max(segmentsCount &- 1, 2)
         /// If no brackets, we need 1 extra byte for the possible colon that we speculatively write
         let speculativeBytes = enclosingInSquareBrackets ? 0 : 1
@@ -69,7 +72,7 @@ extension IPv6Address {
                         advancingIdx: &writeIdx,
                         hexBytes: hexBytes,
                         octalIdx: idx,
-                        compressionSignRange: rangeToCompress
+                        compressionRange: compressionRange
                     )
                 }
 
@@ -79,14 +82,17 @@ extension IPv6Address {
                     writeIdx &+= 1
                 }
 
+                assert(writeIdx <= toReserve)
+
                 return writeIdx
             }
         }
     }
 
+    /// Returns (16, 16) if no compression sign is found, otherwise the bounds of the compression sign.
     @inlinable
     @inline(__always)
-    func findCompressionSignRange() -> Range<Int>? {
+    func findCompressionSignRange() -> Range<Int> {
         let zeroSegments = self.zeroSegmentMask()
         var runStarts = zeroSegments
         var longestRunStarts = zeroSegments
@@ -96,11 +102,12 @@ extension IPv6Address {
             runStarts &= runStarts &>> 1
             longestRunLength &+= 1
         }
-        guard longestRunLength >= 2 else {
-            return nil
-        }
+
+        let hasRun = longestRunLength >= 2 ? 1 : 0
         let start = longestRunStarts.trailingZeroBitCount
-        return start..<(start &+ longestRunLength &- 1)
+        let lowerBound = hasRun &* start &+ (1 &- hasRun) &* 16
+        let upperBound = hasRun &* (start &+ longestRunLength &- 1) &+ (1 &- hasRun) &* 16
+        return Range(uncheckedBounds: (lowerBound, upperBound))
     }
 
     @inlinable
@@ -165,23 +172,24 @@ extension IPv6Address {
         advancingIdx idx: inout Int,
         hexBytes: UnsafeMutableRawBufferPointer,
         octalIdx: Int,
-        compressionSignRange: Range<Int>?
+        compressionRange: Range<Int>
     ) {
         /// cs == compression sign
-        let csLowerBound = compressionSignRange?.lowerBound ?? 16
-        let csUpperBound = compressionSignRange?.upperBound ?? 16
-        let isLowerBoundOfCs = octalIdx == csLowerBound
-        let isUpperBoundOfCs = octalIdx == csUpperBound
-        let isNotWithinCs = octalIdx < csLowerBound || octalIdx > csUpperBound
+        let csLowerBound = compressionRange.lowerBound
+        let csUpperBound = compressionRange.upperBound
+        let isLowerBoundOfCs = octalIdx == csLowerBound ? 1 : 0
+        let isUpperBoundOfCs = octalIdx == csUpperBound ? 1 : 0
+        let isBelowCs = octalIdx < csLowerBound ? 1 : 0
+        let isAboveCs = octalIdx > csUpperBound ? 1 : 0
+        let isNotWithinCs = isBelowCs | isAboveCs
 
-        let isNotLastSegment = octalIdx != csUpperBound &+ 1
-        let isNotFirstSegment = octalIdx != 0
-        let needsTheSeparatorColon = isNotWithinCs && isNotLastSegment && isNotFirstSegment
-
-        let needsColon = isLowerBoundOfCs || isUpperBoundOfCs || needsTheSeparatorColon
+        let isNotLastSegment = octalIdx != csUpperBound &+ 1 ? 1 : 0
+        let isNotFirstSegment = octalIdx != 0 ? 1 : 0
+        let needsTheSeparatorColon = isNotWithinCs & isNotLastSegment & isNotFirstSegment
+        let needsColon = isLowerBoundOfCs | isUpperBoundOfCs | needsTheSeparatorColon
 
         buffer[idx] = .asciiColon
-        idx &+= needsColon ? 1 : 0
+        idx &+= needsColon
 
         let base = octalIdx &* 4
         let _1 = hexBytes[base]
@@ -189,20 +197,20 @@ extension IPv6Address {
         let _3 = hexBytes[base &+ 2]
         let _4 = hexBytes[base &+ 3]
 
-        var notAllZerosSoFar = _1 != UInt8.ascii0
+        var notAllZerosSoFar = _1 != UInt8.ascii0 ? 1 : 0
         buffer[idx] = _1
-        idx &+= (isNotWithinCs && notAllZerosSoFar) ? 1 : 0
+        idx &+= isNotWithinCs & notAllZerosSoFar
 
-        notAllZerosSoFar = notAllZerosSoFar || _2 != UInt8.ascii0
+        notAllZerosSoFar |= _2 != UInt8.ascii0 ? 1 : 0
         buffer[idx] = _2
-        idx &+= (isNotWithinCs && notAllZerosSoFar) ? 1 : 0
+        idx &+= isNotWithinCs & notAllZerosSoFar
 
-        notAllZerosSoFar = notAllZerosSoFar || _3 != UInt8.ascii0
+        notAllZerosSoFar |= _3 != UInt8.ascii0 ? 1 : 0
         buffer[idx] = _3
-        idx &+= (isNotWithinCs && notAllZerosSoFar) ? 1 : 0
+        idx &+= isNotWithinCs & notAllZerosSoFar
 
         buffer[idx] = _4
-        idx &+= isNotWithinCs ? 1 : 0
+        idx &+= isNotWithinCs
     }
 }
 

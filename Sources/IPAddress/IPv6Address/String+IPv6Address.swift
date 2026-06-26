@@ -7,13 +7,7 @@ extension IPv6Address: CustomStringConvertible {
     /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
     @inlinable
     public var description: String {
-        IPv6Address.makeDescription(
-            address: _CompatibilityUInt128Typealias(
-                _low: self.address._low,
-                _high: self.address._high
-            ),
-            enclosingInSquareBrackets: true
-        ) { (maxWriteableBytes, callback) in
+        self.makeDescription(enclosingInSquareBrackets: true) { (maxWriteableBytes, callback) in
             String(unsafeUninitializedCapacity_Compatibility: maxWriteableBytes) { buffer in
                 callback(buffer)
             }
@@ -38,8 +32,7 @@ extension IPv6Address: CustomDebugStringConvertible {
 extension IPv6Address {
     @inlinable
     @inline(__always)
-    package static func makeDescription<Buffer>(
-        address: _CompatibilityUInt128Typealias,
+    package func makeDescription<Buffer>(
         enclosingInSquareBrackets: Bool,
         writingToUnsafeMutableBufferPointerOfUInt8: (
             _ maxWriteableBytes: Int,
@@ -51,7 +44,7 @@ extension IPv6Address {
         /// idx < `7` instead of `8` because even if 7 is a zero it'll be a lone zero and
         /// we won't compress it anyway.
         while idx < 7 {
-            guard isZero(address, octalIdx: idx) else {
+            guard self.isZero(octalIdx: idx) else {
                 idx &+= 1
                 continue
             }
@@ -61,7 +54,7 @@ extension IPv6Address {
             /// This range is guaranteed to be non-empty because we know idx < 7 (6 max)
             /// and (6+1)..<8 is still a range with 1 number in it.
             for nextIdx in (idx &+ 1)..<8 {
-                guard isZero(address, octalIdx: nextIdx) else {
+                guard self.isZero(octalIdx: nextIdx) else {
                     break
                 }
                 endIndex = nextIdx
@@ -96,8 +89,7 @@ extension IPv6Address {
 
         return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
             withUnsafeTemporaryAllocation(byteCount: 32, alignment: 1) { hexBytes in
-                IPv6Address._expandToLowercasedHexASCII(
-                    address: address,
+                self._expandToLowercasedHexASCII(
                     into: hexBytes
                 )
 
@@ -155,13 +147,14 @@ extension IPv6Address {
     }
 
     @inlinable
-    static func isZero(_ address: _CompatibilityUInt128Typealias, octalIdx idx: Int) -> Bool {
-        self.segment(address, octalIdx: idx) == 0
+    @inline(__always)
+    func isZero(octalIdx idx: Int) -> Bool {
+        self.segment(octalIdx: idx) == 0
     }
 
     @inlinable
     @inline(__always)
-    static func segment(_ address: _CompatibilityUInt128Typealias, octalIdx idx: Int) -> UInt16 {
+    func segment(octalIdx idx: Int) -> UInt16 {
         let hi = address._high
         let lo = address._low
         let word = idx < 4 ? hi : lo
@@ -169,27 +162,26 @@ extension IPv6Address {
         return UInt16(truncatingIfNeeded: word &>> shift)
     }
 
-    /// Expands the 16 address bytes into 32 lowercased hex ASCII bytes, most significant nibble first.
+    /// Expands the 16 address bytes into 32 lowercased hex ASCII bytes.
     /// Written as a flat, branch-free loop so LLVM auto-vectorizes it, like `Span.isASCII`.
     @inlinable
-    static func _expandToLowercasedHexASCII(
-        address: _CompatibilityUInt128Typealias,
-        into hexStorage: UnsafeMutableRawBufferPointer
-    ) {
-        withUnsafeBytes(of: address.bigEndian) { bigBytes in
+    @inline(__always)
+    func _expandToLowercasedHexASCII(into hexStorage: UnsafeMutableRawBufferPointer) {
+        withUnsafeBytes(of: self.address.bigEndian) { bigBytes in
             for idx in 0..<16 {
                 let byte = bigBytes[idx]
                 let high = byte &>> 4
                 let low = byte & 0x0F
                 let startOffset = 2 &* idx
-                hexStorage[startOffset] = _lowercasedHexASCII(nibble: high)
-                hexStorage[startOffset &+ 1] = _lowercasedHexASCII(nibble: low)
+                hexStorage[startOffset] = IPv6Address._lowercasedHexASCII(nibble: high)
+                hexStorage[startOffset &+ 1] = IPv6Address._lowercasedHexASCII(nibble: low)
             }
         }
     }
 
     /// Maps a single hex nibble (0...15) to its lowercased ASCII byte.
     @inlinable
+    @inline(__always)
     static func _lowercasedHexASCII(nibble: UInt8) -> UInt8 {
         nibble > 9
             ? nibble &+ UInt8.asciiLowercasedA &- 10

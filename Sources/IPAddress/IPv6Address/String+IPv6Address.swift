@@ -214,14 +214,17 @@ extension IPv6Address {
         let nonZero2 = _2 == UInt8.ascii0 ? 0 : 1
         let nonZero3 = _3 == UInt8.ascii0 ? 0 : 1
 
+        var soFarNonZero = nonZero1
         buffer[idx] = _1
-        idx &+= nonZero1
+        idx &+= soFarNonZero
 
         buffer[idx] = _2
-        idx &+= nonZero1 | nonZero2
+        soFarNonZero |= nonZero2
+        idx &+= soFarNonZero
 
         buffer[idx] = _3
-        idx &+= nonZero1 | nonZero2 | nonZero3
+        soFarNonZero |= nonZero3
+        idx &+= soFarNonZero
 
         buffer[idx] = _4
         idx &+= isNotWithinCs

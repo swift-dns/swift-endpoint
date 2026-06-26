@@ -191,8 +191,7 @@ extension IPv6Address {
     /// Maps a single hex nibble (0...15) to its lowercased ASCII byte.
     @inlinable
     static func _lowercasedHexASCII(nibble: UInt8) -> UInt8 {
-        assert(nibble < 16)
-        return nibble > 9
+        nibble > 9
             ? nibble &+ UInt8.asciiLowercasedA &- 10
             : nibble &+ UInt8.ascii0
     }

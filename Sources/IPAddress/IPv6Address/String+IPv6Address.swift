@@ -39,43 +39,7 @@ extension IPv6Address {
             _ callbackReturningBytesWritten: (UnsafeMutableBufferPointer<UInt8>) -> Int
         ) throws -> Buffer
     ) rethrows -> Buffer {
-        var rangeToCompress: Range<Int>? = nil
-        var idx = 0
-        /// idx < `7` instead of `8` because even if 7 is a zero it'll be a lone zero and
-        /// we won't compress it anyway.
-        while idx < 7 {
-            guard self.isZero(octalIdx: idx) else {
-                idx &+= 1
-                continue
-            }
-
-            var endIndex = idx
-
-            /// This range is guaranteed to be non-empty because we know idx < 7 (6 max)
-            /// and (6+1)..<8 is still a range with 1 number in it.
-            for nextIdx in (idx &+ 1)..<8 {
-                guard self.isZero(octalIdx: nextIdx) else {
-                    break
-                }
-                endIndex = nextIdx
-            }
-
-            if endIndex != idx {
-                /// If a `rangeToCompress` already exists and is not smaller than the new range,
-                /// then don't do anything.
-                /// Otherwise use the `newRange` as the `rangeToCompress`.
-                let newRange = idx..<endIndex
-                if let existingRange = rangeToCompress {
-                    if existingRange.count < newRange.count {
-                        rangeToCompress = newRange
-                    }
-                } else {
-                    rangeToCompress = newRange
-                }
-            }
-
-            idx = endIndex &+ 1
-        }
+        let rangeToCompress = self.findCompressionSignRange()
 
         assert(rangeToCompress?.isEmpty != true)
 
@@ -89,9 +53,7 @@ extension IPv6Address {
 
         return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
             withUnsafeTemporaryAllocation(byteCount: 32, alignment: 1) { hexBytes in
-                self._expandToLowercasedHexASCII(
-                    into: hexBytes
-                )
+                self._expandToLowercasedHexASCII(into: hexBytes)
 
                 var writeIdx = 0
 
@@ -101,8 +63,7 @@ extension IPv6Address {
                     writeIdx &+= 1
                 }
 
-                /// Reset `idx`. It was used in a loop above.
-                idx = 0
+                var idx = 0
                 while idx < 8 {
                     if let rangeToCompress,
                         idx == rangeToCompress.lowerBound
@@ -148,18 +109,49 @@ extension IPv6Address {
 
     @inlinable
     @inline(__always)
-    func isZero(octalIdx idx: Int) -> Bool {
-        self.segment(octalIdx: idx) == 0
+    func findCompressionSignRange() -> Range<Int>? {
+        let zeroSegments = self.zeroSegmentMask()
+        var runStarts = zeroSegments
+        var longestRunStarts = zeroSegments
+        var longestRunLength = 0
+        while runStarts != 0 {
+            longestRunStarts = runStarts
+            runStarts &= runStarts &>> 1
+            longestRunLength &+= 1
+        }
+        guard longestRunLength >= 2 else {
+            return nil
+        }
+        let start = longestRunStarts.trailingZeroBitCount
+        return start..<(start &+ longestRunLength &- 1)
     }
 
     @inlinable
     @inline(__always)
-    func segment(octalIdx idx: Int) -> UInt16 {
-        let hi = address._high
-        let lo = address._low
-        let word = idx < 4 ? hi : lo
-        let shift = (3 &- (idx & 3)) &* 16
-        return UInt16(truncatingIfNeeded: word &>> shift)
+    func zeroSegmentMask() -> UInt8 {
+        IPv6Address.zeroSegmentNibble(self.address._high)
+            | (IPv6Address.zeroSegmentNibble(self.address._low) &<< 4)
+    }
+
+    @inlinable
+    @inline(__always)
+    static func zeroSegmentNibble(_ word: UInt64) -> UInt8 {
+        let lowFifteenBits: UInt64 = 0x7FFF_7FFF_7FFF_7FFF
+        let lowBitsOverflow = (word & lowFifteenBits) &+ lowFifteenBits
+        let nonzeroSegmentTopBits = lowBitsOverflow | word
+        let zeroSegmentTopBits = ~(nonzeroSegmentTopBits | lowFifteenBits)
+
+        let segment0IsZero = (zeroSegmentTopBits &>> 63) & 1
+        let segment1IsZero = (zeroSegmentTopBits &>> 47) & 1
+        let segment2IsZero = (zeroSegmentTopBits &>> 31) & 1
+        let segment3IsZero = (zeroSegmentTopBits &>> 15) & 1
+        return UInt8(
+            truncatingIfNeeded:
+                segment0IsZero
+                | (segment1IsZero &<< 1)
+                | (segment2IsZero &<< 2)
+                | (segment3IsZero &<< 3)
+        )
     }
 
     /// Expands the 16 address bytes into 32 lowercased hex ASCII bytes.

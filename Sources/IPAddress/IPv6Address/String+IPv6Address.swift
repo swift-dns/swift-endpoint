@@ -197,17 +197,18 @@ extension IPv6Address {
         let _3 = hexBytes[base &+ 2]
         let _4 = hexBytes[base &+ 3]
 
-        var notAllZerosSoFar = _1 != UInt8.ascii0 ? 1 : 0
+        let nonZero1 = isNotWithinCs & (_1 == UInt8.ascii0 ? 0 : 1)
+        let nonZero2 = _2 == UInt8.ascii0 ? 0 : 1
+        let nonZero3 = _3 == UInt8.ascii0 ? 0 : 1
+
         buffer[idx] = _1
-        idx &+= isNotWithinCs & notAllZerosSoFar
+        idx &+= nonZero1
 
-        notAllZerosSoFar |= _2 != UInt8.ascii0 ? 1 : 0
         buffer[idx] = _2
-        idx &+= isNotWithinCs & notAllZerosSoFar
+        idx &+= nonZero1 | nonZero2
 
-        notAllZerosSoFar |= _3 != UInt8.ascii0 ? 1 : 0
         buffer[idx] = _3
-        idx &+= isNotWithinCs & notAllZerosSoFar
+        idx &+= nonZero1 | nonZero2 | nonZero3
 
         buffer[idx] = _4
         idx &+= isNotWithinCs

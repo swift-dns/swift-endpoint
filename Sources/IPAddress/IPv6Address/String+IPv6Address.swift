@@ -95,8 +95,7 @@ extension IPv6Address {
         let toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4) &+ speculativeBytes
 
         return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
-            var hexStorage: (UInt64, UInt64, UInt64, UInt64) = (0, 0, 0, 0)
-            return withUnsafeMutableBytes(of: &hexStorage) { hexBytes in
+            withUnsafeTemporaryAllocation(of: UInt8.self, capacity: 32) { hexBytes in
                 IPv6Address._expandLowercasedHexASCII(
                     address: address,
                     into: hexBytes
@@ -175,7 +174,7 @@ extension IPv6Address {
     @inlinable
     static func _expandLowercasedHexASCII(
         address: _CompatibilityUInt128Typealias,
-        into hexStorage: UnsafeMutableRawBufferPointer
+        into hexStorage: UnsafeMutableBufferPointer<UInt8>
     ) {
         withUnsafeBytes(of: address.bigEndian) { bigBytes in
             for idx in 0..<16 {
@@ -198,14 +197,13 @@ extension IPv6Address {
             : nibble &+ UInt8.ascii0
     }
 
-    /// Equivalent to `String(bytePairAsUInt16, radix: 16, uppercase: false)`, but faster, reading
-    /// the already-expanded chars for `octalIdx` from `hex` and suppressing leading zeros.
+    /// Equivalent to `String(bytePairAsUInt16, radix: 16, uppercase: false)`, but faster.
     @inlinable
     @inline(__always)
     static func _writeSegmentFromHex(
         into buffer: UnsafeMutableBufferPointer<UInt8>,
         advancingIdx idx: inout Int,
-        hexBytes: UnsafeMutableRawBufferPointer,
+        hexBytes: UnsafeMutableBufferPointer<UInt8>,
         octalIdx: Int
     ) {
         let base = octalIdx &* 4

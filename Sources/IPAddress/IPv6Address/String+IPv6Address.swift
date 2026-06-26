@@ -63,37 +63,14 @@ extension IPv6Address {
                     writeIdx &+= 1
                 }
 
-                var idx = 0
-                while idx < 8 {
-                    if let rangeToCompress,
-                        idx == rangeToCompress.lowerBound
-                    {
-                        buffer[writeIdx] = .asciiColon
-                        writeIdx &+= 1
-
-                        if idx == 0 {
-                            /// Need 2 colons in this case, so '::'
-                            buffer[writeIdx] = .asciiColon
-                            writeIdx &+= 1
-                        }
-
-                        idx = rangeToCompress.upperBound &+ 1
-                        continue
-                    }
-
-                    IPv6Address._writeSegmentFromHex(
+                for idx in 0..<8 {
+                    IPv6Address._writeSegment(
                         into: buffer,
                         advancingIdx: &writeIdx,
                         hexBytes: hexBytes,
-                        octalIdx: idx
+                        octalIdx: idx,
+                        compressionSignRange: rangeToCompress
                     )
-
-                    /// Speculative write, but we've already made sure we have the extra 1 byte capacity if needed
-                    buffer[writeIdx] = .asciiColon
-                    writeIdx &+= idx < 7 ? 1 : 0
-                    assert(writeIdx < buffer.count)
-
-                    idx &+= 1
                 }
 
                 /// `enclosingInSquareBrackets` is always known at compile time so should result in no branches
@@ -141,16 +118,16 @@ extension IPv6Address {
         let nonzeroSegmentTopBits = lowBitsOverflow | word
         let zeroSegmentTopBits = ~(nonzeroSegmentTopBits | lowFifteenBits)
 
-        let segment0IsZero = (zeroSegmentTopBits &>> 63) & 1
-        let segment1IsZero = (zeroSegmentTopBits &>> 47) & 1
-        let segment2IsZero = (zeroSegmentTopBits &>> 31) & 1
-        let segment3IsZero = (zeroSegmentTopBits &>> 15) & 1
+        let _0IsZero = (zeroSegmentTopBits &>> 63) & 1
+        let _1IsZero = (zeroSegmentTopBits &>> 47) & 1
+        let _2IsZero = (zeroSegmentTopBits &>> 31) & 1
+        let _3IsZero = (zeroSegmentTopBits &>> 15) & 1
         return UInt8(
             truncatingIfNeeded:
-                segment0IsZero
-                | (segment1IsZero &<< 1)
-                | (segment2IsZero &<< 2)
-                | (segment3IsZero &<< 3)
+                _0IsZero
+                | (_1IsZero &<< 1)
+                | (_2IsZero &<< 2)
+                | (_3IsZero &<< 3)
         )
     }
 
@@ -183,33 +160,49 @@ extension IPv6Address {
     /// Equivalent to `String(bytePairAsUInt16, radix: 16, uppercase: false)`, but faster.
     @inlinable
     @inline(__always)
-    static func _writeSegmentFromHex(
+    static func _writeSegment(
         into buffer: UnsafeMutableBufferPointer<UInt8>,
         advancingIdx idx: inout Int,
         hexBytes: UnsafeMutableRawBufferPointer,
-        octalIdx: Int
+        octalIdx: Int,
+        compressionSignRange: Range<Int>?
     ) {
+        /// cs == compression sign
+        let csLowerBound = compressionSignRange?.lowerBound ?? 16
+        let csUpperBound = compressionSignRange?.upperBound ?? 16
+        let isLowerBoundOfCs = octalIdx == csLowerBound
+        let isUpperBoundOfCs = octalIdx == csUpperBound
+        let isNotWithinCs = octalIdx < csLowerBound || octalIdx > csUpperBound
+
+        let isNotLastSegment = octalIdx != csUpperBound &+ 1
+        let isNotFirstSegment = octalIdx != 0
+        let needsTheSeparatorColon = isNotWithinCs && isNotLastSegment && isNotFirstSegment
+
+        let needsColon = isLowerBoundOfCs || isUpperBoundOfCs || needsTheSeparatorColon
+
+        buffer[idx] = .asciiColon
+        idx &+= needsColon ? 1 : 0
+
         let base = octalIdx &* 4
         let _1 = hexBytes[base]
         let _2 = hexBytes[base &+ 1]
         let _3 = hexBytes[base &+ 2]
         let _4 = hexBytes[base &+ 3]
 
-        /// Always write, but only advance past it when it should be kept.
         var notAllZerosSoFar = _1 != UInt8.ascii0
         buffer[idx] = _1
-        idx &+= notAllZerosSoFar ? 1 : 0
+        idx &+= (isNotWithinCs && notAllZerosSoFar) ? 1 : 0
 
         notAllZerosSoFar = notAllZerosSoFar || _2 != UInt8.ascii0
         buffer[idx] = _2
-        idx &+= notAllZerosSoFar ? 1 : 0
+        idx &+= (isNotWithinCs && notAllZerosSoFar) ? 1 : 0
 
         notAllZerosSoFar = notAllZerosSoFar || _3 != UInt8.ascii0
         buffer[idx] = _3
-        idx &+= notAllZerosSoFar ? 1 : 0
+        idx &+= (isNotWithinCs && notAllZerosSoFar) ? 1 : 0
 
         buffer[idx] = _4
-        idx &+= 1
+        idx &+= isNotWithinCs ? 1 : 0
     }
 }
 

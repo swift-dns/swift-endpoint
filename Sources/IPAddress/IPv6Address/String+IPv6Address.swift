@@ -66,14 +66,32 @@ extension IPv6Address {
                     writeIdx &+= 1
                 }
 
-                for idx in 0..<8 {
-                    IPv6Address._writeSegment(
+                var idx = 0
+                while idx < 8 {
+                    if idx == compressionRange.lowerBound {
+                        buffer[writeIdx] = .asciiColon
+                        writeIdx &+= 1
+
+                        if idx == 0 {
+                            buffer[writeIdx] = .asciiColon
+                            writeIdx &+= 1
+                        }
+
+                        idx = compressionRange.upperBound &+ 1
+                        continue
+                    }
+
+                    IPv6Address._writeSegmentFromHex(
                         into: buffer,
                         advancingIdx: &writeIdx,
                         hexBytes: hexBytes,
-                        octalIdx: idx,
-                        compressionRange: compressionRange
+                        octalIdx: idx
                     )
+
+                    buffer[writeIdx] = .asciiColon
+                    writeIdx &+= idx < 7 ? 1 : 0
+
+                    idx &+= 1
                 }
 
                 /// `enclosingInSquareBrackets` is always known at compile time so should result in no branches
@@ -180,54 +198,32 @@ extension IPv6Address {
     /// Equivalent to `String(bytePairAsUInt16, radix: 16, uppercase: false)`, but faster.
     @inlinable
     @inline(__always)
-    static func _writeSegment(
+    static func _writeSegmentFromHex(
         into buffer: UnsafeMutableBufferPointer<UInt8>,
         advancingIdx idx: inout Int,
         hexBytes: UnsafeMutableRawBufferPointer,
-        octalIdx: Int,
-        compressionRange: Range<Int>
+        octalIdx: Int
     ) {
-        /// cs == compression sign
-        let csLowerBound = compressionRange.lowerBound
-        let csUpperBound = compressionRange.upperBound
-        let isLowerBoundOfCs = octalIdx == csLowerBound ? 1 : 0
-        let isUpperBoundOfCs = octalIdx == csUpperBound ? 1 : 0
-        let isBelowCs = octalIdx < csLowerBound ? 1 : 0
-        let isAboveCs = octalIdx > csUpperBound ? 1 : 0
-        let isNotWithinCs = isBelowCs | isAboveCs
-
-        let isNotLastSegment = octalIdx != csUpperBound &+ 1 ? 1 : 0
-        let isNotFirstSegment = octalIdx != 0 ? 1 : 0
-        let needsTheSeparatorColon = isNotWithinCs & isNotLastSegment & isNotFirstSegment
-        let needsColon = isLowerBoundOfCs | isUpperBoundOfCs | needsTheSeparatorColon
-
-        buffer[idx] = .asciiColon
-        idx &+= needsColon
-
         let base = octalIdx &* 4
         let _1 = hexBytes[base]
         let _2 = hexBytes[base &+ 1]
         let _3 = hexBytes[base &+ 2]
         let _4 = hexBytes[base &+ 3]
 
-        let nonZero1 = isNotWithinCs & (_1 == UInt8.ascii0 ? 0 : 1)
-        let nonZero2 = _2 == UInt8.ascii0 ? 0 : 1
-        let nonZero3 = _3 == UInt8.ascii0 ? 0 : 1
-
-        var soFarNonZero = nonZero1
+        var notAllZerosSoFar = _1 != UInt8.ascii0
         buffer[idx] = _1
-        idx &+= soFarNonZero
+        idx &+= notAllZerosSoFar ? 1 : 0
 
+        notAllZerosSoFar = notAllZerosSoFar || _2 != UInt8.ascii0
         buffer[idx] = _2
-        soFarNonZero |= nonZero2
-        idx &+= soFarNonZero
+        idx &+= notAllZerosSoFar ? 1 : 0
 
+        notAllZerosSoFar = notAllZerosSoFar || _3 != UInt8.ascii0
         buffer[idx] = _3
-        soFarNonZero |= nonZero3
-        idx &+= soFarNonZero
+        idx &+= notAllZerosSoFar ? 1 : 0
 
         buffer[idx] = _4
-        idx &+= isNotWithinCs
+        idx &+= 1
     }
 }
 

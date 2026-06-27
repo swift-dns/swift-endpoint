@@ -701,40 +701,35 @@ struct IPAddressTests {
     @available(SwiftStdlib 5.1, *)
     @Test(arguments: Array(0..<256))
     func `IPv6Address compression-sign lookup table contains correct values`(index: Int) {
-        let mask = UInt8(index)
+        var table = [IPv6Address.SegmentWriteTableEntry]()
+        table.reserveCapacity(256)
 
-        var bestStart = -1
-        var bestLength = 0
-        var segment = 0
-        while segment < 8 {
-            if (mask >> segment) & 1 == 1 {
-                var runEnd = segment
-                while runEnd < 8 && (mask >> runEnd) & 1 == 1 {
-                    runEnd += 1
-                }
-                let length = runEnd - segment
-                if length > bestLength {
-                    bestLength = length
-                    bestStart = segment
-                }
-                segment = runEnd
+        let (lowerBound, upperBound) = compressionRangeTable[index]
+        var indices = [0, 1, 2, 3, 4, 5, 6, 7]
+        var compressionSignIdx = 16
+        if upperBound != 16 {
+            indices.removeSubrange(lowerBound...upperBound)
+            if lowerBound == 0 {
+                compressionSignIdx = 14
+            } else if upperBound == 7 {
+                compressionSignIdx = 15
             } else {
-                segment += 1
+                compressionSignIdx = upperBound &+ 1
             }
         }
-
-        let expected: (Int, Int)
-        if bestLength >= 2 {
-            expected = (bestStart, bestStart + bestLength - 1)
-        } else {
-            expected = (16, 16)
+        var packedIndices: UInt64 = 0
+        for (offset, idx) in indices.enumerated() {
+            packedIndices |= UInt64(idx) &<< (offset &* 8)
         }
-
-        let actual = IPv6Address._compressionRangeTable[index]
-        #expect(
-            actual == expected,
-            "mask \(index) (0b\(String(mask, radix: 2))): got \(actual), expected \(expected)"
+        let entry = IPv6Address.SegmentWriteTableEntry(
+            packedIndices,
+            indices.count,
+            compressionSignIdx,
+            compressionSignIdx == 14,
+            compressionSignIdx == 15
         )
+
+        #expect(IPv6Address._segmentWriteTable[index] == entry)
     }
 }
 
@@ -1136,3 +1131,45 @@ private let rawByteRejectTestCases: [[UInt8]] = [
     [70, 58, 97, 58, 56, 58, 69, 69, 69, 69, 58, 56, 58, 69, 69, 69, 69, 28, 42, 58],
     [186, 58],
 ]
+
+// 16 means no compression sign.
+// Each Element is a pair of (lowerBound, upperBound) of range of segments that should be compressed.
+// Each index of each element is the bitmap of the segments that are all-zero (1) or not (0).
+// For example the element at index 0b0011_1000 is `(3, 5)`, meaning segments 3, 4, 5 should be compressed.
+private let compressionRangeTable: [(Int, Int)] = {
+    var table = [(Int, Int)]()
+    table.reserveCapacity(256)
+
+    for index in 0..<256 {
+        let mask = UInt8(index)
+
+        var bestStart = -1
+        var bestLength = 0
+        var segment = 0
+        while segment < 8 {
+            if (mask >> segment) & 1 == 1 {
+                var runEnd = segment
+                while runEnd < 8 && (mask >> runEnd) & 1 == 1 {
+                    runEnd += 1
+                }
+                let length = runEnd - segment
+                if length > bestLength {
+                    bestLength = length
+                    bestStart = segment
+                }
+                segment = runEnd
+            }
+            segment += 1
+        }
+
+        let expected: (Int, Int)
+        if bestLength >= 2 {
+            expected = (bestStart, bestStart + bestLength - 1)
+        } else {
+            expected = (16, 16)
+        }
+        table.append(expected)
+    }
+
+    return table
+}()

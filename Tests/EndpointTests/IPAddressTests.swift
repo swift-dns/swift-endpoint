@@ -728,14 +728,13 @@ struct IPAddressTests {
         let segmentsCount = UInt8(exactly: indices.count)!
         let colonsCount: UInt8 = max(2, min(segmentsCount + 1, 7))
         let maxRawLayoutBytes = UInt8(exactly: colonsCount + segmentsCount * 4)!
-        let entry = IPv6Address.SegmentWriteTableEntry(
-            packedIndices,
-            segmentsCount,
-            maxRawLayoutBytes,
-            UInt8(exactly: compressionSignIdx)!,
-            writeCsAtBeginning,
-            writeCsAtEnd
-        )
+        let packedMetadata =
+            UInt64(segmentsCount) &<< 48
+            | UInt64(maxRawLayoutBytes) &<< 32
+            | UInt64(UInt8(exactly: compressionSignIdx)!) &<< 24
+            | UInt64(writeCsAtBeginning ? 1 : 0) &<< 16
+            | UInt64(writeCsAtEnd ? 1 : 0) &<< 8
+        let entry = IPv6Address.SegmentWriteTableEntry(packedIndices, packedMetadata)
 
         #expect(IPv6Address._segmentWriteTable[index] == entry)
     }

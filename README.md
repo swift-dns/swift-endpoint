@@ -158,7 +158,7 @@ These were performed on my M1 Pro MacBook, on macOS 27.0 (beta 1).
 | ------------------------------------------- | ----------- | ----- | -------------- | ------- |
 | IPv4_String_Encoding_Mixed                  | 15 Millions | 122ms | 3336ms         | 27.34x  |
 | IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 273ms | 421ms          | 1.54x   |
-| IPv6_String_Encoding_Mixed                  | 4 Millions  | 348ms | 1575ms         | 4.53x   |
+| IPv6_String_Encoding_Mixed                  | 4 Millions  | 338ms | 1575ms         | 4.66x   |
 | IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 94ms  | 372ms          | 3.96x   |
 
 #### Against glibc

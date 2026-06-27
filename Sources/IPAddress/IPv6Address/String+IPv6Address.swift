@@ -107,7 +107,7 @@ extension IPv6Address {
         }
     }
 
-    /// Returns (8, 8) if no compression sign is found, otherwise the bounds of the compression sign.
+    /// Returns (16, 16) if no compression sign is found, otherwise the bounds of the compression sign.
     @inlinable
     @inline(__always)
     func findCompressionSignRange() -> Range<Int> {
@@ -117,7 +117,7 @@ extension IPv6Address {
     }
 
     /// Returns a UInt8, each bit representing whether
-    /// the corresponding IPv6 segment is zero (0) or not (1).
+    /// the corresponding IPv6 segment is all-zero (1) or not (0).
     @inlinable
     @inline(__always)
     func makeSegmentsMask() -> UInt8 {
@@ -183,7 +183,6 @@ extension IPv6Address {
             : nibble &+ UInt8.ascii0
     }
 
-    /// Equivalent to `String(bytePairAsUInt16, radix: 16, uppercase: false)`, but faster.
     @inlinable
     @inline(__always)
     static func _writeSegmentFromHex(
@@ -467,7 +466,7 @@ extension IPv6Address {
     // 16 means no compression sign.
     // Each Element is a pair of (lowerBound, upperBound) of range of segments that should be compressed.
     // Each index of each element is the bitmap of the segments that are all-zero (1) or not (0).
-    // For example the element at index `0b0011_1000` is `(3, 5)`, meaning segments 3, 4, 5 should be compressed.
+    // For example the element at index 0b0011_1000 is `(3, 5)`, meaning segments 3, 4, 5 should be compressed.
     @usableFromInline
     package static let _compressionRangeTable: [(Int, Int)] = [
         // 0b0000_0000

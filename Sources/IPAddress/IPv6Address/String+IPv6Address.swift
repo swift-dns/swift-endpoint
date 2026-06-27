@@ -60,11 +60,8 @@ extension IPv6Address {
 
                 var writeIdx = 0
 
-                /// `enclosingInSquareBrackets` is always known at compile time so should result in no branches
-                if enclosingInSquareBrackets {
-                    buffer[0] = .asciiLeftSquareBracket
-                    writeIdx &+= 1
-                }
+                buffer[0] = .asciiLeftSquareBracket
+                writeIdx &+= enclosingInSquareBrackets ? 1 : 0
 
                 var idx = 0
                 while idx < 8 {
@@ -95,11 +92,8 @@ extension IPv6Address {
                     idx &+= 1
                 }
 
-                /// `enclosingInSquareBrackets` is always known at compile time so should result in no branches
-                if enclosingInSquareBrackets {
-                    buffer[writeIdx] = .asciiRightSquareBracket
-                    writeIdx &+= 1
-                }
+                buffer[writeIdx] = .asciiRightSquareBracket
+                writeIdx &+= enclosingInSquareBrackets ? 1 : 0
 
                 assert(writeIdx <= toReserve)
 

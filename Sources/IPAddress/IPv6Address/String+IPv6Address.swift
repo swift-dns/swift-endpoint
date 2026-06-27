@@ -68,16 +68,17 @@ extension IPv6Address {
 
                 var idx = 0
                 while idx < 8 {
-                    if idx == compressionRange.lowerBound {
-                        buffer[writeIdx] = .asciiColon
-                        writeIdx &+= 1
+                    let isAtCsBorder = idx == compressionRange.lowerBound ? 1 : 0
+                    buffer[writeIdx] = .asciiColon
+                    writeIdx &+= isAtCsBorder
 
-                        if idx == 0 {
-                            buffer[writeIdx] = .asciiColon
-                            writeIdx &+= 1
-                        }
+                    let isAtIdx0 = idx == 0 ? 1 : 0
+                    buffer[writeIdx] = .asciiColon
+                    writeIdx &+= isAtCsBorder & isAtIdx0
 
-                        idx = compressionRange.upperBound &+ 1
+                    idx = isAtCsBorder == 1 ? compressionRange.upperBound &+ 1 : idx
+
+                    if isAtCsBorder == 1 {
                         continue
                     }
 

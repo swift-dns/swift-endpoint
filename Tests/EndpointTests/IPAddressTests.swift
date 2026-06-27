@@ -723,12 +723,16 @@ struct IPAddressTests {
         }
         var packedIndices: UInt64 = 0
         for (offset, idx) in indices.enumerated() {
-            packedIndices |= UInt64(idx) &<< (offset &* 8)
+            packedIndices |= UInt64(idx) &<< (offset * 8)
         }
+        let segmentsCount = UInt8(exactly: indices.count)!
+        let colonsCount: UInt8 = max(2, min(segmentsCount + 1, 7))
+        let maxRawLayoutBytes = UInt8(exactly: colonsCount + segmentsCount * 4)!
         let entry = IPv6Address.SegmentWriteTableEntry(
             packedIndices,
-            indices.count,
-            compressionSignIdx,
+            segmentsCount,
+            maxRawLayoutBytes,
+            UInt8(exactly: compressionSignIdx)!,
             writeCsAtBeginning,
             writeCsAtEnd
         )

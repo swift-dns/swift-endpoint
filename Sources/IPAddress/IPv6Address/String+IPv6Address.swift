@@ -60,8 +60,8 @@ extension IPv6Address {
                 buffer[writeIdx] = .asciiColon
                 writeIdx &+= entry.writeCsAtBeginning ? 1 : 0
 
-                var offset = 0
-                while offset < entry.segmentsCount {
+                let range = Range(uncheckedBounds: (0, entry.segmentsCount))
+                for offset in range {
                     let idx = Int(entry.packedIndices &>> (offset &* 8) & 0xFF)
 
                     buffer[writeIdx] = .asciiColon
@@ -76,8 +76,6 @@ extension IPv6Address {
                         hexBytes: hexBytes,
                         octalIdx: idx
                     )
-
-                    offset &+= 1
                 }
 
                 buffer[writeIdx] = .asciiColon

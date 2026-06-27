@@ -64,23 +64,24 @@ extension IPv6Address {
                 buffer[writeIdx] = .asciiColon
                 writeIdx &+= entry.writeCsAtIdx == 14 ? 1 : 0
 
-                withUnsafeBytes(of: entry.packedIndices) { packedIndices in
-                    for i in 0..<entry.segmentsCount {
-                        let idx = Int(packedIndices[i])
+                var offset = 0
+                while offset < entry.segmentsCount {
+                    let idx = Int(entry.packedIndices &>> (offset &* 8) & 0xFF)
 
-                        buffer[writeIdx] = .asciiColon
-                        writeIdx &+= idx == entry.writeCsAtIdx ? 1 : 0
+                    buffer[writeIdx] = .asciiColon
+                    writeIdx &+= idx == entry.writeCsAtIdx ? 1 : 0
 
-                        buffer[writeIdx] = .asciiColon
-                        writeIdx &+= i == 0 ? 0 : 1
+                    buffer[writeIdx] = .asciiColon
+                    writeIdx &+= offset == 0 ? 0 : 1
 
-                        IPv6Address._writeSegmentFromHex(
-                            into: buffer,
-                            advancingIdx: &writeIdx,
-                            hexBytes: hexBytes,
-                            octalIdx: idx
-                        )
-                    }
+                    IPv6Address._writeSegmentFromHex(
+                        into: buffer,
+                        advancingIdx: &writeIdx,
+                        hexBytes: hexBytes,
+                        octalIdx: idx
+                    )
+
+                    offset &+= 1
                 }
 
                 buffer[writeIdx] = .asciiColon

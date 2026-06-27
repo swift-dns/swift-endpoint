@@ -39,17 +39,13 @@ extension IPv6Address {
             _ callbackReturningBytesWritten: (UnsafeMutableBufferPointer<UInt8>) -> Int
         ) throws -> Buffer
     ) rethrows -> Buffer {
-        let compressionRange = self.findCompressionSignRange()
-
-        assert(
-            compressionRange.lowerBound < compressionRange.upperBound
-                || compressionRange.upperBound == 16
-        )
+        let mask = self.makeSegmentsMask()
+        let entry = IPv6Address._segmentWriteTable[Int(mask)]
 
         /// Reserve the max possibly needed capacity.
         let bracketsCount = enclosingInSquareBrackets ? 2 : 0
-        let segmentsCount = 8 &- compressionRange.count
-        let colonsCount = max(segmentsCount &- 1, 2)
+        let segmentsCount = entry.segmentsCount
+        let colonsCount = max(2, min(segmentsCount &+ 1, 7))
         /// If no brackets, we need 1 extra byte for the possible colon that we speculatively write
         let speculativeBytes = enclosingInSquareBrackets ? 0 : 1
         let toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4) &+ speculativeBytes
@@ -63,34 +59,34 @@ extension IPv6Address {
                 buffer[0] = .asciiLeftSquareBracket
                 writeIdx &+= enclosingInSquareBrackets ? 1 : 0
 
-                var idx = 0
-                while idx < 8 {
-                    let isAtCsBorder = idx == compressionRange.lowerBound ? 1 : 0
-                    buffer[writeIdx] = .asciiColon
-                    writeIdx &+= isAtCsBorder
+                buffer[writeIdx] = .asciiColon
+                writeIdx &+= entry.writeCsAtIdx == 14 ? 1 : 0
+                buffer[writeIdx] = .asciiColon
+                writeIdx &+= entry.writeCsAtIdx == 14 ? 1 : 0
 
-                    let isAtIdx0 = idx == 0 ? 1 : 0
-                    buffer[writeIdx] = .asciiColon
-                    writeIdx &+= isAtCsBorder & isAtIdx0
+                withUnsafeBytes(of: entry.packedIndices) { packedIndices in
+                    for i in 0..<entry.segmentsCount {
+                        let idx = Int(packedIndices[i])
 
-                    idx = isAtCsBorder == 1 ? compressionRange.upperBound &+ 1 : idx
+                        buffer[writeIdx] = .asciiColon
+                        writeIdx &+= idx == entry.writeCsAtIdx ? 1 : 0
 
-                    if isAtCsBorder == 1 {
-                        continue
+                        buffer[writeIdx] = .asciiColon
+                        writeIdx &+= i == 0 ? 0 : 1
+
+                        IPv6Address._writeSegmentFromHex(
+                            into: buffer,
+                            advancingIdx: &writeIdx,
+                            hexBytes: hexBytes,
+                            octalIdx: idx
+                        )
                     }
-
-                    IPv6Address._writeSegmentFromHex(
-                        into: buffer,
-                        advancingIdx: &writeIdx,
-                        hexBytes: hexBytes,
-                        octalIdx: idx
-                    )
-
-                    buffer[writeIdx] = .asciiColon
-                    writeIdx &+= idx < 7 ? 1 : 0
-
-                    idx &+= 1
                 }
+
+                buffer[writeIdx] = .asciiColon
+                writeIdx &+= entry.writeCsAtIdx == 15 ? 1 : 0
+                buffer[writeIdx] = .asciiColon
+                writeIdx &+= entry.writeCsAtIdx == 15 ? 1 : 0
 
                 buffer[writeIdx] = .asciiRightSquareBracket
                 writeIdx &+= enclosingInSquareBrackets ? 1 : 0
@@ -458,6 +454,40 @@ extension IPv6Address: LosslessStringConvertible {
 
 @available(SwiftStdlib 5.1, *)
 extension IPv6Address {
+    @usableFromInline
+    package static let _segmentWriteTable:
+        [(packedIndices: UInt64, segmentsCount: Int, writeCsAtIdx: Int)] = {
+            var table = [(packedIndices: UInt64, segmentsCount: Int, writeCsAtIdx: Int)](
+                repeating: (packedIndices: 0, segmentsCount: 0, writeCsAtIdx: 16),
+                count: 256
+            )
+            for mask in 0..<256 {
+                let (lowerBound, upperBound) = _compressionRangeTable[mask]
+                var indices = [0, 1, 2, 3, 4, 5, 6, 7]
+                var compressionSignIdx = 16
+                if upperBound != 16 {
+                    indices.removeSubrange(lowerBound...upperBound)
+                    if lowerBound == 0 {
+                        compressionSignIdx = 14
+                    } else if upperBound == 7 {
+                        compressionSignIdx = 15
+                    } else {
+                        compressionSignIdx = upperBound &+ 1
+                    }
+                }
+                var packedIndices: UInt64 = 0
+                for (offset, idx) in indices.enumerated() {
+                    packedIndices |= UInt64(idx) &<< (offset &* 8)
+                }
+                table[mask] = (
+                    packedIndices: packedIndices,
+                    segmentsCount: indices.count,
+                    writeCsAtIdx: compressionSignIdx
+                )
+            }
+            return table
+        }()
+
     // 16 means no compression sign.
     // Each Element is a pair of (lowerBound, upperBound) of range of segments that should be compressed.
     // Each index of each element is the bitmap of the segments that are all-zero (1) or not (0).

@@ -700,19 +700,23 @@ struct IPAddressTests {
 
     @available(SwiftStdlib 5.1, *)
     @Test(arguments: Array(0..<256))
-    func `IPv6Address compression-sign lookup table contains correct values`(index: Int) {
+    func `IPv6Address segments table contains correct values`(index: Int) {
         var table = [IPv6Address.SegmentWriteTableEntry]()
         table.reserveCapacity(256)
 
         let (lowerBound, upperBound) = compressionRangeTable[index]
         var indices = [0, 1, 2, 3, 4, 5, 6, 7]
         var compressionSignIdx = 16
+        var writeCsAtBeginning = false
+        var writeCsAtEnd = false
         if upperBound != 16 {
             indices.removeSubrange(lowerBound...upperBound)
-            if lowerBound == 0 {
-                compressionSignIdx = 14
-            } else if upperBound == 7 {
+            if upperBound == 7 {
+                writeCsAtEnd = true
                 compressionSignIdx = 15
+            } else if lowerBound == 0 {
+                writeCsAtBeginning = true
+                compressionSignIdx = upperBound &+ 1
             } else {
                 compressionSignIdx = upperBound &+ 1
             }
@@ -725,8 +729,8 @@ struct IPAddressTests {
             packedIndices,
             indices.count,
             compressionSignIdx,
-            compressionSignIdx == 14,
-            compressionSignIdx == 15
+            writeCsAtBeginning,
+            writeCsAtEnd
         )
 
         #expect(IPv6Address._segmentWriteTable[index] == entry)

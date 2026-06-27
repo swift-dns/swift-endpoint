@@ -82,6 +82,56 @@ struct IPAddressTests {
     }
 
     @available(SwiftStdlib 6.2, *)
+    @Test(arguments: ipv4StringAndAddressTestCases.compactMap(\.1))
+    func `IPv4Address description and serialization round-trip`(ip: IPv4Address) {
+        #expect(IPv4Address(ip.description) == ip)
+
+        let viaCString = ip.withCString { span in
+            span.withUnsafeBufferPointer { IPv4Address(cString: $0.baseAddress!) }
+        }
+        #expect(viaCString == ip)
+
+        let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: IPv4Address.size)
+        defer { buffer.deallocate() }
+        var outputSpan = OutputSpan(buffer: buffer, initializedCount: 0)
+        let didEncode = ip.encode(into: &outputSpan)
+        #expect(didEncode)
+        #expect(IPv4Address(from: outputSpan.span) == ip)
+    }
+
+    @available(SwiftStdlib 6.2, *)
+    @Test(arguments: ipv6StringAndAddressTestCases.compactMap(\.1))
+    func `IPv6Address description and serialization round-trip`(ip: IPv6Address) {
+        #expect(IPv6Address(ip.description) == ip)
+
+        let viaCString = ip.withCString { span in
+            span.withUnsafeBufferPointer { IPv6Address(cString: $0.baseAddress!) }
+        }
+        #expect(viaCString == ip)
+
+        let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: IPv6Address.size)
+        defer { buffer.deallocate() }
+        var outputSpan = OutputSpan(buffer: buffer, initializedCount: 0)
+        let didEncode = ip.encode(into: &outputSpan)
+        #expect(didEncode)
+        #expect(IPv6Address(from: outputSpan.span) == ip)
+    }
+
+    @available(SwiftStdlib 6.2, *)
+    @Test(
+        arguments: ipv4StringAndAddressTestCases.compactMap(\.1).map(AnyIPAddress.v4)
+            + ipv6StringAndAddressTestCases.compactMap(\.1).map(AnyIPAddress.v6)
+    )
+    func `AnyIPAddress description round-trip`(ip: AnyIPAddress) {
+        #expect(AnyIPAddress(ip.description) == ip)
+
+        let viaCString = ip.withCString { span in
+            span.withUnsafeBufferPointer { AnyIPAddress(cString: $0.baseAddress!) }
+        }
+        #expect(viaCString == ip)
+    }
+
+    @available(SwiftStdlib 6.2, *)
     @Test(
         arguments: ipv4StringAndAddressTestCases
             + ipv4IDNAStringAndAddressTestCases.map { ($0.0, nil, $0.2) }

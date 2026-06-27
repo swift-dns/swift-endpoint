@@ -39,156 +39,173 @@ extension IPv6Address {
             _ callbackReturningBytesWritten: (UnsafeMutableBufferPointer<UInt8>) -> Int
         ) throws -> Buffer
     ) rethrows -> Buffer {
-        func isZero(octalIdx idx: Int) -> Bool {
-            self.segment(octalIdx: idx) == 0
-        }
+        let compressionRange = self.findCompressionSignRange()
 
-        var rangeToCompress: Range<Int>? = nil
-        var idx = 0
-        /// idx < `7` instead of `8` because even if 7 is a zero it'll be a lone zero and
-        /// we won't compress it anyway.
-        while idx < 7 {
-            guard isZero(octalIdx: idx) else {
-                idx &+= 1
-                continue
-            }
-
-            var endIndex = idx
-
-            /// This range is guaranteed to be non-empty because we know idx < 7 (6 max)
-            /// and (6+1)..<8 is still a range with 1 number in it.
-            for nextIdx in (idx &+ 1)..<8 {
-                guard isZero(octalIdx: nextIdx) else {
-                    break
-                }
-                endIndex = nextIdx
-            }
-
-            if endIndex != idx {
-                /// If a `rangeToCompress` already exists and is not smaller than the new range,
-                /// then don't do anything.
-                /// Otherwise use the `newRange` as the `rangeToCompress`.
-                let newRange = idx..<endIndex
-                if let existingRange = rangeToCompress {
-                    if existingRange.count < newRange.count {
-                        rangeToCompress = newRange
-                    }
-                } else {
-                    rangeToCompress = newRange
-                }
-            }
-
-            idx = endIndex &+ 1
-        }
-
-        assert(rangeToCompress?.isEmpty != true)
+        assert(
+            compressionRange.lowerBound < compressionRange.upperBound
+                || compressionRange.upperBound == 16
+        )
 
         /// Reserve the max possibly needed capacity.
         let bracketsCount = enclosingInSquareBrackets ? 2 : 0
-        let segmentsCount = 8 &- (rangeToCompress?.count ?? 0)
+        let segmentsCount = 8 &- compressionRange.count
         let colonsCount = max(segmentsCount &- 1, 2)
         /// If no brackets, we need 1 extra byte for the possible colon that we speculatively write
         let speculativeBytes = enclosingInSquareBrackets ? 0 : 1
         let toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4) &+ speculativeBytes
 
         return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
-            var writeIdx = 0
+            withUnsafeTemporaryAllocation(byteCount: 32, alignment: 1) { hexBytes in
+                self._expandToLowercasedHexASCII(into: hexBytes)
 
-            /// `enclosingInSquareBrackets` is always known at compile time so should result in no branches
-            if enclosingInSquareBrackets {
+                var writeIdx = 0
+
                 buffer[0] = .asciiLeftSquareBracket
-                writeIdx &+= 1
-            }
+                writeIdx &+= enclosingInSquareBrackets ? 1 : 0
 
-            /// Reset `idx`. It was used in a loop above.
-            idx = 0
-            while idx < 8 {
-                if let rangeToCompress,
-                    idx == rangeToCompress.lowerBound
-                {
+                var idx = 0
+                while idx < 8 {
+                    let isAtCsBorder = idx == compressionRange.lowerBound ? 1 : 0
                     buffer[writeIdx] = .asciiColon
-                    writeIdx &+= 1
+                    writeIdx &+= isAtCsBorder
 
-                    if idx == 0 {
-                        /// Need 2 colons in this case, so '::'
-                        buffer[writeIdx] = .asciiColon
-                        writeIdx &+= 1
+                    let isAtIdx0 = idx == 0 ? 1 : 0
+                    buffer[writeIdx] = .asciiColon
+                    writeIdx &+= isAtCsBorder & isAtIdx0
+
+                    idx = isAtCsBorder == 1 ? compressionRange.upperBound &+ 1 : idx
+
+                    if isAtCsBorder == 1 {
+                        continue
                     }
 
-                    idx = rangeToCompress.upperBound &+ 1
-                    continue
+                    IPv6Address._writeSegmentFromHex(
+                        into: buffer,
+                        advancingIdx: &writeIdx,
+                        hexBytes: hexBytes,
+                        octalIdx: idx
+                    )
+
+                    buffer[writeIdx] = .asciiColon
+                    writeIdx &+= idx < 7 ? 1 : 0
+
+                    idx &+= 1
                 }
 
-                let value = self.segment(octalIdx: idx)
-                IPv6Address._writeUInt16AsLowercasedASCII(
-                    into: buffer,
-                    advancingIdx: &writeIdx,
-                    bytePair: value
-                )
-
-                /// Speculative write, but we've already made sure we have the extra 1 byte capacity if needed
-                buffer[writeIdx] = .asciiColon
-                writeIdx &+= idx < 7 ? 1 : 0
-                assert(writeIdx < buffer.count)
-
-                idx &+= 1
-            }
-
-            /// `enclosingInSquareBrackets` is always known at compile time so should result in no branches
-            if enclosingInSquareBrackets {
                 buffer[writeIdx] = .asciiRightSquareBracket
-                writeIdx &+= 1
-            }
+                writeIdx &+= enclosingInSquareBrackets ? 1 : 0
 
-            return writeIdx
+                assert(writeIdx <= toReserve)
+
+                return writeIdx
+            }
         }
     }
 
+    /// Returns (16, 16) if no compression sign is found, otherwise the bounds of the compression sign.
     @inlinable
     @inline(__always)
-    func segment(octalIdx idx: Int) -> UInt16 {
-        let hi = self.address._high
-        let lo = self.address._low
-        let word = idx < 4 ? hi : lo
-        let shift = (3 &- (idx & 3)) &* 16
-        return UInt16(truncatingIfNeeded: word &>> shift)
+    func findCompressionSignRange() -> Range<Int> {
+        let zeroSegments = self.makeSegmentsMask()
+        let (lowerBound, upperBound) = IPv6Address._compressionRangeTable[Int(zeroSegments)]
+        return Range(uncheckedBounds: (lowerBound, upperBound))
     }
 
-    /// Equivalent to `String(bytePairAsUInt16, radix: 16, uppercase: false)`, but faster.
+    /// Returns a UInt8, each bit representing whether
+    /// the corresponding IPv6 segment is all-zero (1) or not (0).
     @inlinable
-    static func _writeUInt16AsLowercasedASCII(
-        into buffer: UnsafeMutableBufferPointer<UInt8>,
-        advancingIdx idx: inout Int,
-        bytePair: UInt16
-    ) {
-        let _1 = UInt8(truncatingIfNeeded: bytePair &>> 8) &>> 4
-        let _2 = UInt8(truncatingIfNeeded: bytePair &>> 8) & 0x0F
-        let _3 = UInt8(truncatingIfNeeded: bytePair) &>> 4
-        let _4 = UInt8(truncatingIfNeeded: bytePair) & 0x0F
+    @inline(__always)
+    func makeSegmentsMask() -> UInt8 {
+        let highNibble = IPv6Address.makeNibbleFor4Segments(of: self.address._high)
+        let lowNibble = IPv6Address.makeNibbleFor4Segments(of: self.address._low)
+        return highNibble | (lowNibble &<< 4)
+    }
 
-        /// Always write, but only advance past it when it should be kept.
-        var notAllZerosSoFar = _1 != 0
-        buffer[idx] = _lowercasedHexASCII(nibble: _1)
-        idx &+= notAllZerosSoFar ? 1 : 0
+    /// Makes a nibble for 4 segments of a 64-bit word,
+    /// each bit representing whether the segment is all-zero (1) or not (0).
+    @inlinable
+    @inline(__always)
+    static func makeNibbleFor4Segments(of word: UInt64) -> UInt8 {
+        /// 4x 16 bits, each for a segment
+        let m: UInt64 = 0x7FFF_7FFF_7FFF_7FFF
+        /// For each 16-bit (a segment), if the 16-bit is all zeros, it will result in a 0x7FFF.
+        /// Else it'll result in a value with the 15th bit set to 1, example: 0b1000_0010_1001_0100.
+        /// The only exception is when the segment value is 0b1000_0000_0000_0000 which will be counted as zero.
+        let partial_topBitsOneIfSegmentsNonZero = (word & m) &+ m
+        /// Now we remove that exception by ORing the original word with the result.
+        /// Now if a 15th bit in a segment is set to 1, then the segment is not zero.
+        let topBitsOneIfSegmentsNonZero = partial_topBitsOneIfSegmentsNonZero | word
+        /// Make sure all bits are set to 0, other than the 15th bits, which are set to 1 if it was a non-zero segment.
+        let topBitsZero_IfSegmentsZero = ~topBitsOneIfSegmentsNonZero
 
-        notAllZerosSoFar = notAllZerosSoFar || _2 != 0
-        buffer[idx] = _lowercasedHexASCII(nibble: _2)
-        idx &+= notAllZerosSoFar ? 1 : 0
+        let _0IsZero = (topBitsZero_IfSegmentsZero &>> 63) & 1
+        let _1IsZero = (topBitsZero_IfSegmentsZero &>> 47) & 1
+        let _2IsZero = (topBitsZero_IfSegmentsZero &>> 31) & 1
+        let _3IsZero = (topBitsZero_IfSegmentsZero &>> 15) & 1
 
-        notAllZerosSoFar = notAllZerosSoFar || _3 != 0
-        buffer[idx] = _lowercasedHexASCII(nibble: _3)
-        idx &+= notAllZerosSoFar ? 1 : 0
+        return UInt8(
+            truncatingIfNeeded:
+                _0IsZero
+                | (_1IsZero &<< 1)
+                | (_2IsZero &<< 2)
+                | (_3IsZero &<< 3)
+        )
+    }
 
-        buffer[idx] = _lowercasedHexASCII(nibble: _4)
-        idx &+= 1
+    /// Expands the 16 address bytes into 32 lowercased hex ASCII bytes.
+    /// Written as a flat, branch-free loop so LLVM auto-vectorizes it, like `Span.isASCII`.
+    @inlinable
+    @inline(__always)
+    func _expandToLowercasedHexASCII(into hexStorage: UnsafeMutableRawBufferPointer) {
+        withUnsafeBytes(of: self.address.bigEndian) { bigBytes in
+            for idx in 0..<16 {
+                let byte = bigBytes[idx]
+                let high = byte &>> 4
+                let low = byte & 0x0F
+                let startOffset = 2 &* idx
+                hexStorage[startOffset] = IPv6Address._lowercasedHexASCII(nibble: high)
+                hexStorage[startOffset &+ 1] = IPv6Address._lowercasedHexASCII(nibble: low)
+            }
+        }
     }
 
     /// Maps a single hex nibble (0...15) to its lowercased ASCII byte.
     @inlinable
+    @inline(__always)
     static func _lowercasedHexASCII(nibble: UInt8) -> UInt8 {
         nibble > 9
             ? nibble &+ UInt8.asciiLowercasedA &- 10
             : nibble &+ UInt8.ascii0
+    }
+
+    @inlinable
+    @inline(__always)
+    static func _writeSegmentFromHex(
+        into buffer: UnsafeMutableBufferPointer<UInt8>,
+        advancingIdx idx: inout Int,
+        hexBytes: UnsafeMutableRawBufferPointer,
+        octalIdx: Int
+    ) {
+        let base = octalIdx &* 4
+        let _1 = hexBytes[base]
+        let _2 = hexBytes[base &+ 1]
+        let _3 = hexBytes[base &+ 2]
+        let _4 = hexBytes[base &+ 3]
+
+        var notAllZerosSoFar = _1 != UInt8.ascii0
+        buffer[idx] = _1
+        idx &+= notAllZerosSoFar ? 1 : 0
+
+        notAllZerosSoFar = notAllZerosSoFar || _2 != UInt8.ascii0
+        buffer[idx] = _2
+        idx &+= notAllZerosSoFar ? 1 : 0
+
+        notAllZerosSoFar = notAllZerosSoFar || _3 != UInt8.ascii0
+        buffer[idx] = _3
+        idx &+= notAllZerosSoFar ? 1 : 0
+
+        buffer[idx] = _4
+        idx &+= 1
     }
 }
 
@@ -437,4 +454,527 @@ extension IPv6Address: LosslessStringConvertible {
 
         return true
     }
+}
+
+@available(SwiftStdlib 5.1, *)
+extension IPv6Address {
+    // 16 means no compression sign.
+    // Each Element is a pair of (lowerBound, upperBound) of range of segments that should be compressed.
+    // Each index of each element is the bitmap of the segments that are all-zero (1) or not (0).
+    // For example the element at index 0b0011_1000 is `(3, 5)`, meaning segments 3, 4, 5 should be compressed.
+    @usableFromInline
+    package static let _compressionRangeTable: [(Int, Int)] = [
+        // 0b0000_0000
+        (16, 16),
+        // 0b0000_0001
+        (16, 16),
+        // 0b0000_0010
+        (16, 16),
+        // 0b0000_0011
+        (0, 1),
+        // 0b0000_0100
+        (16, 16),
+        // 0b0000_0101
+        (16, 16),
+        // 0b0000_0110
+        (1, 2),
+        // 0b0000_0111
+        (0, 2),
+        // 0b0000_1000
+        (16, 16),
+        // 0b0000_1001
+        (16, 16),
+        // 0b0000_1010
+        (16, 16),
+        // 0b0000_1011
+        (0, 1),
+        // 0b0000_1100
+        (2, 3),
+        // 0b0000_1101
+        (2, 3),
+        // 0b0000_1110
+        (1, 3),
+        // 0b0000_1111
+        (0, 3),
+        // 0b0001_0000
+        (16, 16),
+        // 0b0001_0001
+        (16, 16),
+        // 0b0001_0010
+        (16, 16),
+        // 0b0001_0011
+        (0, 1),
+        // 0b0001_0100
+        (16, 16),
+        // 0b0001_0101
+        (16, 16),
+        // 0b0001_0110
+        (1, 2),
+        // 0b0001_0111
+        (0, 2),
+        // 0b0001_1000
+        (3, 4),
+        // 0b0001_1001
+        (3, 4),
+        // 0b0001_1010
+        (3, 4),
+        // 0b0001_1011
+        (0, 1),
+        // 0b0001_1100
+        (2, 4),
+        // 0b0001_1101
+        (2, 4),
+        // 0b0001_1110
+        (1, 4),
+        // 0b0001_1111
+        (0, 4),
+        // 0b0010_0000
+        (16, 16),
+        // 0b0010_0001
+        (16, 16),
+        // 0b0010_0010
+        (16, 16),
+        // 0b0010_0011
+        (0, 1),
+        // 0b0010_0100
+        (16, 16),
+        // 0b0010_0101
+        (16, 16),
+        // 0b0010_0110
+        (1, 2),
+        // 0b0010_0111
+        (0, 2),
+        // 0b0010_1000
+        (16, 16),
+        // 0b0010_1001
+        (16, 16),
+        // 0b0010_1010
+        (16, 16),
+        // 0b0010_1011
+        (0, 1),
+        // 0b0010_1100
+        (2, 3),
+        // 0b0010_1101
+        (2, 3),
+        // 0b0010_1110
+        (1, 3),
+        // 0b0010_1111
+        (0, 3),
+        // 0b0011_0000
+        (4, 5),
+        // 0b0011_0001
+        (4, 5),
+        // 0b0011_0010
+        (4, 5),
+        // 0b0011_0011
+        (0, 1),
+        // 0b0011_0100
+        (4, 5),
+        // 0b0011_0101
+        (4, 5),
+        // 0b0011_0110
+        (1, 2),
+        // 0b0011_0111
+        (0, 2),
+        // 0b0011_1000
+        (3, 5),
+        // 0b0011_1001
+        (3, 5),
+        // 0b0011_1010
+        (3, 5),
+        // 0b0011_1011
+        (3, 5),
+        // 0b0011_1100
+        (2, 5),
+        // 0b0011_1101
+        (2, 5),
+        // 0b0011_1110
+        (1, 5),
+        // 0b0011_1111
+        (0, 5),
+        // 0b0100_0000
+        (16, 16),
+        // 0b0100_0001
+        (16, 16),
+        // 0b0100_0010
+        (16, 16),
+        // 0b0100_0011
+        (0, 1),
+        // 0b0100_0100
+        (16, 16),
+        // 0b0100_0101
+        (16, 16),
+        // 0b0100_0110
+        (1, 2),
+        // 0b0100_0111
+        (0, 2),
+        // 0b0100_1000
+        (16, 16),
+        // 0b0100_1001
+        (16, 16),
+        // 0b0100_1010
+        (16, 16),
+        // 0b0100_1011
+        (0, 1),
+        // 0b0100_1100
+        (2, 3),
+        // 0b0100_1101
+        (2, 3),
+        // 0b0100_1110
+        (1, 3),
+        // 0b0100_1111
+        (0, 3),
+        // 0b0101_0000
+        (16, 16),
+        // 0b0101_0001
+        (16, 16),
+        // 0b0101_0010
+        (16, 16),
+        // 0b0101_0011
+        (0, 1),
+        // 0b0101_0100
+        (16, 16),
+        // 0b0101_0101
+        (16, 16),
+        // 0b0101_0110
+        (1, 2),
+        // 0b0101_0111
+        (0, 2),
+        // 0b0101_1000
+        (3, 4),
+        // 0b0101_1001
+        (3, 4),
+        // 0b0101_1010
+        (3, 4),
+        // 0b0101_1011
+        (0, 1),
+        // 0b0101_1100
+        (2, 4),
+        // 0b0101_1101
+        (2, 4),
+        // 0b0101_1110
+        (1, 4),
+        // 0b0101_1111
+        (0, 4),
+        // 0b0110_0000
+        (5, 6),
+        // 0b0110_0001
+        (5, 6),
+        // 0b0110_0010
+        (5, 6),
+        // 0b0110_0011
+        (0, 1),
+        // 0b0110_0100
+        (5, 6),
+        // 0b0110_0101
+        (5, 6),
+        // 0b0110_0110
+        (1, 2),
+        // 0b0110_0111
+        (0, 2),
+        // 0b0110_1000
+        (5, 6),
+        // 0b0110_1001
+        (5, 6),
+        // 0b0110_1010
+        (5, 6),
+        // 0b0110_1011
+        (0, 1),
+        // 0b0110_1100
+        (2, 3),
+        // 0b0110_1101
+        (2, 3),
+        // 0b0110_1110
+        (1, 3),
+        // 0b0110_1111
+        (0, 3),
+        // 0b0111_0000
+        (4, 6),
+        // 0b0111_0001
+        (4, 6),
+        // 0b0111_0010
+        (4, 6),
+        // 0b0111_0011
+        (4, 6),
+        // 0b0111_0100
+        (4, 6),
+        // 0b0111_0101
+        (4, 6),
+        // 0b0111_0110
+        (4, 6),
+        // 0b0111_0111
+        (0, 2),
+        // 0b0111_1000
+        (3, 6),
+        // 0b0111_1001
+        (3, 6),
+        // 0b0111_1010
+        (3, 6),
+        // 0b0111_1011
+        (3, 6),
+        // 0b0111_1100
+        (2, 6),
+        // 0b0111_1101
+        (2, 6),
+        // 0b0111_1110
+        (1, 6),
+        // 0b0111_1111
+        (0, 6),
+        // 0b1000_0000
+        (16, 16),
+        // 0b1000_0001
+        (16, 16),
+        // 0b1000_0010
+        (16, 16),
+        // 0b1000_0011
+        (0, 1),
+        // 0b1000_0100
+        (16, 16),
+        // 0b1000_0101
+        (16, 16),
+        // 0b1000_0110
+        (1, 2),
+        // 0b1000_0111
+        (0, 2),
+        // 0b1000_1000
+        (16, 16),
+        // 0b1000_1001
+        (16, 16),
+        // 0b1000_1010
+        (16, 16),
+        // 0b1000_1011
+        (0, 1),
+        // 0b1000_1100
+        (2, 3),
+        // 0b1000_1101
+        (2, 3),
+        // 0b1000_1110
+        (1, 3),
+        // 0b1000_1111
+        (0, 3),
+        // 0b1001_0000
+        (16, 16),
+        // 0b1001_0001
+        (16, 16),
+        // 0b1001_0010
+        (16, 16),
+        // 0b1001_0011
+        (0, 1),
+        // 0b1001_0100
+        (16, 16),
+        // 0b1001_0101
+        (16, 16),
+        // 0b1001_0110
+        (1, 2),
+        // 0b1001_0111
+        (0, 2),
+        // 0b1001_1000
+        (3, 4),
+        // 0b1001_1001
+        (3, 4),
+        // 0b1001_1010
+        (3, 4),
+        // 0b1001_1011
+        (0, 1),
+        // 0b1001_1100
+        (2, 4),
+        // 0b1001_1101
+        (2, 4),
+        // 0b1001_1110
+        (1, 4),
+        // 0b1001_1111
+        (0, 4),
+        // 0b1010_0000
+        (16, 16),
+        // 0b1010_0001
+        (16, 16),
+        // 0b1010_0010
+        (16, 16),
+        // 0b1010_0011
+        (0, 1),
+        // 0b1010_0100
+        (16, 16),
+        // 0b1010_0101
+        (16, 16),
+        // 0b1010_0110
+        (1, 2),
+        // 0b1010_0111
+        (0, 2),
+        // 0b1010_1000
+        (16, 16),
+        // 0b1010_1001
+        (16, 16),
+        // 0b1010_1010
+        (16, 16),
+        // 0b1010_1011
+        (0, 1),
+        // 0b1010_1100
+        (2, 3),
+        // 0b1010_1101
+        (2, 3),
+        // 0b1010_1110
+        (1, 3),
+        // 0b1010_1111
+        (0, 3),
+        // 0b1011_0000
+        (4, 5),
+        // 0b1011_0001
+        (4, 5),
+        // 0b1011_0010
+        (4, 5),
+        // 0b1011_0011
+        (0, 1),
+        // 0b1011_0100
+        (4, 5),
+        // 0b1011_0101
+        (4, 5),
+        // 0b1011_0110
+        (1, 2),
+        // 0b1011_0111
+        (0, 2),
+        // 0b1011_1000
+        (3, 5),
+        // 0b1011_1001
+        (3, 5),
+        // 0b1011_1010
+        (3, 5),
+        // 0b1011_1011
+        (3, 5),
+        // 0b1011_1100
+        (2, 5),
+        // 0b1011_1101
+        (2, 5),
+        // 0b1011_1110
+        (1, 5),
+        // 0b1011_1111
+        (0, 5),
+        // 0b1100_0000
+        (6, 7),
+        // 0b1100_0001
+        (6, 7),
+        // 0b1100_0010
+        (6, 7),
+        // 0b1100_0011
+        (0, 1),
+        // 0b1100_0100
+        (6, 7),
+        // 0b1100_0101
+        (6, 7),
+        // 0b1100_0110
+        (1, 2),
+        // 0b1100_0111
+        (0, 2),
+        // 0b1100_1000
+        (6, 7),
+        // 0b1100_1001
+        (6, 7),
+        // 0b1100_1010
+        (6, 7),
+        // 0b1100_1011
+        (0, 1),
+        // 0b1100_1100
+        (2, 3),
+        // 0b1100_1101
+        (2, 3),
+        // 0b1100_1110
+        (1, 3),
+        // 0b1100_1111
+        (0, 3),
+        // 0b1101_0000
+        (6, 7),
+        // 0b1101_0001
+        (6, 7),
+        // 0b1101_0010
+        (6, 7),
+        // 0b1101_0011
+        (0, 1),
+        // 0b1101_0100
+        (6, 7),
+        // 0b1101_0101
+        (6, 7),
+        // 0b1101_0110
+        (1, 2),
+        // 0b1101_0111
+        (0, 2),
+        // 0b1101_1000
+        (3, 4),
+        // 0b1101_1001
+        (3, 4),
+        // 0b1101_1010
+        (3, 4),
+        // 0b1101_1011
+        (0, 1),
+        // 0b1101_1100
+        (2, 4),
+        // 0b1101_1101
+        (2, 4),
+        // 0b1101_1110
+        (1, 4),
+        // 0b1101_1111
+        (0, 4),
+        // 0b1110_0000
+        (5, 7),
+        // 0b1110_0001
+        (5, 7),
+        // 0b1110_0010
+        (5, 7),
+        // 0b1110_0011
+        (5, 7),
+        // 0b1110_0100
+        (5, 7),
+        // 0b1110_0101
+        (5, 7),
+        // 0b1110_0110
+        (5, 7),
+        // 0b1110_0111
+        (0, 2),
+        // 0b1110_1000
+        (5, 7),
+        // 0b1110_1001
+        (5, 7),
+        // 0b1110_1010
+        (5, 7),
+        // 0b1110_1011
+        (5, 7),
+        // 0b1110_1100
+        (5, 7),
+        // 0b1110_1101
+        (5, 7),
+        // 0b1110_1110
+        (1, 3),
+        // 0b1110_1111
+        (0, 3),
+        // 0b1111_0000
+        (4, 7),
+        // 0b1111_0001
+        (4, 7),
+        // 0b1111_0010
+        (4, 7),
+        // 0b1111_0011
+        (4, 7),
+        // 0b1111_0100
+        (4, 7),
+        // 0b1111_0101
+        (4, 7),
+        // 0b1111_0110
+        (4, 7),
+        // 0b1111_0111
+        (4, 7),
+        // 0b1111_1000
+        (3, 7),
+        // 0b1111_1001
+        (3, 7),
+        // 0b1111_1010
+        (3, 7),
+        // 0b1111_1011
+        (3, 7),
+        // 0b1111_1100
+        (2, 7),
+        // 0b1111_1101
+        (2, 7),
+        // 0b1111_1110
+        (1, 7),
+        // 0b1111_1111
+        (0, 7),
+    ]
 }

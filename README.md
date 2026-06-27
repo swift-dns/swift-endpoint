@@ -146,7 +146,7 @@ For `IPv6Address`, the Arpa domain name format is supported. For example the fol
 
 In [this post](https://forums.swift.org/t/pitch-standard-network-address-types/82288/11) on the Swift forums I was asked to compare IP parsing implementations with the native C libraries which provide functions such as `inet_ntop` and `inet_pton` which are commonly used by everyone, including swift-nio.
 
-Here's the result ~~at that point in time~~ (Last update: Jun 22, 2026):
+Here's the result ~~at that point in time~~ (Last update: Jun 27, 2026):
 
 In all 8 benchmarks this library performs better than the C libraries when called from Swift.
 
@@ -156,10 +156,10 @@ These were performed on my M1 Pro MacBook, on macOS 27.0 (beta 1).
 
 | Benchmark Name                              | Rounds      | Swift | inet_pton/ntop | Speedup |
 | ------------------------------------------- | ----------- | ----- | -------------- | ------- |
-| IPv4_String_Encoding_Mixed                  | 15 Millions | 121ms | 3696ms         | 30.55x  |
-| IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 273ms | 517ms          | 1.89x   |
-| IPv6_String_Encoding_Mixed                  | 4 Millions  | 341ms | 1655ms         | 4.85x   |
-| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 121ms | 396ms          | 3.27x   |
+| IPv4_String_Encoding_Mixed                  | 15 Millions | 122ms | 3336ms         | 27.34x  |
+| IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 273ms | 421ms          | 1.54x   |
+| IPv6_String_Encoding_Mixed                  | 4 Millions  | 338ms | 1575ms         | 4.66x   |
+| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 94ms  | 372ms          | 3.96x   |
 
 #### Against glibc
 
@@ -169,10 +169,10 @@ These were performed on a dedicated-cpu-core machine from Hetzner in the Falkens
 
 | Benchmark Name                              | Rounds      | Swift | inet_pton/ntop | Speedup |
 | ------------------------------------------- | ----------- | ----- | -------------- | ------- |
-| IPv4_String_Encoding_Mixed                  | 15 Millions | 130ms | 1520ms         | 11.69x  |
-| IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 180ms | 200ms          | 1.11x   |
-| IPv6_String_Encoding_Mixed                  | 4 Millions  | 200ms | 820ms          | 4.10x   |
-| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 90ms  | 120ms          | 1.33x   |
+| IPv4_String_Encoding_Mixed                  | 15 Millions | 150ms | 1630ms         | 10.87x  |
+| IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 190ms | 200ms          | 1.05x   |
+| IPv6_String_Encoding_Mixed                  | 4 Millions  | 210ms | 870ms          | 4.14x   |
+| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 100ms | 120ms          | 1.20x   |
 
 #### Notes
 

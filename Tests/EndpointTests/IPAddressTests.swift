@@ -82,6 +82,56 @@ struct IPAddressTests {
     }
 
     @available(SwiftStdlib 6.2, *)
+    @Test(arguments: ipv4StringAndAddressTestCases.compactMap(\.1))
+    func `IPv4Address description and serialization round-trip`(ip: IPv4Address) {
+        #expect(IPv4Address(ip.description) == ip)
+
+        let viaCString = ip.withCString { span in
+            span.withUnsafeBufferPointer { IPv4Address(cString: $0.baseAddress!) }
+        }
+        #expect(viaCString == ip)
+
+        let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: IPv4Address.size)
+        defer { buffer.deallocate() }
+        var outputSpan = OutputSpan(buffer: buffer, initializedCount: 0)
+        let didEncode = ip.encode(into: &outputSpan)
+        #expect(didEncode)
+        #expect(IPv4Address(from: outputSpan.span) == ip)
+    }
+
+    @available(SwiftStdlib 6.2, *)
+    @Test(arguments: ipv6StringAndAddressTestCases.compactMap(\.1))
+    func `IPv6Address description and serialization round-trip`(ip: IPv6Address) {
+        #expect(IPv6Address(ip.description) == ip)
+
+        let viaCString = ip.withCString { span in
+            span.withUnsafeBufferPointer { IPv6Address(cString: $0.baseAddress!) }
+        }
+        #expect(viaCString == ip)
+
+        let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: IPv6Address.size)
+        defer { buffer.deallocate() }
+        var outputSpan = OutputSpan(buffer: buffer, initializedCount: 0)
+        let didEncode = ip.encode(into: &outputSpan)
+        #expect(didEncode)
+        #expect(IPv6Address(from: outputSpan.span) == ip)
+    }
+
+    @available(SwiftStdlib 6.2, *)
+    @Test(
+        arguments: ipv4StringAndAddressTestCases.compactMap(\.1).map(AnyIPAddress.v4)
+            + ipv6StringAndAddressTestCases.compactMap(\.1).map(AnyIPAddress.v6)
+    )
+    func `AnyIPAddress description round-trip`(ip: AnyIPAddress) {
+        #expect(AnyIPAddress(ip.description) == ip)
+
+        let viaCString = ip.withCString { span in
+            span.withUnsafeBufferPointer { AnyIPAddress(cString: $0.baseAddress!) }
+        }
+        #expect(viaCString == ip)
+    }
+
+    @available(SwiftStdlib 6.2, *)
     @Test(
         arguments: ipv4StringAndAddressTestCases
             + ipv4IDNAStringAndAddressTestCases.map { ($0.0, nil, $0.2) }
@@ -362,6 +412,8 @@ struct IPAddressTests {
             (0x0000_0000_0000_0000_0001_0000_0000_0002, "[::1:0:0:2]"),
             (0x0000_0000_0001_0002_0003_0000_0004_0005, "[::1:2:3:0:4:5]"),
             (0x0000_0001_0002_0003_0004_0000_0005_0006, "[0:1:2:3:4:0:5:6]"),
+            (0x0000_0000_0001_0000_0000_0001_0000_0000, "[::1:0:0:1:0:0]"),
+            (0x0001_0000_0001_0000_0000_0000_0001_0000, "[1:0:1::1:0]"),
         ]
     )
     func ipv6AddressDescription(ip: UInt128, expectedDescription: String) {
@@ -638,6 +690,52 @@ struct IPAddressTests {
         #expect(ntop != nil)
         #expect(IPv6Address(cString: buffer) == ip)
     }
+    @available(SwiftStdlib 6.2, *)
+    @Test(arguments: rawByteRejectTestCases)
+    func `Non-ASCII byte inputs are rejected by both parsers`(bytes: [UInt8]) {
+        let span = bytes.span
+        #expect(IPv4Address(textualRepresentation: span) == nil)
+        #expect(IPv6Address(textualRepresentation: span) == nil)
+    }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test(arguments: Array(0..<256))
+    func `IPv6Address compression-sign lookup table contains correct values`(index: Int) {
+        let mask = UInt8(index)
+
+        var bestStart = -1
+        var bestLength = 0
+        var segment = 0
+        while segment < 8 {
+            if (mask >> segment) & 1 == 1 {
+                var runEnd = segment
+                while runEnd < 8 && (mask >> runEnd) & 1 == 1 {
+                    runEnd += 1
+                }
+                let length = runEnd - segment
+                if length > bestLength {
+                    bestLength = length
+                    bestStart = segment
+                }
+                segment = runEnd
+            } else {
+                segment += 1
+            }
+        }
+
+        let expected: (Int, Int)
+        if bestLength >= 2 {
+            expected = (bestStart, bestStart + bestLength - 1)
+        } else {
+            expected = (16, 16)
+        }
+
+        let actual = IPv6Address._compressionRangeTable[index]
+        #expect(
+            actual == expected,
+            "mask \(index) (0b\(String(mask, radix: 2))): got \(actual), expected \(expected)"
+        )
+    }
 }
 
 /// (IPv4String, IPv4Address, isValidIPv6)
@@ -689,6 +787,13 @@ private let ipv4StringAndAddressTestCases: [(String, IPv4Address?, Bool)] = [
     ("1..2.3", nil, false),
     ("1111:2222:3333:4444:5555:6666:7777:8888", nil, true),
     ("::1", nil, true),
+    /// Imported from glibc `resolv/tst-inet_pton.c` and Darwin Libc `tests/inet_pton.c`.
+    /// `192.0.2.01`: glibc rejects the leading zero; this library and Apple `inet_pton`
+    /// accept it as decimal per RFC 6943. Controversial across libcs.
+    ("192.0.2.01", IPv4Address(192, 0, 2, 1), false),
+    ("192.0.2.27", IPv4Address(192, 0, 2, 27), false),
+    ("10.20.30.40", IPv4Address(10, 20, 30, 40), false),
+    ("010.020.030.040", IPv4Address(10, 20, 30, 40), false),
 ]
 
 /// (IPv4String, IPv4Address, isValidIPv6)
@@ -855,6 +960,95 @@ private let ipv6StringAndAddressTestCases: [(String, IPv6Address?, Bool)] = [
     ("0000:0000:0000:0000:0000:0000:0000:0001", 1, false),
     ("[0:00:000:0000:0:0:0:1]", 1, false),
     ("192.168.1.255", nil, true),
+    /// Imported from glibc `resolv/tst-inet_pton.c`.
+    (".:", nil, false),
+    ("0.:", nil, false),
+    ("00", nil, false),
+    ("0000000", nil, false),
+    ("00000000000000000", nil, false),
+    ("092.", nil, false),
+    ("10.0.301.2", nil, false),
+    ("19..", nil, false),
+    ("192.0.2.-1", nil, false),
+    ("192.0.2.1.", nil, false),
+    ("192.0.2.1192.", nil, false),
+    ("192.0.2.256", nil, false),
+    ("192.0.201.", nil, false),
+    ("192.0.261.", nil, false),
+    ("192.062.", nil, false),
+    ("192.192.00n2.1.", nil, false),
+    ("192.192.2.190.", nil, false),
+    ("192.255.255.2555", nil, false),
+    ("1:1::1:1", 0x0001_0001_0000_0000_0000_0000_0001_0001, false),
+    ("2", nil, false),
+    ("2.", nil, false),
+    ("2001:db8:00001::f", nil, false),
+    ("2001:db8:10000::f", nil, false),
+    ("2001:db8:1234:5678:abcd:ef01:2345:67", 0x2001_0db8_1234_5678_abcd_ef01_2345_0067, false),
+    ("2001:db8:1234:5678:abcd:ef01:2345:6789:1", nil, false),
+    ("2001:db8:1234:5678:abcd:ef01:2345::6789", nil, false),
+    ("2001:db8::0", 0x2001_0db8_0000_0000_0000_0000_0000_0000, false),
+    ("2001:db8::00", 0x2001_0db8_0000_0000_0000_0000_0000_0000, false),
+    ("2001:db8::1", 0x2001_0db8_0000_0000_0000_0000_0000_0001, false),
+    ("2001:db8::10", 0x2001_0db8_0000_0000_0000_0000_0000_0010, false),
+    ("2001:db8::19", 0x2001_0db8_0000_0000_0000_0000_0000_0019, false),
+    ("2001:db8::2", 0x2001_0db8_0000_0000_0000_0000_0000_0002, false),
+    ("2001:db8::3", 0x2001_0db8_0000_0000_0000_0000_0000_0003, false),
+    ("2001:db8::4", 0x2001_0db8_0000_0000_0000_0000_0000_0004, false),
+    ("2001:db8::5", 0x2001_0db8_0000_0000_0000_0000_0000_0005, false),
+    ("2001:db8::6", 0x2001_0db8_0000_0000_0000_0000_0000_0006, false),
+    ("2001:db8::7", 0x2001_0db8_0000_0000_0000_0000_0000_0007, false),
+    ("2001:db8::8", 0x2001_0db8_0000_0000_0000_0000_0000_0008, false),
+    ("2001:db8::9", 0x2001_0db8_0000_0000_0000_0000_0000_0009, false),
+    ("2001:db8::A", 0x2001_0db8_0000_0000_0000_0000_0000_000a, false),
+    ("2001:db8::B", 0x2001_0db8_0000_0000_0000_0000_0000_000b, false),
+    ("2001:db8::C", 0x2001_0db8_0000_0000_0000_0000_0000_000c, false),
+    ("2001:db8::D", 0x2001_0db8_0000_0000_0000_0000_0000_000d, false),
+    ("2001:db8::E", 0x2001_0db8_0000_0000_0000_0000_0000_000e, false),
+    ("2001:db8::F", 0x2001_0db8_0000_0000_0000_0000_0000_000f, false),
+    ("2001:db8::a", 0x2001_0db8_0000_0000_0000_0000_0000_000a, false),
+    ("2001:db8::b", 0x2001_0db8_0000_0000_0000_0000_0000_000b, false),
+    ("2001:db8::c", 0x2001_0db8_0000_0000_0000_0000_0000_000c, false),
+    ("2001:db8::d", 0x2001_0db8_0000_0000_0000_0000_0000_000d, false),
+    ("2001:db8::e", 0x2001_0db8_0000_0000_0000_0000_0000_000e, false),
+    ("2001:db8::f", 0x2001_0db8_0000_0000_0000_0000_0000_000f, false),
+    ("2001:db8::ff", 0x2001_0db8_0000_0000_0000_0000_0000_00ff, false),
+    ("22", nil, false),
+    ("2222@", nil, false),
+    ("255.255.255.25555", nil, false),
+    ("2:", nil, false),
+    ("2:ff:1:1:7:ff:1:1:7.", nil, false),
+    (
+        "2f:000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000G01",
+        nil, false
+    ),
+    ("429495", nil, false),
+    ("5::5::", nil, false),
+    ("6.6.", nil, false),
+    ("992.", nil, false),
+    ("::00001", nil, false),
+    ("::10000", nil, false),
+    ("::1:1", 0x0000_0000_0000_0000_0000_0000_0001_0001, false),
+    ("::ff:1:1:7.0.0.1", 0x0000_0000_0000_00ff_0001_0001_0700_0001, false),
+    ("::ff:1:1:7:ff:1:1:7.", nil, false),
+    ("::ff:1:1:7ff:1:8:7.0.0.1", nil, false),
+    ("::ff:1:1:7ff:1:8f:1:1:71", nil, false),
+    ("::ffff:02fff:127.0.S1", nil, false),
+    ("::ffff:127.0.0.1", 0x0000_0000_0000_0000_0000_ffff_7f00_0001, false),
+    ("::ffff:1:7.0.0.1", 0x0000_0000_0000_0000_ffff_0001_0700_0001, false),
+    ("A:f:ff:1:1:D:ff:1:1::7.", nil, false),
+    ("AAAAA.", nil, false),
+    ("D:::", nil, false),
+    ("DF8F", nil, false),
+    ("F::", 0x000f_0000_0000_0000_0000_0000_0000_0000, false),
+    ("F:ff:100:7ff:1:8:7.0.10.1", 0x000f_00ff_0100_07ff_0001_0008_0700_0a01, false),
+    ("d92.", nil, false),
+    (
+        "ff:0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
+        nil, false
+    ),
+    ("fff2:2::ff2:2:f7", 0xfff2_0002_0000_0000_0000_0ff2_0002_00f7, false),
+    ("ffff:ff:ff:fff:ff:ff:ff:", nil, false),
 ]
 
 /// (IPv6String, IPv6Address, isValidIPv4)
@@ -919,3 +1113,26 @@ let anyIPAddressCIDRRelatedPropertiesTestCases:
         (.v6(IPv6Address("00FF::")!), "!isMulticast", { @Sendable in !$0.isMulticast }),
         (.v6(IPv6Address("FAFF::")!), "!isMulticast", { @Sendable in !$0.isMulticast }),
     ]
+
+private let rawByteRejectTestCases: [[UInt8]] = [
+    [49, 57, 50, 46, 48, 46, 50, 46, 49, 57, 50, 46, 255, 46, 46],
+    [49, 57, 50, 46, 48, 46, 50, 174],
+    [49, 57, 50, 46, 48, 46, 178, 46],
+    [49, 57, 50, 46, 48, 57, 50, 46, 174],
+    [49, 57, 50, 46, 48, 174, 50, 46],
+    [49, 57, 50, 46, 49, 57, 50, 46, 48, 46, 50, 54, 54, 49, 25],
+    [49, 57, 50, 46, 57, 50, 46, 50, 49, 57, 19, 46],
+    [49, 57, 50, 46, 176, 46, 50, 46],
+    [50, 48, 48, 49, 58, 100, 98, 56, 58, 58, 49, 58, 58, 10],
+    [50, 48, 48, 49, 58, 100, 98, 56, 58, 58, 49, 58, 58, 50, 10],
+    [50, 48, 48, 49, 58, 100, 98, 56, 58, 58, 102, 102, 102, 102, 58, 50, 10],
+    [50, 53, 53, 46, 50, 53, 53, 46, 50, 53, 53, 46, 50, 53, 53, 1],
+    [
+        50, 58, 97, 58, 56, 58, 69, 69, 69, 69, 58, 58, 69, 69, 69, 69, 58, 70, 58, 69, 69, 69, 56,
+        58, 69, 69, 69, 69, 28, 42, 58,
+    ],
+    [58, 186],
+    [70, 58, 65, 58, 56, 58, 69, 69, 69, 69, 58, 56, 58, 69, 69, 69, 69, 28, 42, 58],
+    [70, 58, 97, 58, 56, 58, 69, 69, 69, 69, 58, 56, 58, 69, 69, 69, 69, 28, 42, 58],
+    [186, 58],
+]

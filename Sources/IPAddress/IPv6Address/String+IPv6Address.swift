@@ -39,22 +39,16 @@ extension IPv6Address {
             _ callbackReturningBytesWritten: (UnsafeMutableBufferPointer<UInt8>) -> Int
         ) throws -> Buffer
     ) rethrows -> Buffer {
-        let compressionRange = self.findCompressionSignRange()
-
-        assert(
-            compressionRange.lowerBound < compressionRange.upperBound
-                || compressionRange.upperBound == 16
-        )
+        let mask = self.makeSegmentsMask()
+        let entry = IPv6Address._segmentWriteTable[Int(mask)]
 
         /// Reserve the max possibly needed capacity.
         let bracketsCount = enclosingInSquareBrackets ? 2 : 0
-        let segmentsCount = 8 &- compressionRange.count
-        let colonsCount = max(segmentsCount &- 1, 2)
         /// If no brackets, we need 1 extra byte for the possible colon that we speculatively write
         let speculativeBytes = enclosingInSquareBrackets ? 0 : 1
-        let toReserve = bracketsCount &+ colonsCount &+ (segmentsCount &* 4) &+ speculativeBytes
+        let toReserve = entry.maxRawLayoutBytes &+ bracketsCount &+ speculativeBytes
 
-        return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
+        return try writingToUnsafeMutableBufferPointerOfUInt8(Int(toReserve)) { buffer in
             withUnsafeTemporaryAllocation(byteCount: 32, alignment: 1) { hexBytes in
                 self._expandToLowercasedHexASCII(into: hexBytes)
 
@@ -63,21 +57,19 @@ extension IPv6Address {
                 buffer[0] = .asciiLeftSquareBracket
                 writeIdx &+= enclosingInSquareBrackets ? 1 : 0
 
-                var idx = 0
-                while idx < 8 {
-                    let isAtCsBorder = idx == compressionRange.lowerBound ? 1 : 0
+                buffer[writeIdx] = .asciiColon
+                writeIdx &+= entry.writeCsAtBeginning ? 1 : 0
+
+                let writeCsAtIdx = entry.writeCsAtIdx
+                let range = Range(uncheckedBounds: (0, entry.segmentsCount))
+                for offset in range {
+                    let idx = Int(entry.packedIndices &>> (offset &* 8) & 0xFF)
+
                     buffer[writeIdx] = .asciiColon
-                    writeIdx &+= isAtCsBorder
+                    writeIdx &+= idx == writeCsAtIdx ? 1 : 0
 
-                    let isAtIdx0 = idx == 0 ? 1 : 0
                     buffer[writeIdx] = .asciiColon
-                    writeIdx &+= isAtCsBorder & isAtIdx0
-
-                    idx = isAtCsBorder == 1 ? compressionRange.upperBound &+ 1 : idx
-
-                    if isAtCsBorder == 1 {
-                        continue
-                    }
+                    writeIdx &+= offset == 0 ? 0 : 1
 
                     IPv6Address._writeSegmentFromHex(
                         into: buffer,
@@ -85,12 +77,12 @@ extension IPv6Address {
                         hexBytes: hexBytes,
                         octalIdx: idx
                     )
-
-                    buffer[writeIdx] = .asciiColon
-                    writeIdx &+= idx < 7 ? 1 : 0
-
-                    idx &+= 1
                 }
+
+                buffer[writeIdx] = .asciiColon
+                writeIdx &+= entry.writeCsAtEnd ? 1 : 0
+                buffer[writeIdx] = .asciiColon
+                writeIdx &+= entry.writeCsAtEnd ? 1 : 0
 
                 buffer[writeIdx] = .asciiRightSquareBracket
                 writeIdx &+= enclosingInSquareBrackets ? 1 : 0
@@ -100,15 +92,6 @@ extension IPv6Address {
                 return writeIdx
             }
         }
-    }
-
-    /// Returns (16, 16) if no compression sign is found, otherwise the bounds of the compression sign.
-    @inlinable
-    @inline(__always)
-    func findCompressionSignRange() -> Range<Int> {
-        let zeroSegments = self.makeSegmentsMask()
-        let (lowerBound, upperBound) = IPv6Address._compressionRangeTable[Int(zeroSegments)]
-        return Range(uncheckedBounds: (lowerBound, upperBound))
     }
 
     /// Returns a UInt8, each bit representing whether
@@ -458,523 +441,282 @@ extension IPv6Address: LosslessStringConvertible {
 
 @available(SwiftStdlib 5.1, *)
 extension IPv6Address {
-    // 16 means no compression sign.
-    // Each Element is a pair of (lowerBound, upperBound) of range of segments that should be compressed.
-    // Each index of each element is the bitmap of the segments that are all-zero (1) or not (0).
-    // For example the element at index 0b0011_1000 is `(3, 5)`, meaning segments 3, 4, 5 should be compressed.
     @usableFromInline
-    package static let _compressionRangeTable: [(Int, Int)] = [
-        // 0b0000_0000
-        (16, 16),
-        // 0b0000_0001
-        (16, 16),
-        // 0b0000_0010
-        (16, 16),
-        // 0b0000_0011
-        (0, 1),
-        // 0b0000_0100
-        (16, 16),
-        // 0b0000_0101
-        (16, 16),
-        // 0b0000_0110
-        (1, 2),
-        // 0b0000_0111
-        (0, 2),
-        // 0b0000_1000
-        (16, 16),
-        // 0b0000_1001
-        (16, 16),
-        // 0b0000_1010
-        (16, 16),
-        // 0b0000_1011
-        (0, 1),
-        // 0b0000_1100
-        (2, 3),
-        // 0b0000_1101
-        (2, 3),
-        // 0b0000_1110
-        (1, 3),
-        // 0b0000_1111
-        (0, 3),
-        // 0b0001_0000
-        (16, 16),
-        // 0b0001_0001
-        (16, 16),
-        // 0b0001_0010
-        (16, 16),
-        // 0b0001_0011
-        (0, 1),
-        // 0b0001_0100
-        (16, 16),
-        // 0b0001_0101
-        (16, 16),
-        // 0b0001_0110
-        (1, 2),
-        // 0b0001_0111
-        (0, 2),
-        // 0b0001_1000
-        (3, 4),
-        // 0b0001_1001
-        (3, 4),
-        // 0b0001_1010
-        (3, 4),
-        // 0b0001_1011
-        (0, 1),
-        // 0b0001_1100
-        (2, 4),
-        // 0b0001_1101
-        (2, 4),
-        // 0b0001_1110
-        (1, 4),
-        // 0b0001_1111
-        (0, 4),
-        // 0b0010_0000
-        (16, 16),
-        // 0b0010_0001
-        (16, 16),
-        // 0b0010_0010
-        (16, 16),
-        // 0b0010_0011
-        (0, 1),
-        // 0b0010_0100
-        (16, 16),
-        // 0b0010_0101
-        (16, 16),
-        // 0b0010_0110
-        (1, 2),
-        // 0b0010_0111
-        (0, 2),
-        // 0b0010_1000
-        (16, 16),
-        // 0b0010_1001
-        (16, 16),
-        // 0b0010_1010
-        (16, 16),
-        // 0b0010_1011
-        (0, 1),
-        // 0b0010_1100
-        (2, 3),
-        // 0b0010_1101
-        (2, 3),
-        // 0b0010_1110
-        (1, 3),
-        // 0b0010_1111
-        (0, 3),
-        // 0b0011_0000
-        (4, 5),
-        // 0b0011_0001
-        (4, 5),
-        // 0b0011_0010
-        (4, 5),
-        // 0b0011_0011
-        (0, 1),
-        // 0b0011_0100
-        (4, 5),
-        // 0b0011_0101
-        (4, 5),
-        // 0b0011_0110
-        (1, 2),
-        // 0b0011_0111
-        (0, 2),
-        // 0b0011_1000
-        (3, 5),
-        // 0b0011_1001
-        (3, 5),
-        // 0b0011_1010
-        (3, 5),
-        // 0b0011_1011
-        (3, 5),
-        // 0b0011_1100
-        (2, 5),
-        // 0b0011_1101
-        (2, 5),
-        // 0b0011_1110
-        (1, 5),
-        // 0b0011_1111
-        (0, 5),
-        // 0b0100_0000
-        (16, 16),
-        // 0b0100_0001
-        (16, 16),
-        // 0b0100_0010
-        (16, 16),
-        // 0b0100_0011
-        (0, 1),
-        // 0b0100_0100
-        (16, 16),
-        // 0b0100_0101
-        (16, 16),
-        // 0b0100_0110
-        (1, 2),
-        // 0b0100_0111
-        (0, 2),
-        // 0b0100_1000
-        (16, 16),
-        // 0b0100_1001
-        (16, 16),
-        // 0b0100_1010
-        (16, 16),
-        // 0b0100_1011
-        (0, 1),
-        // 0b0100_1100
-        (2, 3),
-        // 0b0100_1101
-        (2, 3),
-        // 0b0100_1110
-        (1, 3),
-        // 0b0100_1111
-        (0, 3),
-        // 0b0101_0000
-        (16, 16),
-        // 0b0101_0001
-        (16, 16),
-        // 0b0101_0010
-        (16, 16),
-        // 0b0101_0011
-        (0, 1),
-        // 0b0101_0100
-        (16, 16),
-        // 0b0101_0101
-        (16, 16),
-        // 0b0101_0110
-        (1, 2),
-        // 0b0101_0111
-        (0, 2),
-        // 0b0101_1000
-        (3, 4),
-        // 0b0101_1001
-        (3, 4),
-        // 0b0101_1010
-        (3, 4),
-        // 0b0101_1011
-        (0, 1),
-        // 0b0101_1100
-        (2, 4),
-        // 0b0101_1101
-        (2, 4),
-        // 0b0101_1110
-        (1, 4),
-        // 0b0101_1111
-        (0, 4),
-        // 0b0110_0000
-        (5, 6),
-        // 0b0110_0001
-        (5, 6),
-        // 0b0110_0010
-        (5, 6),
-        // 0b0110_0011
-        (0, 1),
-        // 0b0110_0100
-        (5, 6),
-        // 0b0110_0101
-        (5, 6),
-        // 0b0110_0110
-        (1, 2),
-        // 0b0110_0111
-        (0, 2),
-        // 0b0110_1000
-        (5, 6),
-        // 0b0110_1001
-        (5, 6),
-        // 0b0110_1010
-        (5, 6),
-        // 0b0110_1011
-        (0, 1),
-        // 0b0110_1100
-        (2, 3),
-        // 0b0110_1101
-        (2, 3),
-        // 0b0110_1110
-        (1, 3),
-        // 0b0110_1111
-        (0, 3),
-        // 0b0111_0000
-        (4, 6),
-        // 0b0111_0001
-        (4, 6),
-        // 0b0111_0010
-        (4, 6),
-        // 0b0111_0011
-        (4, 6),
-        // 0b0111_0100
-        (4, 6),
-        // 0b0111_0101
-        (4, 6),
-        // 0b0111_0110
-        (4, 6),
-        // 0b0111_0111
-        (0, 2),
-        // 0b0111_1000
-        (3, 6),
-        // 0b0111_1001
-        (3, 6),
-        // 0b0111_1010
-        (3, 6),
-        // 0b0111_1011
-        (3, 6),
-        // 0b0111_1100
-        (2, 6),
-        // 0b0111_1101
-        (2, 6),
-        // 0b0111_1110
-        (1, 6),
-        // 0b0111_1111
-        (0, 6),
-        // 0b1000_0000
-        (16, 16),
-        // 0b1000_0001
-        (16, 16),
-        // 0b1000_0010
-        (16, 16),
-        // 0b1000_0011
-        (0, 1),
-        // 0b1000_0100
-        (16, 16),
-        // 0b1000_0101
-        (16, 16),
-        // 0b1000_0110
-        (1, 2),
-        // 0b1000_0111
-        (0, 2),
-        // 0b1000_1000
-        (16, 16),
-        // 0b1000_1001
-        (16, 16),
-        // 0b1000_1010
-        (16, 16),
-        // 0b1000_1011
-        (0, 1),
-        // 0b1000_1100
-        (2, 3),
-        // 0b1000_1101
-        (2, 3),
-        // 0b1000_1110
-        (1, 3),
-        // 0b1000_1111
-        (0, 3),
-        // 0b1001_0000
-        (16, 16),
-        // 0b1001_0001
-        (16, 16),
-        // 0b1001_0010
-        (16, 16),
-        // 0b1001_0011
-        (0, 1),
-        // 0b1001_0100
-        (16, 16),
-        // 0b1001_0101
-        (16, 16),
-        // 0b1001_0110
-        (1, 2),
-        // 0b1001_0111
-        (0, 2),
-        // 0b1001_1000
-        (3, 4),
-        // 0b1001_1001
-        (3, 4),
-        // 0b1001_1010
-        (3, 4),
-        // 0b1001_1011
-        (0, 1),
-        // 0b1001_1100
-        (2, 4),
-        // 0b1001_1101
-        (2, 4),
-        // 0b1001_1110
-        (1, 4),
-        // 0b1001_1111
-        (0, 4),
-        // 0b1010_0000
-        (16, 16),
-        // 0b1010_0001
-        (16, 16),
-        // 0b1010_0010
-        (16, 16),
-        // 0b1010_0011
-        (0, 1),
-        // 0b1010_0100
-        (16, 16),
-        // 0b1010_0101
-        (16, 16),
-        // 0b1010_0110
-        (1, 2),
-        // 0b1010_0111
-        (0, 2),
-        // 0b1010_1000
-        (16, 16),
-        // 0b1010_1001
-        (16, 16),
-        // 0b1010_1010
-        (16, 16),
-        // 0b1010_1011
-        (0, 1),
-        // 0b1010_1100
-        (2, 3),
-        // 0b1010_1101
-        (2, 3),
-        // 0b1010_1110
-        (1, 3),
-        // 0b1010_1111
-        (0, 3),
-        // 0b1011_0000
-        (4, 5),
-        // 0b1011_0001
-        (4, 5),
-        // 0b1011_0010
-        (4, 5),
-        // 0b1011_0011
-        (0, 1),
-        // 0b1011_0100
-        (4, 5),
-        // 0b1011_0101
-        (4, 5),
-        // 0b1011_0110
-        (1, 2),
-        // 0b1011_0111
-        (0, 2),
-        // 0b1011_1000
-        (3, 5),
-        // 0b1011_1001
-        (3, 5),
-        // 0b1011_1010
-        (3, 5),
-        // 0b1011_1011
-        (3, 5),
-        // 0b1011_1100
-        (2, 5),
-        // 0b1011_1101
-        (2, 5),
-        // 0b1011_1110
-        (1, 5),
-        // 0b1011_1111
-        (0, 5),
-        // 0b1100_0000
-        (6, 7),
-        // 0b1100_0001
-        (6, 7),
-        // 0b1100_0010
-        (6, 7),
-        // 0b1100_0011
-        (0, 1),
-        // 0b1100_0100
-        (6, 7),
-        // 0b1100_0101
-        (6, 7),
-        // 0b1100_0110
-        (1, 2),
-        // 0b1100_0111
-        (0, 2),
-        // 0b1100_1000
-        (6, 7),
-        // 0b1100_1001
-        (6, 7),
-        // 0b1100_1010
-        (6, 7),
-        // 0b1100_1011
-        (0, 1),
-        // 0b1100_1100
-        (2, 3),
-        // 0b1100_1101
-        (2, 3),
-        // 0b1100_1110
-        (1, 3),
-        // 0b1100_1111
-        (0, 3),
-        // 0b1101_0000
-        (6, 7),
-        // 0b1101_0001
-        (6, 7),
-        // 0b1101_0010
-        (6, 7),
-        // 0b1101_0011
-        (0, 1),
-        // 0b1101_0100
-        (6, 7),
-        // 0b1101_0101
-        (6, 7),
-        // 0b1101_0110
-        (1, 2),
-        // 0b1101_0111
-        (0, 2),
-        // 0b1101_1000
-        (3, 4),
-        // 0b1101_1001
-        (3, 4),
-        // 0b1101_1010
-        (3, 4),
-        // 0b1101_1011
-        (0, 1),
-        // 0b1101_1100
-        (2, 4),
-        // 0b1101_1101
-        (2, 4),
-        // 0b1101_1110
-        (1, 4),
-        // 0b1101_1111
-        (0, 4),
-        // 0b1110_0000
-        (5, 7),
-        // 0b1110_0001
-        (5, 7),
-        // 0b1110_0010
-        (5, 7),
-        // 0b1110_0011
-        (5, 7),
-        // 0b1110_0100
-        (5, 7),
-        // 0b1110_0101
-        (5, 7),
-        // 0b1110_0110
-        (5, 7),
-        // 0b1110_0111
-        (0, 2),
-        // 0b1110_1000
-        (5, 7),
-        // 0b1110_1001
-        (5, 7),
-        // 0b1110_1010
-        (5, 7),
-        // 0b1110_1011
-        (5, 7),
-        // 0b1110_1100
-        (5, 7),
-        // 0b1110_1101
-        (5, 7),
-        // 0b1110_1110
-        (1, 3),
-        // 0b1110_1111
-        (0, 3),
-        // 0b1111_0000
-        (4, 7),
-        // 0b1111_0001
-        (4, 7),
-        // 0b1111_0010
-        (4, 7),
-        // 0b1111_0011
-        (4, 7),
-        // 0b1111_0100
-        (4, 7),
-        // 0b1111_0101
-        (4, 7),
-        // 0b1111_0110
-        (4, 7),
-        // 0b1111_0111
-        (4, 7),
-        // 0b1111_1000
-        (3, 7),
-        // 0b1111_1001
-        (3, 7),
-        // 0b1111_1010
-        (3, 7),
-        // 0b1111_1011
-        (3, 7),
-        // 0b1111_1100
-        (2, 7),
-        // 0b1111_1101
-        (2, 7),
-        // 0b1111_1110
-        (1, 7),
-        // 0b1111_1111
-        (0, 7),
+    package struct SegmentWriteTableEntry: Sendable, Equatable {
+        @usableFromInline let packedIndices: UInt64
+        @usableFromInline let packedMetadata: UInt64
+        @inlinable var segmentsCount: Int { Int(self.packedMetadata &>> 48) }
+        @inlinable var maxRawLayoutBytes: Int { Int(self.packedMetadata &>> 32) & 0xFF }
+        @inlinable var writeCsAtIdx: Int { Int(self.packedMetadata &>> 24) & 0xFF }
+        @inlinable var writeCsAtBeginning: Bool { (self.packedMetadata &>> 16) & 1 == 1 }
+        @inlinable var writeCsAtEnd: Bool { (self.packedMetadata &>> 8) & 1 == 1 }
+
+        package init(
+            _ packedIndices: UInt64,
+            _ packedMetadata: UInt64
+        ) {
+            self.packedIndices = packedIndices
+            self.packedMetadata = packedMetadata
+        }
+    }
+
+    @usableFromInline
+    package static let _segmentWriteTable: [SegmentWriteTableEntry] = [
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0300, 0x0006_001f_0300_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0403, 0x0005_001a_0301_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0100, 0x0006_001f_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0100, 0x0006_001f_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0400, 0x0005_001a_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0706_0504, 0x0004_0015_0401_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0300, 0x0006_001f_0300_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0403, 0x0005_001a_0301_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0502_0100, 0x0006_001f_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0502_0100, 0x0006_001f_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0502_0100, 0x0006_001f_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0100, 0x0005_001a_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0100, 0x0005_001a_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0706_0500, 0x0004_0015_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0007_0605, 0x0003_0010_0501_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0300, 0x0006_001f_0300_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0403, 0x0005_001a_0301_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0100, 0x0006_001f_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0100, 0x0006_001f_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0400, 0x0005_001a_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0706_0504, 0x0004_0015_0401_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0302_0100, 0x0006_001f_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0302_0100, 0x0006_001f_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0302_0100, 0x0006_001f_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0302_0100, 0x0006_001f_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0302_0100, 0x0006_001f_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0300, 0x0006_001f_0300_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0403, 0x0005_001a_0301_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0602_0100, 0x0005_001a_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0602_0100, 0x0005_001a_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0602_0100, 0x0005_001a_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0602_0100, 0x0005_001a_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0706_0100, 0x0004_0015_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0706_0100, 0x0004_0015_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0007_0600, 0x0003_0010_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0000_0706, 0x0002_000b_0601_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0300, 0x0006_001f_0300_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0403, 0x0005_001a_0301_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0100, 0x0006_001f_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0100, 0x0006_001f_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0400, 0x0005_001a_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0706_0504, 0x0004_0015_0401_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0300, 0x0006_001f_0300_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0403, 0x0005_001a_0301_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0502_0100, 0x0006_001f_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0502_0100, 0x0006_001f_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0502_0100, 0x0006_001f_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0100, 0x0005_001a_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0100, 0x0005_001a_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0706_0500, 0x0004_0015_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0007_0605, 0x0003_0010_0501_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0704_0302_0100, 0x0006_001f_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0704_0302_0100, 0x0006_001f_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0704_0302_0100, 0x0006_001f_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0704_0302_0100, 0x0006_001f_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0704_0302_0100, 0x0006_001f_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0300, 0x0006_001f_0300_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0403, 0x0005_001a_0301_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0704_0302_0100, 0x0006_001f_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0704_0302_0100, 0x0006_001f_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0704_0302_0100, 0x0006_001f_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0100, 0x0006_001f_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0100, 0x0006_001f_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0400, 0x0005_001a_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0706_0504, 0x0004_0015_0401_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0302_0100, 0x0005_001a_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0302_0100, 0x0005_001a_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0302_0100, 0x0005_001a_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0302_0100, 0x0005_001a_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0302_0100, 0x0005_001a_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0302_0100, 0x0005_001a_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0302_0100, 0x0005_001a_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0403, 0x0005_001a_0301_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0702_0100, 0x0004_0015_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0702_0100, 0x0004_0015_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0702_0100, 0x0004_0015_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0702_0100, 0x0004_0015_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0007_0100, 0x0003_0010_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0007_0100, 0x0003_0010_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0000_0700, 0x0002_000b_0700_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0000_0007, 0x0001_0006_0701_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0300, 0x0006_001f_0300_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0403, 0x0005_001a_0301_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0100, 0x0006_001f_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0100, 0x0006_001f_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0400, 0x0005_001a_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0706_0504, 0x0004_0015_0401_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0300, 0x0006_001f_0300_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0403, 0x0005_001a_0301_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0502_0100, 0x0006_001f_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0502_0100, 0x0006_001f_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0502_0100, 0x0006_001f_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0100, 0x0005_001a_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0100, 0x0005_001a_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0706_0500, 0x0004_0015_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0007_0605, 0x0003_0010_0501_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0300, 0x0006_001f_0300_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0403, 0x0005_001a_0301_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0706_0504_0302_0100, 0x0008_0027_1000_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0100, 0x0006_001f_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0100, 0x0006_001f_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0400, 0x0005_001a_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0706_0504, 0x0004_0015_0401_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0302_0100, 0x0006_001f_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0302_0100, 0x0006_001f_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0302_0100, 0x0006_001f_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0302_0100, 0x0006_001f_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0302_0100, 0x0006_001f_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0300, 0x0006_001f_0300_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0403, 0x0005_001a_0301_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0602_0100, 0x0005_001a_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0602_0100, 0x0005_001a_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0602_0100, 0x0005_001a_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0602_0100, 0x0005_001a_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0706_0100, 0x0004_0015_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0706_0100, 0x0004_0015_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0007_0600, 0x0003_0010_0600_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0000_0706, 0x0002_000b_0601_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0504_0302_0100, 0x0006_001f_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0504_0302_0100, 0x0006_001f_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0504_0302_0100, 0x0006_001f_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0504_0302_0100, 0x0006_001f_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0504_0302_0100, 0x0006_001f_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0300, 0x0006_001f_0300_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0403, 0x0005_001a_0301_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0504_0302_0100, 0x0006_001f_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0504_0302_0100, 0x0006_001f_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0504_0302_0100, 0x0006_001f_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0100, 0x0006_001f_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0100, 0x0006_001f_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0400, 0x0005_001a_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0706_0504, 0x0004_0015_0401_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0504_0302_0100, 0x0006_001f_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0504_0302_0100, 0x0006_001f_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0504_0302_0100, 0x0006_001f_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0504_0302_0100, 0x0006_001f_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0504_0302_0100, 0x0006_001f_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0300, 0x0006_001f_0300_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0403, 0x0005_001a_0301_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0502_0100, 0x0006_001f_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0502_0100, 0x0006_001f_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0502_0100, 0x0006_001f_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0706_0504_0302, 0x0006_001f_0201_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0100, 0x0005_001a_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0100, 0x0005_001a_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0706_0500, 0x0004_0015_0500_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0007_0605, 0x0003_0010_0501_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0004_0302_0100, 0x0005_001a_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0004_0302_0100, 0x0005_001a_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0004_0302_0100, 0x0005_001a_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0004_0302_0100, 0x0005_001a_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0004_0302_0100, 0x0005_001a_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0004_0302_0100, 0x0005_001a_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0004_0302_0100, 0x0005_001a_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0403, 0x0005_001a_0301_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0004_0302_0100, 0x0005_001a_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0004_0302_0100, 0x0005_001a_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0004_0302_0100, 0x0005_001a_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0004_0302_0100, 0x0005_001a_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0004_0302_0100, 0x0005_001a_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0004_0302_0100, 0x0005_001a_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0007_0605_0400, 0x0005_001a_0400_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0706_0504, 0x0004_0015_0401_0000),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0302_0100, 0x0004_0015_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0302_0100, 0x0004_0015_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0302_0100, 0x0004_0015_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0302_0100, 0x0004_0015_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0302_0100, 0x0004_0015_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0302_0100, 0x0004_0015_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0302_0100, 0x0004_0015_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0302_0100, 0x0004_0015_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0002_0100, 0x0003_0010_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0002_0100, 0x0003_0010_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0002_0100, 0x0003_0010_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0002_0100, 0x0003_0010_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0000_0100, 0x0002_000b_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0000_0100, 0x0002_000b_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0000_0000, 0x0001_0006_0f00_0100),
+        IPv6Address.SegmentWriteTableEntry(0x0000_0000_0000_0000, 0x0000_0002_0f00_0100),
     ]
 }

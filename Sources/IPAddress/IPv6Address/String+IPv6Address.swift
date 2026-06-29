@@ -48,7 +48,7 @@ extension IPv6Address {
         let speculativeBytes = enclosingInSquareBrackets ? 0 : 1
         let toReserve = entry.maxRawLayoutBytes &+ bracketsCount &+ speculativeBytes
 
-        return try writingToUnsafeMutableBufferPointerOfUInt8(Int(toReserve)) { buffer in
+        return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
             withUnsafeTemporaryAllocation(byteCount: 32, alignment: 1) { hexBytes in
                 self._expandToLowercasedHexASCII(into: hexBytes)
 

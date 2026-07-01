@@ -24,7 +24,7 @@ public protocol _IPAddressProtocol:
     init?(exactly ipAddress: AnyIPAddress)
 
     @available(SwiftStdlib 5.1, *)
-    init?(_uncheckedAssumingValidASCII: Span<UInt8>)
+    init?(textualRepresentation: Span<UInt8>)
 }
 
 /// DO NOT IMPLEMENT THIS PROTOCOL YOURSELF.

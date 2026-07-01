@@ -26,11 +26,6 @@ extension UInt8 {
     }
 
     @inlinable
-    var isASCII: Bool {
-        self & 0b1000_0000 == 0
-    }
-
-    @inlinable
     static var asciiHyphenMinus: UInt8 {
         0x2D
     }

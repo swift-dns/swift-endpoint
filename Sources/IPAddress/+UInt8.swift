@@ -1,10 +1,5 @@
 extension UInt8 {
     @inlinable
-    var isASCII: Bool {
-        self & 0b1000_0000 == 0
-    }
-
-    @inlinable
     package static var ascii0: UInt8 {
         0x30
     }

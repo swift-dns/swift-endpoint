@@ -154,12 +154,12 @@ In all 8 benchmarks this library performs better than the C libraries when calle
 
 These were performed on my M1 Pro MacBook, on macOS 27.0 (beta 1).
 
-| Benchmark Name                              | Rounds      | Swift | inet_pton/ntop | Speedup |
-| ------------------------------------------- | ----------- | ----- | -------------- | ------- |
-| IPv4_String_Encoding_Mixed                  | 15 Millions | 123ms | 3355ms         | 27.28x  |
-| IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 241ms | 425ms          | 1.76x   |
-| IPv6_String_Encoding_Mixed                  | 4 Millions  | 322ms | 1753ms         | 5.44x   |
-| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 86ms  | 374ms          | 4.35x   |
+| Benchmark Name                       | Swift (ns/op) | inet_pton/ntop (ns/op) | Speedup |
+| ------------------------------------ | ------------- | ---------------------- | ------- |
+| IPv4_String_Encoding_Mixed           | 8.2           | 223.7                  | 27.28x  |
+| IPv4_String_Decoding_Local_Broadcast | 24.1          | 42.5                   | 1.76x   |
+| IPv6_String_Encoding_Mixed           | 80.5          | 438.2                  | 5.44x   |
+| IPv6_String_Decoding...Compressed... | 28.7          | 124.7                  | 4.35x   |
 
 #### Against glibc
 
@@ -167,12 +167,12 @@ These were performed on a dedicated-cpu-core machine from Hetzner in the Falkens
 
 > Host with 2 'x86_64' processors with 7 GB memory, running: #85-Ubuntu SMP PREEMPT_DYNAMIC
 
-| Benchmark Name                              | Rounds      | Swift | inet_pton/ntop | Speedup |
-| ------------------------------------------- | ----------- | ----- | -------------- | ------- |
-| IPv4_String_Encoding_Mixed                  | 15 Millions | 150ms | 1710ms         | 11.40x  |
-| IPv4_String_Decoding_Local_Broadcast        | 10 Millions | 160ms | 200ms          | 1.25x   |
-| IPv6_String_Encoding_Mixed                  | 4 Millions  | 210ms | 900ms          | 4.29x   |
-| IPv6_String_Decoding_2_Groups_Compressed... | 3 Millions  | 90ms  | 120ms          | 1.33x   |
+| Benchmark Name                       | Swift (ns/op) | inet_pton/ntop (ns/op) | Speedup |
+| ------------------------------------ | ------------- | ---------------------- | ------- |
+| IPv4_String_Encoding_Mixed           | 10.0          | 114.0                  | 11.40x  |
+| IPv4_String_Decoding_Local_Broadcast | 16.0          | 20.0                   | 1.25x   |
+| IPv6_String_Encoding_Mixed           | 52.5          | 225.0                  | 4.29x   |
+| IPv6_String_Decoding...Compressed... | 30.0          | 40.0                   | 1.33x   |
 
 #### Notes
 

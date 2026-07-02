@@ -122,14 +122,14 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     /// that we're not blaming byte-order mismatches on inet_ntop.
 
     Benchmark(
-        "IPv4_String_Encoding_Mixed_inet_ntop_15M",
+        "IPv4_String_Encoding_Mixed_inet_ntop_1M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<15_000_000 {
+        for _ in 0..<1_000_000 {
             let ptr = UnsafeMutableRawPointer.allocate(byteCount: 15, alignment: 1).bindMemory(
                 to: Int8.self,
                 capacity: 15

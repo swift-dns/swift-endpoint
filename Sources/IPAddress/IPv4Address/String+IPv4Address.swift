@@ -59,12 +59,7 @@ extension IPv4Address {
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
     @inlinable
     public init?(textualRepresentation utf8Span: UTF8Span) {
-        var utf8Span = utf8Span
-        guard utf8Span.checkForASCII() else {
-            return nil
-        }
-
-        self.init(_uncheckedAssumingValidASCII: utf8Span.span)
+        self.init(textualRepresentation: utf8Span.span)
     }
 }
 
@@ -105,31 +100,25 @@ extension IPv4Address: LosslessStringConvertible {
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
-        if !span.isASCII { return nil }
+        var address: UInt32 = 0
+        let success = IPv4Address.parseIPv4(
+            span: span,
+            address: &address
+        )
 
-        self.init(_uncheckedAssumingValidASCII: span)
-    }
-
-    /// Initialize an IPv4 address from a `Span<UInt8>` of its textual representation.
-    /// The provided **span is required to be ASCII**.
-    /// That is, 4 decimal UInt8s separated by `.`.
-    /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
-    ///
-    /// You should usually use `init?(textualRepresentation: UTF8Span)`, or
-    /// `init?(textualRepresentation: Span<UInt8>)` instead.
-    /// This initializer must only be used when you are 100% sure the span only contains ASCII characters.
-    @inlinable
-    public init?(_uncheckedAssumingValidASCII span: Span<UInt8>) {
-        debugOnly {
-            if !span.isASCII {
-                fatalError(
-                    "IPv4Address initializer should not be used with non-ASCII character: \([UInt8](copying: span))"
-                )
-            }
+        guard success else {
+            return nil
         }
 
-        var address: UInt32 = 0
+        self.init(address)
+    }
 
+    @inlinable
+    @inline(__always)
+    static func parseIPv4(
+        span: Span<UInt8>,
+        address: inout UInt32
+    ) -> Bool {
         var currentSegment: UInt8 = 0
         var digitIdx: UInt8 = 0
         var segmentIdx: UInt8 = 0
@@ -144,7 +133,7 @@ extension IPv4Address: LosslessStringConvertible {
             switch byte {
             case .asciiDot:
                 if segmentIdx > 3 || digitIdx == 0 {
-                    return nil
+                    return false
                 }
 
                 /// segmentIdx is guaranteed to be in range of 0...3
@@ -156,7 +145,7 @@ extension IPv4Address: LosslessStringConvertible {
                 segmentIdx &+= 1
             default:
                 guard let byte = UInt8.mapUTF8ByteToUInt8(byte) else {
-                    return nil
+                    return false
                 }
 
                 let multiplier: UInt8
@@ -164,21 +153,21 @@ extension IPv4Address: LosslessStringConvertible {
                 case 0: multiplier = 1
                 case 1: multiplier = 10
                 case 2: multiplier = 100
-                default: return nil
+                default: return false
                 }
 
                 let (multipliedByte, overflew1) = byte.multipliedReportingOverflow(
                     by: multiplier
                 )
                 if overflew1 {
-                    return nil
+                    return false
                 }
 
                 let (newSegment, overflew2) = multipliedByte.addingReportingOverflow(
                     currentSegment
                 )
                 if overflew2 {
-                    return nil
+                    return false
                 }
 
                 currentSegment = newSegment
@@ -188,9 +177,9 @@ extension IPv4Address: LosslessStringConvertible {
 
         if segmentIdx == 3, digitIdx != 0 {
             address |= UInt32(currentSegment) &<< 24
-            self.address = address
+            return true
         } else {
-            return nil
+            return false
         }
     }
 }

@@ -27,12 +27,7 @@ extension CIDR {
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
     @inlinable
     public init?(textualRepresentation utf8Span: UTF8Span) {
-        var utf8Span = utf8Span
-        guard utf8Span.checkForASCII() else {
-            return nil
-        }
-
-        self.init(_uncheckedAssumingValidASCII: utf8Span.span)
+        self.init(textualRepresentation: utf8Span.span)
     }
 }
 
@@ -85,29 +80,6 @@ extension CIDR: LosslessStringConvertible {
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
-        if !span.isASCII { return nil }
-
-        self.init(_uncheckedAssumingValidASCII: span)
-    }
-
-    /// Initialize an CIDR from a `Span<UInt8>` of its textual representation.
-    /// The provided **span is required to be ASCII**.
-    /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
-    /// This initializer tolerates and clamps the prefix length if needed.
-    /// For example it'll ignore if the mask is greater than the address size.
-    /// e.g. 2001::/220 will be clamped to 2001::/128.
-    /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
-    /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
-    @inlinable
-    init?(_uncheckedAssumingValidASCII span: Span<UInt8>) {
-        debugOnly {
-            if !span.isASCII {
-                fatalError(
-                    "CIDR initializer should not be used with non-ASCII character: \([UInt8](copying: span))"
-                )
-            }
-        }
-
         let count = span.count
         /// Unchecked because `count` is `span.count`
         let maxIdx = count &- 1
@@ -124,7 +96,7 @@ extension CIDR: LosslessStringConvertible {
                 let maskSpanRange = Range(uncheckedBounds: (backwardsIdx &+ 1, span.count))
                 let prefixLengthSpan = span.extracting(unchecked: maskSpanRange)
                 guard
-                    let prefix = IPAddressType(_uncheckedAssumingValidASCII: prefixSpan),
+                    let prefix = IPAddressType(textualRepresentation: prefixSpan),
                     let prefixLength = UInt8(decimalRepresentation: prefixLengthSpan)
                 else {
                     return nil
@@ -136,7 +108,7 @@ extension CIDR: LosslessStringConvertible {
 
         /// There was no forward slash found, so just decode this as the prefix.
         /// Set the prefix length to the full bit width of the IP address type (32 or 128).
-        guard let prefix = IPAddressType(_uncheckedAssumingValidASCII: span) else {
+        guard let prefix = IPAddressType(textualRepresentation: span) else {
             return nil
         }
         self.init(prefix: prefix, prefixLength: UInt8(AddressValueType.bitWidth))

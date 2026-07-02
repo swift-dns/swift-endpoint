@@ -200,12 +200,7 @@ extension IPv6Address {
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     @inlinable
     public init?(textualRepresentation utf8Span: UTF8Span) {
-        var utf8Span = utf8Span
-        guard utf8Span.checkForASCII() else {
-            return nil
-        }
-
-        self.init(_uncheckedAssumingValidASCII: utf8Span.span)
+        self.init(textualRepresentation: utf8Span.span)
     }
 }
 
@@ -249,27 +244,6 @@ extension IPv6Address: LosslessStringConvertible {
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
-        if !span.isASCII { return nil }
-
-        self.init(_uncheckedAssumingValidASCII: span)
-    }
-
-    /// Initialize an IPv6 address from a `Span<UInt8>` of its textual representation.
-    /// The provided **span is required to be ASCII**.
-    /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
-    /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
-    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
-    ///
-    /// You should usually use `init?(textualRepresentation: UTF8Span)`, or
-    /// `init?(textualRepresentation: Span<UInt8>)` instead.
-    /// This initializer must only be used when you are 100% sure the span only contains ASCII characters.
-    @inlinable
-    public init?(_uncheckedAssumingValidASCII span: Span<UInt8>) {
-        assert(
-            span.isASCII,
-            "IPv6Address initializer should not be used with non-ASCII character: \([UInt8](copying: span))"
-        )
-
         /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics here
         /// and write backwards.
         var address = _CompatibilityUInt128Typealias.zero
@@ -384,14 +358,16 @@ extension IPv6Address: LosslessStringConvertible {
             }
 
             if byte == .asciiDot {
+                var ipv4Address: UInt32 = 0
                 guard
                     remainingBytesCount >= 4,
-                    let ipv4 = IPv4Address(
-                        _uncheckedAssumingValidASCII: span.extracting(
+                    IPv4Address.parseIPv4(
+                        span: span.extracting(
                             unchecked: Range(
                                 uncheckedBounds: (latestColonIdx &+ 1, span.count)
                             )
-                        )
+                        ),
+                        address: &ipv4Address
                     )
                 else {
                     return false
@@ -399,7 +375,7 @@ extension IPv6Address: LosslessStringConvertible {
 
                 remainingBytesCount &-= 4
                 let shift = remainingBytesCount &* 8
-                address |= _CompatibilityUInt128Typealias(ipv4.address) &<< shift
+                address |= _CompatibilityUInt128Typealias(ipv4Address) &<< shift
 
                 segmentDigitIdx = 0
                 currentSegmentValue = 0

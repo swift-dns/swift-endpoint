@@ -5,8 +5,8 @@ extension IPv4Address: CustomStringConvertible {
     public var description: String {
         /// 15 is enough for the biggest possible IPv4Address description.
         /// For example for "255.255.255.255".
-        /// Coincidentally, Swift's `_SmallString` supports up to 15 bytes, which helps make this
-        /// implementation as efficient as possible.
+        /// Coincidentally, Swift's `_SmallString` usually supports up to 15 bytes, which helps make
+        /// this implementation as efficient as possible without a heap allocation.
         String(unsafeUninitializedCapacity_Compatibility: 15) { buffer in
             self.writeTextualRepresentation_RequiringMinimumCapacityOf15(
                 into: UnsafeMutableRawBufferPointer(buffer)
@@ -119,64 +119,42 @@ extension IPv4Address: LosslessStringConvertible {
         span: Span<UInt8>,
         address: inout UInt32
     ) -> Bool {
-        var currentSegment: UInt8 = 0
-        var digitIdx: UInt8 = 0
-        var segmentIdx: UInt8 = 0
+        var currentSegment: UInt32 = 0
+        var digitsCount: UInt8 = 0
+        var dotsCount: UInt8 = 0
 
-        let spanLastIdx = span.count &- 1
         for idx in span.indices {
             /// Unchecked because `idx` comes right from `span.indices`
-            let backwardsIdx = spanLastIdx &- idx
-            /// Unchecked because `backwardsIdx` is guaranteed to be in range of `0...spanLastIdx`
-            let byte = span[unchecked: backwardsIdx]
+            let byte = span[unchecked: idx]
 
             switch byte {
             case .asciiDot:
-                if segmentIdx > 3 || digitIdx == 0 {
+                if digitsCount == 0 || currentSegment > 255 || dotsCount == 3 {
                     return false
                 }
 
-                /// segmentIdx is guaranteed to be in range of 0...3
-                let shift = 8 &* segmentIdx
-                address |= UInt32(currentSegment) &<< shift
+                address = (address &<< 8) | currentSegment
 
                 currentSegment = 0
-                digitIdx = 0
-                segmentIdx &+= 1
+                digitsCount = 0
+                dotsCount &+= 1
             default:
-                guard let byte = UInt8.mapUTF8ByteToUInt8(byte) else {
+                guard let digit = UInt8.mapUTF8ByteToUInt8(byte) else {
                     return false
                 }
 
-                let multiplier: UInt8
-                switch digitIdx {
-                case 0: multiplier = 1
-                case 1: multiplier = 10
-                case 2: multiplier = 100
-                default: return false
-                }
-
-                let (multipliedByte, overflew1) = byte.multipliedReportingOverflow(
-                    by: multiplier
-                )
-                if overflew1 {
+                digitsCount &+= 1
+                if digitsCount > 3 {
                     return false
                 }
 
-                let (newSegment, overflew2) = multipliedByte.addingReportingOverflow(
-                    currentSegment
-                )
-                if overflew2 {
-                    return false
-                }
-
-                currentSegment = newSegment
-                digitIdx &+= 1
+                /// This is safe: `currentSegment` is guaranteed to be at most 99 at this point.
+                currentSegment = currentSegment &* 10 &+ UInt32(digit)
             }
         }
 
-        if segmentIdx == 3, digitIdx != 0 {
-            address |= UInt32(currentSegment) &<< 24
+        if dotsCount == 3, digitsCount != 0, currentSegment <= 255 {
+            address = (address &<< 8) | currentSegment
             return true
         } else {
             return false

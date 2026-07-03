@@ -1,35 +1,5 @@
 import Endpoint
 
-extension IPTestCase where IPAddressType == AnyIPAddress {
-    @available(SwiftStdlib 6.0, *)
-    static var stringAndAddress: [Self] {
-        [
-            IPTestCase(
-                "192.168.1.1",
-                .v4(IPv4Address(192, 168, 1, 1)),
-                canonicalDescription: "192.168.1.1"
-            ),
-            IPTestCase("[192.168.1.256]"),
-            IPTestCase(
-                "[2001:0:0:1::]",
-                .v6(IPv6Address(0x2001_0000_0000_0001_0000_0000_0000_0000)),
-                canonicalDescription: "[2001:0:0:1::]"
-            ),
-            IPTestCase(
-                "0:0:0:0:0:FFFF:204.152.189.116",
-                .v6(IPv6Address(0x0000_0000_0000_0000_0000_FFFF_CC98_BD74)),
-                canonicalDescription: "[::ffff:cc98:bd74]"
-            ),
-            IPTestCase(
-                "[2001:db8:85a3::100]",
-                .v6(IPv6Address(0x2001_0DB8_85A3_0000_0000_0000_0000_0100)),
-                canonicalDescription: "[2001:db8:85a3::100]"
-            ),
-            IPTestCase("[0:1:2:3:4:0:5:6::]"),
-        ]
-    }
-}
-
 extension IPPropertyTestCase where IPAddressType == AnyIPAddress {
     static var all: [Self] {
         [
@@ -85,6 +55,34 @@ extension IPPropertyTestCase where IPAddressType == AnyIPAddress {
 }
 
 extension IPTestCase where IPAddressType == AnyIPAddress {
+    @available(SwiftStdlib 6.0, *)
+    static var stringAndAddress: [Self] {
+        [
+            IPTestCase(
+                "192.168.1.1",
+                address: .v4(IPv4Address(192, 168, 1, 1)),
+                canonicalDescription: "192.168.1.1"
+            ),
+            IPTestCase("[192.168.1.256]", address: nil),
+            IPTestCase(
+                "[2001:0:0:1::]",
+                address: .v6(IPv6Address(0x2001_0000_0000_0001_0000_0000_0000_0000)),
+                canonicalDescription: "[2001:0:0:1::]"
+            ),
+            IPTestCase(
+                "0:0:0:0:0:FFFF:204.152.189.116",
+                address: .v6(IPv6Address(0x0000_0000_0000_0000_0000_FFFF_CC98_BD74)),
+                canonicalDescription: "[::ffff:cc98:bd74]"
+            ),
+            IPTestCase(
+                "[2001:db8:85a3::100]",
+                address: .v6(IPv6Address(0x2001_0DB8_85A3_0000_0000_0000_0000_0100)),
+                canonicalDescription: "[2001:db8:85a3::100]"
+            ),
+            IPTestCase("[0:1:2:3:4:0:5:6::]", address: nil),
+        ]
+    }
+
     static var rawByteReject: [[UInt8]] {
         [
             [49, 57, 50, 46, 48, 46, 50, 46, 49, 57, 50, 46, 255, 46, 46],

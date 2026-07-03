@@ -8,7 +8,7 @@ struct IPTestCase<IPAddressType: Sendable & Hashable>: Sendable {
 
     init(
         _ string: String,
-        _ address: IPAddressType? = nil,
+        address: IPAddressType? = nil,
         canonicalDescription: String? = nil,
         isValidAsOtherIPVersion: Bool = false
     ) {

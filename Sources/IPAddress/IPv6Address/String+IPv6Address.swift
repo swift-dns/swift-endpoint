@@ -178,12 +178,12 @@ extension IPv6Address {
 
         /// Now let's take the leading 0s into account.
         /// We don't want to write any leading 0s.
-        let stringOrderedHexASCII = hexASCII.byteSwapped
+        let systemRepresentationBytes = hexASCII.byteSwapped
         // segment.leadingZeroBitCount / 2
         let zeroDigitsCount = segment.leadingZeroBitCount &>> 2
         /// If all 4 digits are 0 we still need to write 1 zero.
         let zeroDigitsCountMax3 = min(3, zeroDigitsCount)
-        let toStore = stringOrderedHexASCII &>> (zeroDigitsCountMax3 &* 8)
+        let toStore = systemRepresentationBytes &>> (zeroDigitsCountMax3 &* 8)
 
         UnsafeMutableRawBufferPointer(buffer).storeBytes(
             of: toStore,

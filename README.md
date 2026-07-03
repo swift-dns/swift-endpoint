@@ -171,7 +171,7 @@ These were performed on a dedicated-cpu-core machine from Hetzner in the Falkens
 | ------------------------------------ | ------------- | ---------------------- | ------- |
 | IPv4_String_Encoding_Mixed           | 10.0          | 110.0                  | 11.00x  |
 | IPv4_String_Decoding_Local_Broadcast | 11.2          | 20.0                   | 1.79x   |
-| IPv6_String_Encoding_Mixed           | 53.3          | 230.0                  | 4.32x   |
+| IPv6_String_Encoding_Mixed           | 53.3          | 220.0                  | 4.13x   |
 | IPv6_String_Decoding...Compressed... | 30.0          | 40.0                   | 1.33x   |
 
 #### Notes

@@ -49,48 +49,43 @@ extension IPv6Address {
         let toReserve = entry.maxRawLayoutBytes &+ bracketsCount &+ speculativeBytes
 
         return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
-            withUnsafeTemporaryAllocation(byteCount: 32, alignment: 1) { hexBytes in
-                self._expandToLowercasedHexASCII(into: hexBytes)
+            var writeIdx = 0
 
-                var writeIdx = 0
+            buffer[0] = .asciiLeftSquareBracket
+            writeIdx &+= enclosingInSquareBrackets ? 1 : 0
 
-                buffer[0] = .asciiLeftSquareBracket
-                writeIdx &+= enclosingInSquareBrackets ? 1 : 0
+            buffer[writeIdx] = .asciiColon
+            writeIdx &+= entry.writeCsAtBeginning ? 1 : 0
 
-                buffer[writeIdx] = .asciiColon
-                writeIdx &+= entry.writeCsAtBeginning ? 1 : 0
-
-                let writeCsAtIdx = entry.writeCsAtIdx
-                let range = Range(uncheckedBounds: (0, entry.segmentsCount))
-                for offset in range {
-                    let idx = Int(entry.packedIndices &>> (offset &* 8) & 0xFF)
-
-                    buffer[writeIdx] = .asciiColon
-                    writeIdx &+= idx == writeCsAtIdx ? 1 : 0
-
-                    buffer[writeIdx] = .asciiColon
-                    writeIdx &+= offset == 0 ? 0 : 1
-
-                    IPv6Address._writeSegmentFromHex(
-                        into: buffer,
-                        advancingIdx: &writeIdx,
-                        hexBytes: hexBytes,
-                        octalIdx: idx
-                    )
-                }
+            let writeCsAtIdx = entry.writeCsAtIdx
+            let range = Range(uncheckedBounds: (0, entry.segmentsCount))
+            for offset in range {
+                let idx = Int(entry.packedIndices &>> (offset &* 8) & 0xFF)
 
                 buffer[writeIdx] = .asciiColon
-                writeIdx &+= entry.writeCsAtEnd ? 1 : 0
+                writeIdx &+= idx == writeCsAtIdx ? 1 : 0
+
                 buffer[writeIdx] = .asciiColon
-                writeIdx &+= entry.writeCsAtEnd ? 1 : 0
+                writeIdx &+= offset == 0 ? 0 : 1
 
-                buffer[writeIdx] = .asciiRightSquareBracket
-                writeIdx &+= enclosingInSquareBrackets ? 1 : 0
-
-                assert(writeIdx <= toReserve)
-
-                return writeIdx
+                self._writeSegmentAsLowercasedHexASCII(
+                    into: buffer,
+                    advancingIdx: &writeIdx,
+                    segmentIdx: idx
+                )
             }
+
+            buffer[writeIdx] = .asciiColon
+            writeIdx &+= entry.writeCsAtEnd ? 1 : 0
+            buffer[writeIdx] = .asciiColon
+            writeIdx &+= entry.writeCsAtEnd ? 1 : 0
+
+            buffer[writeIdx] = .asciiRightSquareBracket
+            writeIdx &+= enclosingInSquareBrackets ? 1 : 0
+
+            assert(writeIdx <= toReserve)
+
+            return writeIdx
         }
     }
 
@@ -135,60 +130,67 @@ extension IPv6Address {
         )
     }
 
-    /// Expands the 16 address bytes into 32 lowercased hex ASCII bytes.
-    /// Written as a flat, branch-free loop so LLVM auto-vectorizes it, like `Span.isASCII`.
+    /// The 16-bit segment at `segmentIdx`.
+    /// Unchecked because `segmentIdx` is required to be in range of `0...7`.
     @inlinable
     @inline(__always)
-    func _expandToLowercasedHexASCII(into hexStorage: UnsafeMutableRawBufferPointer) {
-        withUnsafeBytes(of: self.address.bigEndian) { bigBytes in
-            for idx in 0..<16 {
-                let byte = bigBytes[idx]
-                let high = byte &>> 4
-                let low = byte & 0x0F
-                let startOffset = 2 &* idx
-                hexStorage[startOffset] = IPv6Address._lowercasedHexASCII(nibble: high)
-                hexStorage[startOffset &+ 1] = IPv6Address._lowercasedHexASCII(nibble: low)
-            }
-        }
+    func _segment(atUncheckedIndex segmentIdx: Int) -> UInt16 {
+        assert(segmentIdx >= 0 && segmentIdx <= 7)
+        let word = segmentIdx < 4 ? self.address._high : self.address._low
+        let shift = (3 &- (segmentIdx & 3)) &* 16
+        return UInt16(truncatingIfNeeded: word &>> shift)
     }
 
-    /// Maps a single hex nibble (0...15) to its lowercased ASCII byte.
+    /// Writes the segment at `segmentIdx` as 1 to 4 lowercased hex ASCII bytes without
+    /// `buffer` must have a capacity of at least `idx + 4` bytes,
+    /// which we reserve anyway since we don't know if the segment contains leading zeros or not.
     @inlinable
     @inline(__always)
-    static func _lowercasedHexASCII(nibble: UInt8) -> UInt8 {
-        nibble > 9
-            ? nibble &+ UInt8.asciiLowercasedA &- 10
-            : nibble &+ UInt8.ascii0
-    }
-
-    @inlinable
-    @inline(__always)
-    static func _writeSegmentFromHex(
+    func _writeSegmentAsLowercasedHexASCII(
         into buffer: UnsafeMutableBufferPointer<UInt8>,
         advancingIdx idx: inout Int,
-        hexBytes: UnsafeMutableRawBufferPointer,
-        octalIdx: Int
+        segmentIdx: Int
     ) {
-        let base = octalIdx &* 4
-        let _1 = hexBytes[base]
-        let _2 = hexBytes[base &+ 1]
-        let _3 = hexBytes[base &+ 2]
-        let _4 = hexBytes[base &+ 3]
+        /// Get the segment's value as 4x nibbles (4bits) cramped into a UInt16.
+        let segment = self._segment(atUncheckedIndex: segmentIdx)
 
-        var notAllZerosSoFar = _1 != UInt8.ascii0
-        buffer[idx] = _1
-        idx &+= notAllZerosSoFar ? 1 : 0
+        var nibbles = UInt32(segment)
+        /// `nibbles` is in form `0x00_00_1c_2d` here.
+        /// We make it `0x01_0c_02_0d`, so each nibble in its own 8-bit lane.
+        nibbles = ((nibbles &<< 8) | nibbles) & 0x00FF_00FF
+        nibbles = ((nibbles &<< 4) | nibbles) & 0x0F0F_0F0F
 
-        notAllZerosSoFar = notAllZerosSoFar || _2 != UInt8.ascii0
-        buffer[idx] = _2
-        idx &+= notAllZerosSoFar ? 1 : 0
+        /// Now we add 6 to each lane, if it overflows to more than 4 bits, we know the lane contained
+        /// a hex digit in range 10...15 (a...f). Otherwise it contained a digit in range 0...9.
+        /// For `0x01_0c_02_0d`, we'll have something in form `0x00_01_00_01` here.
+        /// If 1, then the lane contained a to f.
+        let above9Mask = ((nibbles &+ 0x0606_0606) & 0x1010_1010) &>> 4
+        /// 0x27
+        let adjustment = UInt32(UInt8.asciiLowercasedA - UInt8.ascii0 - 10)
+        /// This will make the a to f lanes contain 0x27, and the 0...9 lanes contain 0.
+        /// 0x00_01_00_01 x 0x27 = 0x00_27_00_27
+        let above9Base = above9Mask &* adjustment
+        /// Now we add 0x30 (ascii code of 0) to each lane. If the lane contained 0...9, we'll be all-good.
+        /// Otherwise we add the 0x27s to the lanes, which adds to he 0x30s and to the 0-15 values and
+        /// will be in range (0x30 + 0x27 + 10)...(0x30 + 0x27 + 15), which is 0x61...0x6f,
+        /// which is the range for ascii codes of a to f.
+        let hexASCII = nibbles &+ 0x3030_3030 &+ above9Base
 
-        notAllZerosSoFar = notAllZerosSoFar || _3 != UInt8.ascii0
-        buffer[idx] = _3
-        idx &+= notAllZerosSoFar ? 1 : 0
+        /// Now let's take the leading 0s into account.
+        /// We don't want to write any leading 0s.
+        let systemRepresentationBytes = hexASCII.byteSwapped
+        // segment.leadingZeroBitCount / 2
+        let zeroDigitsCount = segment.leadingZeroBitCount &>> 2
+        /// If all 4 digits are 0 we still need to write 1 zero.
+        let zeroDigitsCountMax3 = min(3, zeroDigitsCount)
+        let toStore = systemRepresentationBytes &>> (zeroDigitsCountMax3 &* 8)
 
-        buffer[idx] = _4
-        idx &+= 1
+        UnsafeMutableRawBufferPointer(buffer).storeBytes(
+            of: toStore,
+            toByteOffset: idx,
+            as: UInt32.self
+        )
+        idx &+= 4 &- zeroDigitsCountMax3
     }
 }
 

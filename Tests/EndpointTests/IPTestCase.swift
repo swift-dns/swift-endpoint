@@ -54,3 +54,27 @@ struct IPv4MappedIPv6TestCase: Sendable {
         self.ipv4 = ipv4
     }
 }
+
+extension IPTestCase where IPAddressType == IPv4Address {
+    @available(SwiftStdlib 5.1, *)
+    var asAnyIPAddress: IPTestCase<AnyIPAddress>? {
+        guard !isValidAsOtherIPVersion else { return nil }
+        return IPTestCase<AnyIPAddress>(
+            string,
+            address: address.map(AnyIPAddress.v4),
+            canonicalDescription: canonicalDescription
+        )
+    }
+}
+
+extension IPTestCase where IPAddressType == IPv6Address {
+    @available(SwiftStdlib 5.1, *)
+    var asAnyIPAddress: IPTestCase<AnyIPAddress>? {
+        guard !isValidAsOtherIPVersion else { return nil }
+        return IPTestCase<AnyIPAddress>(
+            string,
+            address: address.map(AnyIPAddress.v6),
+            canonicalDescription: canonicalDescription
+        )
+    }
+}

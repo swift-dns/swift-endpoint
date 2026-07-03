@@ -4,7 +4,13 @@ import Testing
 @Suite
 struct AnyIPAddressTests {
     @available(SwiftStdlib 6.0, *)
-    @Test(arguments: IPTestCase<AnyIPAddress>.stringAndAddress.compactMap(\.descriptionTestCase))
+    @Test(
+        arguments: IPTestCase<AnyIPAddress>.stringAndAddress.compactMap(\.descriptionTestCase)
+            + IPTestCase<IPv4Address>.stringAndAddress
+            .compactMap(\.asAnyIPAddress).compactMap(\.descriptionTestCase)
+            + IPTestCase<IPv6Address>.stringAndAddress
+            .compactMap(\.asAnyIPAddress).compactMap(\.descriptionTestCase)
+    )
     func `AnyIPAddress description`(ip: AnyIPAddress, expectedDescription: String) {
         #expect(ip.description == expectedDescription)
 
@@ -33,7 +39,11 @@ struct AnyIPAddressTests {
     }
 
     @available(SwiftStdlib 6.2, *)
-    @Test(arguments: IPTestCase<AnyIPAddress>.stringAndAddress)
+    @Test(
+        arguments: IPTestCase<AnyIPAddress>.stringAndAddress
+            + IPTestCase<IPv4Address>.stringAndAddress.compactMap(\.asAnyIPAddress)
+            + IPTestCase<IPv6Address>.stringAndAddress.compactMap(\.asAnyIPAddress)
+    )
     func `AnyIPAddress from string`(testCase: IPTestCase<AnyIPAddress>) {
         let string = testCase.string
         let expectedAddress = testCase.address

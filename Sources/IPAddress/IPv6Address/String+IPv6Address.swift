@@ -156,7 +156,7 @@ extension IPv6Address {
 
         var nibbles = UInt32(segment)
         /// `nibbles` is in form `0x00_00_1c_2d` here.
-        /// We make it `0x01_0c_02_0d`, so each nibble in its own 8-bit lane.
+        /// We make it `0x01_0c_02_0d`, so each nibble is in its own 8-bit lane.
         nibbles = ((nibbles &<< 8) | nibbles) & 0x00FF_00FF
         nibbles = ((nibbles &<< 4) | nibbles) & 0x0F0F_0F0F
 
@@ -179,7 +179,7 @@ extension IPv6Address {
         /// Now let's take the leading 0s into account.
         /// We don't want to write any leading 0s.
         let systemRepresentationBytes = hexASCII.byteSwapped
-        // segment.leadingZeroBitCount / 2
+        // segment.leadingZeroBitCount / 4
         let zeroDigitsCount = segment.leadingZeroBitCount &>> 2
         /// If all 4 digits are 0 we still need to write 1 zero.
         let zeroDigitsCountMax3 = min(3, zeroDigitsCount)

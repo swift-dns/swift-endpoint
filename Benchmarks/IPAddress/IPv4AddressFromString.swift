@@ -57,14 +57,14 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - IPv4_String_Decoding_Local_Broadcast
 
     Benchmark(
-        "IPv4_String_Decoding_Local_Broadcast_8M",
+        "IPv4_String_Decoding_Local_Broadcast_15M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<8_000_000 {
+        for _ in 0..<15_000_000 {
             let ip = IPv4Address("255.255.255.255").unsafelyUnwrapped
             blackHole(ip)
         }

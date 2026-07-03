@@ -5,8 +5,8 @@ extension IPv4Address: CustomStringConvertible {
     public var description: String {
         /// 15 is enough for the biggest possible IPv4Address description.
         /// For example for "255.255.255.255".
-        /// Coincidentally, Swift's `_SmallString` supports up to 15 bytes, which helps make this
-        /// implementation as efficient as possible.
+        /// Coincidentally, Swift's `_SmallString` usually supports up to 15 bytes, which helps make
+        /// this implementation as efficient as possible without a heap allocation.
         String(unsafeUninitializedCapacity_Compatibility: 15) { buffer in
             self.writeTextualRepresentation_RequiringMinimumCapacityOf15(
                 into: UnsafeMutableRawBufferPointer(buffer)
@@ -148,6 +148,7 @@ extension IPv4Address: LosslessStringConvertible {
                     return false
                 }
 
+                /// This is safe: `currentSegment` is guaranteed to be at most 99 at this point.
                 currentSegment = currentSegment &* 10 &+ UInt32(digit)
             }
         }

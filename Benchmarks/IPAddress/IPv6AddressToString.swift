@@ -26,14 +26,14 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     let ipv6Zero: IPv6Address = 0
     Benchmark(
-        "IPv6_String_Encoding_Zero_10M",
+        "IPv6_String_Encoding_Zero_8M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<10_000_000 {
+        for _ in 0..<8_000_000 {
             let description = ipv6Zero.description
             blackHole(description)
         }
@@ -43,14 +43,14 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     let ipv6Localhost: IPv6Address = 0x0000_0000_0000_0000_0000_0000_0000_0001
     Benchmark(
-        "IPv6_String_Encoding_Localhost_10M",
+        "IPv6_String_Encoding_Localhost_8M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<10_000_000 {
+        for _ in 0..<8_000_000 {
             let description = ipv6Localhost.description
             blackHole(description)
         }
@@ -60,14 +60,14 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     let ipv6Max: IPv6Address = 0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF
     Benchmark(
-        "IPv6_String_Encoding_Max_4M",
+        "IPv6_String_Encoding_Max_3M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<4_000_000 {
+        for _ in 0..<3_000_000 {
             let description = ipv6Max.description
             blackHole(description)
         }
@@ -77,14 +77,14 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     let ipv6Mixed: IPv6Address = 0x85a0_850a_8500_0000_0000_00af_805a_085a
     Benchmark(
-        "IPv6_String_Encoding_Mixed_4M",
+        "IPv6_String_Encoding_Mixed_3M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<4_000_000 {
+        for _ in 0..<3_000_000 {
             let description = ipv6Mixed.description
             blackHole(description)
         }
@@ -122,14 +122,14 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
     /// that we're not blaming byte-order mismatches on inet_ntop.
 
     Benchmark(
-        "IPv6_String_Encoding_Mixed_inet_ntop_4M",
+        "IPv6_String_Encoding_Mixed_inet_ntop_1M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<4_000_000 {
+        for _ in 0..<1_000_000 {
             let ptr = UnsafeMutableRawPointer.allocate(byteCount: 64, alignment: 1).bindMemory(
                 to: Int8.self,
                 capacity: 64

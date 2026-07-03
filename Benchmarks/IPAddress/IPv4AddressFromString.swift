@@ -25,14 +25,14 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - IPv4_String_Decoding_Zero
 
     Benchmark(
-        "IPv4_String_Decoding_Zero_10M",
+        "IPv4_String_Decoding_Zero_15M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<10_000_000 {
+        for _ in 0..<15_000_000 {
             let ip = IPv4Address("0.0.0.0").unsafelyUnwrapped
             blackHole(ip)
         }
@@ -41,14 +41,14 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - IPv4_String_Decoding_Localhost
 
     Benchmark(
-        "IPv4_String_Decoding_Localhost_10M",
+        "IPv4_String_Decoding_Localhost_15M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<10_000_000 {
+        for _ in 0..<15_000_000 {
             let ip = IPv4Address("127.0.0.1").unsafelyUnwrapped
             blackHole(ip)
         }
@@ -57,14 +57,14 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - IPv4_String_Decoding_Local_Broadcast
 
     Benchmark(
-        "IPv4_String_Decoding_Local_Broadcast_10M",
+        "IPv4_String_Decoding_Local_Broadcast_8M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<10_000_000 {
+        for _ in 0..<8_000_000 {
             let ip = IPv4Address("255.255.255.255").unsafelyUnwrapped
             blackHole(ip)
         }
@@ -97,14 +97,14 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: IPv4_String_Decoding_Broadcast_inet_pton
 
     Benchmark(
-        "IPv4_String_Decoding_Local_Broadcast_inet_pton_10M",
+        "IPv4_String_Decoding_Local_Broadcast_inet_pton_8M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<10_000_000 {
+        for _ in 0..<8_000_000 {
             var ipv4Address = in_addr()
             _ = "255.255.255.255".withCString { p in
                 inet_pton(AF_INET, p, &ipv4Address)

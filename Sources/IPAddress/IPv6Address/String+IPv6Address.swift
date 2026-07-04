@@ -44,8 +44,9 @@ extension IPv6Address {
 
         /// Reserve the max possibly needed capacity.
         let bracketsCount = enclosingInSquareBrackets ? 2 : 0
-        /// If no brackets, we need 1 extra byte for the possible colon that we speculatively write
-        let speculativeBytes = enclosingInSquareBrackets ? 0 : 1
+        /// If no brackets, we need 2 extra byte for the possible colon that we speculatively write
+        /// Otherwise just 1, because the trailing bracket byte provides 1 extra byte of worth of room.
+        let speculativeBytes = enclosingInSquareBrackets ? 1 : 2
         let toReserve = entry.maxRawLayoutBytes &+ bracketsCount &+ speculativeBytes
 
         return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
@@ -63,9 +64,9 @@ extension IPv6Address {
                 let idx = Int(entry.packedIndices &>> (offset &* 8) & 0xFF)
 
                 buffer[writeIdx] = .asciiColon
+                buffer[writeIdx &+ 1] = .asciiColon
+                /// We've reserved 2 speculative bytes worth of room so this is safe:
                 writeIdx &+= idx == writeCsAtIdx ? 1 : 0
-
-                buffer[writeIdx] = .asciiColon
                 writeIdx &+= offset == 0 ? 0 : 1
 
                 self._writeSegmentAsLowercasedHexASCII(
@@ -75,10 +76,10 @@ extension IPv6Address {
                 )
             }
 
+            /// We've reserved 2 speculative bytes worth of room so this is safe:
             buffer[writeIdx] = .asciiColon
-            writeIdx &+= entry.writeCsAtEnd ? 1 : 0
-            buffer[writeIdx] = .asciiColon
-            writeIdx &+= entry.writeCsAtEnd ? 1 : 0
+            buffer[writeIdx &+ 1] = .asciiColon
+            writeIdx &+= entry.writeCsAtEnd ? 2 : 0
 
             buffer[writeIdx] = .asciiRightSquareBracket
             writeIdx &+= enclosingInSquareBrackets ? 1 : 0
@@ -156,7 +157,7 @@ extension IPv6Address {
 
         var nibbles = UInt32(segment)
         /// `nibbles` is in form `0x00_00_1c_2d` here.
-        /// We make it `0x01_0c_02_0d`, so each nibble in its own 8-bit lane.
+        /// We make it `0x01_0c_02_0d`, so each nibble is in its own 8-bit lane.
         nibbles = ((nibbles &<< 8) | nibbles) & 0x00FF_00FF
         nibbles = ((nibbles &<< 4) | nibbles) & 0x0F0F_0F0F
 
@@ -179,7 +180,7 @@ extension IPv6Address {
         /// Now let's take the leading 0s into account.
         /// We don't want to write any leading 0s.
         let systemRepresentationBytes = hexASCII.byteSwapped
-        // segment.leadingZeroBitCount / 2
+        // segment.leadingZeroBitCount / 4
         let zeroDigitsCount = segment.leadingZeroBitCount &>> 2
         /// If all 4 digits are 0 we still need to write 1 zero.
         let zeroDigitsCountMax3 = min(3, zeroDigitsCount)

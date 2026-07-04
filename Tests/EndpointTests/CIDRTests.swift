@@ -82,13 +82,10 @@ struct CIDRTests {
         text: String,
         expectedCIDR: CIDR<IPv4Address>?
     ) {
-        #expect(CIDR<IPv4Address>(text) == expectedCIDR)
-        #expect(CIDR<IPv4Address>(Substring(text)) == expectedCIDR)
-        #expect(CIDR<IPv4Address>(textualRepresentation: text.utf8Span) == expectedCIDR)
-        #expect(CIDR<IPv4Address>(textualRepresentation: text.utf8Span.span) == expectedCIDR)
+        Self.expectParses(text, expectedCIDR)
     }
 
-    @available(SwiftStdlib 5.1, *)
+    @available(SwiftStdlib 6.0, *)
     @Test(
         arguments: [(cidr: CIDR<IPv4Address>, containsIP: IPv4Address, result: Bool)]([
             (
@@ -133,24 +130,7 @@ struct CIDRTests {
         containsIP: IPv4Address,
         result: Bool
     ) {
-        #expect(
-            cidr.contains(containsIP) == result,
-            """
-            IPv4Address containment check failed. A containment result of '\(result)' was expected.
-            mask:    0b\(String(cidr.mask.address, radix: 2)); \(cidr.mask.address.trailingZeroBitCount) trailing zeros
-            prefix:  0b\(String(cidr.prefix.address, radix: 2)); \(cidr.prefix.address.trailingZeroBitCount) trailing zeros
-            checked: 0b\(String(containsIP.address, radix: 2)); \(containsIP.address.trailingZeroBitCount) trailing zeros
-            """
-        )
-        #expect(
-            cidr.contains(AnyIPAddress.v4(containsIP)) == result,
-            """
-            AnyIPAddress.v4 containment check failed. A containment result of '\(result)' was expected.
-            mask:    0b\(String(cidr.mask.address, radix: 2)); \(cidr.mask.address.trailingZeroBitCount) trailing zeros
-            prefix:  0b\(String(cidr.prefix.address, radix: 2)); \(cidr.prefix.address.trailingZeroBitCount) trailing zeros
-            checked: 0b\(String(containsIP.address, radix: 2)); \(containsIP.address.trailingZeroBitCount) trailing zeros
-            """
-        )
+        Self.expectContains(cidr, containsIP, result, asAnyIPAddress: AnyIPAddress.v4)
     }
 
     @available(SwiftStdlib 5.1, *)
@@ -199,24 +179,7 @@ struct CIDRTests {
             ofType: IPv4Address.self,
             countForEachBit: 100
         ) {
-            #expect(
-                cidr.contains(containsIP) == result,
-                """
-                IPv4Address containment check failed. A containment result of '\(result)' was expected.
-                mask:    0b\(String(cidr.mask.address, radix: 2)); \(cidr.mask.address.trailingZeroBitCount) trailing zeros
-                prefix:  0b\(String(cidr.prefix.address, radix: 2)); \(cidr.prefix.address.trailingZeroBitCount) trailing zeros
-                checked: 0b\(String(containsIP.address, radix: 2)); \(containsIP.address.trailingZeroBitCount) trailing zeros
-                """
-            )
-            #expect(
-                cidr.contains(AnyIPAddress.v4(containsIP)) == result,
-                """
-                AnyIPAddress.v4 containment check failed. A containment result of '\(result)' was expected.
-                mask:    0b\(String(cidr.mask.address, radix: 2)); \(cidr.mask.address.trailingZeroBitCount) trailing zeros
-                prefix:  0b\(String(cidr.prefix.address, radix: 2)); \(cidr.prefix.address.trailingZeroBitCount) trailing zeros
-                checked: 0b\(String(containsIP.address, radix: 2)); \(containsIP.address.trailingZeroBitCount) trailing zeros
-                """
-            )
+            Self.expectContains(cidr, containsIP, result, asAnyIPAddress: AnyIPAddress.v4)
         }
     }
 
@@ -448,10 +411,7 @@ struct CIDRTests {
         text: String,
         expectedCIDR: CIDR<IPv6Address>?
     ) {
-        #expect(CIDR<IPv6Address>(text) == expectedCIDR)
-        #expect(CIDR<IPv6Address>(Substring(text)) == expectedCIDR)
-        #expect(CIDR<IPv6Address>(textualRepresentation: text.utf8Span) == expectedCIDR)
-        #expect(CIDR<IPv6Address>(textualRepresentation: text.utf8Span.span) == expectedCIDR)
+        Self.expectParses(text, expectedCIDR)
     }
 
     @available(SwiftStdlib 6.2, *)
@@ -496,24 +456,7 @@ struct CIDRTests {
         containsIP: IPv6Address,
         result: Bool
     ) {
-        #expect(
-            cidr.contains(containsIP) == result,
-            """
-            IPv6Address containment check failed. A containment result of '\(result)' was expected.
-            mask:    0b\(String(cidr.mask.address, radix: 2)); \(cidr.mask.address.trailingZeroBitCount) trailing zeros
-            prefix:  0b\(String(cidr.prefix.address, radix: 2)); \(cidr.prefix.address.trailingZeroBitCount) trailing zeros
-            checked: 0b\(String(containsIP.address, radix: 2)); \(containsIP.address.trailingZeroBitCount) trailing zeros
-            """
-        )
-        #expect(
-            cidr.contains(AnyIPAddress.v6(containsIP)) == result,
-            """
-            AnyIPAddress.v6 containment check failed. A containment result of '\(result)' was expected.
-            mask:    0b\(String(cidr.mask.address, radix: 2)); \(cidr.mask.address.trailingZeroBitCount) trailing zeros
-            prefix:  0b\(String(cidr.prefix.address, radix: 2)); \(cidr.prefix.address.trailingZeroBitCount) trailing zeros
-            checked: 0b\(String(containsIP.address, radix: 2)); \(containsIP.address.trailingZeroBitCount) trailing zeros
-            """
-        )
+        Self.expectContains(cidr, containsIP, result, asAnyIPAddress: AnyIPAddress.v6)
     }
 
     @available(SwiftStdlib 6.0, *)
@@ -522,24 +465,7 @@ struct CIDRTests {
             ofType: IPv6Address.self,
             countForEachBit: 15
         ) {
-            #expect(
-                cidr.contains(containsIP) == result,
-                """
-                IPv6Address containment check failed. A containment result of '\(result)' was expected.
-                mask:    0b\(String(cidr.mask.address, radix: 2)); \(cidr.mask.address.trailingZeroBitCount) trailing zeros
-                prefix:  0b\(String(cidr.prefix.address, radix: 2)); \(cidr.prefix.address.trailingZeroBitCount) trailing zeros
-                checked: 0b\(String(containsIP.address, radix: 2)); \(containsIP.address.trailingZeroBitCount) trailing zeros
-                """
-            )
-            #expect(
-                cidr.contains(AnyIPAddress.v6(containsIP)) == result,
-                """
-                AnyIPAddress.v6 containment check failed. A containment result of '\(result)' was expected.
-                mask:    0b\(String(cidr.mask.address, radix: 2)); \(cidr.mask.address.trailingZeroBitCount) trailing zeros
-                prefix:  0b\(String(cidr.prefix.address, radix: 2)); \(cidr.prefix.address.trailingZeroBitCount) trailing zeros
-                checked: 0b\(String(containsIP.address, radix: 2)); \(containsIP.address.trailingZeroBitCount) trailing zeros
-                """
-            )
+            Self.expectContains(cidr, containsIP, result, asAnyIPAddress: AnyIPAddress.v6)
         }
     }
 
@@ -647,6 +573,60 @@ struct CIDRTests {
     }
 
     @available(SwiftStdlib 6.0, *)
+    static func expectContains<IPAddressType: _IPAddressProtocol>(
+        _ cidr: CIDR<IPAddressType>,
+        _ ip: IPAddressType,
+        _ expected: Bool,
+        asAnyIPAddress: (IPAddressType) -> AnyIPAddress,
+        sourceLocation: SourceLocation = #_sourceLocation
+    ) {
+        let details = """
+            mask:    \(Self.binaryDescription(cidr.mask.address))
+            prefix:  \(Self.binaryDescription(cidr.prefix.address))
+            checked: \(Self.binaryDescription(ip.address))
+            """
+        #expect(
+            cidr.contains(ip) == expected,
+            """
+            \(IPAddressType.self) containment check failed. A containment result of '\(expected)' was expected.
+            \(details)
+            """,
+            sourceLocation: sourceLocation
+        )
+        #expect(
+            cidr.contains(asAnyIPAddress(ip)) == expected,
+            """
+            AnyIPAddress containment check failed. A containment result of '\(expected)' was expected.
+            \(details)
+            """,
+            sourceLocation: sourceLocation
+        )
+    }
+
+    @available(SwiftStdlib 6.2, *)
+    static func expectParses<IPAddressType: _IPAddressProtocol>(
+        _ text: String,
+        _ expected: CIDR<IPAddressType>?,
+        sourceLocation: SourceLocation = #_sourceLocation
+    ) {
+        #expect(CIDR<IPAddressType>(text) == expected, sourceLocation: sourceLocation)
+        #expect(CIDR<IPAddressType>(Substring(text)) == expected, sourceLocation: sourceLocation)
+        #expect(
+            CIDR<IPAddressType>(textualRepresentation: text.utf8Span) == expected,
+            sourceLocation: sourceLocation
+        )
+        #expect(
+            CIDR<IPAddressType>(textualRepresentation: text.utf8Span.span) == expected,
+            sourceLocation: sourceLocation
+        )
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    static func binaryDescription<T: _IPAddressProtocolAddressValueType>(_ value: T) -> String {
+        "0b\(String(value: value, radix: 2)); \(value.trailingZeroBitCount) trailing zeros"
+    }
+
+    @available(SwiftStdlib 6.0, *)
     /// We intentionally don't use much math operators here like bit-shift, to keep things
     /// simpler for tests.
     static func makeRandom<IPAddressType: _IPAddressProtocol>(
@@ -750,151 +730,155 @@ extension String {
 }
 
 @available(SwiftStdlib 6.0, *)
-let ipv6CIDRTruncationArguments: [(prefixLength: UInt8, ip: IPv6Address, expectedIP: IPv6Address)] =
-    [
-        (
-            prefixLength: 0 as UInt8,
-            ip: IPv6Address(0b00000000_00000000_00000000_00000000 << 96),
-            expectedIP: IPv6Address(0b00000000_00000000_00000000_00000000 << 96)
+private typealias TruncationTestCase = (
+    prefixLength: UInt8, ip: IPv6Address, expectedIP: IPv6Address
+)
+
+@available(SwiftStdlib 6.0, *)
+private let ipv6CIDRTruncationArguments: [TruncationTestCase] = [
+    (
+        prefixLength: 0 as UInt8,
+        ip: IPv6Address(0b00000000_00000000_00000000_00000000 << 96),
+        expectedIP: IPv6Address(0b00000000_00000000_00000000_00000000 << 96)
+    ),
+    (
+        prefixLength: 0 as UInt8,
+        ip: IPv6Address(0b10000000_00000000_00000000_00000000 << 96),
+        expectedIP: IPv6Address(0b00000000_00000000_00000000_00000000 << 96)
+    ),
+    (
+        prefixLength: 0 as UInt8,
+        ip: IPv6Address(0b10000000_00001000_00000000_00100000 << 96),
+        expectedIP: IPv6Address(0b00000000_00000000_00000000_00000000 << 96)
+    ),
+    (
+        prefixLength: 1 as UInt8,
+        ip: IPv6Address(0b00000000_00001000_00000000_00100000 << 96),
+        expectedIP: IPv6Address(0b00000000_00000000_00000000_00000000 << 96)
+    ),
+    (
+        prefixLength: 1 as UInt8,
+        ip: IPv6Address(0b10000000_00000000_00000000_00000000 << 96),
+        expectedIP: IPv6Address(0b10000000_00000000_00000000_00000000 << 96)
+    ),
+    (
+        prefixLength: 1 as UInt8,
+        ip: IPv6Address(0b11000000_00000000_00000000_00000000 << 96),
+        expectedIP: IPv6Address(0b10000000_00000000_00000000_00000000 << 96)
+    ),
+    (
+        prefixLength: 9 as UInt8,
+        ip: IPv6Address(0b1111111_10000000_00000000_00000000 << 96),
+        expectedIP: IPv6Address(0b1111111_10000000_00000000_00000000 << 96)
+    ),
+    (
+        prefixLength: 9 as UInt8,
+        ip: IPv6Address(0b1111111_10001000_00010010_00000001 << 96),
+        expectedIP: IPv6Address(0b1111111_10000000_00000000_00000000 << 96)
+    ),
+    (
+        prefixLength: 24 as UInt8,
+        ip: IPv6Address(0b1111111_11111111_11111111_00000000 << 96),
+        expectedIP: IPv6Address(0b1111111_11111111_11111111_00000000 << 96)
+    ),
+    (
+        prefixLength: 24 as UInt8,
+        ip: IPv6Address(0b1111111_11111111_11111111_11111111 << 96),
+        expectedIP: IPv6Address(0b1111111_11111111_11111111_00000000 << 96)
+    ),
+    (
+        prefixLength: 25 as UInt8,
+        ip: IPv6Address(0b1111111_11111111_11111111_11111000 << 96),
+        expectedIP: IPv6Address(0b1111111_11111111_11111111_10000000 << 96)
+    ),
+    (
+        prefixLength: 120 as UInt8,
+        ip: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_01000100
         ),
-        (
-            prefixLength: 0 as UInt8,
-            ip: IPv6Address(0b10000000_00000000_00000000_00000000 << 96),
-            expectedIP: IPv6Address(0b00000000_00000000_00000000_00000000 << 96)
+        expectedIP: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_00000000
+        )
+    ),
+    (
+        prefixLength: 120 as UInt8,
+        ip: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
         ),
-        (
-            prefixLength: 0 as UInt8,
-            ip: IPv6Address(0b10000000_00001000_00000000_00100000 << 96),
-            expectedIP: IPv6Address(0b00000000_00000000_00000000_00000000 << 96)
+        expectedIP: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_00000000
+        )
+    ),
+    (
+        prefixLength: 120 as UInt8,
+        ip: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_00000000
         ),
-        (
-            prefixLength: 1 as UInt8,
-            ip: IPv6Address(0b00000000_00001000_00000000_00100000 << 96),
-            expectedIP: IPv6Address(0b00000000_00000000_00000000_00000000 << 96)
+        expectedIP: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_00000000
+        )
+    ),
+    (
+        prefixLength: 126 as UInt8,
+        ip: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
         ),
-        (
-            prefixLength: 1 as UInt8,
-            ip: IPv6Address(0b10000000_00000000_00000000_00000000 << 96),
-            expectedIP: IPv6Address(0b10000000_00000000_00000000_00000000 << 96)
+        expectedIP: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111100
+        )
+    ),
+    (
+        prefixLength: 126 as UInt8,
+        ip: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111101
         ),
-        (
-            prefixLength: 1 as UInt8,
-            ip: IPv6Address(0b11000000_00000000_00000000_00000000 << 96),
-            expectedIP: IPv6Address(0b10000000_00000000_00000000_00000000 << 96)
+        expectedIP: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111100
+        )
+    ),
+    (
+        prefixLength: 126 as UInt8,
+        ip: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111100
         ),
-        (
-            prefixLength: 9 as UInt8,
-            ip: IPv6Address(0b1111111_10000000_00000000_00000000 << 96),
-            expectedIP: IPv6Address(0b1111111_10000000_00000000_00000000 << 96)
+        expectedIP: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111100
+        )
+    ),
+    (
+        prefixLength: 127 as UInt8,
+        ip: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
         ),
-        (
-            prefixLength: 9 as UInt8,
-            ip: IPv6Address(0b1111111_10001000_00010010_00000001 << 96),
-            expectedIP: IPv6Address(0b1111111_10000000_00000000_00000000 << 96)
+        expectedIP: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111110
+        )
+    ),
+    (
+        prefixLength: 127 as UInt8,
+        ip: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111110
         ),
-        (
-            prefixLength: 24 as UInt8,
-            ip: IPv6Address(0b1111111_11111111_11111111_00000000 << 96),
-            expectedIP: IPv6Address(0b1111111_11111111_11111111_00000000 << 96)
+        expectedIP: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111110
+        )
+    ),
+    (
+        prefixLength: 128 as UInt8,
+        ip: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
         ),
-        (
-            prefixLength: 24 as UInt8,
-            ip: IPv6Address(0b1111111_11111111_11111111_11111111 << 96),
-            expectedIP: IPv6Address(0b1111111_11111111_11111111_00000000 << 96)
+        expectedIP: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
+        )
+    ),
+    (
+        prefixLength: 129 as UInt8,
+        ip: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
         ),
-        (
-            prefixLength: 25 as UInt8,
-            ip: IPv6Address(0b1111111_11111111_11111111_11111000 << 96),
-            expectedIP: IPv6Address(0b1111111_11111111_11111111_10000000 << 96)
-        ),
-        (
-            prefixLength: 120 as UInt8,
-            ip: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_01000100
-            ),
-            expectedIP: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_00000000
-            )
-        ),
-        (
-            prefixLength: 120 as UInt8,
-            ip: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
-            ),
-            expectedIP: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_00000000
-            )
-        ),
-        (
-            prefixLength: 120 as UInt8,
-            ip: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_00000000
-            ),
-            expectedIP: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_00000000
-            )
-        ),
-        (
-            prefixLength: 126 as UInt8,
-            ip: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
-            ),
-            expectedIP: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111100
-            )
-        ),
-        (
-            prefixLength: 126 as UInt8,
-            ip: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111101
-            ),
-            expectedIP: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111100
-            )
-        ),
-        (
-            prefixLength: 126 as UInt8,
-            ip: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111100
-            ),
-            expectedIP: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111100
-            )
-        ),
-        (
-            prefixLength: 127 as UInt8,
-            ip: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
-            ),
-            expectedIP: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111110
-            )
-        ),
-        (
-            prefixLength: 127 as UInt8,
-            ip: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111110
-            ),
-            expectedIP: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111110
-            )
-        ),
-        (
-            prefixLength: 128 as UInt8,
-            ip: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
-            ),
-            expectedIP: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
-            )
-        ),
-        (
-            prefixLength: 129 as UInt8,
-            ip: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
-            ),
-            expectedIP: IPv6Address(
-                0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
-            )
-        ),
-    ]
+        expectedIP: IPv6Address(
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111_11111111
+        )
+    ),
+]

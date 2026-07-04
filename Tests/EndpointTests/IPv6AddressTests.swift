@@ -356,11 +356,11 @@ struct IPv6AddressTests {
         }
         let segmentsCount = UInt8(exactly: indices.count)!
         let colonsCount: UInt8 = max(2, min(segmentsCount + 1, 7))
-        let maxRawLayoutBytes = UInt8(exactly: colonsCount + segmentsCount * 4)!
+        let minRawLayoutBytes = UInt8(exactly: colonsCount + segmentsCount)!
         let entry = IPv6Address.SegmentWriteTableEntry(
             packedIndices,
             segmentsCount,
-            maxRawLayoutBytes,
+            minRawLayoutBytes,
             UInt8(exactly: compressionSignIdx)!,
             writeCsAtBeginning,
             writeCsAtEnd

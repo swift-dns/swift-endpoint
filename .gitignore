@@ -12,3 +12,4 @@ __LocalProfilingTests.swift
 .vscode/tasks.json
 AGENTS.md
 .claude/
+Fuzzing

@@ -60,14 +60,14 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     let ipv6Compact: IPv6Address = 0x0001_0002_0000_0000_0000_0000_0003_0000
     Benchmark(
-        "IPv6_String_Encoding_Compact_8M",
+        "IPv6_String_Encoding_Compact_5M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<8_000_000 {
+        for _ in 0..<5_000_000 {
             let description = ipv6Compact.description
             blackHole(description)
         }

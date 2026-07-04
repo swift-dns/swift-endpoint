@@ -179,32 +179,36 @@ extension IPv4Address: LosslessStringConvertible {
         count: Int,
         advancing idx: inout Int
     ) -> UInt32? {
-        guard let digit1 = UInt8.mapUTF8ByteToUInt8(span[unchecked: idx]) else {
-            return nil
-        }
-        var segment = UInt32(digit1)
-        idx &+= 1
-
-        guard idx < count,
-            let digit2 = UInt8.mapUTF8ByteToUInt8(span[unchecked: idx])
-        else {
-            return segment
-        }
-        segment = segment &* 10 &+ UInt32(digit2)
-        idx &+= 1
-
-        guard idx < count,
-            let digit3 = UInt8.mapUTF8ByteToUInt8(span[unchecked: idx])
-        else {
-            return segment
-        }
-        segment = segment &* 10 &+ UInt32(digit3)
-        idx &+= 1
-
-        guard segment <= 255 else {
+        let digit0 = span[unchecked: idx] &- .ascii0
+        guard digit0 < 10 else {
             return nil
         }
 
+        /// Clamped reads, always in bounds. Digit existence is tracked separately.
+        let digit1 = span[unchecked: min(idx &+ 1, count &- 1)] &- .ascii0
+        let digit2 = span[unchecked: min(idx &+ 2, count &- 1)] &- .ascii0
+
+        let exists1 = idx &+ 1 < count && digit1 < 10
+        let exists2 = idx &+ 2 < count && digit2 < 10
+        let length: Int = 1 &+ (exists1 ? 1 : 0) &+ ((exists1 && exists2) ? 1 : 0)
+
+        /// `idx + length - 1 <= count - 1`
+        let lastDigit = span[unchecked: idx &+ length &- 1] &- .ascii0
+
+        let shift = (length &- 1) &* 8
+        let multiplier0 = (0x0064_0A00 as UInt32) &>> shift & 0xFF
+        let multiplier1 = (0x0A_0000 as UInt32) &>> shift & 0xFF
+
+        let segment =
+            UInt32(digit0) &* multiplier0
+            &+ UInt32(digit1) &* multiplier1
+            &+ UInt32(lastDigit)
+
+        guard segment < 256 else {
+            return nil
+        }
+
+        idx &+= length
         return segment
     }
 }

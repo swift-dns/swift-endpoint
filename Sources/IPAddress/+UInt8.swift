@@ -68,39 +68,30 @@ extension UInt8 {
             return nil
         }
 
-        /// Unchecked because it must be in range of 1...3
-        let maxIdx = count &- 1
-
-        guard let first = UInt8.mapUTF8ByteToUInt8(span[unchecked: maxIdx]) else {
+        guard let digit1 = UInt8.mapUTF8ByteToUInt8(span[unchecked: 0]) else {
             return nil
         }
-        self = first
+        var value = UInt32(digit1)
 
         if count > 1 {
-            guard let second = UInt8.mapUTF8ByteToUInt8(span[unchecked: maxIdx &- 1]) else {
+            guard let digit2 = UInt8.mapUTF8ByteToUInt8(span[unchecked: 1]) else {
                 return nil
             }
+            value = value &* 10 &+ UInt32(digit2)
 
-            /// Unchecked because `(self == (0...9)) + (10 * (0...9))` is always in range of `0...99`,
-            /// which is a valid `UInt8`.
-            self &+= 10 &* second
-
-            if count == 3 {
-                /// `count == 3` means `maxIdx == 2`. So instead of
-                /// `span[unchecked: maxIdx &-- 2]` we can directly go for `span[unchecked: 0]`.
-                guard let third = UInt8.mapUTF8ByteToUInt8(span[unchecked: 0]) else {
+            if count > 2 {
+                guard let digit3 = UInt8.mapUTF8ByteToUInt8(span[unchecked: 2]) else {
                     return nil
                 }
+                value = value &* 10 &+ UInt32(digit3)
 
-                let (value, overflew1) = third.multipliedReportingOverflow(by: 100)
-                if overflew1 { return nil }
-
-                let (newByte, overflew2) = self.addingReportingOverflow(value)
-                if overflew2 { return nil }
-
-                self = newByte
+                guard value <= 255 else {
+                    return nil
+                }
             }
         }
+
+        self = UInt8(truncatingIfNeeded: value)
     }
 
     @inlinable

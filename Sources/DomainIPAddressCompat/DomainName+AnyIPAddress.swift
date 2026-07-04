@@ -37,11 +37,11 @@ extension AnyIPAddress {
                         return IPv4Address(domainName: domainName).map { .v4($0) }
                     }
                     let identifierLabel = asciiSpan.extracting(unchecked: identifierLabelRange)
+
                     let inAddrBytes = [
                         UInt8(ascii: "i"), UInt8(ascii: "n"), UInt8(ascii: "-"), UInt8(ascii: "a"),
                         UInt8(ascii: "d"), UInt8(ascii: "d"), UInt8(ascii: "r"),
                     ]
-
                     /// If the 5th label is `in-addr`, then this can only be an IPv4.
                     if identifierLabel.swift_endpoint_equals(to: inAddrBytes) {
                         return IPv4Address(arpaDomainName: domainName).map { .v4($0) }

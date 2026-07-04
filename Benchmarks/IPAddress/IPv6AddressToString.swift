@@ -56,6 +56,139 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
+    // MARK: - IPv6_String_Encoding_Compact
+
+    let ipv6Compact: IPv6Address = 0x0001_0002_0000_0000_0000_0000_0003_0000
+    Benchmark(
+        "IPv6_String_Encoding_Compact_8M",
+        configuration: .init(
+            metrics: [.cpuUser],
+            warmupIterations: 5,
+            maxIterations: 1000
+        )
+    ) { benchmark in
+        for _ in 0..<8_000_000 {
+            let description = ipv6Compact.description
+            blackHole(description)
+        }
+    }
+
+    Benchmark(
+        "IPv6_String_Encoding_Compact_Malloc",
+        configuration: .init(
+            metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        let description = ipv6Compact.description
+        blackHole(description)
+    }
+
+    Benchmark(
+        "IPv6_String_Encoding_Compact_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 1,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        let description = ipv6Compact.description
+        blackHole(description)
+    }
+
+    // MARK: IPv6_String_Encoding_Compact_inet_ntop
+
+    var ipv6CompactInetNtop = ipv6Compact.address
+
+    /// inet_ntop expects the reverse byte-order but we don't account for that here so
+    /// that we're not blaming byte-order mismatches on inet_ntop.
+
+    Benchmark(
+        "IPv6_String_Encoding_Compact_inet_ntop_1M",
+        configuration: .init(
+            metrics: [.cpuUser],
+            warmupIterations: 5,
+            maxIterations: 1000
+        )
+    ) { benchmark in
+        for _ in 0..<1_000_000 {
+            let ptr = UnsafeMutableRawPointer.allocate(byteCount: 64, alignment: 1).bindMemory(
+                to: Int8.self,
+                capacity: 64
+            )
+            inet_ntop(
+                AF_INET6,
+                &ipv6CompactInetNtop,
+                ptr,
+                64
+            )
+            let description = String(cString: ptr)
+            ptr.deinitialize(count: 64).deallocate()
+            blackHole(description)
+        }
+    }
+
+    Benchmark(
+        "IPv6_String_Encoding_Compact_inet_ntop_Malloc",
+        configuration: .init(
+            metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        var addressBytes: [Int8] = [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ]
+        let description = addressBytes.withUnsafeMutableBufferPointer {
+            (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) -> String in
+            inet_ntop(
+                AF_INET6,
+                &ipv6CompactInetNtop,
+                addressBytesPtr.baseAddress!,
+                50
+            )
+            return addressBytesPtr.baseAddress!.withMemoryRebound(
+                to: UInt8.self,
+                capacity: 50
+            ) {
+                String(cString: $0)
+            }
+        }
+        blackHole(description)
+    }
+
+    Benchmark(
+        "IPv6_String_Encoding_Compact_inet_ntop_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 1,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        var addressBytes: [Int8] = [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ]
+        let description = addressBytes.withUnsafeMutableBufferPointer {
+            (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) -> String in
+            inet_ntop(
+                AF_INET6,
+                &ipv6CompactInetNtop,
+                addressBytesPtr.baseAddress!,
+                50
+            )
+            return addressBytesPtr.baseAddress!.withMemoryRebound(
+                to: UInt8.self,
+                capacity: 50
+            ) {
+                String(cString: $0)
+            }
+        }
+        blackHole(description)
+    }
+
     // MARK: - IPv6_String_Encoding_Max
 
     let ipv6Max: IPv6Address = 0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF

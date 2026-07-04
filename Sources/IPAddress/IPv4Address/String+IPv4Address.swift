@@ -129,8 +129,19 @@ extension IPv4Address: LosslessStringConvertible {
 
         var idx = 0
 
+        /// No count checks, we already know it's at least 7, and we will check at most 4 here.
         guard
-            let segment1 = IPv4Address.parseIPv4Segment(span: span, idx: &idx, count: count),
+            let segment1 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
+            span[unchecked: idx] == .asciiDot
+        else {
+            return false
+        }
+        idx &+= 1
+
+        /// No pre-parse count check, we know we have at least 7 bytes and at this
+        /// point we have 3 remaining at least.
+        guard
+            let segment2 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
             idx < count,
             span[unchecked: idx] == .asciiDot
         else {
@@ -139,7 +150,8 @@ extension IPv4Address: LosslessStringConvertible {
         idx &+= 1
 
         guard
-            let segment2 = IPv4Address.parseIPv4Segment(span: span, idx: &idx, count: count),
+            idx < count,
+            let segment3 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
             idx < count,
             span[unchecked: idx] == .asciiDot
         else {
@@ -148,16 +160,8 @@ extension IPv4Address: LosslessStringConvertible {
         idx &+= 1
 
         guard
-            let segment3 = IPv4Address.parseIPv4Segment(span: span, idx: &idx, count: count),
             idx < count,
-            span[unchecked: idx] == .asciiDot
-        else {
-            return false
-        }
-        idx &+= 1
-
-        guard
-            let segment4 = IPv4Address.parseIPv4Segment(span: span, idx: &idx, count: count),
+            let segment4 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
             idx == count
         else {
             return false
@@ -168,19 +172,14 @@ extension IPv4Address: LosslessStringConvertible {
         return true
     }
 
-    /// Parses a 1-to-3-digits decimal segment of an IPv4 address, advancing `idx` past the
-    /// digits. Returns `nil` if the byte at `idx` is not a digit, or if the digits form a
-    /// number greater than 255. Stops right before the first non-digit byte, or at `count`.
     @inlinable
     @inline(__always)
-    static func parseIPv4Segment(
-        span: Span<UInt8>,
-        idx: inout Int,
-        count: Int
+    static func _parseSegment(
+        from span: Span<UInt8>,
+        count: Int,
+        advancing idx: inout Int
     ) -> UInt32? {
-        guard idx < count,
-            let digit1 = UInt8.mapUTF8ByteToUInt8(span[unchecked: idx])
-        else {
+        guard let digit1 = UInt8.mapUTF8ByteToUInt8(span[unchecked: idx]) else {
             return nil
         }
         var segment = UInt32(digit1)

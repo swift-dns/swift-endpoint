@@ -68,27 +68,24 @@ extension UInt8 {
             return nil
         }
 
-        guard let digit1 = UInt8.mapUTF8ByteToUInt8(span[unchecked: 0]) else {
+        let digit0 = span[unchecked: 0] &- UInt8.ascii0
+        /// essentially `count &>> 1` == `max(count - 2, 0)`
+        let digit1 = span[unchecked: count &>> 1] &- UInt8.ascii0
+        /// `count > 0` so `(0...2) ~ (count - 1)`
+        let digit2 = span[unchecked: count &- 1] &- UInt8.ascii0
+
+        let shift = (count &- 1) &* 8
+        let multiplier0 = (0x0064_0A00 as UInt32) &>> shift & 0xFF
+        let multiplier1 = (0x0A_0000 as UInt32) &>> shift & 0xFF
+
+        let value =
+            UInt32(digit0) &* multiplier0
+            &+ UInt32(digit1) &* multiplier1
+            &+ UInt32(digit2)
+
+        /// The digit checks reject non-decimal-digit bytes, whose wrapped values exceed 9.
+        guard digit0 < 10, digit1 < 10, digit2 < 10, value < 256 else {
             return nil
-        }
-        var value = UInt32(digit1)
-
-        if count > 1 {
-            guard let digit2 = UInt8.mapUTF8ByteToUInt8(span[unchecked: 1]) else {
-                return nil
-            }
-            value = value &* 10 &+ UInt32(digit2)
-
-            if count > 2 {
-                guard let digit3 = UInt8.mapUTF8ByteToUInt8(span[unchecked: 2]) else {
-                    return nil
-                }
-                value = value &* 10 &+ UInt32(digit3)
-
-                guard value <= 255 else {
-                    return nil
-                }
-            }
         }
 
         self = UInt8(truncatingIfNeeded: value)

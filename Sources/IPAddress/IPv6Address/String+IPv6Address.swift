@@ -367,85 +367,77 @@ extension IPv6Address: LosslessStringConvertible {
             return false
         }
 
-        let count = span.count
-        var remainingBytesCount = 16
-        /// cs == compression sign
-        var beforeCsBytesCountRemaining = -1
-        var idx = 0
-
         /// Special-case handling for when there is a compression sign at the beginning
         if span[unchecked: 0] == .asciiColon {
-            /// Unchecked because we just checked count > 1 above
-            if span[unchecked: 1] != .asciiColon {
+            span = span.extracting(
+                unchecked: Range(uncheckedBounds: (1, span.count))
+            )
+            if span[unchecked: 0] != .asciiColon {
                 return false
-            }
-            beforeCsBytesCountRemaining = 16
-            idx = 2
-            if idx == count {
-                /// The whole address is just "::".
-                return true
             }
         }
 
-        groupsLoop: while true {
-            let groupStartIdx = idx
-            guard
-                let group = IPv6Address.parseIPv6Group(
-                    span: span,
-                    idx: &idx,
-                    count: count
-                )
-            else {
-                /// No group here. That is only valid when this is the second colon of a
-                /// compression sign. Only one compression sign is allowed in an address.
-                guard
-                    idx < count,
-                    span[unchecked: idx] == .asciiColon,
-                    beforeCsBytesCountRemaining == -1
-                else {
+        let endIdx = span.count &- 1
+        var segmentDigitIdx = 0
+        var latestColonIdx = -1
+        var currentSegmentValue: UInt16 = 0
+        var remainingBytesCount = 16
+        /// cs == compression sign
+        var beforeCsBytesCountRemaining = -1
+
+        var idx = 0
+        while idx < span.count {
+            defer { idx &+= 1 }
+
+            let byte = span[unchecked: idx]
+
+            if let digit = UInt8.mapHexadecimalByteToUInt8(byte) {
+                if segmentDigitIdx == 4 {
                     return false
                 }
-                beforeCsBytesCountRemaining = remainingBytesCount
-                idx &+= 1
-                if idx == count {
-                    /// The address ends with a compression sign.
-                    break groupsLoop
-                }
-                continue groupsLoop
+
+                currentSegmentValue &<<= 4
+                currentSegmentValue |= UInt16(digit)
+                segmentDigitIdx &+= 1
+
+                continue
             }
 
-            if idx == count {
-                /// The final group of the address.
-                guard remainingBytesCount >= 2 else {
+            if byte == .asciiColon {
+                latestColonIdx = idx
+                if segmentDigitIdx == 0 {
+                    if beforeCsBytesCountRemaining != -1 {
+                        return false
+                    }
+                    beforeCsBytesCountRemaining = remainingBytesCount
+                    continue
+                } else if idx == endIdx {
                     return false
                 }
+
+                /// We only do decrements of 2x to remainingBytesCount so it can't be 1.
+                if remainingBytesCount == 0 {
+                    return false
+                }
+
                 remainingBytesCount &-= 2
                 let shift = remainingBytesCount &* 8
-                address |= _CompatibilityUInt128Typealias(group) &<< shift
+                address |= _CompatibilityUInt128Typealias(currentSegmentValue) &<< shift
 
-                break groupsLoop
+                segmentDigitIdx = 0
+                currentSegmentValue = 0
+
+                continue
             }
 
-            switch span[unchecked: idx] {
-            case .asciiColon:
-                guard remainingBytesCount >= 2 else {
-                    return false
-                }
-                remainingBytesCount &-= 2
-                let shift = remainingBytesCount &* 8
-                address |= _CompatibilityUInt128Typealias(group) &<< shift
-
-                idx &+= 1
-            case .asciiDot:
-                /// An IPv4-mapped tail like in "::FFFF:204.152.189.116".
-                /// Reparse the bytes starting at the group start, as an IPv4 address.
+            if byte == .asciiDot {
                 var ipv4Address: UInt32 = 0
                 guard
                     remainingBytesCount >= 4,
                     IPv4Address.parseIPv4(
                         span: span.extracting(
                             unchecked: Range(
-                                uncheckedBounds: (groupStartIdx, count)
+                                uncheckedBounds: (latestColonIdx &+ 1, span.count)
                             )
                         ),
                         address: &ipv4Address
@@ -458,18 +450,29 @@ extension IPv6Address: LosslessStringConvertible {
                 let shift = remainingBytesCount &* 8
                 address |= _CompatibilityUInt128Typealias(ipv4Address) &<< shift
 
-                break groupsLoop
-            default:
-                /// Bad character
+                segmentDigitIdx = 0
+                currentSegmentValue = 0
+
+                break
+            }
+
+            /// Bad character
+            return false
+        }
+
+        if segmentDigitIdx > 0 {
+            guard remainingBytesCount >= 2 else {
                 return false
             }
+            remainingBytesCount &-= 2
+            let shift = remainingBytesCount &* 8
+            address |= _CompatibilityUInt128Typealias(currentSegmentValue) &<< shift
         }
 
         if beforeCsBytesCountRemaining == -1 {
             return remainingBytesCount == 0
         }
 
-        /// The compression sign must compress at least one all-zero group.
         guard remainingBytesCount >= 2 else {
             return false
         }
@@ -482,56 +485,6 @@ extension IPv6Address: LosslessStringConvertible {
         address = beforeSegments | afterSegments
 
         return true
-    }
-
-    /// Parses a 1-to-4-hex-digits group of an IPv6 address, advancing `idx` past the digits.
-    /// Returns `nil` if the byte at `idx` is not a hexadecimal digit, or if a 5th consecutive
-    /// hexadecimal digit exists. Stops right before the first non-hex-digit byte, or at `count`.
-    @inlinable
-    @inline(__always)
-    static func parseIPv6Group(
-        span: Span<UInt8>,
-        idx: inout Int,
-        count: Int
-    ) -> UInt16? {
-        guard idx < count,
-            let digit1 = UInt8.mapHexadecimalByteToUInt8(span[unchecked: idx])
-        else {
-            return nil
-        }
-        var group = UInt16(digit1)
-        idx &+= 1
-
-        guard idx < count,
-            let digit2 = UInt8.mapHexadecimalByteToUInt8(span[unchecked: idx])
-        else {
-            return group
-        }
-        group = (group &<< 4) | UInt16(digit2)
-        idx &+= 1
-
-        guard idx < count,
-            let digit3 = UInt8.mapHexadecimalByteToUInt8(span[unchecked: idx])
-        else {
-            return group
-        }
-        group = (group &<< 4) | UInt16(digit3)
-        idx &+= 1
-
-        guard idx < count,
-            let digit4 = UInt8.mapHexadecimalByteToUInt8(span[unchecked: idx])
-        else {
-            return group
-        }
-        group = (group &<< 4) | UInt16(digit4)
-        idx &+= 1
-
-        if idx < count, UInt8.mapHexadecimalByteToUInt8(span[unchecked: idx]) != nil {
-            /// A group can contain at most 4 hexadecimal digits.
-            return nil
-        }
-
-        return group
     }
 }
 

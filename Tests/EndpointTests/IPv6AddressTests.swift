@@ -119,7 +119,7 @@ struct IPv6AddressTests {
     }
 
     @available(SwiftStdlib 6.0, *)
-    @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress.compactMap(\.descriptionTestCase))
+    @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress.compactMap(\.ip))
     func ipv6AddressDescription(ipv6: IPv6Address, expectedDescription: String) {
         #expect(ipv6.description == expectedDescription)
 
@@ -132,7 +132,7 @@ struct IPv6AddressTests {
     }
 
     @available(SwiftStdlib 6.2, *)
-    @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress.compactMap(\.address))
+    @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress.compactMap(\.ip?.address))
     func `IPv6Address description and serialization round-trip`(ip: IPv6Address) {
         #expect(IPv6Address(ip.description) == ip)
 
@@ -153,12 +153,16 @@ struct IPv6AddressTests {
     @Test(
         arguments: IPTestCase<IPv6Address>.stringAndAddress
             + IPTestCase<IPv6Address>.idnaStringAndAddress.map {
-                IPTestCase($0.string, isValidAsOtherIPVersion: $0.isValidAsOtherIPVersion)
+                IPTestCase<IPv6Address>(
+                    $0.string,
+                    ip: nil,
+                    isValidAsOtherIPVersion: $0.isValidAsOtherIPVersion
+                )
             }
     )
     func ipv6AddressFromString(testCase: IPTestCase<IPv6Address>) {
         let string = testCase.string
-        let expectedAddress = testCase.address
+        let expectedAddress = testCase.ip?.address
         let isValidIPv4 = testCase.isValidAsOtherIPVersion
 
         #expect(IPv6Address(string) == expectedAddress)
@@ -215,7 +219,7 @@ struct IPv6AddressTests {
     @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress)
     func ipv6AddressFromStringThroughArpaDomainName(testCase: IPTestCase<IPv6Address>) {
         let string = testCase.string
-        let expectedAddress = testCase.address
+        let expectedAddress = testCase.ip?.address
         let isValidIPv4 = testCase.isValidAsOtherIPVersion
 
         let plainIPv6Address = IPv6Address(string)
@@ -293,7 +297,7 @@ struct IPv6AddressTests {
     }
 
     @available(SwiftStdlib 6.0, *)
-    @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress.compactMap(\.address))
+    @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress.compactMap(\.ip?.address))
     func `IPv6Address cString APIs compatibility with C`(ip: IPv6Address) {
         let bytes = ip.bytes
         let expectedBytes = [
@@ -365,3 +369,45 @@ struct IPv6AddressTests {
         #expect(IPv6Address._segmentWriteTable[index] == entry)
     }
 }
+
+// 16 means no compression sign.
+// Each Element is a pair of (lowerBound, upperBound) of range of segments that should be compressed.
+// Each index of each element is the bitmap of the segments that are all-zero (1) or not (0).
+// For example the element at index 0b0011_1000 is `(3, 5)`, meaning segments 3, 4, 5 should be compressed.
+private let compressionRangeTable: [(Int, Int)] = {
+    var table = [(Int, Int)]()
+    table.reserveCapacity(256)
+
+    for index in 0..<256 {
+        let mask = UInt8(index)
+
+        var bestStart = -1
+        var bestLength = 0
+        var segment = 0
+        while segment < 8 {
+            if (mask >> segment) & 1 == 1 {
+                var runEnd = segment
+                while runEnd < 8 && (mask >> runEnd) & 1 == 1 {
+                    runEnd += 1
+                }
+                let length = runEnd - segment
+                if length > bestLength {
+                    bestLength = length
+                    bestStart = segment
+                }
+                segment = runEnd
+            }
+            segment += 1
+        }
+
+        let expected: (Int, Int)
+        if bestLength >= 2 {
+            expected = (bestStart, bestStart + bestLength - 1)
+        } else {
+            expected = (16, 16)
+        }
+        table.append(expected)
+    }
+
+    return table
+}()

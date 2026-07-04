@@ -2,27 +2,17 @@ import Endpoint
 
 struct IPTestCase<IPAddressType: Sendable & Hashable>: Sendable {
     let string: String
-    let address: IPAddressType?
-    let canonicalDescription: String?
+    let ip: (address: IPAddressType, description: String)?
     let isValidAsOtherIPVersion: Bool
 
     init(
         _ string: String,
-        address: IPAddressType? = nil,
-        canonicalDescription: String? = nil,
+        ip: (address: IPAddressType, description: String)?,
         isValidAsOtherIPVersion: Bool = false
     ) {
         self.string = string
-        self.address = address
-        self.canonicalDescription = canonicalDescription
+        self.ip = ip
         self.isValidAsOtherIPVersion = isValidAsOtherIPVersion
-    }
-
-    var descriptionTestCase: (IPAddressType, String)? {
-        guard let address, let canonicalDescription else {
-            return nil
-        }
-        return (address, canonicalDescription)
     }
 }
 
@@ -61,8 +51,7 @@ extension IPTestCase where IPAddressType == IPv4Address {
         guard !isValidAsOtherIPVersion else { return nil }
         return IPTestCase<AnyIPAddress>(
             string,
-            address: address.map(AnyIPAddress.v4),
-            canonicalDescription: canonicalDescription
+            ip: ip.map { (AnyIPAddress.v4($0.address), $0.description) }
         )
     }
 }
@@ -73,8 +62,7 @@ extension IPTestCase where IPAddressType == IPv6Address {
         guard !isValidAsOtherIPVersion else { return nil }
         return IPTestCase<AnyIPAddress>(
             string,
-            address: address.map(AnyIPAddress.v6),
-            canonicalDescription: canonicalDescription
+            ip: ip.map { (AnyIPAddress.v6($0.address), $0.description) }
         )
     }
 }

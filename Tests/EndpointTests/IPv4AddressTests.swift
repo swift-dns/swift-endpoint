@@ -56,7 +56,7 @@ struct IPv4AddressTests {
         #expect(decodedIP == ip)
     }
 
-    @Test(arguments: IPTestCase<IPv4Address>.stringAndAddress.compactMap(\.descriptionTestCase))
+    @Test(arguments: IPTestCase<IPv4Address>.stringAndAddress.compactMap(\.ip))
     func ipv4AddressDescription(ip: IPv4Address, expectedDescription: String) {
         #expect(ip.description == expectedDescription)
 
@@ -68,7 +68,7 @@ struct IPv4AddressTests {
     }
 
     @available(SwiftStdlib 6.2, *)
-    @Test(arguments: IPTestCase<IPv4Address>.stringAndAddress.compactMap(\.address))
+    @Test(arguments: IPTestCase<IPv4Address>.stringAndAddress.compactMap(\.ip?.address))
     func `IPv4Address description and serialization round-trip`(ip: IPv4Address) {
         #expect(IPv4Address(ip.description) == ip)
 
@@ -89,12 +89,16 @@ struct IPv4AddressTests {
     @Test(
         arguments: IPTestCase<IPv4Address>.stringAndAddress
             + IPTestCase<IPv4Address>.idnaStringAndAddress.map {
-                IPTestCase($0.string, isValidAsOtherIPVersion: $0.isValidAsOtherIPVersion)
+                IPTestCase<IPv4Address>(
+                    $0.string,
+                    ip: nil,
+                    isValidAsOtherIPVersion: $0.isValidAsOtherIPVersion
+                )
             }
     )
     func ipv4AddressFromString(testCase: IPTestCase<IPv4Address>) {
         let string = testCase.string
-        let expectedAddress = testCase.address
+        let expectedAddress = testCase.ip?.address
         let isValidIPv6 = testCase.isValidAsOtherIPVersion
 
         #expect(IPv4Address(string) == expectedAddress)
@@ -132,7 +136,7 @@ struct IPv4AddressTests {
     )
     func ipv4AddressFromStringThroughDomainName(testCase: IPTestCase<IPv4Address>) {
         let string = testCase.string
-        let expectedAddress = testCase.address
+        let expectedAddress = testCase.ip?.address
         let isValidIPv6 = testCase.isValidAsOtherIPVersion
 
         let domainName = try? DomainName(string)
@@ -157,7 +161,7 @@ struct IPv4AddressTests {
     @Test(arguments: IPTestCase<IPv4Address>.stringAndAddress)
     func ipv4AddressFromStringThroughArpaDomainName(testCase: IPTestCase<IPv4Address>) {
         let string = testCase.string
-        let expectedAddress = testCase.address
+        let expectedAddress = testCase.ip?.address
         let isValidIPv6 = testCase.isValidAsOtherIPVersion
 
         let arpa =
@@ -204,7 +208,7 @@ struct IPv4AddressTests {
     }
 
     @available(SwiftStdlib 5.1, *)
-    @Test(arguments: IPTestCase<IPv4Address>.stringAndAddress.compactMap(\.address))
+    @Test(arguments: IPTestCase<IPv4Address>.stringAndAddress.compactMap(\.ip?.address))
     func `IPv4Address cString APIs compatibility with C`(ip: IPv4Address) {
         let expectedBytes = [ip.bytes.0, ip.bytes.1, ip.bytes.2, ip.bytes.3]
 

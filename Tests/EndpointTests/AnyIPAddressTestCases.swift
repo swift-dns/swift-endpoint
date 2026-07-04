@@ -60,26 +60,28 @@ extension IPTestCase where IPAddressType == AnyIPAddress {
         [
             IPTestCase(
                 "192.168.1.1",
-                address: .v4(IPv4Address(192, 168, 1, 1)),
-                canonicalDescription: "192.168.1.1"
+                ip: (.v4(IPv4Address(192, 168, 1, 1)), "192.168.1.1")
             ),
-            IPTestCase("[192.168.1.256]", address: nil),
+            IPTestCase("[192.168.1.256]", ip: nil),
             IPTestCase(
                 "[2001:0:0:1::]",
-                address: .v6(IPv6Address(0x2001_0000_0000_0001_0000_0000_0000_0000)),
-                canonicalDescription: "[2001:0:0:1::]"
+                ip: (.v6(IPv6Address(0x2001_0000_0000_0001_0000_0000_0000_0000)), "[2001:0:0:1::]")
             ),
             IPTestCase(
                 "0:0:0:0:0:FFFF:204.152.189.116",
-                address: .v6(IPv6Address(0x0000_0000_0000_0000_0000_FFFF_CC98_BD74)),
-                canonicalDescription: "[::ffff:cc98:bd74]"
+                ip: (
+                    .v6(IPv6Address(0x0000_0000_0000_0000_0000_FFFF_CC98_BD74)),
+                    "[::ffff:cc98:bd74]"
+                )
             ),
             IPTestCase(
                 "[2001:db8:85a3::100]",
-                address: .v6(IPv6Address(0x2001_0DB8_85A3_0000_0000_0000_0000_0100)),
-                canonicalDescription: "[2001:db8:85a3::100]"
+                ip: (
+                    .v6(IPv6Address(0x2001_0DB8_85A3_0000_0000_0000_0000_0100)),
+                    "[2001:db8:85a3::100]"
+                )
             ),
-            IPTestCase("[0:1:2:3:4:0:5:6::]", address: nil),
+            IPTestCase("[0:1:2:3:4:0:5:6::]", ip: nil),
         ]
     }
 

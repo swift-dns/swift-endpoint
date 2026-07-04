@@ -5,11 +5,11 @@ import Testing
 struct AnyIPAddressTests {
     @available(SwiftStdlib 6.0, *)
     @Test(
-        arguments: IPTestCase<AnyIPAddress>.stringAndAddress.compactMap(\.descriptionTestCase)
+        arguments: IPTestCase<AnyIPAddress>.stringAndAddress.compactMap(\.ip)
             + IPTestCase<IPv4Address>.stringAndAddress
-            .compactMap(\.asAnyIPAddress).compactMap(\.descriptionTestCase)
+            .compactMap(\.asAnyIPAddress).compactMap(\.ip)
             + IPTestCase<IPv6Address>.stringAndAddress
-            .compactMap(\.asAnyIPAddress).compactMap(\.descriptionTestCase)
+            .compactMap(\.asAnyIPAddress).compactMap(\.ip)
     )
     func `AnyIPAddress description`(ip: AnyIPAddress, expectedDescription: String) {
         #expect(ip.description == expectedDescription)
@@ -24,10 +24,10 @@ struct AnyIPAddressTests {
 
     @available(SwiftStdlib 6.2, *)
     @Test(
-        arguments: IPTestCase<IPv4Address>.stringAndAddress.compactMap(\.address).map(
-            AnyIPAddress.v4
-        )
-            + IPTestCase<IPv6Address>.stringAndAddress.compactMap(\.address).map(AnyIPAddress.v6)
+        arguments: IPTestCase<IPv4Address>.stringAndAddress
+            .compactMap(\.ip?.address).map(AnyIPAddress.v4)
+            + IPTestCase<IPv6Address>.stringAndAddress
+            .compactMap(\.ip?.address).map(AnyIPAddress.v6)
     )
     func `AnyIPAddress description round-trip`(ip: AnyIPAddress) {
         #expect(AnyIPAddress(ip.description) == ip)
@@ -46,7 +46,7 @@ struct AnyIPAddressTests {
     )
     func `AnyIPAddress from string`(testCase: IPTestCase<AnyIPAddress>) {
         let string = testCase.string
-        let expectedAddress = testCase.address
+        let expectedAddress = testCase.ip?.address
 
         #expect(AnyIPAddress(string) == expectedAddress)
 

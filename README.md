@@ -146,20 +146,20 @@ For `IPv6Address`, the Arpa domain name format is supported. For example the fol
 
 In [this post](https://forums.swift.org/t/pitch-standard-network-address-types/82288/11) on the Swift forums I was asked to compare IP parsing implementations with the native C libraries which provide functions such as `inet_ntop` and `inet_pton` which are commonly used by everyone, including swift-nio.
 
-Here's the result ~~at that point in time~~ (Last update: Jul 3, 2026):
+Here's the result ~~at that point in time~~ (Last update: Jul 5, 2026):
 
 In all 8 benchmarks this library performs better than the C libraries when called from Swift.
 
 #### Against Darwin
 
-These were performed on my M1 Pro MacBook, on macOS 27.0 (beta 1).
+These were performed on my M1 Pro MacBook, on macOS 27.0 (beta 2).
 
 | Benchmark Name                       | Swift (ns/op) | inet_pton/ntop (ns/op) | Speedup |
 | ------------------------------------ | ------------- | ---------------------- | ------- |
-| IPv4_String_Encoding_Mixed           | 8.1           | 217.0                  | 26.79x  |
-| IPv4_String_Decoding_Local_Broadcast | 13.4          | 41.6                   | 3.10x   |
-| IPv6_String_Encoding_Mixed           | 84.7          | 387.0                  | 4.57x   |
-| IPv6_String_Decoding...Compressed... | 26.4          | 122.8                  | 4.65x   |
+| IPv4_String_Encoding_Mixed           | 8.2           | 223.0                  | 27.20x  |
+| IPv4_String_Decoding_Local_Broadcast | 8.2           | 42.5                   | 5.18x   |
+| IPv6_String_Encoding_Mixed           | 84.0          | 398.0                  | 4.74x   |
+| IPv6_String_Decoding...Compressed... | 28.6          | 124.3                  | 4.35x   |
 
 #### Against glibc
 
@@ -170,8 +170,8 @@ These were performed on a dedicated-cpu-core machine from Hetzner in the Falkens
 | Benchmark Name                       | Swift (ns/op) | inet_pton/ntop (ns/op) | Speedup |
 | ------------------------------------ | ------------- | ---------------------- | ------- |
 | IPv4_String_Encoding_Mixed           | 10.0          | 110.0                  | 11.00x  |
-| IPv4_String_Decoding_Local_Broadcast | 11.2          | 20.0                   | 1.79x   |
-| IPv6_String_Encoding_Mixed           | 53.3          | 220.0                  | 4.13x   |
+| IPv4_String_Decoding_Local_Broadcast | 8.7           | 20.0                   | 2.30x   |
+| IPv6_String_Encoding_Mixed           | 56.7          | 220.0                  | 3.88x   |
 | IPv6_String_Decoding...Compressed... | 30.0          | 40.0                   | 1.33x   |
 
 #### Notes

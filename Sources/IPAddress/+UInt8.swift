@@ -68,39 +68,27 @@ extension UInt8 {
             return nil
         }
 
-        /// Unchecked because it must be in range of 1...3
-        let maxIdx = count &- 1
+        let digit0 = span[unchecked: 0] &- UInt8.ascii0
+        /// essentially `count &>> 1` == `max(count - 2, 0)`
+        let digit1 = span[unchecked: count &>> 1] &- UInt8.ascii0
+        /// `count > 0` so `(0...2) ~ (count - 1)`
+        let digit2 = span[unchecked: count &- 1] &- UInt8.ascii0
 
-        guard let first = UInt8.mapUTF8ByteToUInt8(span[unchecked: maxIdx]) else {
+        let shift = (count &- 1) &* 8
+        let multiplier0 = (0x0064_0A00 as UInt32) &>> shift & 0xFF
+        let multiplier1 = (0x0A_0000 as UInt32) &>> shift & 0xFF
+
+        let value =
+            UInt32(digit0) &* multiplier0
+            &+ UInt32(digit1) &* multiplier1
+            &+ UInt32(digit2)
+
+        /// The digit checks reject non-decimal-digit bytes, whose wrapped values exceed 9.
+        guard digit0 < 10, digit1 < 10, digit2 < 10, value < 256 else {
             return nil
         }
-        self = first
 
-        if count > 1 {
-            guard let second = UInt8.mapUTF8ByteToUInt8(span[unchecked: maxIdx &- 1]) else {
-                return nil
-            }
-
-            /// Unchecked because `(self == (0...9)) + (10 * (0...9))` is always in range of `0...99`,
-            /// which is a valid `UInt8`.
-            self &+= 10 &* second
-
-            if count == 3 {
-                /// `count == 3` means `maxIdx == 2`. So instead of
-                /// `span[unchecked: maxIdx &-- 2]` we can directly go for `span[unchecked: 0]`.
-                guard let third = UInt8.mapUTF8ByteToUInt8(span[unchecked: 0]) else {
-                    return nil
-                }
-
-                let (value, overflew1) = third.multipliedReportingOverflow(by: 100)
-                if overflew1 { return nil }
-
-                let (newByte, overflew2) = self.addingReportingOverflow(value)
-                if overflew2 { return nil }
-
-                self = newByte
-            }
-        }
+        self = UInt8(truncatingIfNeeded: value)
     }
 
     @inlinable

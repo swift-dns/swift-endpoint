@@ -119,45 +119,92 @@ extension IPv4Address: LosslessStringConvertible {
         span: Span<UInt8>,
         address: inout UInt32
     ) -> Bool {
-        var currentSegment: UInt32 = 0
-        var digitsCount: UInt8 = 0
-        var dotsCount: UInt8 = 0
+        let count = span.count
 
-        for idx in span.indices {
-            /// Unchecked because `idx` comes right from `span.indices`
-            let byte = span[unchecked: idx]
-
-            switch byte {
-            case .asciiDot:
-                if digitsCount == 0 || currentSegment > 255 || dotsCount == 3 {
-                    return false
-                }
-
-                address = (address &<< 8) | currentSegment
-
-                currentSegment = 0
-                digitsCount = 0
-                dotsCount &+= 1
-            default:
-                guard let digit = UInt8.mapUTF8ByteToUInt8(byte) else {
-                    return false
-                }
-
-                digitsCount &+= 1
-                if digitsCount > 3 {
-                    return false
-                }
-
-                /// This is safe: `currentSegment` is guaranteed to be at most 99 at this point.
-                currentSegment = currentSegment &* 10 &+ UInt32(digit)
-            }
-        }
-
-        if dotsCount == 3, digitsCount != 0, currentSegment <= 255 {
-            address = (address &<< 8) | currentSegment
-            return true
-        } else {
+        /// The shortest possible IPv4 address is "0.0.0.0" with 7 bytes, and the longest possible
+        /// one is "255.255.255.255" with 15 bytes.
+        guard count >= 7, count <= 15 else {
             return false
         }
+
+        var idx = 0
+
+        /// No count checks, we already know it's at least 7, and we will check at most 4 here.
+        guard
+            let segment1 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
+            span[unchecked: idx] == .asciiDot
+        else {
+            return false
+        }
+        idx &+= 1
+
+        /// No pre-parse count check, we know we have at least 7 bytes and at this
+        /// point we have 3 remaining at least.
+        guard
+            let segment2 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
+            idx < count,
+            span[unchecked: idx] == .asciiDot
+        else {
+            return false
+        }
+        idx &+= 1
+
+        guard
+            idx < count,
+            let segment3 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
+            idx < count,
+            span[unchecked: idx] == .asciiDot
+        else {
+            return false
+        }
+        idx &+= 1
+
+        guard
+            idx < count,
+            let segment4 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
+            idx == count
+        else {
+            return false
+        }
+
+        address = (segment1 &<< 24) | (segment2 &<< 16) | (segment3 &<< 8) | segment4
+
+        return true
+    }
+
+    @inlinable
+    @inline(__always)
+    static func _parseSegment(
+        from span: Span<UInt8>,
+        count: Int,
+        advancing idx: inout Int
+    ) -> UInt32? {
+        guard let digit1 = UInt8.mapUTF8ByteToUInt8(span[unchecked: idx]) else {
+            return nil
+        }
+        var segment = UInt32(digit1)
+        idx &+= 1
+
+        guard idx < count,
+            let digit2 = UInt8.mapUTF8ByteToUInt8(span[unchecked: idx])
+        else {
+            return segment
+        }
+        segment = segment &* 10 &+ UInt32(digit2)
+        idx &+= 1
+
+        guard idx < count,
+            let digit3 = UInt8.mapUTF8ByteToUInt8(span[unchecked: idx])
+        else {
+            return segment
+        }
+        segment = segment &* 10 &+ UInt32(digit3)
+        idx &+= 1
+
+        guard segment <= 255 else {
+            return nil
+        }
+
+        return segment
     }
 }

@@ -346,18 +346,13 @@ extension IPv6Address: LosslessStringConvertible {
 
         /// Trim the left and right square brackets if they both exist
 
-        /// Unchecked because we just checked count > 1 above
-        let startsWithBracket = unsafe span[unchecked: 0] == .asciiLeftSquareBracket
-        /// Unchecked because we just checked count > 1 above
-        let endsWithBracket = unsafe span[unchecked: span.count &- 1] == .asciiRightSquareBracket
+        let startsWithBracket = span[0] == .asciiLeftSquareBracket
+        let endsWithBracket = span[span.count &- 1] == .asciiRightSquareBracket
         switch (startsWithBracket, endsWithBracket) {
         case (false, false):
             break
         case (true, true):
-            /// Unchecked because we just checked count > 1 above
-            span = unsafe span.extracting(
-                unchecked: Range(uncheckedBounds: (1, span.count &- 1))
-            )
+            span = span.extracting(1 ..< (span.count &- 1))
         case (true, false), (false, true):
             return false
         }
@@ -368,11 +363,9 @@ extension IPv6Address: LosslessStringConvertible {
         }
 
         /// Special-case handling for when there is a compression sign at the beginning
-        if unsafe span[unchecked: 0] == .asciiColon {
-            span = unsafe span.extracting(
-                unchecked: Range(uncheckedBounds: (1, span.count))
-            )
-            if unsafe span[unchecked: 0] != .asciiColon {
+        if span[0] == .asciiColon {
+            span = span.extracting(1 ..< span.count)
+            if span[0] != .asciiColon {
                 return false
             }
         }

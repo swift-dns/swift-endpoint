@@ -68,7 +68,7 @@ extension UInt8 {
             return nil
         }
 
-        let digit0 = unsafe span[unchecked: 0] &- UInt8.ascii0
+        let digit0 = span[0] &- UInt8.ascii0
         /// essentially `count &>> 1` == `max(count - 2, 0)`
         let digit1 = unsafe span[unchecked: count &>> 1] &- UInt8.ascii0
         /// `count > 0` so `(0...2) ~ (count - 1)`

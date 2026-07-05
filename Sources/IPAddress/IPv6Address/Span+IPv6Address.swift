@@ -6,24 +6,24 @@ extension IPv6Address {
             return nil
         }
 
-        unsafe self.init(
+        self.init(
             UnsignedInteger128(
-                _low: UInt64(span[unchecked: 8]) &<< 56
-                    | UInt64(span[unchecked: 9]) &<< 48
-                    | UInt64(span[unchecked: 10]) &<< 40
-                    | UInt64(span[unchecked: 11]) &<< 32
-                    | UInt64(span[unchecked: 12]) &<< 24
-                    | UInt64(span[unchecked: 13]) &<< 16
-                    | UInt64(span[unchecked: 14]) &<< 8
-                    | UInt64(span[unchecked: 15]),
-                _high: UInt64(span[unchecked: 0]) &<< 56
-                    | UInt64(span[unchecked: 1]) &<< 48
-                    | UInt64(span[unchecked: 2]) &<< 40
-                    | UInt64(span[unchecked: 3]) &<< 32
-                    | UInt64(span[unchecked: 4]) &<< 24
-                    | UInt64(span[unchecked: 5]) &<< 16
-                    | UInt64(span[unchecked: 6]) &<< 8
-                    | UInt64(span[unchecked: 7])
+                _low: UInt64(span[8]) &<< 56
+                    | UInt64(span[9]) &<< 48
+                    | UInt64(span[10]) &<< 40
+                    | UInt64(span[11]) &<< 32
+                    | UInt64(span[12]) &<< 24
+                    | UInt64(span[13]) &<< 16
+                    | UInt64(span[14]) &<< 8
+                    | UInt64(span[15]),
+                _high: UInt64(span[0]) &<< 56
+                    | UInt64(span[1]) &<< 48
+                    | UInt64(span[2]) &<< 40
+                    | UInt64(span[3]) &<< 32
+                    | UInt64(span[4]) &<< 24
+                    | UInt64(span[5]) &<< 16
+                    | UInt64(span[6]) &<< 8
+                    | UInt64(span[7])
             )
         )
     }

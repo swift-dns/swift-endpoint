@@ -189,14 +189,14 @@ extension DomainName {
         // short-circuit root parse
         switch bytesCount {
         case 1:
-            if unsafe span[unchecked: 0].isIDNALabelSeparator {
+            if span[0].isIDNALabelSeparator {
                 self = .root
                 return
             }
         case 3:
-            let first = unsafe span[unchecked: 0]
-            let second = unsafe span[unchecked: 1]
-            let third = unsafe span[unchecked: 2]
+            let first = span[0]
+            let second = span[1]
+            let third = span[2]
             /// U+FF0E ( ． ) FULLWIDTH FULL STOP
             /// U+3002 ( 。 ) IDEOGRAPHIC FULL STOP
             /// U+FF61 ( ｡ ) HALFWIDTH IDEOGRAPHIC FULL STOP
@@ -490,9 +490,9 @@ extension DomainName {
                 )
             }
         case 3...:
-            let first = unsafe span[unchecked: endIndex &- 2]
-            let second = unsafe span[unchecked: endIndex &- 1]
-            let third = unsafe span[unchecked: endIndex]
+            let first = span[endIndex &- 2]
+            let second = span[endIndex &- 1]
+            let third = span[endIndex]
             if third.isIDNALabelSeparator {
                 fatalError(
                     "DomainName initializer should not be used with root label indicator: \(unsafe span[unchecked: endIndex])"

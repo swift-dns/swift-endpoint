@@ -6,11 +6,11 @@ extension IPv4Address {
             return nil
         }
 
-        unsafe self.init(
-            UInt32(span[unchecked: 0]) &<< 24
-                | UInt32(span[unchecked: 1]) &<< 16
-                | UInt32(span[unchecked: 2]) &<< 8
-                | UInt32(span[unchecked: 3])
+        self.init(
+            UInt32(span[0]) &<< 24
+                | UInt32(span[1]) &<< 16
+                | UInt32(span[2]) &<< 8
+                | UInt32(span[3])
         )
     }
 

@@ -222,7 +222,7 @@ extension IPv6Address {
         advancingIdx idx: inout Int,
         segmentIdx: Int
     ) {
-        /// Get the segment's value as 4x nibbles (4bits) cramped into a UInt16.
+        /// Get the segment's value as 4x nibbles cramped into a UInt16.
         let segment = self._segment(atUncheckedIndex: segmentIdx)
 
         var nibbles = UInt32(segment)

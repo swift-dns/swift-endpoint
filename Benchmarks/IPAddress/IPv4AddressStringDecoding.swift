@@ -165,7 +165,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "IPv4_String_Decoding_Multiple_IPs_3M",
+        "IPv4_String_Decoding_Multiple_IPs_6M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -173,7 +173,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<3_000_000 {
+        for _ in 0..<6_000_000 {
             let idx = Int(rng.next() % 16)
             let ip = IPv4Address(ipv4MultipleIPs[idx]).unsafelyUnwrapped
             blackHole(ip)
@@ -211,7 +211,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: IPv4_String_Decoding_Multiple_IPs_inet_pton
 
     Benchmark(
-        "IPv4_String_Decoding_Multiple_IPs_inet_pton_2M",
+        "IPv4_String_Decoding_Multiple_IPs_inet_pton_6M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -219,7 +219,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<2_000_000 {
+        for _ in 0..<6_000_000 {
             var ipv4Address = in_addr()
             let idx = Int(rng.next() % 16)
             _ = ipv4MultipleIPs[idx].withCString { p in

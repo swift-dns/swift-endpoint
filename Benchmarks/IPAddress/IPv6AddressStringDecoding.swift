@@ -275,7 +275,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: IPv6_String_Decoding_Multiple_IPs_inet_pton
 
     Benchmark(
-        "IPv6_String_Decoding_Multiple_IPs_inet_pton_2M",
+        "IPv6_String_Decoding_Multiple_IPs_inet_pton_3M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -283,7 +283,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<2_000_000 {
+        for _ in 0..<3_000_000 {
             var ipv6Address = in6_addr()
             let idx = Int(rng.next() % 16)
             _ = ipv6MultipleIPs[idx].withCString { p in

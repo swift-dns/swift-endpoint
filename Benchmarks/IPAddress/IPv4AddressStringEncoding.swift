@@ -225,7 +225,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "IPv4_String_Encoding_Multiple_IPs_4M",
+        "IPv4_String_Encoding_Multiple_IPs_8M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -233,7 +233,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<4_000_000 {
+        for _ in 0..<8_000_000 {
             let idx = Int(rng.next() % 16)
             let description = ipv4MultipleIPs[idx].description
             blackHole(description)

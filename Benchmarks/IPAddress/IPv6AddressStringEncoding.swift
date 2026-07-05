@@ -359,7 +359,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "IPv6_String_Encoding_Multiple_IPs_2M",
+        "IPv6_String_Encoding_Multiple_IPs_3M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -367,7 +367,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<2_000_000 {
+        for _ in 0..<3_000_000 {
             let idx = Int(rng.next() % 16)
             let description = ipv6MultipleIPs[idx].description
             blackHole(description)

@@ -2,7 +2,7 @@ import Benchmark
 import Domain
 
 let benchmarks: @Sendable () -> Void = {
-    Benchmark.defaultConfiguration.maxDuration = .seconds(5)
+    unsafe Benchmark.defaultConfiguration.maxDuration = .seconds(5)
 
     let google = "google.com"
     Benchmark(

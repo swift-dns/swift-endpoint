@@ -88,10 +88,10 @@ let package = Package(
 var settings: [SwiftSetting] {
     [
         .swiftLanguageMode(.v6),
+        .strictMemorySafety(),
         .enableUpcomingFeature("MemberImportVisibility"),
         .enableUpcomingFeature("InternalImportsByDefault"),
         .enableUpcomingFeature("ExistentialAny"),
-        .enableUpcomingFeature("StrictMemorySafety"),
         .enableExperimentalFeature(
             "AvailabilityMacro=SwiftStdlib 6.2:macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0"
         ),

@@ -22,7 +22,7 @@ enum CCalls {
         _ b: UnsafeRawPointer,
         _ count: Int
     ) -> Int32 {
-        memcmp(a, b, count)
+        unsafe memcmp(a, b, count)
     }
 }
 

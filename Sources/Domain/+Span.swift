@@ -4,7 +4,7 @@ extension Span<UInt8> {
     var isASCII: Bool {
         var result: UInt8 = 0
         for idx in self.indices {
-            result |= self[unchecked: idx]
+            result |= unsafe self[unchecked: idx]
         }
         return result <= 127
     }
@@ -20,7 +20,7 @@ extension Span<UInt8> {
 
         return self.withUnsafeBytes { selfBytes -> Bool in
             other.withUnsafeBytes { otherBytes -> Bool in
-                CCalls.c_memcmp(
+                unsafe CCalls.c_memcmp(
                     /// If the count is non-zero then the `UnsafeRawBufferPointer` guarantees there is a non-nil pointer.
                     selfBytes.baseAddress.unsafelyUnwrapped,
                     otherBytes.baseAddress.unsafelyUnwrapped,

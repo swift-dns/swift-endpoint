@@ -43,10 +43,10 @@ extension DomainName.Label {
     @inlinable
     func _makeDescriptionAssumingASCII() -> String {
         let byteCount = self._data.readableBytes
-        return String(unsafeUninitializedCapacity_Compatibility: byteCount) { stringBuffer in
-            self._data.withUnsafeReadableBytes { ptr in
+        return unsafe String(unsafeUninitializedCapacity_Compatibility: byteCount) { stringBuffer in
+            unsafe self._data.withUnsafeReadableBytes { ptr in
                 let rawBuffer = UnsafeMutableRawBufferPointer(stringBuffer)
-                rawBuffer.copyMemory(from: ptr)
+                unsafe rawBuffer.copyMemory(from: ptr)
             }
             return byteCount
         }

@@ -22,7 +22,7 @@ import Darwin
 enum CCalls {
     @usableFromInline
     static func c_strlen(_ s: UnsafePointer<CChar>) -> Int {
-        strlen(s)
+        unsafe strlen(s)
     }
 
     @usableFromInline
@@ -31,7 +31,7 @@ enum CCalls {
         _ src: UnsafeRawPointer,
         _ count: Int
     ) {
-        _ = memmove(dest, src, count)
+        _ = unsafe memmove(dest, src, count)
     }
 }
 

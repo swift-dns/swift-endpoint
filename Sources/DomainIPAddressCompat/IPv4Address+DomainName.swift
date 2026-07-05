@@ -34,55 +34,55 @@ extension DomainName {
     init(ipv4InDottedQuadNotation ipv4: IPv4Address) {
         var buffer = ByteBuffer()
         /// 16 is the maximum number of bytes required to represent an IPv4 address here
-        buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 16) { bufferPtr in
+        unsafe buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 16) { bufferPtr in
             var bufferIdx = 0
             let bytes = ipv4.bytes
 
-            bufferPtr[bufferIdx] = .zero
+            unsafe bufferPtr[bufferIdx] = .zero
             bufferIdx &+= 1
             var segmentStartIndex = bufferIdx
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
-            bytes.0.asDecimal_RequiringMinimumCapacityOf3(
+            unsafe bytes.0.asDecimal_RequiringMinimumCapacityOf3(
                 buffer: bufferPtr,
                 advancingIdx: &bufferIdx
             )
-            bufferPtr[segmentStartIndex &- 1] = UInt8(
+            unsafe bufferPtr[segmentStartIndex &- 1] = UInt8(
                 truncatingIfNeeded: bufferIdx &- segmentStartIndex
             )
 
-            bufferPtr[bufferIdx] = .zero
+            unsafe bufferPtr[bufferIdx] = .zero
             bufferIdx &+= 1
             segmentStartIndex = bufferIdx
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
-            bytes.1.asDecimal_RequiringMinimumCapacityOf3(
+            unsafe bytes.1.asDecimal_RequiringMinimumCapacityOf3(
                 buffer: bufferPtr,
                 advancingIdx: &bufferIdx
             )
-            bufferPtr[segmentStartIndex &- 1] = UInt8(
+            unsafe bufferPtr[segmentStartIndex &- 1] = UInt8(
                 truncatingIfNeeded: bufferIdx &- segmentStartIndex
             )
 
-            bufferPtr[bufferIdx] = .zero
+            unsafe bufferPtr[bufferIdx] = .zero
             bufferIdx &+= 1
             segmentStartIndex = bufferIdx
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
-            bytes.2.asDecimal_RequiringMinimumCapacityOf3(
+            unsafe bytes.2.asDecimal_RequiringMinimumCapacityOf3(
                 buffer: bufferPtr,
                 advancingIdx: &bufferIdx
             )
-            bufferPtr[segmentStartIndex &- 1] = UInt8(
+            unsafe bufferPtr[segmentStartIndex &- 1] = UInt8(
                 truncatingIfNeeded: bufferIdx &- segmentStartIndex
             )
 
-            bufferPtr[bufferIdx] = .zero
+            unsafe bufferPtr[bufferIdx] = .zero
             bufferIdx &+= 1
             segmentStartIndex = bufferIdx
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
-            bytes.3.asDecimal_RequiringMinimumCapacityOf3(
+            unsafe bytes.3.asDecimal_RequiringMinimumCapacityOf3(
                 buffer: bufferPtr,
                 advancingIdx: &bufferIdx
             )
-            bufferPtr[segmentStartIndex &- 1] = UInt8(
+            unsafe bufferPtr[segmentStartIndex &- 1] = UInt8(
                 truncatingIfNeeded: bufferIdx &- segmentStartIndex
             )
 
@@ -97,73 +97,73 @@ extension DomainName {
         var buffer = ByteBuffer()
         /// 16 is the maximum number of bytes required to represent an IPv4 address,
         /// 15 more bytes are required for the "in-addr" and "arpa" labels.
-        buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 31) { bufferPtr in
+        unsafe buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 31) { bufferPtr in
             var bufferIdx = 0
             let bytes = ipv4.bytes
 
-            bufferPtr[bufferIdx] = .zero
+            unsafe bufferPtr[bufferIdx] = .zero
             bufferIdx &+= 1
             var segmentStartIndex = bufferIdx
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
-            bytes.3.asDecimal_RequiringMinimumCapacityOf3(
+            unsafe bytes.3.asDecimal_RequiringMinimumCapacityOf3(
                 buffer: bufferPtr,
                 advancingIdx: &bufferIdx
             )
-            bufferPtr[segmentStartIndex &- 1] = UInt8(
+            unsafe bufferPtr[segmentStartIndex &- 1] = UInt8(
                 truncatingIfNeeded: bufferIdx &- segmentStartIndex
             )
 
-            bufferPtr[bufferIdx] = .zero
+            unsafe bufferPtr[bufferIdx] = .zero
             bufferIdx &+= 1
             segmentStartIndex = bufferIdx
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
-            bytes.2.asDecimal_RequiringMinimumCapacityOf3(
+            unsafe bytes.2.asDecimal_RequiringMinimumCapacityOf3(
                 buffer: bufferPtr,
                 advancingIdx: &bufferIdx
             )
-            bufferPtr[segmentStartIndex &- 1] = UInt8(
+            unsafe bufferPtr[segmentStartIndex &- 1] = UInt8(
                 truncatingIfNeeded: bufferIdx &- segmentStartIndex
             )
 
-            bufferPtr[bufferIdx] = .zero
+            unsafe bufferPtr[bufferIdx] = .zero
             bufferIdx &+= 1
             segmentStartIndex = bufferIdx
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
-            bytes.1.asDecimal_RequiringMinimumCapacityOf3(
+            unsafe bytes.1.asDecimal_RequiringMinimumCapacityOf3(
                 buffer: bufferPtr,
                 advancingIdx: &bufferIdx
             )
-            bufferPtr[segmentStartIndex &- 1] = UInt8(
+            unsafe bufferPtr[segmentStartIndex &- 1] = UInt8(
                 truncatingIfNeeded: bufferIdx &- segmentStartIndex
             )
 
-            bufferPtr[bufferIdx] = .zero
+            unsafe bufferPtr[bufferIdx] = .zero
             bufferIdx &+= 1
             segmentStartIndex = bufferIdx
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
-            bytes.0.asDecimal_RequiringMinimumCapacityOf3(
+            unsafe bytes.0.asDecimal_RequiringMinimumCapacityOf3(
                 buffer: bufferPtr,
                 advancingIdx: &bufferIdx
             )
-            bufferPtr[segmentStartIndex &- 1] = UInt8(
+            unsafe bufferPtr[segmentStartIndex &- 1] = UInt8(
                 truncatingIfNeeded: bufferIdx &- segmentStartIndex
             )
 
-            bufferPtr[bufferIdx] = 7
-            bufferPtr[bufferIdx &+ 1] = UInt8(ascii: "i")
-            bufferPtr[bufferIdx &+ 2] = UInt8(ascii: "n")
-            bufferPtr[bufferIdx &+ 3] = UInt8(ascii: "-")
-            bufferPtr[bufferIdx &+ 4] = UInt8(ascii: "a")
-            bufferPtr[bufferIdx &+ 5] = UInt8(ascii: "d")
-            bufferPtr[bufferIdx &+ 6] = UInt8(ascii: "d")
-            bufferPtr[bufferIdx &+ 7] = UInt8(ascii: "r")
+            unsafe bufferPtr[bufferIdx] = 7
+            unsafe bufferPtr[bufferIdx &+ 1] = UInt8(ascii: "i")
+            unsafe bufferPtr[bufferIdx &+ 2] = UInt8(ascii: "n")
+            unsafe bufferPtr[bufferIdx &+ 3] = UInt8(ascii: "-")
+            unsafe bufferPtr[bufferIdx &+ 4] = UInt8(ascii: "a")
+            unsafe bufferPtr[bufferIdx &+ 5] = UInt8(ascii: "d")
+            unsafe bufferPtr[bufferIdx &+ 6] = UInt8(ascii: "d")
+            unsafe bufferPtr[bufferIdx &+ 7] = UInt8(ascii: "r")
             bufferIdx &+= 8
 
-            bufferPtr[bufferIdx] = 4
-            bufferPtr[bufferIdx &+ 1] = UInt8(ascii: "a")
-            bufferPtr[bufferIdx &+ 2] = UInt8(ascii: "r")
-            bufferPtr[bufferIdx &+ 3] = UInt8(ascii: "p")
-            bufferPtr[bufferIdx &+ 4] = UInt8(ascii: "a")
+            unsafe bufferPtr[bufferIdx] = 4
+            unsafe bufferPtr[bufferIdx &+ 1] = UInt8(ascii: "a")
+            unsafe bufferPtr[bufferIdx &+ 2] = UInt8(ascii: "r")
+            unsafe bufferPtr[bufferIdx &+ 3] = UInt8(ascii: "p")
+            unsafe bufferPtr[bufferIdx &+ 4] = UInt8(ascii: "a")
             bufferIdx &+= 5
 
             return bufferIdx

@@ -17,12 +17,12 @@ extension AnyIPAddress {
     @inlinable
     public init?(domainName: DomainName) {
         guard
-            let result = domainName._data.withUnsafeReadableBytes({ ptr -> AnyIPAddress? in
-                ptr.withMemoryRebound(to: UInt8.self) { ptr -> AnyIPAddress? in
+            let result = unsafe domainName._data.withUnsafeReadableBytes({ ptr -> AnyIPAddress? in
+                unsafe ptr.withMemoryRebound(to: UInt8.self) { ptr -> AnyIPAddress? in
                     var iterator = domainName.makePositionIterator()
 
                     /// `DomainName.data` always only contains ASCII bytes
-                    let asciiSpan = ptr.span
+                    let asciiSpan = unsafe ptr.span
 
                     for _ in 0..<4 {
                         guard iterator.next() != nil else {
@@ -36,7 +36,7 @@ extension AnyIPAddress {
                         /// `"127.0.0.1"` into the domain name.
                         return IPv4Address(domainName: domainName).map { .v4($0) }
                     }
-                    let identifierLabel = asciiSpan.extracting(unchecked: identifierLabelRange)
+                    let identifierLabel = unsafe asciiSpan.extracting(unchecked: identifierLabelRange)
 
                     let inAddrBytes = [
                         UInt8(ascii: "i"), UInt8(ascii: "n"), UInt8(ascii: "-"), UInt8(ascii: "a"),
@@ -67,12 +67,12 @@ extension AnyIPAddress {
     @inlinable
     public init?(arpaDomainName domainName: DomainName) {
         guard
-            let result = domainName._data.withUnsafeReadableBytes({ ptr -> AnyIPAddress? in
-                ptr.withMemoryRebound(to: UInt8.self) { ptr -> AnyIPAddress? in
+            let result = unsafe domainName._data.withUnsafeReadableBytes({ ptr -> AnyIPAddress? in
+                unsafe ptr.withMemoryRebound(to: UInt8.self) { ptr -> AnyIPAddress? in
                     var iterator = domainName.makePositionIterator()
 
                     /// `DomainName.data` always only contains ASCII bytes
-                    let asciiSpan = ptr.span
+                    let asciiSpan = unsafe ptr.span
 
                     for _ in 0..<4 {
                         guard let labelPosition = iterator.next() else {
@@ -94,7 +94,7 @@ extension AnyIPAddress {
                     guard let identifierLabelRange = iterator.next()?.range else {
                         return nil
                     }
-                    let identifierLabel = asciiSpan.extracting(unchecked: identifierLabelRange)
+                    let identifierLabel = unsafe asciiSpan.extracting(unchecked: identifierLabelRange)
                     let inAddrBytes = [
                         UInt8(ascii: "i"), UInt8(ascii: "n"), UInt8(ascii: "-"), UInt8(ascii: "a"),
                         UInt8(ascii: "d"), UInt8(ascii: "d"), UInt8(ascii: "r"),

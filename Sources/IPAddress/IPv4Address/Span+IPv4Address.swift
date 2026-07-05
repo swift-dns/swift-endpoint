@@ -6,7 +6,7 @@ extension IPv4Address {
             return nil
         }
 
-        self.init(
+        unsafe self.init(
             UInt32(span[unchecked: 0]) &<< 24
                 | UInt32(span[unchecked: 1]) &<< 16
                 | UInt32(span[unchecked: 2]) &<< 8

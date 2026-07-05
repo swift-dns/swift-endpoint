@@ -11,13 +11,13 @@ extension UnsignedInteger128: CustomStringConvertible {
         let toReserve = Swift.max(approximation, 1)
         var value = self
         let _10 = Self(_low: 10, _high: 0)
-        return String(unsafeUninitializedCapacity_Compatibility: toReserve) { buffer in
+        return unsafe String(unsafeUninitializedCapacity_Compatibility: toReserve) { buffer in
             var idx = toReserve
             repeat {
                 let tenth = value / _10
                 let remainder = value &- (tenth &* _10)
                 idx &-= 1
-                buffer[idx] = UInt8(remainder._low) &+ UInt8.ascii0
+                unsafe buffer[idx] = UInt8(remainder._low) &+ UInt8.ascii0
                 value = tenth
             } while value != .zero
 
@@ -25,8 +25,8 @@ extension UnsignedInteger128: CustomStringConvertible {
             /// Use `memmove` to close the gap if needed.
             let count = toReserve &- idx
             if idx != 0 {
-                let base = buffer.baseAddress.unsafelyUnwrapped
-                CCalls.c_memmove(base, base + idx, count)
+                let base = unsafe buffer.baseAddress.unsafelyUnwrapped
+                unsafe CCalls.c_memmove(base, base + idx, count)
             }
             return count
         }
@@ -51,7 +51,7 @@ extension UnsignedInteger128: CustomStringConvertible {
 
         var idx = 0
         while idx < span.count {
-            let byte = span[unchecked: idx]
+            let byte = unsafe span[unchecked: idx]
             guard let number = UInt8.mapUTF8ByteToUInt8(byte) else {
                 return nil
             }

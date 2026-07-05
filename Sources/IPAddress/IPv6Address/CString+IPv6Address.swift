@@ -16,7 +16,7 @@ extension IPv6Address {
     public func withCString<Result>(
         _ body: (Span<CChar>) throws -> Result
     ) rethrows -> Result {
-        try self.makeDescription(
+        try unsafe self.makeDescription(
             enclosingInSquareBrackets: false
         ) { (maxWriteableBytes, writeBytes) in
             try withUnsafeTemporaryAllocation(
@@ -24,11 +24,11 @@ extension IPv6Address {
                 /// 1 extra byte for the null terminator.
                 capacity: maxWriteableBytes &+ 1
             ) { buffer in
-                let count = writeBytes(buffer)
-                buffer[count] = 0
+                let count = unsafe writeBytes(buffer)
+                unsafe buffer[count] = 0
                 return try unsafe buffer.withMemoryRebound(to: CChar.self) { cBuffer in
-                    let range = ClosedRange<Int>(uncheckedBounds: (0, count))
-                    let limitedSpan = cBuffer.span.extracting(unchecked: range)
+                    let range = unsafe ClosedRange<Int>(uncheckedBounds: (0, count))
+                    let limitedSpan = unsafe cBuffer.span.extracting(unchecked: range)
                     return try body(limitedSpan)
                 }
             }
@@ -46,10 +46,10 @@ extension IPv6Address {
     /// - `cString`: A pointer to a null-terminated C string of the address's textual representation.
     @inlinable
     public init?(cString: UnsafePointer<CChar>) {
-        let length = CCalls.c_strlen(cString)
-        let buffer = UnsafeBufferPointer(start: cString, count: length)
-        let result = buffer.withMemoryRebound(to: UInt8.self) {
-            IPv6Address(textualRepresentation: $0.span)
+        let length = unsafe CCalls.c_strlen(cString)
+        let buffer = unsafe UnsafeBufferPointer(start: cString, count: length)
+        let result = unsafe buffer.withMemoryRebound(to: UInt8.self) {
+            IPv6Address(textualRepresentation: unsafe $0.span)
         }
         guard let result else {
             return nil

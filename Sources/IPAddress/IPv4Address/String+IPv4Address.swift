@@ -7,8 +7,8 @@ extension IPv4Address: CustomStringConvertible {
         /// For example for "255.255.255.255".
         /// Coincidentally, Swift's `_SmallString` usually supports up to 15 bytes, which helps make
         /// this implementation as efficient as possible without a heap allocation.
-        String(unsafeUninitializedCapacity_Compatibility: 15) { buffer in
-            self.writeTextualRepresentation_RequiringMinimumCapacityOf15(
+        unsafe String(unsafeUninitializedCapacity_Compatibility: 15) { buffer in
+            unsafe self.writeTextualRepresentation_RequiringMinimumCapacityOf15(
                 into: UnsafeMutableRawBufferPointer(buffer)
             )
         }
@@ -27,16 +27,16 @@ extension IPv4Address: CustomStringConvertible {
 
         let byte = UInt8(truncatingIfNeeded: self.address &>> 24)
         /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
-        byte.asDecimal_RequiringMinimumCapacityOf3(buffer: buffer, advancingIdx: &resultIdx)
+        unsafe byte.asDecimal_RequiringMinimumCapacityOf3(buffer: buffer, advancingIdx: &resultIdx)
 
         for idx in 1..<4 {
-            buffer[resultIdx] = .asciiDot
+            unsafe buffer[resultIdx] = .asciiDot
             resultIdx &+= 1
 
             let shift = 24 &- idx &* 8
             let byte = UInt8(truncatingIfNeeded: self.address &>> shift)
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
-            byte.asDecimal_RequiringMinimumCapacityOf3(buffer: buffer, advancingIdx: &resultIdx)
+            unsafe byte.asDecimal_RequiringMinimumCapacityOf3(buffer: buffer, advancingIdx: &resultIdx)
         }
 
         return resultIdx
@@ -132,7 +132,7 @@ extension IPv4Address: LosslessStringConvertible {
         /// No count checks, we already know it's at least 7, and we will check at most 4 here.
         guard
             let segment1 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
-            span[unchecked: idx] == .asciiDot
+            unsafe span[unchecked: idx] == .asciiDot
         else {
             return false
         }
@@ -143,7 +143,7 @@ extension IPv4Address: LosslessStringConvertible {
         guard
             let segment2 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
             idx < count,
-            span[unchecked: idx] == .asciiDot
+            unsafe span[unchecked: idx] == .asciiDot
         else {
             return false
         }
@@ -153,7 +153,7 @@ extension IPv4Address: LosslessStringConvertible {
             idx < count,
             let segment3 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
             idx < count,
-            span[unchecked: idx] == .asciiDot
+            unsafe span[unchecked: idx] == .asciiDot
         else {
             return false
         }
@@ -179,14 +179,14 @@ extension IPv4Address: LosslessStringConvertible {
         count: Int,
         advancing idx: inout Int
     ) -> UInt32? {
-        guard let digit1 = UInt8.mapUTF8ByteToUInt8(span[unchecked: idx]) else {
+        guard let digit1 = unsafe UInt8.mapUTF8ByteToUInt8(span[unchecked: idx]) else {
             return nil
         }
         var segment = UInt32(digit1)
         idx &+= 1
 
         guard idx < count,
-            let digit2 = UInt8.mapUTF8ByteToUInt8(span[unchecked: idx])
+            let digit2 = unsafe UInt8.mapUTF8ByteToUInt8(span[unchecked: idx])
         else {
             return segment
         }
@@ -194,7 +194,7 @@ extension IPv4Address: LosslessStringConvertible {
         idx &+= 1
 
         guard idx < count,
-            let digit3 = UInt8.mapUTF8ByteToUInt8(span[unchecked: idx])
+            let digit3 = unsafe UInt8.mapUTF8ByteToUInt8(span[unchecked: idx])
         else {
             return segment
         }

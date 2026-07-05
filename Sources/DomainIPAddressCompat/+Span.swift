@@ -15,8 +15,8 @@ extension Span<UInt8> {
         return self.withUnsafeBytes { lhsBuffer in
             bytes.withUnsafeBytes { rhsBuffer in
                 /// Both are non-nil because `count` is non-zero at this point.
-                let lhs = lhsBuffer.baseAddress.unsafelyUnwrapped
-                let rhs = rhsBuffer.baseAddress.unsafelyUnwrapped
+                let lhs = unsafe lhsBuffer.baseAddress.unsafelyUnwrapped
+                let rhs = unsafe rhsBuffer.baseAddress.unsafelyUnwrapped
                 var differenceBits: UInt64 = 0
 
                 /// Try to compare the bytes with as few loads as possible
@@ -24,37 +24,37 @@ extension Span<UInt8> {
                     var idx = 0
                     while idx &+ 8 < count {
                         differenceBits |=
-                            lhs.loadUnaligned(fromByteOffset: idx, as: UInt64.self)
+                            unsafe lhs.loadUnaligned(fromByteOffset: idx, as: UInt64.self)
                             ^ rhs.loadUnaligned(fromByteOffset: idx, as: UInt64.self)
                         idx &+= 8
                     }
                     let finalIdx = count &- 8
                     differenceBits |=
-                        lhs.loadUnaligned(fromByteOffset: finalIdx, as: UInt64.self)
+                        unsafe lhs.loadUnaligned(fromByteOffset: finalIdx, as: UInt64.self)
                         ^ rhs.loadUnaligned(fromByteOffset: finalIdx, as: UInt64.self)
                 } else if count >= 4 {
                     let finalIdx = count &- 4
                     differenceBits |= UInt64(
-                        lhs.loadUnaligned(fromByteOffset: 0, as: UInt32.self)
+                        unsafe lhs.loadUnaligned(fromByteOffset: 0, as: UInt32.self)
                             ^ rhs.loadUnaligned(fromByteOffset: 0, as: UInt32.self)
                     )
                     differenceBits |= UInt64(
-                        lhs.loadUnaligned(fromByteOffset: finalIdx, as: UInt32.self)
+                        unsafe lhs.loadUnaligned(fromByteOffset: finalIdx, as: UInt32.self)
                             ^ rhs.loadUnaligned(fromByteOffset: finalIdx, as: UInt32.self)
                     )
                 } else if count >= 2 {
                     let finalIdx = count &- 2
                     differenceBits |= UInt64(
-                        lhs.loadUnaligned(fromByteOffset: 0, as: UInt16.self)
+                        unsafe lhs.loadUnaligned(fromByteOffset: 0, as: UInt16.self)
                             ^ rhs.loadUnaligned(fromByteOffset: 0, as: UInt16.self)
                     )
                     differenceBits |= UInt64(
-                        lhs.loadUnaligned(fromByteOffset: finalIdx, as: UInt16.self)
+                        unsafe lhs.loadUnaligned(fromByteOffset: finalIdx, as: UInt16.self)
                             ^ rhs.loadUnaligned(fromByteOffset: finalIdx, as: UInt16.self)
                     )
                 } else {
                     differenceBits = UInt64(
-                        lhs.loadUnaligned(fromByteOffset: 0, as: UInt8.self)
+                        unsafe lhs.loadUnaligned(fromByteOffset: 0, as: UInt8.self)
                             ^ rhs.loadUnaligned(fromByteOffset: 0, as: UInt8.self)
                     )
                 }

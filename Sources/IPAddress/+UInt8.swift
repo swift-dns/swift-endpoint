@@ -68,11 +68,11 @@ extension UInt8 {
             return nil
         }
 
-        let digit0 = span[unchecked: 0] &- UInt8.ascii0
+        let digit0 = unsafe span[unchecked: 0] &- UInt8.ascii0
         /// essentially `count &>> 1` == `max(count - 2, 0)`
-        let digit1 = span[unchecked: count &>> 1] &- UInt8.ascii0
+        let digit1 = unsafe span[unchecked: count &>> 1] &- UInt8.ascii0
         /// `count > 0` so `(0...2) ~ (count - 1)`
-        let digit2 = span[unchecked: count &- 1] &- UInt8.ascii0
+        let digit2 = unsafe span[unchecked: count &- 1] &- UInt8.ascii0
 
         let shift = (count &- 1) &* 8
         let multiplier0 = (0x0064_0A00 as UInt32) &>> shift & 0xFF
@@ -143,14 +143,14 @@ extension UInt8 {
 
         /// Always write, but only advance past it when it should be kept.
         var notAllZerosSoFar = r3 != 0
-        buffer[idx] = r3 &+ UInt8.ascii0
+        unsafe buffer[idx] = r3 &+ UInt8.ascii0
         idx &+= notAllZerosSoFar ? 1 : 0
 
         notAllZerosSoFar = notAllZerosSoFar || r2 != 0
-        buffer[idx] = r2 &+ UInt8.ascii0
+        unsafe buffer[idx] = r2 &+ UInt8.ascii0
         idx &+= notAllZerosSoFar ? 1 : 0
 
-        buffer[idx] = r1 &+ UInt8.ascii0
+        unsafe buffer[idx] = r1 &+ UInt8.ascii0
         idx &+= 1
     }
 }

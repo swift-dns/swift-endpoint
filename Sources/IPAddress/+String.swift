@@ -7,7 +7,7 @@ extension String {
     ) throws(E) -> T {
         do {
             if let fastResult = try self.utf8.withContiguousStorageIfAvailable({
-                try body($0.span)
+                unsafe try body($0.span)
             }) {
                 return fastResult
             }
@@ -23,7 +23,7 @@ extension String {
 
         do {
             return try self.withUTF8 {
-                try body($0.span)
+                unsafe try body($0.span)
             }
         } catch let error as E {
             throw error
@@ -51,13 +51,13 @@ extension String {
     ) rethrows {
         if #available(SwiftStdlib 5.3, *) {
             try self.init(unsafeUninitializedCapacity: capacity) { buffer in
-                try initializer(buffer)
+                unsafe try initializer(buffer)
             }
         } else {
-            let array = try [UInt8].init(
+            let array = unsafe try [UInt8].init(
                 unsafeUninitializedCapacity: capacity
             ) { buffer, initializedCount in
-                initializedCount = try initializer(buffer)
+                initializedCount = unsafe try initializer(buffer)
             }
             self.init(decoding: array, as: UTF8.self)
         }
@@ -88,8 +88,8 @@ extension Substring {
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
         do {
-            if let fastResult = try self.utf8.withContiguousStorageIfAvailable({
-                try body($0.span)
+            if let fastResult = unsafe try self.utf8.withContiguousStorageIfAvailable({
+                unsafe try body($0.span)
             }) {
                 return fastResult
             }
@@ -105,7 +105,7 @@ extension Substring {
 
         do {
             return try self.withUTF8 {
-                try body($0.span)
+                unsafe try body($0.span)
             }
         } catch let error as E {
             throw error

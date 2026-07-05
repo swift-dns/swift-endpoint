@@ -6,7 +6,7 @@ extension IPv6Address {
             return nil
         }
 
-        self.init(
+        unsafe self.init(
             UnsignedInteger128(
                 _low: UInt64(span[unchecked: 8]) &<< 56
                     | UInt64(span[unchecked: 9]) &<< 48

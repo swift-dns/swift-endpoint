@@ -18,7 +18,7 @@ import Darwin
 #elseif canImport(WASILibc)
 @preconcurrency import WASILibc
 #else
-#error("The IPv6AddressFromString benchmarks module was unable to identify your C library.")
+#error("The IPv6AddressStringDecoding benchmarks module was unable to identify your C library.")
 #endif
 
 let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
@@ -205,5 +205,125 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
             inet_pton(AF_INET6, p, &ipv6Address)
         }
         blackHole(ipv6Address)
+    }
+
+    // MARK: - IPv6_String_Decoding_Multiple_IPs
+
+    let ipv6MultipleIPs = [
+        "::1",
+        "2606:4700:4700::1111",
+        "2001:4860:4860::8888",
+        "2620:fe::fe",
+        "2620:119:35::35",
+        "2a03:2880:f177:185:face:b00c:0:25de",
+        "2a00:1450:4001:c15::8a",
+        "2606:4700::6810:84e5",
+        "2600:9000:2241:5800:1:5a21:7c40:93a1",
+        "2001:db8:85a3::8a2e:370:7334",
+        "64:ff9b::808:808",
+        "fe80::1ff:fe23:4567:890a",
+        "ff02::1",
+        "2001:41d0:302:2200::180",
+        "2a01:4f8:c010:d56::1",
+        "2400:cb00:2049:1::a29f:1804",
+    ]
+
+    Benchmark(
+        "IPv6_String_Decoding_Multiple_IPs_4M",
+        configuration: .init(
+            metrics: [.cpuUser],
+            warmupIterations: 5,
+            maxIterations: 1000
+        )
+    ) { benchmark in
+        var rng = FastRNG()
+        for _ in 0..<4_000_000 {
+            let idx = Int(rng.next() % 16)
+            let ip = IPv6Address(ipv6MultipleIPs[idx]).unsafelyUnwrapped
+            blackHole(ip)
+        }
+    }
+
+    Benchmark(
+        "IPv6_String_Decoding_Multiple_IPs_Malloc",
+        configuration: .init(
+            metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        for ipString in ipv6MultipleIPs {
+            let ip = IPv6Address(ipString).unsafelyUnwrapped
+            blackHole(ip)
+        }
+    }
+
+    Benchmark(
+        "IPv6_String_Decoding_Multiple_IPs_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 1,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        for ipString in ipv6MultipleIPs {
+            let ip = IPv6Address(ipString).unsafelyUnwrapped
+            blackHole(ip)
+        }
+    }
+
+    // MARK: IPv6_String_Decoding_Multiple_IPs_inet_pton
+
+    Benchmark(
+        "IPv6_String_Decoding_Multiple_IPs_inet_pton_3M",
+        configuration: .init(
+            metrics: [.cpuUser],
+            warmupIterations: 5,
+            maxIterations: 1000
+        )
+    ) { benchmark in
+        var rng = FastRNG()
+        for _ in 0..<3_000_000 {
+            var ipv6Address = in6_addr()
+            let idx = Int(rng.next() % 16)
+            _ = ipv6MultipleIPs[idx].withCString { p in
+                inet_pton(AF_INET6, p, &ipv6Address)
+            }
+            blackHole(ipv6Address)
+        }
+    }
+
+    Benchmark(
+        "IPv6_String_Decoding_Multiple_IPs_inet_pton_Malloc",
+        configuration: .init(
+            metrics: [.mallocCountTotal],
+            warmupIterations: 1,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        for ipString in ipv6MultipleIPs {
+            var ipv6Address = in6_addr()
+            _ = ipString.withCString { p in
+                inet_pton(AF_INET6, p, &ipv6Address)
+            }
+            blackHole(ipv6Address)
+        }
+    }
+
+    Benchmark(
+        "IPv6_String_Decoding_Multiple_IPs_inet_pton_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 1,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        for ipString in ipv6MultipleIPs {
+            var ipv6Address = in6_addr()
+            _ = ipString.withCString { p in
+                inet_pton(AF_INET6, p, &ipv6Address)
+            }
+            blackHole(ipv6Address)
+        }
     }
 }

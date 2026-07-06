@@ -48,7 +48,7 @@ extension IPv6Address {
         /// Also _writeSegmentAsLowercasedHexASCII needs 4 bytes of room, 1 of which is guaranteed to be
         /// present in the byte-count since the segments are non-zero. So 3.
         let speculativeBytes = 3
-        /// `enclosingInSquareBrackets` if true, gives 1 byte worth of leading room
+        /// `enclosingInSquareBrackets` if true, gives 1 byte worth of trailing room
         let conservativeSpeculativeBytes =
             enclosingInSquareBrackets ? speculativeBytes &- 1 : speculativeBytes
         /// Exact required bytes to print, including headroom bytes for speculative writes.
@@ -78,7 +78,7 @@ extension IPv6Address {
                 writeIdx &+= idx == writeCsAtIdx ? 1 : 0
                 writeIdx &+= offset == 0 ? 0 : 1
 
-                self._writeSegmentAsLowercasedHexASCII(
+                self._writeSegmentAsLowercasedHexASCII_RequiringMinimumCapacityOf4(
                     into: buffer,
                     advancingIdx: &writeIdx,
                     segmentIdx: idx
@@ -93,7 +93,7 @@ extension IPv6Address {
             buffer[writeIdx] = .asciiRightSquareBracket
             writeIdx &+= enclosingInSquareBrackets ? 1 : 0
 
-            assert(writeIdx <= toReserve)
+            assert(writeIdx <= toReserve - 2)
 
             return writeIdx
         }
@@ -212,12 +212,9 @@ extension IPv6Address {
         return UInt16(truncatingIfNeeded: word &>> shift)
     }
 
-    /// Writes the segment at `segmentIdx` as 1 to 4 lowercased hex ASCII bytes without
-    /// `buffer` must have a capacity of at least `idx + 4` bytes,
-    /// which we reserve anyway since we don't know if the segment contains leading zeros or not.
     @inlinable
     @inline(__always)
-    func _writeSegmentAsLowercasedHexASCII(
+    func _writeSegmentAsLowercasedHexASCII_RequiringMinimumCapacityOf4(
         into buffer: UnsafeMutableBufferPointer<UInt8>,
         advancingIdx idx: inout Int,
         segmentIdx: Int

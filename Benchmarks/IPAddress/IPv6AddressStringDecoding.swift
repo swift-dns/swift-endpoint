@@ -18,7 +18,7 @@ import Darwin
 #elseif canImport(WASILibc)
 @preconcurrency import WASILibc
 #else
-#error("The IPv6AddressFromString benchmarks module was unable to identify your C library.")
+#error("The IPv6AddressStringDecoding benchmarks module was unable to identify your C library.")
 #endif
 
 let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {

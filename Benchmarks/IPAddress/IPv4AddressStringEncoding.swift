@@ -18,7 +18,7 @@ import Darwin
 #elseif canImport(WASILibc)
 @preconcurrency import WASILibc
 #else
-#error("The IPv4AddressToString benchmarks module was unable to identify your C library.")
+#error("The IPv4AddressStringEncoding benchmarks module was unable to identify your C library.")
 #endif
 
 let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
@@ -118,8 +118,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
 
     var ipv4MixedInetNtop = ipv4Mixed.address
 
-    /// inet_ntop expects the reverse byte-order but we don't account for that here so
-    /// that we're not blaming byte-order mismatches on inet_ntop.
+    /// inet_ntop expects the reverse byte-order but we don't account for that here.
 
     Benchmark(
         "IPv4_String_Encoding_Mixed_inet_ntop_1M",

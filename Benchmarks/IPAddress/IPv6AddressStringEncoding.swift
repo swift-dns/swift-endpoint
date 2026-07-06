@@ -18,7 +18,7 @@ import Darwin
 #elseif canImport(WASILibc)
 @preconcurrency import WASILibc
 #else
-#error("The IPv6AddressToString benchmarks module was unable to identify your C library.")
+#error("The IPv6AddressStringEncoding benchmarks module was unable to identify your C library.")
 #endif
 
 let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
@@ -101,8 +101,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     var ipv6CompactInetNtop = ipv6Compact.address
 
-    /// inet_ntop expects the reverse byte-order but we don't account for that here so
-    /// that we're not blaming byte-order mismatches on inet_ntop.
+    /// inet_ntop expects the reverse byte-order but we don't account for that here.
 
     Benchmark(
         "IPv6_String_Encoding_Compact_inet_ntop_1M",
@@ -251,8 +250,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     var ipv6MixedInetNtop = ipv6Mixed.address
 
-    /// inet_ntop expects the reverse byte-order but we don't account for that here so
-    /// that we're not blaming byte-order mismatches on inet_ntop.
+    /// inet_ntop expects the reverse byte-order but we don't account for that here.
 
     Benchmark(
         "IPv6_String_Encoding_Mixed_inet_ntop_1M",

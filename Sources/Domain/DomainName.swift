@@ -252,10 +252,11 @@ extension DomainName: Sequence {
                 return ByteBuffer()
             }
 
-            return unsafe self.domainName._data.getSlice(
+            let slice = self.domainName._data.getSlice(
                 at: self.startIndex,
                 length: self.domainName._data.writerIndex &- self.startIndex
-            ).unsafelyUnwrapped
+            )
+            return unsafe slice.unsafelyUnwrapped
         }
 
         @inlinable

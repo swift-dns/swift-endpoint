@@ -21,11 +21,6 @@ import Darwin
 @usableFromInline
 enum CCalls {
     @usableFromInline
-    static func c_strlen(_ s: UnsafePointer<CChar>) -> Int {
-        unsafe strlen(s)
-    }
-
-    @usableFromInline
     static func c_memmove(
         _ dest: UnsafeMutableRawPointer,
         _ src: UnsafeRawPointer,

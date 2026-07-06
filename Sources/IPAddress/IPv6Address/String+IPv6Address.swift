@@ -425,8 +425,8 @@ extension IPv6Address: LosslessStringConvertible {
                 var ipv4Address: UInt32 = 0
                 guard
                     remainingBytesCount >= 4,
-                    unsafe IPv4Address.parseIPv4(
-                        span: span.extracting(
+                    IPv4Address.parseIPv4(
+                        span: unsafe span.extracting(
                             unchecked: Range(
                                 uncheckedBounds: (latestColonIdx &+ 1, span.count)
                             )

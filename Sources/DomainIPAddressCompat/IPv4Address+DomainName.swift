@@ -157,14 +157,14 @@ extension DomainName {
             unsafe bufferPtr[bufferIdx &+ 5] = UInt8(ascii: "d")
             unsafe bufferPtr[bufferIdx &+ 6] = UInt8(ascii: "d")
             unsafe bufferPtr[bufferIdx &+ 7] = UInt8(ascii: "r")
-            bufferIdx &+= 8
 
-            unsafe bufferPtr[bufferIdx] = 4
-            unsafe bufferPtr[bufferIdx &+ 1] = UInt8(ascii: "a")
-            unsafe bufferPtr[bufferIdx &+ 2] = UInt8(ascii: "r")
-            unsafe bufferPtr[bufferIdx &+ 3] = UInt8(ascii: "p")
-            unsafe bufferPtr[bufferIdx &+ 4] = UInt8(ascii: "a")
-            bufferIdx &+= 5
+            unsafe bufferPtr[bufferIdx &+ 8] = 4
+            unsafe bufferPtr[bufferIdx &+ 9] = UInt8(ascii: "a")
+            unsafe bufferPtr[bufferIdx &+ 10] = UInt8(ascii: "r")
+            unsafe bufferPtr[bufferIdx &+ 11] = UInt8(ascii: "p")
+            unsafe bufferPtr[bufferIdx &+ 12] = UInt8(ascii: "a")
+
+            bufferIdx &+= 13
 
             return bufferIdx
         }

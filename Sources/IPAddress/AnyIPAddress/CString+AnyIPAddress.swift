@@ -34,7 +34,7 @@ extension AnyIPAddress {
     /// - `cString`: A pointer to a null-terminated C string of the address's textual representation.
     @inlinable
     public init?(cString: UnsafePointer<CChar>) {
-        let length = unsafe CCalls.c_strlen(cString)
+        let length = unsafe UTF8._nullCodeUnitOffset(in: cString)
         let buffer = unsafe UnsafeBufferPointer(start: cString, count: length)
         let result = unsafe buffer.withMemoryRebound(to: UInt8.self) {
             AnyIPAddress(textualRepresentation: unsafe $0.span)

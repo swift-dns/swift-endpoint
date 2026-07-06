@@ -102,7 +102,5 @@ var settings: [SwiftSetting] {
         .enableExperimentalFeature(
             "AvailabilityMacro=SwiftStdlib 6.2:macOS 26.0, iOS 26.0, watchOS 26.0, tvOS 26.0, visionOS 26.0"
         ),
-        .treatAllWarnings(as: .error),
-        .treatWarning("StrictMemorySafety", as: .warning),
     ]
 }

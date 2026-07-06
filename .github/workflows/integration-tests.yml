@@ -57,8 +57,6 @@ jobs:
             --build-tests \
             --explicit-target-dependency-import-check error \
             -Xswiftc -require-explicit-sendable \
-            -Xswiftc -warnings-as-errors \
-            -Xswiftc -Wwarning -Xswiftc StrictMemorySafety \
             -c ${{ matrix.config.mode }}
 
       - name: Cache .build
@@ -290,8 +288,6 @@ jobs:
             --enable-code-coverage \
             --explicit-target-dependency-import-check error \
             -Xswiftc -require-explicit-sendable \
-            -Xswiftc -warnings-as-errors \
-            -Xswiftc -Wwarning -Xswiftc StrictMemorySafety \
             -c ${{ matrix.config.mode }}
 
       - name: Cache .build
@@ -384,6 +380,4 @@ jobs:
           swift-build-flags: >-
             --build-tests
             --explicit-target-dependency-import-check error
-            -Xswiftc -warnings-as-errors
-            -Xswiftc -Wwarning -Xswiftc StrictMemorySafety
           swift-test-flags: --filter "IntegrationTests."

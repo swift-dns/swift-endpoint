@@ -57,6 +57,7 @@ jobs:
             --explicit-target-dependency-import-check error \
             -Xswiftc -require-explicit-sendable \
             -Xswiftc -warnings-as-errors \
+            -Xswiftc -Wwarning -Xswiftc StrictMemorySafety \
             -c ${{ matrix.config.mode }}
 
       - name: Cache .build
@@ -257,6 +258,7 @@ jobs:
             --explicit-target-dependency-import-check error \
             -Xswiftc -require-explicit-sendable \
             -Xswiftc -warnings-as-errors \
+            -Xswiftc -Wwarning -Xswiftc StrictMemorySafety \
             -c ${{ matrix.config.mode }}
 
       - name: Cache .build

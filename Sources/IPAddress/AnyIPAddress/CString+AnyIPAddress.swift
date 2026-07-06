@@ -34,10 +34,10 @@ extension AnyIPAddress {
     /// - `cString`: A pointer to a null-terminated C string of the address's textual representation.
     @inlinable
     public init?(cString: UnsafePointer<CChar>) {
-        let length = CCalls.c_strlen(cString)
-        let buffer = UnsafeBufferPointer(start: cString, count: length)
-        let result = buffer.withMemoryRebound(to: UInt8.self) {
-            AnyIPAddress(textualRepresentation: $0.span)
+        let length = unsafe UTF8._nullCodeUnitOffset(in: cString)
+        let buffer = unsafe UnsafeBufferPointer(start: cString, count: length)
+        let result = unsafe buffer.withMemoryRebound(to: UInt8.self) {
+            AnyIPAddress(textualRepresentation: unsafe $0.span)
         }
         guard let result else {
             return nil

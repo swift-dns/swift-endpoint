@@ -16,7 +16,7 @@ extension DomainName {
         var buffer = ByteBuffer()
         /// 64 is the maximum number of bytes required to represent an IPv6 address,
         /// 9 more bytes are required for the "ip6" and "arpa" labels.
-        buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 73) { bufferPtr in
+        unsafe buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 73) { bufferPtr in
             var bufferIdx = 0
 
             let lo = ipv6.address._low
@@ -27,14 +27,14 @@ extension DomainName {
                 let num1 = byte &>> 4
                 let num2 = byte & 0x0F
 
-                bufferPtr[bufferIdx] = 1
-                bufferPtr[bufferIdx &+ 1] =
+                unsafe bufferPtr[bufferIdx] = 1
+                unsafe bufferPtr[bufferIdx &+ 1] =
                     num2 > 9
                     ? num2 &+ UInt8.asciiLowercasedA &- 10
                     : num2 &+ UInt8.ascii0
 
-                bufferPtr[bufferIdx &+ 2] = 1
-                bufferPtr[bufferIdx &+ 3] =
+                unsafe bufferPtr[bufferIdx &+ 2] = 1
+                unsafe bufferPtr[bufferIdx &+ 3] =
                     num1 > 9
                     ? num1 &+ UInt8.asciiLowercasedA &- 10
                     : num1 &+ UInt8.ascii0
@@ -42,17 +42,17 @@ extension DomainName {
                 bufferIdx &+= 4
             }
 
-            bufferPtr[bufferIdx] = 3
-            bufferPtr[bufferIdx &+ 1] = UInt8(ascii: "i")
-            bufferPtr[bufferIdx &+ 2] = UInt8(ascii: "p")
-            bufferPtr[bufferIdx &+ 3] = UInt8(ascii: "6")
+            unsafe bufferPtr[bufferIdx] = 3
+            unsafe bufferPtr[bufferIdx &+ 1] = UInt8(ascii: "i")
+            unsafe bufferPtr[bufferIdx &+ 2] = UInt8(ascii: "p")
+            unsafe bufferPtr[bufferIdx &+ 3] = UInt8(ascii: "6")
             bufferIdx &+= 4
 
-            bufferPtr[bufferIdx] = 4
-            bufferPtr[bufferIdx &+ 1] = UInt8(ascii: "a")
-            bufferPtr[bufferIdx &+ 2] = UInt8(ascii: "r")
-            bufferPtr[bufferIdx &+ 3] = UInt8(ascii: "p")
-            bufferPtr[bufferIdx &+ 4] = UInt8(ascii: "a")
+            unsafe bufferPtr[bufferIdx] = 4
+            unsafe bufferPtr[bufferIdx &+ 1] = UInt8(ascii: "a")
+            unsafe bufferPtr[bufferIdx &+ 2] = UInt8(ascii: "r")
+            unsafe bufferPtr[bufferIdx &+ 3] = UInt8(ascii: "p")
+            unsafe bufferPtr[bufferIdx &+ 4] = UInt8(ascii: "a")
             bufferIdx &+= 5
 
             return bufferIdx

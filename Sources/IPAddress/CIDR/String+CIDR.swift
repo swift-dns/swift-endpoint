@@ -87,14 +87,14 @@ extension CIDR: LosslessStringConvertible {
             /// Unchecked because `idx` comes right from `span.indices`
             let backwardsIdx = maxIdx &- idx
             /// Unchecked because `backwardsIdx` is guaranteed to be in range of `0...maxIdx`
-            let utf8Byte = span[unchecked: backwardsIdx]
+            let utf8Byte = unsafe span[unchecked: backwardsIdx]
             if utf8Byte == .asciiForwardSlash {
                 /// Unchecked because `0 <= backwardsIdx <= maxIdx < span.count`
-                let prefixSpanRange = Range(uncheckedBounds: (0, backwardsIdx))
-                let prefixSpan = span.extracting(unchecked: prefixSpanRange)
+                let prefixSpanRange = unsafe Range(uncheckedBounds: (0, backwardsIdx))
+                let prefixSpan = unsafe span.extracting(unchecked: prefixSpanRange)
                 /// Unchecked because `0 <= backwardsIdx <= maxIdx < span.count`
-                let maskSpanRange = Range(uncheckedBounds: (backwardsIdx &+ 1, span.count))
-                let prefixLengthSpan = span.extracting(unchecked: maskSpanRange)
+                let maskSpanRange = unsafe Range(uncheckedBounds: (backwardsIdx &+ 1, span.count))
+                let prefixLengthSpan = unsafe span.extracting(unchecked: maskSpanRange)
                 guard
                     let prefix = IPAddressType(textualRepresentation: prefixSpan),
                     let prefixLength = UInt8(decimalRepresentation: prefixLengthSpan)

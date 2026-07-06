@@ -17,11 +17,13 @@ extension IPv4Address {
     ) rethrows -> Result {
         /// 15 bytes for the biggest possible textual representation, plus 1 for the null terminator.
         try withUnsafeTemporaryAllocation(byteCount: 16, alignment: 1) { buffer in
-            let count = self.writeTextualRepresentation_RequiringMinimumCapacityOf15(into: buffer)
-            buffer[count] = 0
+            let count = unsafe self.writeTextualRepresentation_RequiringMinimumCapacityOf15(
+                into: buffer
+            )
+            unsafe buffer[count] = 0
             return try unsafe buffer.withMemoryRebound(to: CChar.self) { cBuffer in
-                let range = ClosedRange<Int>(uncheckedBounds: (0, count))
-                let limitedSpan = cBuffer.span.extracting(unchecked: range)
+                let range = unsafe ClosedRange<Int>(uncheckedBounds: (0, count))
+                let limitedSpan = unsafe cBuffer.span.extracting(unchecked: range)
                 return try body(limitedSpan)
             }
         }
@@ -37,10 +39,10 @@ extension IPv4Address {
     /// - `cString`: A pointer to a null-terminated C string of the address's textual representation.
     @inlinable
     public init?(cString: UnsafePointer<CChar>) {
-        let length = CCalls.c_strlen(cString)
-        let buffer = UnsafeBufferPointer(start: cString, count: length)
-        let result = buffer.withMemoryRebound(to: UInt8.self) {
-            IPv4Address(textualRepresentation: $0.span)
+        let length = unsafe UTF8._nullCodeUnitOffset(in: cString)
+        let buffer = unsafe UnsafeBufferPointer(start: cString, count: length)
+        let result = unsafe buffer.withMemoryRebound(to: UInt8.self) {
+            IPv4Address(textualRepresentation: unsafe $0.span)
         }
         guard let result else {
             return nil

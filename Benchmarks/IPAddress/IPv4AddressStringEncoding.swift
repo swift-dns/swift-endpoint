@@ -129,18 +129,21 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<1_000_000 {
-            let ptr = UnsafeMutableRawPointer.allocate(byteCount: 15, alignment: 1).bindMemory(
+            let ptr = unsafe UnsafeMutableRawPointer.allocate(
+                byteCount: 15,
+                alignment: 1
+            ).bindMemory(
                 to: Int8.self,
                 capacity: 15
             )
-            inet_ntop(
+            unsafe inet_ntop(
                 AF_INET,
                 &ipv4MixedInetNtop,
                 ptr,
                 15
             )
-            let description = String(cString: ptr)
-            ptr.deinitialize(count: 15).deallocate()
+            let description = unsafe String(cString: ptr)
+            unsafe ptr.deinitialize(count: 15).deallocate()
             blackHole(description)
         }
     }
@@ -158,17 +161,17 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         ]
         let description = addressBytes.withUnsafeMutableBufferPointer {
             (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) -> String in
-            inet_ntop(
+            unsafe inet_ntop(
                 AF_INET,
                 &ipv4MixedInetNtop,
                 addressBytesPtr.baseAddress!,
                 15
             )
-            return addressBytesPtr.baseAddress!.withMemoryRebound(
+            return unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
                 to: UInt8.self,
                 capacity: 15
             ) {
-                String(cString: $0)
+                unsafe String(cString: $0)
             }
         }
         blackHole(description)
@@ -187,17 +190,17 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         ]
         let description = addressBytes.withUnsafeMutableBufferPointer {
             (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) -> String in
-            inet_ntop(
+            unsafe inet_ntop(
                 AF_INET,
                 &ipv4MixedInetNtop,
                 addressBytesPtr.baseAddress!,
                 15
             )
-            return addressBytesPtr.baseAddress!.withMemoryRebound(
+            return unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
                 to: UInt8.self,
                 capacity: 15
             ) {
-                String(cString: $0)
+                unsafe String(cString: $0)
             }
         }
         blackHole(description)
@@ -286,18 +289,21 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         for _ in 0..<1_000_000 {
             let idx = Int(rng.next() % 16)
             var address = ipv4MultipleIPsInetNtop[idx]
-            let ptr = UnsafeMutableRawPointer.allocate(byteCount: 16, alignment: 1).bindMemory(
+            let ptr = unsafe UnsafeMutableRawPointer.allocate(
+                byteCount: 16,
+                alignment: 1
+            ).bindMemory(
                 to: Int8.self,
                 capacity: 16
             )
-            inet_ntop(
+            unsafe inet_ntop(
                 AF_INET,
                 &address,
                 ptr,
                 16
             )
-            let description = String(cString: ptr)
-            ptr.deinitialize(count: 16).deallocate()
+            let description = unsafe String(cString: ptr)
+            unsafe ptr.deinitialize(count: 16).deallocate()
             blackHole(description)
         }
     }
@@ -316,17 +322,17 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         addressBytes.withUnsafeMutableBufferPointer {
             (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) in
             for var address in ipv4MultipleIPsInetNtop {
-                inet_ntop(
+                unsafe inet_ntop(
                     AF_INET,
                     &address,
                     addressBytesPtr.baseAddress!,
                     16
                 )
-                let description = addressBytesPtr.baseAddress!.withMemoryRebound(
+                let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
                     to: UInt8.self,
                     capacity: 16
                 ) {
-                    String(cString: $0)
+                    unsafe String(cString: $0)
                 }
                 blackHole(description)
             }
@@ -347,17 +353,17 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         addressBytes.withUnsafeMutableBufferPointer {
             (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) in
             for var address in ipv4MultipleIPsInetNtop {
-                inet_ntop(
+                unsafe inet_ntop(
                     AF_INET,
                     &address,
                     addressBytesPtr.baseAddress!,
                     16
                 )
-                let description = addressBytesPtr.baseAddress!.withMemoryRebound(
+                let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
                     to: UInt8.self,
                     capacity: 16
                 ) {
-                    String(cString: $0)
+                    unsafe String(cString: $0)
                 }
                 blackHole(description)
             }

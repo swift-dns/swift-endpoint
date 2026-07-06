@@ -16,20 +16,20 @@ extension IPv4Address {
     @inlinable
     public init?(domainName: DomainName) {
         guard
-            let result = domainName._data.withUnsafeReadableBytes({ ptr -> IPv4Address? in
-                ptr.withMemoryRebound(to: UInt8.self) { ptr -> IPv4Address? in
+            let result = unsafe domainName._data.withUnsafeReadableBytes({ ptr -> IPv4Address? in
+                unsafe ptr.withMemoryRebound(to: UInt8.self) { ptr -> IPv4Address? in
                     var ipv4 = IPv4Address(0)
                     var iterator = domainName.makePositionIterator()
 
                     /// `DomainName.data` always only contains ASCII bytes
-                    let asciiSpan = ptr.span
+                    let asciiSpan = unsafe ptr.span
 
                     for idx in 0..<4 {
                         guard let range = iterator.next()?.range else {
                             return nil
                         }
                         guard
-                            let byte = UInt8(
+                            let byte = unsafe UInt8(
                                 decimalRepresentation: asciiSpan.extracting(unchecked: range)
                             )
                         else {
@@ -54,8 +54,8 @@ extension IPv4Address {
                         return nil
                     }
 
-                    let inAddr = asciiSpan.extracting(unchecked: inAddrRange)
-                    let arpa = asciiSpan.extracting(unchecked: arpaRange)
+                    let inAddr = unsafe asciiSpan.extracting(unchecked: inAddrRange)
+                    let arpa = unsafe asciiSpan.extracting(unchecked: arpaRange)
                     let inAddrBytes = [
                         UInt8(ascii: "i"), UInt8(ascii: "n"), UInt8(ascii: "-"), UInt8(ascii: "a"),
                         UInt8(ascii: "d"), UInt8(ascii: "d"), UInt8(ascii: "r"),
@@ -91,20 +91,20 @@ extension IPv4Address {
     @inlinable
     public init?(arpaDomainName domainName: DomainName) {
         guard
-            let result = domainName._data.withUnsafeReadableBytes({ ptr -> IPv4Address? in
-                ptr.withMemoryRebound(to: UInt8.self) { ptr -> IPv4Address? in
+            let result = unsafe domainName._data.withUnsafeReadableBytes({ ptr -> IPv4Address? in
+                unsafe ptr.withMemoryRebound(to: UInt8.self) { ptr -> IPv4Address? in
                     var ipv4 = IPv4Address(0)
                     var iterator = domainName.makePositionIterator()
 
                     /// `DomainName.data` always only contains ASCII bytes
-                    let asciiSpan = ptr.span
+                    let asciiSpan = unsafe ptr.span
 
                     for idx in 0..<4 {
                         guard let range = iterator.next()?.range else {
                             return nil
                         }
                         guard
-                            let byte = UInt8(
+                            let byte = unsafe UInt8(
                                 decimalRepresentation: asciiSpan.extracting(unchecked: range)
                             )
                         else {
@@ -121,8 +121,8 @@ extension IPv4Address {
                         return nil
                     }
 
-                    let inAddr = asciiSpan.extracting(unchecked: inAddrRange)
-                    let arpa = asciiSpan.extracting(unchecked: arpaRange)
+                    let inAddr = unsafe asciiSpan.extracting(unchecked: inAddrRange)
+                    let arpa = unsafe asciiSpan.extracting(unchecked: arpaRange)
                     let inAddrBytes = [
                         UInt8(ascii: "i"), UInt8(ascii: "n"), UInt8(ascii: "-"), UInt8(ascii: "a"),
                         UInt8(ascii: "d"), UInt8(ascii: "d"), UInt8(ascii: "r"),

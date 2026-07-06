@@ -54,29 +54,29 @@ extension DomainName {
     ) -> String {
         /// The needed capacity without the root label indicator
         let neededCapacity = self.encodedLength - 1
-        var domainName = String(
+        var domainName = unsafe String(
             unsafeUninitializedCapacity_Compatibility: neededCapacity
         ) { stringBuffer in
             var bufferIdx = 0
 
-            self._data.withUnsafeReadableBytes { domainNamePtr in
+            unsafe self._data.withUnsafeReadableBytes { domainNamePtr in
                 var iterator = self.makePositionIterator()
                 if let range = iterator.next()?.range {
                     /// These are all ASCII bytes so safe to map directly
                     for idx in range {
-                        stringBuffer[bufferIdx] = domainNamePtr[idx]
+                        unsafe stringBuffer[bufferIdx] = unsafe domainNamePtr[idx]
                         /// Can't possibly overflow since it can't be greater than the buffer size
                         bufferIdx &+= 1
                     }
                 }
 
                 while let range = iterator.next()?.range {
-                    stringBuffer[bufferIdx] = .asciiDot
+                    unsafe stringBuffer[bufferIdx] = .asciiDot
                     /// Can't possibly overflow since it can't be greater than the buffer size
                     bufferIdx &+= 1
                     /// These are all ASCII bytes so safe to map directly
                     for idx in range {
-                        stringBuffer[bufferIdx] = domainNamePtr[idx]
+                        unsafe stringBuffer[bufferIdx] = unsafe domainNamePtr[idx]
                         /// Can't possibly overflow since it can't be greater than the buffer size
                         bufferIdx &+= 1
                     }
@@ -189,14 +189,14 @@ extension DomainName {
         // short-circuit root parse
         switch bytesCount {
         case 1:
-            if span[unchecked: 0].isIDNALabelSeparator {
+            if span[0].isIDNALabelSeparator {
                 self = .root
                 return
             }
         case 3:
-            let first = span[unchecked: 0]
-            let second = span[unchecked: 1]
-            let third = span[unchecked: 2]
+            let first = span[0]
+            let second = span[1]
+            let third = span[2]
             /// U+FF0E ( ． ) FULLWIDTH FULL STOP
             /// U+3002 ( 。 ) IDEOGRAPHIC FULL STOP
             /// U+FF61 ( ｡ ) HALFWIDTH IDEOGRAPHIC FULL STOP
@@ -262,28 +262,28 @@ extension DomainName {
         var endIndex = bytesCount &- 1
         switch bytesCount {
         case 2:
-            let rhs = bytesSpan[unchecked: endIndex]
+            let rhs = unsafe bytesSpan[unchecked: endIndex]
             if rhs.isIDNALabelSeparator {
-                let range = Range(uncheckedBounds: (0, endIndex))
-                newSpan = bytesSpan.extracting(unchecked: range)
+                let range = unsafe Range(uncheckedBounds: (0, endIndex))
+                newSpan = unsafe bytesSpan.extracting(unchecked: range)
                 isFQDN = true
                 bytesCount &-= 1
                 break
             }
         case 3...:
-            let first = bytesSpan[unchecked: endIndex &- 2]
-            let second = bytesSpan[unchecked: endIndex &- 1]
-            let third = bytesSpan[unchecked: endIndex]
+            let first = unsafe bytesSpan[unchecked: endIndex &- 2]
+            let second = unsafe bytesSpan[unchecked: endIndex &- 1]
+            let third = unsafe bytesSpan[unchecked: endIndex]
             if third.isIDNALabelSeparator {
-                let range = Range(uncheckedBounds: (0, endIndex))
-                newSpan = bytesSpan.extracting(unchecked: range)
+                let range = unsafe Range(uncheckedBounds: (0, endIndex))
+                newSpan = unsafe bytesSpan.extracting(unchecked: range)
                 isFQDN = true
                 bytesCount &-= 1
                 break
             }
             if DomainName.isIDNALabelSeparator(first, second, third) {
-                let range = Range(uncheckedBounds: (0, endIndex &- 2))
-                newSpan = bytesSpan.extracting(unchecked: range)
+                let range = unsafe Range(uncheckedBounds: (0, endIndex &- 2))
+                newSpan = unsafe bytesSpan.extracting(unchecked: range)
                 isFQDN = true
                 bytesCount &-= 3
                 break
@@ -295,16 +295,16 @@ extension DomainName {
         endIndex = bytesCount &- 1
         switch bytesCount {
         case 1:
-            let rhs = newSpan[unchecked: endIndex]
+            let rhs = unsafe newSpan[unchecked: endIndex]
             if rhs.isIDNALabelSeparator {
                 throw ValidationError.multipleRootLabelIndicatorsAreNotAllowed(
                     in: ByteBuffer(swift_endpoint_copying: bytesSpan)
                 )
             }
         case 3...:
-            let first = newSpan[unchecked: endIndex &- 2]
-            let second = newSpan[unchecked: endIndex &- 1]
-            let third = newSpan[unchecked: endIndex]
+            let first = unsafe newSpan[unchecked: endIndex &- 2]
+            let second = unsafe newSpan[unchecked: endIndex &- 1]
+            let third = unsafe newSpan[unchecked: endIndex]
             if third.isIDNALabelSeparator {
                 throw ValidationError.multipleRootLabelIndicatorsAreNotAllowed(
                     in: ByteBuffer(swift_endpoint_copying: bytesSpan)
@@ -355,16 +355,16 @@ extension DomainName {
         self.isFQDN = isFQDN
         self._data = ByteBuffer()
 
-        try self._data.writeWithUnsafeMutableBytes(
+        unsafe try self._data.writeWithUnsafeMutableBytes(
             minimumWritableBytes: totalLength
         ) { dataPtr in
-            var dataPtr = dataPtr.baseAddress.unsafelyUnwrapped
+            var dataPtr = unsafe dataPtr.baseAddress.unsafelyUnwrapped
             var startIndex = 0
             for idx in span.indices {
-                let byte = span[unchecked: idx]
+                let byte = unsafe span[unchecked: idx]
                 switch byte {
                 case .asciiDot:
-                    try Self._writeLabel(
+                    unsafe try Self._writeLabel(
                         from: span,
                         to: &dataPtr,
                         startIndex: startIndex,
@@ -376,7 +376,7 @@ extension DomainName {
                 }
             }
 
-            try Self._writeLabel(
+            unsafe try Self._writeLabel(
                 from: span,
                 to: &dataPtr,
                 startIndex: startIndex,
@@ -394,7 +394,7 @@ extension DomainName {
         startIndex: Int,
         idx: Int
     ) throws {
-        let range = Range(uncheckedBounds: (startIndex, idx))
+        let range = unsafe Range(uncheckedBounds: (startIndex, idx))
         let chunk = span.extracting(range)
 
         /// At this point we know the bytes are ASCII and lowercased.
@@ -403,7 +403,7 @@ extension DomainName {
         /// We tolerate stars for domain names like "*.example.com" which are wildcards.
         /// We tolerate whitespaces for labels like "Mijia Cloud" which Xiaomi devices use.
         for idx in chunk.indices {
-            let byte = chunk[unchecked: idx]
+            let byte = unsafe chunk[unchecked: idx]
             assert(!byte.isUppercasedASCIILetter)
 
             if !byte.isAcceptableDomainNameCharacter {
@@ -429,15 +429,15 @@ extension DomainName {
         }
 
         /// Label length is 1 byte (even less than 255, 63 max)
-        dataPtr.storeBytes(of: UInt8(truncatingIfNeeded: labelLength), as: UInt8.self)
-        dataPtr = dataPtr.advanced(by: 1)
+        unsafe dataPtr.storeBytes(of: UInt8(truncatingIfNeeded: labelLength), as: UInt8.self)
+        unsafe dataPtr = unsafe dataPtr.advanced(by: 1)
 
         chunk.withUnsafeBytes { chunkPtr in
-            dataPtr.copyMemory(
+            unsafe dataPtr.copyMemory(
                 from: chunkPtr.baseAddress.unsafelyUnwrapped,
                 byteCount: chunk.count
             )
-            dataPtr = dataPtr.advanced(by: chunk.count)
+            unsafe dataPtr = unsafe dataPtr.advanced(by: chunk.count)
         }
     }
 
@@ -469,9 +469,9 @@ extension DomainName {
         }
         for idx in span.indices {
             /// Unchecked because `idx` comes right from `span.indices`
-            if span[unchecked: idx].isUppercasedASCIILetter {
+            if unsafe span[unchecked: idx].isUppercasedASCIILetter {
                 fatalError(
-                    "DomainName initializer should not be used with uppercased ASCII characters: \(span[unchecked: idx])"
+                    "DomainName initializer should not be used with uppercased ASCII characters: \(unsafe span[unchecked: idx])"
                 )
             }
         }
@@ -482,25 +482,25 @@ extension DomainName {
             /// Ignore, an error will be thrown in the initializer
             break
         case 1, 2:
-            let lhs = span[unchecked: 0]
-            let rhs = span[unchecked: 1]
+            let lhs = unsafe span[unchecked: 0]
+            let rhs = unsafe span[unchecked: 1]
             if lhs.isIDNALabelSeparator || rhs.isIDNALabelSeparator {
                 fatalError(
-                    "DomainName initializer should not be used with root label indicator: \(span[unchecked: endIndex])"
+                    "DomainName initializer should not be used with root label indicator: \(unsafe span[unchecked: endIndex])"
                 )
             }
         case 3...:
-            let first = span[unchecked: endIndex &- 2]
-            let second = span[unchecked: endIndex &- 1]
-            let third = span[unchecked: endIndex]
+            let first = span[endIndex &- 2]
+            let second = span[endIndex &- 1]
+            let third = span[endIndex]
             if third.isIDNALabelSeparator {
                 fatalError(
-                    "DomainName initializer should not be used with root label indicator: \(span[unchecked: endIndex])"
+                    "DomainName initializer should not be used with root label indicator: \(unsafe span[unchecked: endIndex])"
                 )
             }
             if DomainName.isIDNALabelSeparator(first, second, third) {
                 fatalError(
-                    "DomainName initializer should not be used with root label indicator: \(span[unchecked: endIndex])"
+                    "DomainName initializer should not be used with root label indicator: \(unsafe span[unchecked: endIndex])"
                 )
             }
         default:

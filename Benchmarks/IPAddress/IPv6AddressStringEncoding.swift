@@ -112,18 +112,21 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<1_000_000 {
-            let ptr = UnsafeMutableRawPointer.allocate(byteCount: 64, alignment: 1).bindMemory(
+            let ptr = unsafe UnsafeMutableRawPointer.allocate(
+                byteCount: 64,
+                alignment: 1
+            ).bindMemory(
                 to: Int8.self,
                 capacity: 64
             )
-            inet_ntop(
+            unsafe inet_ntop(
                 AF_INET6,
                 &ipv6CompactInetNtop,
                 ptr,
                 64
             )
-            let description = String(cString: ptr)
-            ptr.deinitialize(count: 64).deallocate()
+            let description = unsafe String(cString: ptr)
+            unsafe ptr.deinitialize(count: 64).deallocate()
             blackHole(description)
         }
     }
@@ -142,17 +145,17 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         ]
         let description = addressBytes.withUnsafeMutableBufferPointer {
             (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) -> String in
-            inet_ntop(
+            unsafe inet_ntop(
                 AF_INET6,
                 &ipv6CompactInetNtop,
                 addressBytesPtr.baseAddress!,
                 50
             )
-            return addressBytesPtr.baseAddress!.withMemoryRebound(
+            return unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
                 to: UInt8.self,
                 capacity: 50
             ) {
-                String(cString: $0)
+                unsafe String(cString: $0)
             }
         }
         blackHole(description)
@@ -172,17 +175,17 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         ]
         let description = addressBytes.withUnsafeMutableBufferPointer {
             (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) -> String in
-            inet_ntop(
+            unsafe inet_ntop(
                 AF_INET6,
                 &ipv6CompactInetNtop,
                 addressBytesPtr.baseAddress!,
                 50
             )
-            return addressBytesPtr.baseAddress!.withMemoryRebound(
+            return unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
                 to: UInt8.self,
                 capacity: 50
             ) {
-                String(cString: $0)
+                unsafe String(cString: $0)
             }
         }
         blackHole(description)
@@ -261,18 +264,21 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<1_000_000 {
-            let ptr = UnsafeMutableRawPointer.allocate(byteCount: 64, alignment: 1).bindMemory(
+            let ptr = unsafe UnsafeMutableRawPointer.allocate(
+                byteCount: 64,
+                alignment: 1
+            ).bindMemory(
                 to: Int8.self,
                 capacity: 64
             )
-            inet_ntop(
+            unsafe inet_ntop(
                 AF_INET6,
                 &ipv6MixedInetNtop,
                 ptr,
                 64
             )
-            let description = String(cString: ptr)
-            ptr.deinitialize(count: 64).deallocate()
+            let description = unsafe String(cString: ptr)
+            unsafe ptr.deinitialize(count: 64).deallocate()
             blackHole(description)
         }
     }
@@ -291,17 +297,17 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         ]
         let description = addressBytes.withUnsafeMutableBufferPointer {
             (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) -> String in
-            inet_ntop(
+            unsafe inet_ntop(
                 AF_INET6,
                 &ipv6MixedInetNtop,
                 addressBytesPtr.baseAddress!,
                 50
             )
-            return addressBytesPtr.baseAddress!.withMemoryRebound(
+            return unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
                 to: UInt8.self,
                 capacity: 50
             ) {
-                String(cString: $0)
+                unsafe String(cString: $0)
             }
         }
         blackHole(description)
@@ -321,17 +327,17 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         ]
         let description = addressBytes.withUnsafeMutableBufferPointer {
             (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) -> String in
-            inet_ntop(
+            unsafe inet_ntop(
                 AF_INET6,
                 &ipv6MixedInetNtop,
                 addressBytesPtr.baseAddress!,
                 50
             )
-            return addressBytesPtr.baseAddress!.withMemoryRebound(
+            return unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
                 to: UInt8.self,
                 capacity: 50
             ) {
-                String(cString: $0)
+                unsafe String(cString: $0)
             }
         }
         blackHole(description)
@@ -420,18 +426,21 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         for _ in 0..<1_000_000 {
             let idx = Int(rng.next() % 16)
             var address = ipv6MultipleIPsInetNtop[idx]
-            let ptr = UnsafeMutableRawPointer.allocate(byteCount: 64, alignment: 1).bindMemory(
+            let ptr = unsafe UnsafeMutableRawPointer.allocate(
+                byteCount: 64,
+                alignment: 1
+            ).bindMemory(
                 to: Int8.self,
                 capacity: 64
             )
-            inet_ntop(
+            unsafe inet_ntop(
                 AF_INET6,
                 &address,
                 ptr,
                 64
             )
-            let description = String(cString: ptr)
-            ptr.deinitialize(count: 64).deallocate()
+            let description = unsafe String(cString: ptr)
+            unsafe ptr.deinitialize(count: 64).deallocate()
             blackHole(description)
         }
     }
@@ -451,17 +460,17 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         addressBytes.withUnsafeMutableBufferPointer {
             (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) in
             for var address in ipv6MultipleIPsInetNtop {
-                inet_ntop(
+                unsafe inet_ntop(
                     AF_INET6,
                     &address,
                     addressBytesPtr.baseAddress!,
                     50
                 )
-                let description = addressBytesPtr.baseAddress!.withMemoryRebound(
+                let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
                     to: UInt8.self,
                     capacity: 50
                 ) {
-                    String(cString: $0)
+                    unsafe String(cString: $0)
                 }
                 blackHole(description)
             }
@@ -483,17 +492,17 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         addressBytes.withUnsafeMutableBufferPointer {
             (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) in
             for var address in ipv6MultipleIPsInetNtop {
-                inet_ntop(
+                unsafe inet_ntop(
                     AF_INET6,
                     &address,
                     addressBytesPtr.baseAddress!,
                     50
                 )
-                let description = addressBytesPtr.baseAddress!.withMemoryRebound(
+                let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
                     to: UInt8.self,
                     capacity: 50
                 ) {
-                    String(cString: $0)
+                    unsafe String(cString: $0)
                 }
                 blackHole(description)
             }

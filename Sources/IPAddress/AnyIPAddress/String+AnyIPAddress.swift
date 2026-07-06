@@ -78,7 +78,7 @@ extension AnyIPAddress: LosslessStringConvertible {
         /// This works even for ipv4-mapped ipv6 addresses like `"::FFFF:204.152.189.116"`.
         for idx in span.indices {
             /// Unchecked because `idx` comes right from `span.indices`
-            switch span[unchecked: idx] {
+            switch unsafe span[unchecked: idx] {
             case .asciiDot:
                 guard let ipv4 = IPv4Address(textualRepresentation: span) else {
                     return nil

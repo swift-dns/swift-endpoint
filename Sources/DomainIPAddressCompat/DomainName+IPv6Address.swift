@@ -27,19 +27,19 @@ extension IPv6Address {
     @inlinable
     public init?(arpaDomainName domainName: DomainName) {
         guard
-            let result = domainName._data.withUnsafeReadableBytes({ ptr -> IPv6Address? in
-                ptr.withMemoryRebound(to: UInt8.self) { ptr -> IPv6Address? in
+            let result = unsafe domainName._data.withUnsafeReadableBytes({ ptr -> IPv6Address? in
+                unsafe ptr.withMemoryRebound(to: UInt8.self) { ptr -> IPv6Address? in
                     var ipv6Address = _CompatibilityUInt128Typealias.zero
                     var iterator = domainName.makePositionIterator()
 
                     /// `DomainName.data` always only contains ASCII bytes
-                    let asciiSpan = ptr.span
+                    let asciiSpan = unsafe ptr.span
 
                     for idx in 0..<32 {
                         guard
                             let labelPosition = iterator.next(),
                             labelPosition.length == 1,
-                            let byte = UInt8.mapHexadecimalByteToUInt8(
+                            let byte = unsafe UInt8.mapHexadecimalByteToUInt8(
                                 asciiSpan[unchecked: labelPosition.startIndex]
                             )
                         else {
@@ -56,8 +56,8 @@ extension IPv6Address {
                         return nil
                     }
 
-                    let ip6 = asciiSpan.extracting(unchecked: ip6Range)
-                    let arpa = asciiSpan.extracting(unchecked: arpaRange)
+                    let ip6 = unsafe asciiSpan.extracting(unchecked: ip6Range)
+                    let arpa = unsafe asciiSpan.extracting(unchecked: arpaRange)
                     let ip6Bytes = [
                         UInt8(ascii: "i"), UInt8(ascii: "p"), UInt8(ascii: "6"),
                     ]

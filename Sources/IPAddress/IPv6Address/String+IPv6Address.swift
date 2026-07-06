@@ -7,9 +7,10 @@ extension IPv6Address: CustomStringConvertible {
     /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
     @inlinable
     public var description: String {
-        self.makeDescription(enclosingInSquareBrackets: true) { (maxWriteableBytes, callback) in
-            String(unsafeUninitializedCapacity_Compatibility: maxWriteableBytes) { buffer in
-                callback(buffer)
+        unsafe self.makeDescription(enclosingInSquareBrackets: true) {
+            (maxWriteableBytes, callback) in
+            unsafe String(unsafeUninitializedCapacity_Compatibility: maxWriteableBytes) { buffer in
+                unsafe callback(buffer)
             }
         }
     }
@@ -58,27 +59,27 @@ extension IPv6Address {
             &+ bracketsCount
             &+ conservativeSpeculativeBytes
 
-        return try writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
+        return try unsafe writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
             var writeIdx = 0
 
-            buffer[0] = .asciiLeftSquareBracket
+            unsafe buffer[0] = .asciiLeftSquareBracket
             writeIdx &+= enclosingInSquareBrackets ? 1 : 0
 
-            buffer[writeIdx] = .asciiColon
+            unsafe buffer[writeIdx] = .asciiColon
             writeIdx &+= entry.writeCsAtBeginning ? 1 : 0
 
             let writeCsAtIdx = entry.writeCsAtIdx
-            let range = Range(uncheckedBounds: (0, entry.segmentsCount))
+            let range = unsafe Range(uncheckedBounds: (0, entry.segmentsCount))
             for offset in range {
                 let idx = Int(entry.packedIndices &>> (offset &* 3) & 0x7)
 
-                buffer[writeIdx] = .asciiColon
-                buffer[writeIdx &+ 1] = .asciiColon
+                unsafe buffer[writeIdx] = .asciiColon
+                unsafe buffer[writeIdx &+ 1] = .asciiColon
                 /// We've reserved 2 speculative bytes worth of room so this is safe:
                 writeIdx &+= idx == writeCsAtIdx ? 1 : 0
                 writeIdx &+= offset == 0 ? 0 : 1
 
-                self._writeSegmentAsLowercasedHexASCII_RequiringMinimumCapacityOf4(
+                unsafe self._writeSegmentAsLowercasedHexASCII_RequiringMinimumCapacityOf4(
                     into: buffer,
                     advancingIdx: &writeIdx,
                     segmentIdx: idx
@@ -86,11 +87,11 @@ extension IPv6Address {
             }
 
             /// We've reserved 2 speculative bytes worth of room so this is safe:
-            buffer[writeIdx] = .asciiColon
-            buffer[writeIdx &+ 1] = .asciiColon
+            unsafe buffer[writeIdx] = .asciiColon
+            unsafe buffer[writeIdx &+ 1] = .asciiColon
             writeIdx &+= entry.writeCsAtEnd ? 2 : 0
 
-            buffer[writeIdx] = .asciiRightSquareBracket
+            unsafe buffer[writeIdx] = .asciiRightSquareBracket
             writeIdx &+= enclosingInSquareBrackets ? 1 : 0
 
             assert(writeIdx <= toReserve - 2)
@@ -253,7 +254,7 @@ extension IPv6Address {
         let zeroDigitsCountMax3 = min(3, zeroDigitsCount)
         let toStore = systemRepresentationBytes &>> (zeroDigitsCountMax3 &* 8)
 
-        UnsafeMutableRawBufferPointer(buffer).storeBytes(
+        unsafe UnsafeMutableRawBufferPointer(buffer).storeBytes(
             of: toStore,
             toByteOffset: idx,
             as: UInt32.self
@@ -343,18 +344,13 @@ extension IPv6Address: LosslessStringConvertible {
 
         /// Trim the left and right square brackets if they both exist
 
-        /// Unchecked because we just checked count > 1 above
-        let startsWithBracket = span[unchecked: 0] == .asciiLeftSquareBracket
-        /// Unchecked because we just checked count > 1 above
-        let endsWithBracket = span[unchecked: span.count &- 1] == .asciiRightSquareBracket
+        let startsWithBracket = span[0] == .asciiLeftSquareBracket
+        let endsWithBracket = span[span.count &- 1] == .asciiRightSquareBracket
         switch (startsWithBracket, endsWithBracket) {
         case (false, false):
             break
         case (true, true):
-            /// Unchecked because we just checked count > 1 above
-            span = span.extracting(
-                unchecked: Range(uncheckedBounds: (1, span.count &- 1))
-            )
+            span = span.extracting(1..<(span.count &- 1))
         case (true, false), (false, true):
             return false
         }
@@ -365,11 +361,9 @@ extension IPv6Address: LosslessStringConvertible {
         }
 
         /// Special-case handling for when there is a compression sign at the beginning
-        if span[unchecked: 0] == .asciiColon {
-            span = span.extracting(
-                unchecked: Range(uncheckedBounds: (1, span.count))
-            )
-            if span[unchecked: 0] != .asciiColon {
+        if span[0] == .asciiColon {
+            span = span.extracting(1..<span.count)
+            if span[0] != .asciiColon {
                 return false
             }
         }
@@ -386,7 +380,7 @@ extension IPv6Address: LosslessStringConvertible {
         while idx < span.count {
             defer { idx &+= 1 }
 
-            let byte = span[unchecked: idx]
+            let byte = unsafe span[unchecked: idx]
 
             if let digit = UInt8.mapHexadecimalByteToUInt8(byte) {
                 if segmentDigitIdx == 4 {
@@ -432,7 +426,7 @@ extension IPv6Address: LosslessStringConvertible {
                 guard
                     remainingBytesCount >= 4,
                     IPv4Address.parseIPv4(
-                        span: span.extracting(
+                        span: unsafe span.extracting(
                             unchecked: Range(
                                 uncheckedBounds: (latestColonIdx &+ 1, span.count)
                             )

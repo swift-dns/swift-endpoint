@@ -217,7 +217,7 @@ extension DomainName: Sequence {
 
             @inlinable
             package var range: Range<Int> {
-                Range(uncheckedBounds: (self.startIndex, self.startIndex &+ self.length))
+                unsafe Range(uncheckedBounds: (self.startIndex, self.startIndex &+ self.length))
             }
 
             @inlinable
@@ -252,10 +252,11 @@ extension DomainName: Sequence {
                 return ByteBuffer()
             }
 
-            return self.domainName._data.getSlice(
+            let slice = self.domainName._data.getSlice(
                 at: self.startIndex,
                 length: self.domainName._data.writerIndex &- self.startIndex
-            ).unsafelyUnwrapped
+            )
+            return unsafe slice.unsafelyUnwrapped
         }
 
         @inlinable

@@ -24,13 +24,13 @@ extension DomainName {
     ///   otherwise, `false`.
     @inlinable
     public func isSubdomain(of other: DomainName) -> Bool {
-        self._data.withUnsafeReadableBytes { selfPtr -> Bool in
-            selfPtr.withMemoryRebound(to: UInt8.self) { selfBytes -> Bool in
-                other._data.withUnsafeReadableBytes { otherPtr -> Bool in
-                    otherPtr.withMemoryRebound(to: UInt8.self) { otherBytes -> Bool in
-                        let selfSpan = selfBytes.span
+        unsafe self._data.withUnsafeReadableBytes { selfPtr -> Bool in
+            unsafe selfPtr.withMemoryRebound(to: UInt8.self) { selfBytes -> Bool in
+                unsafe other._data.withUnsafeReadableBytes { otherPtr -> Bool in
+                    unsafe otherPtr.withMemoryRebound(to: UInt8.self) { otherBytes -> Bool in
+                        let selfSpan = unsafe selfBytes.span
                         var selfIterator = self.makePositionIterator()
-                        let otherSpan = otherBytes.span
+                        let otherSpan = unsafe otherBytes.span
                         var otherIterator = other.makePositionIterator()
 
                         guard var otherLabelPosition = otherIterator.next() else {
@@ -39,11 +39,11 @@ extension DomainName {
 
                         var seenWildcard = false
                         while let selfLabelPosition = selfIterator.next() {
-                            let otherLabel = otherSpan.extracting(
+                            let otherLabel = unsafe otherSpan.extracting(
                                 unchecked: otherLabelPosition.range
                             )
                             let otherLabelIsWildcard =
-                                otherLabelPosition.length == 1
+                                unsafe otherLabelPosition.length == 1
                                 && otherSpan[unchecked: otherLabelPosition.startIndex] == .asciiStar
 
                             if otherLabelIsWildcard {
@@ -55,7 +55,7 @@ extension DomainName {
                                 continue
                             }
 
-                            let selfLabel = selfSpan.extracting(
+                            let selfLabel = unsafe selfSpan.extracting(
                                 unchecked: selfLabelPosition.range
                             )
                             if selfLabel.swift_endpoint_equals(to: otherLabel) {

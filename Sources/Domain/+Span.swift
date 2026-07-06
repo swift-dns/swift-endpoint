@@ -4,7 +4,7 @@ extension Span<UInt8> {
     var isASCII: Bool {
         var result: UInt8 = 0
         for idx in self.indices {
-            result |= unsafe self[unchecked: idx]
+            result |= self[idx]
         }
         return result <= 127
     }

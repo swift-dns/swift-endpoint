@@ -129,7 +129,10 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<1_000_000 {
-            let ptr = unsafe UnsafeMutableRawPointer.allocate(byteCount: 15, alignment: 1).bindMemory(
+            let ptr = unsafe UnsafeMutableRawPointer.allocate(
+                byteCount: 15,
+                alignment: 1
+            ).bindMemory(
                 to: Int8.self,
                 capacity: 15
             )
@@ -286,7 +289,10 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         for _ in 0..<1_000_000 {
             let idx = Int(rng.next() % 16)
             var address = ipv4MultipleIPsInetNtop[idx]
-            let ptr = unsafe UnsafeMutableRawPointer.allocate(byteCount: 16, alignment: 1).bindMemory(
+            let ptr = unsafe UnsafeMutableRawPointer.allocate(
+                byteCount: 16,
+                alignment: 1
+            ).bindMemory(
                 to: Int8.self,
                 capacity: 16
             )

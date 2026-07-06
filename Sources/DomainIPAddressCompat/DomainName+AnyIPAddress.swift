@@ -36,7 +36,9 @@ extension AnyIPAddress {
                         /// `"127.0.0.1"` into the domain name.
                         return IPv4Address(domainName: domainName).map { .v4($0) }
                     }
-                    let identifierLabel = unsafe asciiSpan.extracting(unchecked: identifierLabelRange)
+                    let identifierLabel = unsafe asciiSpan.extracting(
+                        unchecked: identifierLabelRange
+                    )
 
                     let inAddrBytes = [
                         UInt8(ascii: "i"), UInt8(ascii: "n"), UInt8(ascii: "-"), UInt8(ascii: "a"),
@@ -94,7 +96,9 @@ extension AnyIPAddress {
                     guard let identifierLabelRange = iterator.next()?.range else {
                         return nil
                     }
-                    let identifierLabel = unsafe asciiSpan.extracting(unchecked: identifierLabelRange)
+                    let identifierLabel = unsafe asciiSpan.extracting(
+                        unchecked: identifierLabelRange
+                    )
                     let inAddrBytes = [
                         UInt8(ascii: "i"), UInt8(ascii: "n"), UInt8(ascii: "-"), UInt8(ascii: "a"),
                         UInt8(ascii: "d"), UInt8(ascii: "d"), UInt8(ascii: "r"),

@@ -112,7 +112,10 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<1_000_000 {
-            let ptr = unsafe UnsafeMutableRawPointer.allocate(byteCount: 64, alignment: 1).bindMemory(
+            let ptr = unsafe UnsafeMutableRawPointer.allocate(
+                byteCount: 64,
+                alignment: 1
+            ).bindMemory(
                 to: Int8.self,
                 capacity: 64
             )
@@ -261,7 +264,10 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<1_000_000 {
-            let ptr = unsafe UnsafeMutableRawPointer.allocate(byteCount: 64, alignment: 1).bindMemory(
+            let ptr = unsafe UnsafeMutableRawPointer.allocate(
+                byteCount: 64,
+                alignment: 1
+            ).bindMemory(
                 to: Int8.self,
                 capacity: 64
             )
@@ -420,7 +426,10 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         for _ in 0..<1_000_000 {
             let idx = Int(rng.next() % 16)
             var address = ipv6MultipleIPsInetNtop[idx]
-            let ptr = unsafe UnsafeMutableRawPointer.allocate(byteCount: 64, alignment: 1).bindMemory(
+            let ptr = unsafe UnsafeMutableRawPointer.allocate(
+                byteCount: 64,
+                alignment: 1
+            ).bindMemory(
                 to: Int8.self,
                 capacity: 64
             )

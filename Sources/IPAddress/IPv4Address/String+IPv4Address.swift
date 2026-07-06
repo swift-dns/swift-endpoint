@@ -36,7 +36,10 @@ extension IPv4Address: CustomStringConvertible {
             let shift = 24 &- idx &* 8
             let byte = UInt8(truncatingIfNeeded: self.address &>> shift)
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
-            unsafe byte.asDecimal_RequiringMinimumCapacityOf3(buffer: buffer, advancingIdx: &resultIdx)
+            unsafe byte.asDecimal_RequiringMinimumCapacityOf3(
+                buffer: buffer,
+                advancingIdx: &resultIdx
+            )
         }
 
         return resultIdx

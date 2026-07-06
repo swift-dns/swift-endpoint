@@ -33,7 +33,8 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<5_000_000 {
-            let ip = unsafe IPv6Address("[2001:0db8:85a3:f109:197a:8a2e:0370:7334]").unsafelyUnwrapped
+            let ip = unsafe IPv6Address("[2001:0db8:85a3:f109:197a:8a2e:0370:7334]")
+                .unsafelyUnwrapped
             blackHole(ip)
         }
     }
@@ -65,7 +66,8 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<5_000_000 {
-            let ip = unsafe IPv6Address("[0000:0000:0000:0000:0000:0000:0000:0000]").unsafelyUnwrapped
+            let ip = unsafe IPv6Address("[0000:0000:0000:0000:0000:0000:0000:0000]")
+                .unsafelyUnwrapped
             blackHole(ip)
         }
     }

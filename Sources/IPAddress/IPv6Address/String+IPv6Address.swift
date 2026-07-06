@@ -7,7 +7,8 @@ extension IPv6Address: CustomStringConvertible {
     /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
     @inlinable
     public var description: String {
-        unsafe self.makeDescription(enclosingInSquareBrackets: true) { (maxWriteableBytes, callback) in
+        unsafe self.makeDescription(enclosingInSquareBrackets: true) {
+            (maxWriteableBytes, callback) in
             unsafe String(unsafeUninitializedCapacity_Compatibility: maxWriteableBytes) { buffer in
                 unsafe callback(buffer)
             }
@@ -349,7 +350,7 @@ extension IPv6Address: LosslessStringConvertible {
         case (false, false):
             break
         case (true, true):
-            span = span.extracting(1 ..< (span.count &- 1))
+            span = span.extracting(1..<(span.count &- 1))
         case (true, false), (false, true):
             return false
         }
@@ -361,7 +362,7 @@ extension IPv6Address: LosslessStringConvertible {
 
         /// Special-case handling for when there is a compression sign at the beginning
         if span[0] == .asciiColon {
-            span = span.extracting(1 ..< span.count)
+            span = span.extracting(1..<span.count)
             if span[0] != .asciiColon {
                 return false
             }

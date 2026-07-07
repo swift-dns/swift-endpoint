@@ -211,20 +211,19 @@ The numbers are sum of allocation counts for all the 16 different IPs.
 | IPv6    | Parsing     | 0                    | 0                             |
 
 <details>
-  <summary>Why more allocations for IPv6 serialization?</summary>
+  <summary>Why swift-endpoint commits more allocations for IPv6 serialization?</summary>
 
-swift-endpoint is usually 3 times faster in serializing ipv6 addresses, but sometimes it does an allocation where glibc/Darwin won't. Here's why that happens:
+swift-endpoint is on average 3+ times faster in serializing ipv6 addresses, but sometimes it does an extra heap allocation when glibc/Darwin won't. Even though this extra allocation is not enough for the C APIs to beat swift-endpoint, here's why they happen at all:
 
 * IPv6 serialization, serializes the IPv6 into a `String`.
 * `String` has the ability to inline-allocate the characters if there are no more than 15 utf8 bytes.
-* In all serialization cases using Swift or C APIs, the benchmarks produce a `String` via asking `String` to allocate `X` amount of bytes required to store the IPv6's text representation.
-* The C APIs don't inform you of how many exact bytes they need. They simply expect you to hand them a pointer with enough space.
-* As a performance optimization for calling inet APIs, swift-endpoint benchmarks use stack allocations for the for passing that pointer to the C APIs.
+* The C APIs don't inform you of how many exact bytes they need to store the text representation of the IPv6. They simply expect you to hand them a pointer with enough space.
+* As a performance optimization for calling inet APIs, swift-endpoint benchmarks use stack allocations and passing that pointer to the C APIs.
 * After that, the C API benchmark make a `String` out of the parsed result. At this point, `String` knows exactly how many bytes it needs to allocate on the heap or if it can store the bytes inline.
-* swift-endpoint on the other hand doesn't do a stack allocation but in for other parts of the parsing operation, it has to ask for 2 more bytes that the exact amount required to store the IPv6 text representation.
-* This is because swift-endpoint uses speculative writes when writing the IPv6 text representation, and needs a few bytes of headroom. Using speculative writes, combined with a few other technique such as SWAR is what makes IPv6 not only fast, but also almost branchless.
+* swift-endpoint on the other hand doesn't do a stack allocation but for other parts of the parsing operation, it has to ask for 2 more bytes than the exact amount required to store the IPv6 text representation.
+* This is because swift-endpoint uses speculative writes when writing the IPv6 text representation, and needs a few bytes of headroom.
+* Using speculative writes, combined with a few other technique such as SWAR is what makes IPv6 not only fast, but also almost branchless.
 * So in cases where IPv6 serialization requires 14 or 15 utf8 bytes, via the C APIs it won't allocate anything on the heap and `String` will store the bytes inline, but via swift-endpoint, it has to ask for 14+2=16 or 15+2=17 bytes so `String` has to allocate on heap for the storage.
-
 
 </details>
 

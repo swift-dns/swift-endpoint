@@ -164,7 +164,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
                 addressBytesPtr.baseAddress!,
                 15
             )
-            blackHole(addressBytesPtr)
+            unsafe blackHole(addressBytesPtr)
         }
     }
 
@@ -184,7 +184,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
                 addressBytesPtr.baseAddress!,
                 15
             )
-            blackHole(addressBytesPtr)
+            unsafe blackHole(addressBytesPtr)
         }
     }
 
@@ -307,7 +307,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
                     addressBytesPtr.baseAddress!,
                     16
                 )
-                blackHole(addressBytesPtr)
+                unsafe blackHole(addressBytesPtr)
             }
         }
     }
@@ -329,7 +329,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
                     addressBytesPtr.baseAddress!,
                     16
                 )
-                blackHole(addressBytesPtr)
+                unsafe blackHole(addressBytesPtr)
             }
         }
     }

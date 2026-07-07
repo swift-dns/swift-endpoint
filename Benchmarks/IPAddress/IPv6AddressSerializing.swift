@@ -147,7 +147,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
                 addressBytesPtr.baseAddress!,
                 50
             )
-            blackHole(addressBytesPtr)
+            unsafe blackHole(addressBytesPtr)
         }
     }
 
@@ -167,7 +167,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
                 addressBytesPtr.baseAddress!,
                 50
             )
-            blackHole(addressBytesPtr)
+            unsafe blackHole(addressBytesPtr)
         }
     }
 
@@ -279,7 +279,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
                 addressBytesPtr.baseAddress!,
                 50
             )
-            blackHole(addressBytesPtr)
+            unsafe blackHole(addressBytesPtr)
         }
     }
 
@@ -299,7 +299,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
                 addressBytesPtr.baseAddress!,
                 50
             )
-            blackHole(addressBytesPtr)
+            unsafe blackHole(addressBytesPtr)
         }
     }
 
@@ -422,7 +422,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
                     addressBytesPtr.baseAddress!,
                     50
                 )
-                blackHole(addressBytesPtr)
+                unsafe blackHole(addressBytesPtr)
             }
         }
     }
@@ -444,7 +444,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
                     addressBytesPtr.baseAddress!,
                     50
                 )
-                blackHole(addressBytesPtr)
+                unsafe blackHole(addressBytesPtr)
             }
         }
     }

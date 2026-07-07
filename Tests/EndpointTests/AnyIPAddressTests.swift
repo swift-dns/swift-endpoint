@@ -7,9 +7,9 @@ struct AnyIPAddressTests {
     @Test(
         arguments: IPTestCase<AnyIPAddress>.stringAndAddress.compactMap(\.ip)
             + IPTestCase<IPv4Address>.stringAndAddress
-            .compactMap(\.asAnyIPAddress).compactMap(\.ip)
+            .compactMap(\.asAnyIPAddress?.ip)
             + IPTestCase<IPv6Address>.stringAndAddress
-            .compactMap(\.asAnyIPAddress).compactMap(\.ip)
+            .compactMap(\.asAnyIPAddress?.ip)
     )
     func `AnyIPAddress description`(ip: AnyIPAddress, expectedDescription: String) {
         #expect(ip.description == expectedDescription)
@@ -17,7 +17,7 @@ struct AnyIPAddressTests {
         let droppedFirstLast = String(expectedDescription.dropFirst().dropLast())
         let bracketLess = ip.isIPv6 ? droppedFirstLast : expectedDescription
         let produced = ip.withCString { span in
-            span.withUnsafeBufferPointer { String(cString: $0.baseAddress!) }
+            span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
         }
         #expect(produced == bracketLess)
     }
@@ -33,7 +33,7 @@ struct AnyIPAddressTests {
         #expect(AnyIPAddress(ip.description) == ip)
 
         let viaCString = ip.withCString { span in
-            span.withUnsafeBufferPointer { AnyIPAddress(cString: $0.baseAddress!) }
+            span.withUnsafeBufferPointer { unsafe AnyIPAddress(cString: $0.baseAddress!) }
         }
         #expect(viaCString == ip)
     }
@@ -50,7 +50,7 @@ struct AnyIPAddressTests {
 
         #expect(AnyIPAddress(string) == expectedAddress)
 
-        string.withCString { #expect(AnyIPAddress(cString: $0) == expectedAddress) }
+        string.withCString { #expect(unsafe AnyIPAddress(cString: $0) == expectedAddress) }
     }
 
     @available(SwiftStdlib 5.1, *)

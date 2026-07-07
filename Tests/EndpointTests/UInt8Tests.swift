@@ -7,8 +7,11 @@ struct UInt8Tests {
         for number in (UInt8(0)...UInt8(255)) {
             withUnsafeTemporaryAllocation(byteCount: 3, alignment: 1) { buffer in
                 var idx = 0
-                number.asDecimal_RequiringMinimumCapacityOf3(buffer: buffer, advancingIdx: &idx)
-                let string = String(decoding: buffer[0..<idx], as: UTF8.self)
+                unsafe number.asDecimal_RequiringMinimumCapacityOf3(
+                    buffer: buffer,
+                    advancingIdx: &idx
+                )
+                let string = unsafe String(decoding: buffer[0..<idx], as: UTF8.self)
                 #expect(string == String(number))
             }
         }

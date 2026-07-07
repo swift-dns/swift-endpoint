@@ -33,8 +33,8 @@ struct IPv4AddressTests {
         let ip = IPv4Address(123, 251, 98, 234)
 
         let bufferPointer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: 20)
-        defer { bufferPointer.deallocate() }
-        var outputSpan = OutputSpan(buffer: bufferPointer, initializedCount: 0)
+        defer { unsafe bufferPointer.deallocate() }
+        var outputSpan = unsafe OutputSpan(buffer: bufferPointer, initializedCount: 0)
 
         let didEncode = ip.encode(into: &outputSpan)
 
@@ -47,7 +47,7 @@ struct IPv4AddressTests {
         let isEmpty = outputSpan.isEmpty
         #expect(!isEmpty)
         outputSpan.span.withUnsafeBytes { ptr in
-            let data = [UInt8](ptr)
+            let data = unsafe [UInt8](ptr)
             #expect(data == [123, 251, 98, 234])
         }
 
@@ -62,7 +62,7 @@ struct IPv4AddressTests {
 
         let produced = ip.withCString { span in
             #expect(span.count == expectedDescription.utf8.count + 1)
-            return span.withUnsafeBufferPointer { String(cString: $0.baseAddress!) }
+            return span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
         }
         #expect(produced == expectedDescription)
     }
@@ -73,13 +73,13 @@ struct IPv4AddressTests {
         #expect(IPv4Address(ip.description) == ip)
 
         let viaCString = ip.withCString { span in
-            span.withUnsafeBufferPointer { IPv4Address(cString: $0.baseAddress!) }
+            span.withUnsafeBufferPointer { unsafe IPv4Address(cString: $0.baseAddress!) }
         }
         #expect(viaCString == ip)
 
         let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: IPv4Address.size)
-        defer { buffer.deallocate() }
-        var outputSpan = OutputSpan(buffer: buffer, initializedCount: 0)
+        defer { unsafe buffer.deallocate() }
+        var outputSpan = unsafe OutputSpan(buffer: buffer, initializedCount: 0)
         let didEncode = ip.encode(into: &outputSpan)
         #expect(didEncode)
         #expect(IPv4Address(from: outputSpan.span) == ip)
@@ -120,11 +120,11 @@ struct IPv4AddressTests {
         }
 
         string.withCString { cString in
-            #expect(IPv4Address(cString: cString) == expectedAddress)
+            #expect(unsafe IPv4Address(cString: cString) == expectedAddress)
             if isValidIPv6 {
-                #expect(AnyIPAddress(cString: cString)?.isIPv6 == true)
+                #expect(unsafe AnyIPAddress(cString: cString)?.isIPv6 == true)
             } else {
-                #expect(AnyIPAddress(cString: cString) == expectedAddress.map { .v4($0) })
+                #expect(unsafe AnyIPAddress(cString: cString) == expectedAddress.map { .v4($0) })
             }
         }
     }
@@ -214,15 +214,15 @@ struct IPv4AddressTests {
 
         var inAddress = in_addr()
         let pton = ip.withCString { span in
-            span.withUnsafeBufferPointer { inet_pton(AF_INET, $0.baseAddress!, &inAddress) }
+            span.withUnsafeBufferPointer { unsafe inet_pton(AF_INET, $0.baseAddress!, &inAddress) }
         }
         #expect(pton == 1)
-        #expect(withUnsafeBytes(of: inAddress) { Array($0) } == expectedBytes)
+        #expect(withUnsafeBytes(of: inAddress) { unsafe Array($0) } == expectedBytes)
 
         var buffer = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
-        let ntop = inet_ntop(AF_INET, &inAddress, &buffer, socklen_t(INET_ADDRSTRLEN))
-        #expect(ntop != nil)
-        #expect(IPv4Address(cString: buffer) == ip)
+        let ntop = unsafe inet_ntop(AF_INET, &inAddress, &buffer, socklen_t(INET_ADDRSTRLEN))
+        #expect(unsafe ntop != nil)
+        #expect(unsafe IPv4Address(cString: buffer) == ip)
     }
 
     @available(SwiftStdlib 6.2, *)

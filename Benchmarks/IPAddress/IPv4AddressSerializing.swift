@@ -129,12 +129,12 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<1_000_000 {
-            withUnsafeTemporaryAllocation(of: Int8.self, capacity: 15) { ptr in
+            withUnsafeTemporaryAllocation(of: Int8.self, capacity: 16) { ptr in
                 unsafe inet_ntop(
                     AF_INET,
                     &ipv4MixedInetNtop,
                     ptr.baseAddress.unsafelyUnwrapped,
-                    15
+                    16
                 )
                 unsafe blackHole(ptr)
             }
@@ -154,7 +154,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
                 AF_INET,
                 &ipv4MixedInetNtop,
                 ptr.baseAddress.unsafelyUnwrapped,
-                15
+                16
             )
             unsafe blackHole(ptr)
         }
@@ -173,7 +173,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
                 AF_INET,
                 &ipv4MixedInetNtop,
                 ptr.baseAddress.unsafelyUnwrapped,
-                15
+                16
             )
             unsafe blackHole(ptr)
         }

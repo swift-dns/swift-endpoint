@@ -99,9 +99,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv6_Serializing_Compact_inet_ntop
 
-    var ipv6CompactInetNtop = ipv6Compact.address
-
-    /// inet_ntop expects the reverse byte-order but we don't account for that here.
+    var ipv6CompactInetNtop = ipv6Compact.address.bigEndian
 
     Benchmark(
         "IPv6_Serializing_Compact_inet_ntop_1M",
@@ -222,9 +220,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv6_Serializing_Mixed_inet_ntop
 
-    var ipv6MixedInetNtop = ipv6Mixed.address
-
-    /// inet_ntop expects the reverse byte-order but we don't account for that here.
+    var ipv6MixedInetNtop = ipv6Mixed.address.bigEndian
 
     Benchmark(
         "IPv6_Serializing_Mixed_inet_ntop_1M",
@@ -352,9 +348,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv6_Serializing_Multiple_IPs_inet_ntop
 
-    let ipv6MultipleIPsInetNtop = ipv6MultipleIPs.map(\.address)
-
-    /// inet_ntop expects the reverse byte-order but we don't account for that here.
+    let ipv6MultipleIPsInetNtop = ipv6MultipleIPs.map(\.address.bigEndian)
 
     Benchmark(
         "IPv6_Serializing_Multiple_IPs_inet_ntop_1M",

@@ -116,9 +116,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv4_Serializing_Mixed_inet_ntop
 
-    var ipv4MixedInetNtop = ipv4Mixed.address
-
-    /// inet_ntop expects the reverse byte-order but we don't account for that here.
+    var ipv4MixedInetNtop = ipv4Mixed.address.bigEndian
 
     Benchmark(
         "IPv4_Serializing_Mixed_inet_ntop_1M",
@@ -246,9 +244,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv4_Serializing_Multiple_IPs_inet_ntop
 
-    let ipv4MultipleIPsInetNtop = ipv4MultipleIPs.map(\.address)
-
-    /// inet_ntop expects the reverse byte-order but we don't account for that here.
+    let ipv4MultipleIPsInetNtop = ipv4MultipleIPs.map(\.address.bigEndian)
 
     Benchmark(
         "IPv4_Serializing_Multiple_IPs_inet_ntop_1M",

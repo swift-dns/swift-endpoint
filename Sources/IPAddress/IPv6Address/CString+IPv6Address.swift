@@ -21,10 +21,14 @@ extension IPv6Address {
         ) { (maxWriteableBytes, writeBytes) in
             try withUnsafeTemporaryAllocation(
                 of: UInt8.self,
-                /// 1 extra byte for the null terminator.
-                capacity: maxWriteableBytes &+ 1
+                capacity: maxWriteableBytes
             ) { buffer in
                 let count = unsafe writeBytes(buffer)
+                /// We're counting on our own `makeDescription`'s underlying impl to never actually
+                /// write as many bytes as it has requested so we don't need 1 more byte of alloc
+                /// for the null terminator. That's always true right now since the impl needs extra
+                /// headroom for speculative writes it performs.
+                assert(count < buffer.count)
                 unsafe buffer[count] = 0
                 return try unsafe buffer.withMemoryRebound(to: CChar.self) { cBuffer in
                     let range = unsafe ClosedRange<Int>(uncheckedBounds: (0, count))

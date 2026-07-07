@@ -18,15 +18,15 @@ import Darwin
 #elseif canImport(WASILibc)
 @preconcurrency import WASILibc
 #else
-#error("The IPv4AddressStringEncoding benchmarks module was unable to identify your C library.")
+#error("The IPv4AddressSerializing benchmarks module was unable to identify your C library.")
 #endif
 
 let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
-    // MARK: - IPv4_String_Encoding_Zero
+    // MARK: - IPv4_Serializing_Zero
 
     let ipv4Zero = IPv4Address(0, 0, 0, 0)
     Benchmark(
-        "IPv4_String_Encoding_Zero_15M",
+        "IPv4_Serializing_Zero_15M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -39,11 +39,11 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: - IPv4_String_Encoding_Localhost
+    // MARK: - IPv4_Serializing_Localhost
 
     let ipv4Localhost = IPv4Address(127, 0, 0, 1)
     Benchmark(
-        "IPv4_String_Encoding_Localhost_15M",
+        "IPv4_Serializing_Localhost_15M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -56,11 +56,11 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: - IPv4_String_Encoding_Local_Broadcast
+    // MARK: - IPv4_Serializing_Local_Broadcast
 
     let ipv4LocalBroadcast = IPv4Address(255, 255, 255, 255)
     Benchmark(
-        "IPv4_String_Encoding_Local_Broadcast_15M",
+        "IPv4_Serializing_Local_Broadcast_15M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -73,11 +73,11 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: - IPv4_String_Encoding_Mixed
+    // MARK: - IPv4_Serializing_Mixed
 
     let ipv4Mixed = IPv4Address(123, 45, 6, 0)
     Benchmark(
-        "IPv4_String_Encoding_Mixed_15M",
+        "IPv4_Serializing_Mixed_15M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -91,7 +91,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv4_String_Encoding_Mixed_Malloc",
+        "IPv4_Serializing_Mixed_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -103,7 +103,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv4_String_Encoding_Mixed_Instructions",
+        "IPv4_Serializing_Mixed_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,
@@ -114,14 +114,14 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         blackHole(description)
     }
 
-    // MARK: IPv4_String_Encoding_Mixed_inet_ntop
+    // MARK: IPv4_Serializing_Mixed_inet_ntop
 
     var ipv4MixedInetNtop = ipv4Mixed.address
 
     /// inet_ntop expects the reverse byte-order but we don't account for that here.
 
     Benchmark(
-        "IPv4_String_Encoding_Mixed_inet_ntop_1M",
+        "IPv4_Serializing_Mixed_inet_ntop_1M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -149,7 +149,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv4_String_Encoding_Mixed_inet_ntop_Malloc",
+        "IPv4_Serializing_Mixed_inet_ntop_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -178,7 +178,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv4_String_Encoding_Mixed_inet_ntop_Instructions",
+        "IPv4_Serializing_Mixed_inet_ntop_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,
@@ -206,7 +206,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         blackHole(description)
     }
 
-    // MARK: - IPv4_String_Encoding_Multiple_IPs
+    // MARK: - IPv4_Serializing_Multiple_IPs
 
     let ipv4MultipleIPs = [
         IPv4Address(127, 0, 0, 1),
@@ -228,7 +228,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "IPv4_String_Encoding_Multiple_IPs_8M",
+        "IPv4_Serializing_Multiple_IPs_8M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -244,7 +244,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv4_String_Encoding_Multiple_IPs_Malloc",
+        "IPv4_Serializing_Multiple_IPs_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -258,7 +258,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv4_String_Encoding_Multiple_IPs_Instructions",
+        "IPv4_Serializing_Multiple_IPs_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,
@@ -271,14 +271,14 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: IPv4_String_Encoding_Multiple_IPs_inet_ntop
+    // MARK: IPv4_Serializing_Multiple_IPs_inet_ntop
 
     let ipv4MultipleIPsInetNtop = ipv4MultipleIPs.map(\.address)
 
     /// inet_ntop expects the reverse byte-order but we don't account for that here.
 
     Benchmark(
-        "IPv4_String_Encoding_Multiple_IPs_inet_ntop_1M",
+        "IPv4_Serializing_Multiple_IPs_inet_ntop_1M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -309,7 +309,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv4_String_Encoding_Multiple_IPs_inet_ntop_Malloc",
+        "IPv4_Serializing_Multiple_IPs_inet_ntop_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -340,7 +340,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv4_String_Encoding_Multiple_IPs_inet_ntop_Instructions",
+        "IPv4_Serializing_Multiple_IPs_inet_ntop_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,

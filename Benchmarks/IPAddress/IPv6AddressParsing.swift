@@ -18,14 +18,14 @@ import Darwin
 #elseif canImport(WASILibc)
 @preconcurrency import WASILibc
 #else
-#error("The IPv6AddressStringDecoding benchmarks module was unable to identify your C library.")
+#error("The IPv6AddressParsing benchmarks module was unable to identify your C library.")
 #endif
 
 let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
-    // MARK: - IPv6_String_Decoding_Uncompressed
+    // MARK: - IPv6_Parsing_Uncompressed
 
     Benchmark(
-        "IPv6_String_Decoding_Uncompressed_5M",
+        "IPv6_Parsing_Uncompressed_5M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -39,10 +39,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: - IPv6_String_Decoding_Zero_Compressed
+    // MARK: - IPv6_Parsing_Zero_Compressed
 
     Benchmark(
-        "IPv6_String_Decoding_Zero_Compressed_15M",
+        "IPv6_Parsing_Zero_Compressed_15M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -55,10 +55,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: - IPv6_String_Decoding_Zero_Uncompressed
+    // MARK: - IPv6_Parsing_Zero_Uncompressed
 
     Benchmark(
-        "IPv6_String_Decoding_Zero_Uncompressed_5M",
+        "IPv6_Parsing_Zero_Uncompressed_5M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -72,10 +72,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: - IPv6_String_Decoding_Localhost_Compressed
+    // MARK: - IPv6_Parsing_Localhost_Compressed
 
     Benchmark(
-        "IPv6_String_Decoding_Localhost_Compressed_15M",
+        "IPv6_Parsing_Localhost_Compressed_15M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -88,10 +88,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: - IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets
+    // MARK: - IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets
 
     Benchmark(
-        "IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets_5M",
+        "IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets_5M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -105,7 +105,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets_Malloc",
+        "IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -117,7 +117,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets_Instructions",
+        "IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,
@@ -128,10 +128,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         blackHole(ip)
     }
 
-    // MARK: - IPv6_String_Decoding_2_Groups_Compressed_At_The_End
+    // MARK: - IPv6_Parsing_2_Groups_Compressed_At_The_End
 
     Benchmark(
-        "IPv6_String_Decoding_2_Groups_Compressed_At_The_End_5M",
+        "IPv6_Parsing_2_Groups_Compressed_At_The_End_5M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -144,10 +144,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: - IPv6_String_Decoding_2_Groups_Compressed_At_The_Begining
+    // MARK: - IPv6_Parsing_2_Groups_Compressed_At_The_Begining
 
     Benchmark(
-        "IPv6_String_Decoding_2_Groups_Compressed_At_The_Begining_5M",
+        "IPv6_Parsing_2_Groups_Compressed_At_The_Begining_5M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -160,10 +160,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton
+    // MARK: IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton
 
     Benchmark(
-        "IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton_4M",
+        "IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton_4M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -180,7 +180,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton_Malloc",
+        "IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -195,7 +195,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Decoding_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton_Instructions",
+        "IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,
@@ -209,7 +209,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         blackHole(ipv6Address)
     }
 
-    // MARK: - IPv6_String_Decoding_Multiple_IPs
+    // MARK: - IPv6_Parsing_Multiple_IPs
 
     let ipv6MultipleIPs = [
         "::1",
@@ -231,7 +231,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "IPv6_String_Decoding_Multiple_IPs_4M",
+        "IPv6_Parsing_Multiple_IPs_4M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -247,7 +247,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Decoding_Multiple_IPs_Malloc",
+        "IPv6_Parsing_Multiple_IPs_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -261,7 +261,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Decoding_Multiple_IPs_Instructions",
+        "IPv6_Parsing_Multiple_IPs_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,
@@ -274,10 +274,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: IPv6_String_Decoding_Multiple_IPs_inet_pton
+    // MARK: IPv6_Parsing_Multiple_IPs_inet_pton
 
     Benchmark(
-        "IPv6_String_Decoding_Multiple_IPs_inet_pton_3M",
+        "IPv6_Parsing_Multiple_IPs_inet_pton_3M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -296,7 +296,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Decoding_Multiple_IPs_inet_pton_Malloc",
+        "IPv6_Parsing_Multiple_IPs_inet_pton_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -313,7 +313,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Decoding_Multiple_IPs_inet_pton_Instructions",
+        "IPv6_Parsing_Multiple_IPs_inet_pton_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,

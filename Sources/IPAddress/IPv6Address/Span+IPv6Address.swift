@@ -1,7 +1,7 @@
 @available(SwiftStdlib 5.1, *)
 extension IPv6Address {
-    /// Initialize an `IPv6Address` from the 16 bytes representing it.
-    public init?(from span: Span<UInt8>) {
+    /// Initialize an `IPv6Address` by parsing the 16 bytes representing it.
+    public init?(parsing span: Span<UInt8>) {
         guard span.count >= 16 else {
             return nil
         }
@@ -28,9 +28,9 @@ extension IPv6Address {
         )
     }
 
-    /// Encode the address into the provided span.
-    /// Returns true if the address was encoded successfully, false otherwise.
-    public func encode(into span: inout OutputSpan<UInt8>) -> Bool {
+    /// Serialize the address into the provided span.
+    /// Returns true if the address was serialized successfully, false otherwise.
+    public func serialize(into span: inout OutputSpan<UInt8>) -> Bool {
         guard span.freeCapacity >= 16 else {
             return false
         }

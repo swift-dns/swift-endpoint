@@ -77,7 +77,7 @@ public struct IPv6Address: Sendable, Hashable {
     }
 
     /// Whether this address is an IPv6 Multicast address, or not.
-    /// Equivalent to `FF00::/120` in CIDR notation.
+    /// Equivalent to `FF00::/8` in CIDR notation.
     /// That is, any IPv6 address starting with this sequence of bits: `11111111`.
     /// In other words, any IPv6 address starting with `FFxx`. This does not include an address like
     /// `FF::` which is equivalent to `00FF::` and does not start with `FF`.

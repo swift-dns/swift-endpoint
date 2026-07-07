@@ -152,14 +152,25 @@ In all 8 benchmarks this library performs better than the C libraries when calle
 
 #### Against Darwin
 
-These were performed on my M1 Pro MacBook, on macOS 27.0 (beta 2).
+These were performed on my M1 Pro MacBook, on macOS 27.
 
-| Benchmark Name                       | Swift (ns/op) | inet_pton/ntop (ns/op) | Speedup |
-| ------------------------------------ | ------------- | ---------------------- | ------- |
-| IPv4_String_Encoding_Mixed           | 8.2           | 223.0                  | 27.20x  |
-| IPv4_String_Decoding_Local_Broadcast | 8.2           | 42.5                   | 5.18x   |
-| IPv6_String_Encoding_Mixed           | 84.0          | 398.0                  | 4.74x   |
-| IPv6_String_Decoding...Compressed... | 28.6          | 124.3                  | 4.35x   |
+| IP Type | Operation   | Swift (ns/op) | inet_pton/ntop (ns/op) | Speedup |
+| ------- | ----------- | ------------- | ---------------------- | ------- |
+| IPv4    | Serializing | 14.6          | 241.0                  | 16.51x  |
+| IPv4    | Parsing     | 18.7          | 46.3                   | 2.48x   |
+| IPv6    | Serializing | 82.7          | 355.0                  | 4.29x   |
+| IPv6    | Parsing     | 33.5          | 98.0                   | 2.93x   |
+
+**Instructions executed per address:**
+
+| IP Type | Operation   | Swift (instr/op) | inet_pton/ntop (instr/op) | Speedup |
+| ------- | ----------- | ---------------- | ------------------------- | ------- |
+| IPv4    | Serializing | 298.4            | 3000.0                    | 10.05x  |
+| IPv4    | Parsing     | 196.8            | 687.5                     | 3.49x   |
+| IPv6    | Serializing | 1375.0           | 4500.0                    | 3.27x   |
+| IPv6    | Parsing     | 493.4            | 1625.0                    | 3.29x   |
+
+> On Darwin the tooling reports instruction counts of 10,000 or more rounded to the nearest thousand, so the `inet_pton/ntop` cells (and IPv6 serializing Swift) are approximate.
 
 #### Against glibc
 
@@ -167,16 +178,36 @@ These were performed on a dedicated-cpu-core machine from Hetzner in the Falkens
 
 > Host with 2 'x86_64' processors with 7 GB memory, running: #85-Ubuntu SMP PREEMPT_DYNAMIC
 
-| Benchmark Name                       | Swift (ns/op) | inet_pton/ntop (ns/op) | Speedup |
-| ------------------------------------ | ------------- | ---------------------- | ------- |
-| IPv4_String_Encoding_Mixed           | 10.0          | 110.0                  | 11.00x  |
-| IPv4_String_Decoding_Local_Broadcast | 8.7           | 20.0                   | 2.30x   |
-| IPv6_String_Encoding_Mixed           | 56.7          | 220.0                  | 3.88x   |
-| IPv6_String_Decoding...Compressed... | 30.0          | 40.0                   | 1.33x   |
+| IP Type | Operation   | Swift (ns/op) | inet_pton/ntop (ns/op) | Speedup |
+| ------- | ----------- | ------------- | ---------------------- | ------- |
+| IPv4    | Serializing | 20.0          | 130.0                  | 6.50x   |
+| IPv4    | Parsing     | 28.3          | 26.7                   | 0.94x   |
+| IPv6    | Serializing | 63.3          | 200.0                  | 3.16x   |
+| IPv6    | Parsing     | 42.5          | 46.7                   | 1.10x   |
+
+**Instructions executed per address:**
+
+| IP Type | Operation   | Swift (instr/op) | inet_pton/ntop (instr/op) | Speedup |
+| ------- | ----------- | ---------------- | ------------------------- | ------- |
+| IPv4    | Serializing | 371.2            | 1895.9                    | 5.11x   |
+| IPv4    | Parsing     | 327.1            | 350.6                     | 1.07x   |
+| IPv6    | Serializing | 1087.6           | 3310.3                    | 3.04x   |
+| IPv6    | Parsing     | 712.1            | 690.4                     | 0.97x   |
+
+#### Allocations
+
+Allocation counts are deterministic and identical on Darwin and glibc.
+
+| IP Type | Operation   | Swift (allocs/op) | inet_pton/ntop (allocs/op) |
+| ------- | ----------- | ----------------- | -------------------------- |
+| IPv4    | Serializing | 0.0               | 0.0                        |
+| IPv4    | Parsing     | 0.0               | 0.0                        |
+| IPv6    | Serializing | 0.9               | 0.8                        |
+| IPv6    | Parsing     | 0.0               | 0.0                        |
 
 #### Notes
 
 - To see up to date information about performance of this package, please go to this [benchmarks list](https://github.com/swift-dns/swift-endpoint/actions/workflows/benchmarks.yml?query=branch%3Amain), and choose the most recent benchmark. You'll see a summary of the benchmark there.
 - The results above are all reproducible by simply running `scripts/benchmark.bash` on a machine of your own.
 - All benchmarks on all platforms commit similar allocations.
-- 3 of the benchmarks always do `0`, `IPv6_String_Encoding_Mixed` always does `1`.
+- 3 of the benchmarks always do `0`, `IPv6_Serializing_Mixed` always does `1`.

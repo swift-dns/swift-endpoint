@@ -18,14 +18,14 @@ import Darwin
 #elseif canImport(WASILibc)
 @preconcurrency import WASILibc
 #else
-#error("The IPv4AddressStringDecoding benchmarks module was unable to identify your C library.")
+#error("The IPv4AddressParsing benchmarks module was unable to identify your C library.")
 #endif
 
 let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
-    // MARK: - IPv4_String_Decoding_Zero
+    // MARK: - IPv4_Parsing_Zero
 
     Benchmark(
-        "IPv4_String_Decoding_Zero_15M",
+        "IPv4_Parsing_Zero_15M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -38,10 +38,10 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: - IPv4_String_Decoding_Localhost
+    // MARK: - IPv4_Parsing_Localhost
 
     Benchmark(
-        "IPv4_String_Decoding_Localhost_15M",
+        "IPv4_Parsing_Localhost_15M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -54,10 +54,10 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: - IPv4_String_Decoding_Local_Broadcast
+    // MARK: - IPv4_Parsing_Local_Broadcast
 
     Benchmark(
-        "IPv4_String_Decoding_Local_Broadcast_15M",
+        "IPv4_Parsing_Local_Broadcast_15M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -71,7 +71,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv4_String_Decoding_Local_Broadcast_Malloc",
+        "IPv4_Parsing_Local_Broadcast_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -83,7 +83,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv4_String_Decoding_Local_Broadcast_Instructions",
+        "IPv4_Parsing_Local_Broadcast_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,
@@ -94,10 +94,10 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         blackHole(ip)
     }
 
-    // MARK: IPv4_String_Decoding_Broadcast_inet_pton
+    // MARK: IPv4_Parsing_Broadcast_inet_pton
 
     Benchmark(
-        "IPv4_String_Decoding_Local_Broadcast_inet_pton_8M",
+        "IPv4_Parsing_Local_Broadcast_inet_pton_8M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -114,7 +114,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv4_String_Decoding_Local_Broadcast_inet_pton_Malloc",
+        "IPv4_Parsing_Local_Broadcast_inet_pton_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -129,7 +129,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv4_String_Decoding_Local_Broadcast_inet_pton_Instructions",
+        "IPv4_Parsing_Local_Broadcast_inet_pton_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,
@@ -143,7 +143,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         blackHole(ipv4Address)
     }
 
-    // MARK: - IPv4_String_Decoding_Multiple_IPs
+    // MARK: - IPv4_Parsing_Multiple_IPs
 
     let ipv4MultipleIPs = [
         "127.0.0.1",
@@ -165,7 +165,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "IPv4_String_Decoding_Multiple_IPs_6M",
+        "IPv4_Parsing_Multiple_IPs_6M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -181,7 +181,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv4_String_Decoding_Multiple_IPs_Malloc",
+        "IPv4_Parsing_Multiple_IPs_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -195,7 +195,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv4_String_Decoding_Multiple_IPs_Instructions",
+        "IPv4_Parsing_Multiple_IPs_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,
@@ -208,10 +208,10 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: IPv4_String_Decoding_Multiple_IPs_inet_pton
+    // MARK: IPv4_Parsing_Multiple_IPs_inet_pton
 
     Benchmark(
-        "IPv4_String_Decoding_Multiple_IPs_inet_pton_6M",
+        "IPv4_Parsing_Multiple_IPs_inet_pton_6M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -230,7 +230,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv4_String_Decoding_Multiple_IPs_inet_pton_Malloc",
+        "IPv4_Parsing_Multiple_IPs_inet_pton_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -247,7 +247,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv4_String_Decoding_Multiple_IPs_inet_pton_Instructions",
+        "IPv4_Parsing_Multiple_IPs_inet_pton_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,

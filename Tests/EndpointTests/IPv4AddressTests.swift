@@ -29,16 +29,16 @@ struct IPv4AddressTests {
         #expect(ip.bytes == (0x7F, 0x00, 0x00, 0x01))
     }
 
-    @Test func `IPv4Address encode decode happy-path with span works correctly`() throws {
+    @Test func `IPv4Address serialize parse happy-path with span works correctly`() throws {
         let ip = IPv4Address(123, 251, 98, 234)
 
         let bufferPointer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: 20)
         defer { unsafe bufferPointer.deallocate() }
         var outputSpan = unsafe OutputSpan(buffer: bufferPointer, initializedCount: 0)
 
-        let didEncode = ip.encode(into: &outputSpan)
+        let didSerialize = ip.serialize(into: &outputSpan)
 
-        #expect(didEncode)
+        #expect(didSerialize)
         #expect(outputSpan.capacity == 20)
         #expect(outputSpan.freeCapacity == 16)
         #expect(outputSpan.count == 4)
@@ -51,9 +51,9 @@ struct IPv4AddressTests {
             #expect(data == [123, 251, 98, 234])
         }
 
-        let _decodedIP = IPv4Address(from: outputSpan.span)
-        let decodedIP = try #require(_decodedIP)
-        #expect(decodedIP == ip)
+        let _parsedIP = IPv4Address(parsing: outputSpan.span)
+        let parsedIP = try #require(_parsedIP)
+        #expect(parsedIP == ip)
     }
 
     @Test(arguments: IPTestCase<IPv4Address>.stringAndAddress.compactMap(\.ip))
@@ -80,9 +80,9 @@ struct IPv4AddressTests {
         let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: IPv4Address.size)
         defer { unsafe buffer.deallocate() }
         var outputSpan = unsafe OutputSpan(buffer: buffer, initializedCount: 0)
-        let didEncode = ip.encode(into: &outputSpan)
-        #expect(didEncode)
-        #expect(IPv4Address(from: outputSpan.span) == ip)
+        let didSerialize = ip.serialize(into: &outputSpan)
+        #expect(didSerialize)
+        #expect(IPv4Address(parsing: outputSpan.span) == ip)
     }
 
     @available(SwiftStdlib 6.2, *)

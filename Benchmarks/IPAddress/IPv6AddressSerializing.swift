@@ -18,15 +18,15 @@ import Darwin
 #elseif canImport(WASILibc)
 @preconcurrency import WASILibc
 #else
-#error("The IPv6AddressStringEncoding benchmarks module was unable to identify your C library.")
+#error("The IPv6AddressSerializing benchmarks module was unable to identify your C library.")
 #endif
 
 let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
-    // MARK: - IPv6_String_Encoding_Zero
+    // MARK: - IPv6_Serializing_Zero
 
     let ipv6Zero: IPv6Address = 0
     Benchmark(
-        "IPv6_String_Encoding_Zero_8M",
+        "IPv6_Serializing_Zero_8M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -39,11 +39,11 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: - IPv6_String_Encoding_Localhost
+    // MARK: - IPv6_Serializing_Localhost
 
     let ipv6Localhost: IPv6Address = 0x0000_0000_0000_0000_0000_0000_0000_0001
     Benchmark(
-        "IPv6_String_Encoding_Localhost_8M",
+        "IPv6_Serializing_Localhost_8M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -56,11 +56,11 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: - IPv6_String_Encoding_Compact
+    // MARK: - IPv6_Serializing_Compact
 
     let ipv6Compact: IPv6Address = 0x0001_0002_0000_0000_0000_0000_0003_0000
     Benchmark(
-        "IPv6_String_Encoding_Compact_5M",
+        "IPv6_Serializing_Compact_5M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -74,7 +74,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Encoding_Compact_Malloc",
+        "IPv6_Serializing_Compact_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -86,7 +86,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Encoding_Compact_Instructions",
+        "IPv6_Serializing_Compact_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,
@@ -97,14 +97,14 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         blackHole(description)
     }
 
-    // MARK: IPv6_String_Encoding_Compact_inet_ntop
+    // MARK: IPv6_Serializing_Compact_inet_ntop
 
     var ipv6CompactInetNtop = ipv6Compact.address
 
     /// inet_ntop expects the reverse byte-order but we don't account for that here.
 
     Benchmark(
-        "IPv6_String_Encoding_Compact_inet_ntop_1M",
+        "IPv6_Serializing_Compact_inet_ntop_1M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -132,7 +132,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Encoding_Compact_inet_ntop_Malloc",
+        "IPv6_Serializing_Compact_inet_ntop_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -162,7 +162,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Encoding_Compact_inet_ntop_Instructions",
+        "IPv6_Serializing_Compact_inet_ntop_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,
@@ -191,11 +191,11 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         blackHole(description)
     }
 
-    // MARK: - IPv6_String_Encoding_Max
+    // MARK: - IPv6_Serializing_Max
 
     let ipv6Max: IPv6Address = 0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF
     Benchmark(
-        "IPv6_String_Encoding_Max_3M",
+        "IPv6_Serializing_Max_3M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -208,11 +208,11 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: - IPv6_String_Encoding_Mixed
+    // MARK: - IPv6_Serializing_Mixed
 
     let ipv6Mixed: IPv6Address = 0x85a0_850a_8500_0000_0000_00af_805a_085a
     Benchmark(
-        "IPv6_String_Encoding_Mixed_3M",
+        "IPv6_Serializing_Mixed_3M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -226,7 +226,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Encoding_Mixed_Malloc",
+        "IPv6_Serializing_Mixed_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -238,7 +238,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Encoding_Mixed_Instructions",
+        "IPv6_Serializing_Mixed_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,
@@ -249,14 +249,14 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         blackHole(description)
     }
 
-    // MARK: IPv6_String_Encoding_Mixed_inet_ntop
+    // MARK: IPv6_Serializing_Mixed_inet_ntop
 
     var ipv6MixedInetNtop = ipv6Mixed.address
 
     /// inet_ntop expects the reverse byte-order but we don't account for that here.
 
     Benchmark(
-        "IPv6_String_Encoding_Mixed_inet_ntop_1M",
+        "IPv6_Serializing_Mixed_inet_ntop_1M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -284,7 +284,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Encoding_Mixed_inet_ntop_Malloc",
+        "IPv6_Serializing_Mixed_inet_ntop_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -314,7 +314,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Encoding_Mixed_inet_ntop_Instructions",
+        "IPv6_Serializing_Mixed_inet_ntop_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,
@@ -343,7 +343,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         blackHole(description)
     }
 
-    // MARK: - IPv6_String_Encoding_Multiple_IPs
+    // MARK: - IPv6_Serializing_Multiple_IPs
 
     let ipv6MultipleIPs: [IPv6Address] = [
         0x0000_0000_0000_0000_0000_0000_0000_0001,
@@ -365,7 +365,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "IPv6_String_Encoding_Multiple_IPs_3M",
+        "IPv6_Serializing_Multiple_IPs_3M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -381,7 +381,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Encoding_Multiple_IPs_Malloc",
+        "IPv6_Serializing_Multiple_IPs_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -395,7 +395,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Encoding_Multiple_IPs_Instructions",
+        "IPv6_Serializing_Multiple_IPs_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,
@@ -408,14 +408,14 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: IPv6_String_Encoding_Multiple_IPs_inet_ntop
+    // MARK: IPv6_Serializing_Multiple_IPs_inet_ntop
 
     let ipv6MultipleIPsInetNtop = ipv6MultipleIPs.map(\.address)
 
     /// inet_ntop expects the reverse byte-order but we don't account for that here.
 
     Benchmark(
-        "IPv6_String_Encoding_Multiple_IPs_inet_ntop_1M",
+        "IPv6_Serializing_Multiple_IPs_inet_ntop_1M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -446,7 +446,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Encoding_Multiple_IPs_inet_ntop_Malloc",
+        "IPv6_Serializing_Multiple_IPs_inet_ntop_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
@@ -478,7 +478,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "IPv6_String_Encoding_Multiple_IPs_inet_ntop_Instructions",
+        "IPv6_Serializing_Multiple_IPs_inet_ntop_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 1,

@@ -147,14 +147,16 @@ For `IPv6Address`, the Arpa domain name format is supported. For example the fol
 Below are benchmarks of this library against inet C-library APIs of macOS's Darwin and Linux's glibc.
 
 These benchmarks are meant to represent a slow-case scenario of real-world workloads.
+
 Each benchmark runs against 16 different IPs one by one in a random manner, via a constant seed to keep the benchmarks consistent across benchmark runs.
+
 This means the CPUs can't find a clear pattern and over-optimize any of the operations, which make the benchmarks less realistic.
 
 #### Against Darwin
 
 These were performed on my M1 Pro MacBook, on macOS 27.
 
-##### Average CPU User Time
+**Average CPU User Time**
 
 | IP Type | Operation   | Swift (ns/op) | inet_pton/ntop (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ---------------------- | ------- |
@@ -163,7 +165,7 @@ These were performed on my M1 Pro MacBook, on macOS 27.
 | IPv6    | Serializing | 82.7          | 355.0                  | 4.29x   |
 | IPv6    | Parsing     | 33.5          | 98.0                   | 2.93x   |
 
-##### Average Instructions Executed
+**Average Instructions Executed**
 
 | IP Type | Operation   | Swift (instr/op) | inet_pton/ntop (instr/op) | Speedup |
 | ------- | ----------- | ---------------- | ------------------------- | ------- |
@@ -180,7 +182,7 @@ These were performed on a dedicated-cpu-core machine from Hetzner in the Falkens
 
 > Host with 2 'x86_64' processors with 7 GB memory, running: #85-Ubuntu SMP PREEMPT_DYNAMIC
 
-##### Average CPU User Time
+**Average CPU User Time**
 
 | IP Type | Operation   | Swift (ns/op) | inet_pton/ntop (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ---------------------- | ------- |
@@ -189,7 +191,7 @@ These were performed on a dedicated-cpu-core machine from Hetzner in the Falkens
 | IPv6    | Serializing | 63.3          | 200.0                  | 3.16x   |
 | IPv6    | Parsing     | 42.5          | 46.7                   | 1.10x   |
 
-##### Average Instructions Executed
+**Average Instructions Executed**
 
 | IP Type | Operation   | Swift (instr/op) | inet_pton/ntop (instr/op) | Speedup |
 | ------- | ----------- | ---------------- | ------------------------- | ------- |

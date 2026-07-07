@@ -162,6 +162,9 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton
 
+    let cString2GroupsCompressedInTheMiddleNoBrackets =
+        "2001:0db8:85a3::8a2e:0370:7334".toCStringArray()
+
     Benchmark(
         "IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton_4M",
         configuration: .init(
@@ -172,8 +175,8 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     ) { benchmark in
         for _ in 0..<4_000_000 {
             var ipv6Address = in6_addr()
-            _ = "2001:0db8:85a3::8a2e:0370:7334".withCString { p in
-                unsafe inet_pton(AF_INET6, p, &ipv6Address)
+            _ = cString2GroupsCompressedInTheMiddleNoBrackets.withUnsafeBufferPointer { ptr in
+                unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, &ipv6Address)
             }
             blackHole(ipv6Address)
         }
@@ -188,8 +191,8 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var ipv6Address = in6_addr()
-        _ = "2001:0db8:85a3::8a2e:0370:7334".withCString { p in
-            unsafe inet_pton(AF_INET6, p, &ipv6Address)
+        _ = cString2GroupsCompressedInTheMiddleNoBrackets.withUnsafeBufferPointer { ptr in
+            unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, &ipv6Address)
         }
         blackHole(ipv6Address)
     }
@@ -203,8 +206,8 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var ipv6Address = in6_addr()
-        _ = "2001:0db8:85a3::8a2e:0370:7334".withCString { p in
-            unsafe inet_pton(AF_INET6, p, &ipv6Address)
+        _ = cString2GroupsCompressedInTheMiddleNoBrackets.withUnsafeBufferPointer { ptr in
+            unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, &ipv6Address)
         }
         blackHole(ipv6Address)
     }
@@ -276,6 +279,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv6_Parsing_Multiple_IPs_inet_pton
 
+    let ipv6MultipleIPsInet = ipv6MultipleIPs.map {
+        $0.toCStringArray()
+    }
+
     Benchmark(
         "IPv6_Parsing_Multiple_IPs_inet_pton_3M",
         configuration: .init(
@@ -288,8 +295,8 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         for _ in 0..<3_000_000 {
             var ipv6Address = in6_addr()
             let idx = Int(rng.next() % 16)
-            _ = ipv6MultipleIPs[idx].withCString { p in
-                unsafe inet_pton(AF_INET6, p, &ipv6Address)
+            _ = ipv6MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
+                unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, &ipv6Address)
             }
             blackHole(ipv6Address)
         }
@@ -303,10 +310,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        for ipString in ipv6MultipleIPs {
+        for idx in 0..<16 {
             var ipv6Address = in6_addr()
-            _ = ipString.withCString { p in
-                unsafe inet_pton(AF_INET6, p, &ipv6Address)
+            _ = ipv6MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
+                unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, &ipv6Address)
             }
             blackHole(ipv6Address)
         }
@@ -320,10 +327,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        for ipString in ipv6MultipleIPs {
+        for idx in 0..<16 {
             var ipv6Address = in6_addr()
-            _ = ipString.withCString { p in
-                unsafe inet_pton(AF_INET6, p, &ipv6Address)
+            _ = ipv6MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
+                unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, &ipv6Address)
             }
             blackHole(ipv6Address)
         }

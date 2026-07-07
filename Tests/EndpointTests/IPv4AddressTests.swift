@@ -129,6 +129,24 @@ struct IPv4AddressTests {
         }
     }
 
+    @Test func ipv4AddressFromStringAcrossBytes() {
+        let bytes: [UInt8] = [0, 1, 9, 10, 99, 100, 127, 128, 129, 199, 200, 249, 250, 255]
+        for byte1 in bytes {
+            for byte2 in bytes {
+                for byte3 in bytes {
+                    for byte4 in bytes {
+                        let string = "\(byte1).\(byte2).\(byte3).\(byte4)"
+                        let expected = IPv4Address(byte1, byte2, byte3, byte4)
+                        guard IPv4Address(string) == expected else {
+                            Issue.record("Mismatch for \(string.debugDescription)")
+                            return
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @available(SwiftStdlib 6.2, *)
     @Test(
         arguments: IPTestCase<IPv4Address>.stringAndAddress

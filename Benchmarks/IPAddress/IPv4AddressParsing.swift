@@ -96,6 +96,8 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv4_Parsing_Broadcast_inet_pton
 
+    let cStringBroadcastIP = "255.255.255.255".toCStringArray()
+
     Benchmark(
         "IPv4_Parsing_Local_Broadcast_inet_pton_8M",
         configuration: .init(
@@ -106,8 +108,8 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     ) { benchmark in
         for _ in 0..<8_000_000 {
             var ipv4Address = in_addr()
-            _ = "255.255.255.255".withCString { p in
-                unsafe inet_pton(AF_INET, p, &ipv4Address)
+            _ = cStringBroadcastIP.withUnsafeBufferPointer { ptr in
+                unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, &ipv4Address)
             }
             blackHole(ipv4Address)
         }
@@ -122,8 +124,8 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var ipv4Address = in_addr()
-        _ = "255.255.255.255".withCString { p in
-            unsafe inet_pton(AF_INET, p, &ipv4Address)
+        _ = cStringBroadcastIP.withUnsafeBufferPointer { ptr in
+            unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, &ipv4Address)
         }
         blackHole(ipv4Address)
     }
@@ -137,8 +139,8 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var ipv4Address = in_addr()
-        _ = "255.255.255.255".withCString { p in
-            unsafe inet_pton(AF_INET, p, &ipv4Address)
+        _ = cStringBroadcastIP.withUnsafeBufferPointer { ptr in
+            unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, &ipv4Address)
         }
         blackHole(ipv4Address)
     }
@@ -210,6 +212,10 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv4_Parsing_Multiple_IPs_inet_pton
 
+    let ipv4MultipleIPsInet = ipv4MultipleIPs.map {
+        $0.toCStringArray()
+    }
+
     Benchmark(
         "IPv4_Parsing_Multiple_IPs_inet_pton_6M",
         configuration: .init(
@@ -222,8 +228,8 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         for _ in 0..<6_000_000 {
             var ipv4Address = in_addr()
             let idx = Int(rng.next() % 16)
-            _ = ipv4MultipleIPs[idx].withCString { p in
-                unsafe inet_pton(AF_INET, p, &ipv4Address)
+            _ = ipv4MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
+                unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, &ipv4Address)
             }
             blackHole(ipv4Address)
         }
@@ -237,10 +243,10 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        for ipString in ipv4MultipleIPs {
+        for idx in 0..<16 {
             var ipv4Address = in_addr()
-            _ = ipString.withCString { p in
-                unsafe inet_pton(AF_INET, p, &ipv4Address)
+            _ = ipv4MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
+                unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, &ipv4Address)
             }
             blackHole(ipv4Address)
         }
@@ -254,10 +260,10 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        for ipString in ipv4MultipleIPs {
+        for idx in 0..<16 {
             var ipv4Address = in_addr()
-            _ = ipString.withCString { p in
-                unsafe inet_pton(AF_INET, p, &ipv4Address)
+            _ = ipv4MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
+                unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, &ipv4Address)
             }
             blackHole(ipv4Address)
         }

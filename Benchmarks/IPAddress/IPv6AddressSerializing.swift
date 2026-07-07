@@ -147,13 +147,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
                 addressBytesPtr.baseAddress!,
                 50
             )
-            let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
-                to: UInt8.self,
-                capacity: 50
-            ) {
-                unsafe String(cString: $0)
-            }
-            blackHole(description)
+            blackHole(addressBytesPtr)
         }
     }
 
@@ -173,13 +167,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
                 addressBytesPtr.baseAddress!,
                 50
             )
-            let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
-                to: UInt8.self,
-                capacity: 50
-            ) {
-                unsafe String(cString: $0)
-            }
-            blackHole(description)
+            blackHole(addressBytesPtr)
         }
     }
 
@@ -291,13 +279,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
                 addressBytesPtr.baseAddress!,
                 50
             )
-            let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
-                to: UInt8.self,
-                capacity: 50
-            ) {
-                unsafe String(cString: $0)
-            }
-            blackHole(description)
+            blackHole(addressBytesPtr)
         }
     }
 
@@ -317,13 +299,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
                 addressBytesPtr.baseAddress!,
                 50
             )
-            let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
-                to: UInt8.self,
-                capacity: 50
-            ) {
-                unsafe String(cString: $0)
-            }
-            blackHole(description)
+            blackHole(addressBytesPtr)
         }
     }
 
@@ -446,13 +422,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
                     addressBytesPtr.baseAddress!,
                     50
                 )
-                let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
-                    to: UInt8.self,
-                    capacity: 50
-                ) {
-                    unsafe String(cString: $0)
-                }
-                blackHole(description)
+                blackHole(addressBytesPtr)
             }
         }
     }
@@ -474,13 +444,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
                     addressBytesPtr.baseAddress!,
                     50
                 )
-                let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
-                    to: UInt8.self,
-                    capacity: 50
-                ) {
-                    unsafe String(cString: $0)
-                }
-                blackHole(description)
+                blackHole(addressBytesPtr)
             }
         }
     }

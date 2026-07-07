@@ -164,13 +164,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
                 addressBytesPtr.baseAddress!,
                 15
             )
-            let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
-                to: UInt8.self,
-                capacity: 15
-            ) {
-                unsafe String(cString: $0)
-            }
-            blackHole(description)
+            blackHole(addressBytesPtr)
         }
     }
 
@@ -190,13 +184,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
                 addressBytesPtr.baseAddress!,
                 15
             )
-            let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
-                to: UInt8.self,
-                capacity: 15
-            ) {
-                unsafe String(cString: $0)
-            }
-            blackHole(description)
+            blackHole(addressBytesPtr)
         }
     }
 
@@ -319,13 +307,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
                     addressBytesPtr.baseAddress!,
                     16
                 )
-                let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
-                    to: UInt8.self,
-                    capacity: 16
-                ) {
-                    unsafe String(cString: $0)
-                }
-                blackHole(description)
+                blackHole(addressBytesPtr)
             }
         }
     }
@@ -347,13 +329,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
                     addressBytesPtr.baseAddress!,
                     16
                 )
-                let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
-                    to: UInt8.self,
-                    capacity: 16
-                ) {
-                    unsafe String(cString: $0)
-                }
-                blackHole(description)
+                blackHole(addressBytesPtr)
             }
         }
     }

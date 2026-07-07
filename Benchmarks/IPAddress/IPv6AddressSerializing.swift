@@ -139,26 +139,22 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        var addressBytes: [Int8] = [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ]
-        let description = addressBytes.withUnsafeMutableBufferPointer {
-            (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) -> String in
+        withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) {
+            (addressBytesPtr: UnsafeMutableBufferPointer<Int8>) in
             unsafe inet_ntop(
                 AF_INET6,
                 &ipv6CompactInetNtop,
                 addressBytesPtr.baseAddress!,
                 50
             )
-            return unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
+            let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
                 to: UInt8.self,
                 capacity: 50
             ) {
                 unsafe String(cString: $0)
             }
+            blackHole(description)
         }
-        blackHole(description)
     }
 
     Benchmark(
@@ -169,26 +165,22 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        var addressBytes: [Int8] = [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ]
-        let description = addressBytes.withUnsafeMutableBufferPointer {
-            (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) -> String in
+        withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) {
+            (addressBytesPtr: UnsafeMutableBufferPointer<Int8>) in
             unsafe inet_ntop(
                 AF_INET6,
                 &ipv6CompactInetNtop,
                 addressBytesPtr.baseAddress!,
                 50
             )
-            return unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
+            let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
                 to: UInt8.self,
                 capacity: 50
             ) {
                 unsafe String(cString: $0)
             }
+            blackHole(description)
         }
-        blackHole(description)
     }
 
     // MARK: - IPv6_Serializing_Max
@@ -291,26 +283,22 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        var addressBytes: [Int8] = [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ]
-        let description = addressBytes.withUnsafeMutableBufferPointer {
-            (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) -> String in
+        withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) {
+            (addressBytesPtr: UnsafeMutableBufferPointer<Int8>) in
             unsafe inet_ntop(
                 AF_INET6,
                 &ipv6MixedInetNtop,
                 addressBytesPtr.baseAddress!,
                 50
             )
-            return unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
+            let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
                 to: UInt8.self,
                 capacity: 50
             ) {
                 unsafe String(cString: $0)
             }
+            blackHole(description)
         }
-        blackHole(description)
     }
 
     Benchmark(
@@ -321,26 +309,22 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        var addressBytes: [Int8] = [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ]
-        let description = addressBytes.withUnsafeMutableBufferPointer {
-            (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) -> String in
+        withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) {
+            (addressBytesPtr: UnsafeMutableBufferPointer<Int8>) in
             unsafe inet_ntop(
                 AF_INET6,
                 &ipv6MixedInetNtop,
                 addressBytesPtr.baseAddress!,
                 50
             )
-            return unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
+            let description = unsafe addressBytesPtr.baseAddress!.withMemoryRebound(
                 to: UInt8.self,
                 capacity: 50
             ) {
                 unsafe String(cString: $0)
             }
+            blackHole(description)
         }
-        blackHole(description)
     }
 
     // MARK: - IPv6_Serializing_Multiple_IPs
@@ -453,13 +437,9 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        var addressBytes: [Int8] = [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ]
-        addressBytes.withUnsafeMutableBufferPointer {
-            (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) in
-            for var address in ipv6MultipleIPsInetNtop {
+        for var address in ipv6MultipleIPsInetNtop {
+            withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) {
+                (addressBytesPtr: UnsafeMutableBufferPointer<Int8>) in
                 unsafe inet_ntop(
                     AF_INET6,
                     &address,
@@ -485,13 +465,9 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        var addressBytes: [Int8] = [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ]
-        addressBytes.withUnsafeMutableBufferPointer {
-            (addressBytesPtr: inout UnsafeMutableBufferPointer<Int8>) in
-            for var address in ipv6MultipleIPsInetNtop {
+        for var address in ipv6MultipleIPsInetNtop {
+            withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) {
+                (addressBytesPtr: UnsafeMutableBufferPointer<Int8>) in
                 unsafe inet_ntop(
                     AF_INET6,
                     &address,

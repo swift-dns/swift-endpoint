@@ -96,7 +96,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv4_Parsing_Broadcast_inet_pton
 
-    let cStringBroadcastIP = "255.255.255.255".toCStringArray()
+    let cStringBroadcastIP = "255.255.255.255".utf8CString
 
     Benchmark(
         "IPv4_Parsing_Local_Broadcast_inet_pton_8M",
@@ -212,9 +212,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv4_Parsing_Multiple_IPs_inet_pton
 
-    let ipv4MultipleIPsInet = ipv4MultipleIPs.map {
-        $0.toCStringArray()
-    }
+    let ipv4MultipleIPsInet = ipv4MultipleIPs.map(\.utf8CString)
 
     Benchmark(
         "IPv4_Parsing_Multiple_IPs_inet_pton_6M",

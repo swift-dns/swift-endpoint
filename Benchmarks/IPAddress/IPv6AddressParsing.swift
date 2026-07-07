@@ -163,7 +163,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton
 
     let cString2GroupsCompressedInTheMiddleNoBrackets =
-        "2001:0db8:85a3::8a2e:0370:7334".toCStringArray()
+        "2001:0db8:85a3::8a2e:0370:7334".utf8CString
 
     Benchmark(
         "IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton_4M",
@@ -279,9 +279,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv6_Parsing_Multiple_IPs_inet_pton
 
-    let ipv6MultipleIPsInet = ipv6MultipleIPs.map {
-        $0.toCStringArray()
-    }
+    let ipv6MultipleIPsInet = ipv6MultipleIPs.map(\.utf8CString)
 
     Benchmark(
         "IPv6_Parsing_Multiple_IPs_inet_pton_3M",

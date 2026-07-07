@@ -144,37 +144,21 @@ For `IPv6Address`, the Arpa domain name format is supported. For example the fol
 
 ## Performance
 
-Below are benchmarks of this library against inet C-library APIs of macOS's Darwin and Linux's glibc.
-
-These benchmarks are meant to represent a slow-case scenario of real-world workloads.
-
-Each benchmark runs against 16 different IPs one by one in a random manner, via a constant seed to keep the benchmarks consistent across benchmark runs.
-
-This means the CPUs can't find a clear pattern and over-optimize any of the operations, which make the benchmarks less realistic.
+* Below are benchmarks of this library against inet C-library APIs of macOS's Darwin and Linux's glibc.
+* These benchmarks are meant to represent a slow-case scenario of real-world workloads.
+* Each benchmark runs against 16 different IPs one by one in a random manner, via a constant seed to keep the benchmarks consistent across benchmark runs.
+* This means CPUs won't a clear pattern and over-optimize any of the operations, which would make the benchmarks less realistic.
 
 #### Against Darwin
 
 These were performed on my M1 Pro MacBook, on macOS 27.
 
-**Average CPU User Time**
-
-| IP Type | Operation   | Swift (ns/op) | inet_pton/ntop (ns/op) | Speedup |
-| ------- | ----------- | ------------- | ---------------------- | ------- |
-| IPv4    | Serializing | 14.6          | 241.0                  | 16.51x  |
-| IPv4    | Parsing     | 18.7          | 46.3                   | 2.48x   |
-| IPv6    | Serializing | 82.7          | 355.0                  | 4.29x   |
-| IPv6    | Parsing     | 33.5          | 98.0                   | 2.93x   |
-
-**Average Instructions Executed**
-
-| IP Type | Operation   | Swift (instr/op) | inet_pton/ntop (instr/op) | Speedup |
-| ------- | ----------- | ---------------- | ------------------------- | ------- |
-| IPv4    | Serializing | 298.4            | 3000.0                    | 10.05x  |
-| IPv4    | Parsing     | 196.8            | 687.5                     | 3.49x   |
-| IPv6    | Serializing | 1375.0           | 4500.0                    | 3.27x   |
-| IPv6    | Parsing     | 493.4            | 1625.0                    | 3.29x   |
-
-> On Darwin the tooling reports instruction counts of 10,000 or more rounded to the nearest thousand, so the `inet_pton/ntop` cells (and IPv6 serializing Swift) are approximate.
+| IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
+| ------- | ----------- | ------------- | ------------ | ------- |
+| IPv4    | Serializing | 14.6          | 241.0        | 16.51x  |
+| IPv4    | Parsing     | 18.7          | 46.3         | 2.48x   |
+| IPv6    | Serializing | 82.7          | 355.0        | 4.29x   |
+| IPv6    | Parsing     | 33.5          | 98.0         | 2.93x   |
 
 #### Against glibc
 
@@ -182,52 +166,12 @@ These were performed on a dedicated-cpu-core machine from Hetzner in the Falkens
 
 > Host with 2 'x86_64' processors with 7 GB memory, running: #85-Ubuntu SMP PREEMPT_DYNAMIC
 
-**Average CPU User Time**
-
-| IP Type | Operation   | Swift (ns/op) | inet_pton/ntop (ns/op) | Speedup |
-| ------- | ----------- | ------------- | ---------------------- | ------- |
-| IPv4    | Serializing | 20.0          | 130.0                  | 6.50x   |
-| IPv4    | Parsing     | 28.3          | 26.7                   | 0.94x   |
-| IPv6    | Serializing | 63.3          | 200.0                  | 3.16x   |
-| IPv6    | Parsing     | 42.5          | 46.7                   | 1.10x   |
-
-**Average Instructions Executed**
-
-| IP Type | Operation   | Swift (instr/op) | inet_pton/ntop (instr/op) | Speedup |
-| ------- | ----------- | ---------------- | ------------------------- | ------- |
-| IPv4    | Serializing | 371.2            | 1895.9                    | 5.11x   |
-| IPv4    | Parsing     | 327.1            | 350.6                     | 1.07x   |
-| IPv6    | Serializing | 1087.6           | 3310.3                    | 3.04x   |
-| IPv6    | Parsing     | 712.1            | 690.4                     | 0.97x   |
-
-#### Allocations
-
-Allocation counts are identical on Darwin and glibc.
-The numbers are sum of allocation counts for all the 16 different IPs.
-
-| IP Type | Operation   | Swift (allocs/16ops) | inet_pton/ntop (allocs/16ops) |
-| ------- | ----------- | -------------------- | ----------------------------- |
-| IPv4    | Serializing | 0                    | 0                             |
-| IPv4    | Parsing     | 0                    | 0                             |
-| IPv6    | Serializing | 14                   | 12                            |
-| IPv6    | Parsing     | 0                    | 0                             |
-
-<details>
-  <summary>Why swift-endpoint commits more allocations for IPv6 serialization?</summary>
-
-swift-endpoint is on average 3+ times faster in serializing ipv6 addresses, but sometimes it does an extra heap allocation when glibc/Darwin won't. Even though this extra allocation is not enough for the C APIs to beat swift-endpoint, here's why they happen at all:
-
-* IPv6 serialization, serializes the IPv6 into a `String`.
-* `String` has the ability to inline-allocate the characters if there are no more than 15 utf8 bytes.
-* The C APIs don't inform you of how many exact bytes they need to store the text representation of the IPv6. They simply expect you to hand them a pointer with enough space.
-* As a performance optimization for calling inet APIs, swift-endpoint benchmarks use stack allocations and passing that pointer to the C APIs.
-* After that, the C API benchmark make a `String` out of the parsed result. At this point, `String` knows exactly how many bytes it needs to allocate on the heap or if it can store the bytes inline.
-* swift-endpoint on the other hand doesn't do a stack allocation but for other parts of the parsing operation, it has to ask for 2 more bytes than the exact amount required to store the IPv6 text representation.
-* This is because swift-endpoint uses speculative writes when writing the IPv6 text representation, and needs a few bytes of headroom.
-* Using speculative writes, combined with a few other technique such as SWAR is what makes IPv6 not only fast, but also almost branchless.
-* So in cases where IPv6 serialization requires 14 or 15 utf8 bytes, via the C APIs it won't allocate anything on the heap and `String` will store the bytes inline, but via swift-endpoint, it has to ask for 14+2=16 or 15+2=17 bytes so `String` has to allocate on heap for the storage.
-
-</details>
+| IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
+| ------- | ----------- | ------------- | ------------ | ------- |
+| IPv4    | Serializing | 20.0          | 130.0        | 6.50x   |
+| IPv4    | Parsing     | 28.3          | 26.7         | 0.94x   |
+| IPv6    | Serializing | 63.3          | 200.0        | 3.16x   |
+| IPv6    | Parsing     | 42.5          | 46.7         | 1.10x   |
 
 #### Notes
 

@@ -348,7 +348,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv6_Serializing_Multiple_IPs_inet_ntop
 
-    let ipv6MultipleIPsInetNtop = ipv6MultipleIPs.map(\.address.bigEndian)
+    var ipv6MultipleIPsInetNtop = ipv6MultipleIPs.map(\.address.bigEndian)
 
     Benchmark(
         "IPv6_Serializing_Multiple_IPs_inet_ntop_1M",
@@ -361,11 +361,10 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         var rng = FastRNG()
         for _ in 0..<1_000_000 {
             let idx = Int(rng.next() % 16)
-            var address = ipv6MultipleIPsInetNtop[idx]
             withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) { ptr in
                 unsafe inet_ntop(
                     AF_INET6,
-                    &address,
+                    &ipv6MultipleIPsInetNtop[idx],
                     ptr.baseAddress.unsafelyUnwrapped,
                     50
                 )
@@ -382,11 +381,11 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        for var address in ipv6MultipleIPsInetNtop {
+        for idx in 0..<16 {
             withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) { ptr in
                 unsafe inet_ntop(
                     AF_INET6,
-                    &address,
+                    &ipv6MultipleIPsInetNtop[idx],
                     ptr.baseAddress.unsafelyUnwrapped,
                     50
                 )
@@ -403,11 +402,11 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        for var address in ipv6MultipleIPsInetNtop {
+        for idx in 0..<16 {
             withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) { ptr in
                 unsafe inet_ntop(
                     AF_INET6,
-                    &address,
+                    &ipv6MultipleIPsInetNtop[idx],
                     ptr.baseAddress.unsafelyUnwrapped,
                     50
                 )

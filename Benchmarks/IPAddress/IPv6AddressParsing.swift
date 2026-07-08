@@ -436,7 +436,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "IPv6_Parsing_Multiple_IPs_inet_pton_3M",
+        "IPv6_Parsing_Multiple_IPs_inet_pton_4M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -444,7 +444,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<3_000_000 {
+        for _ in 0..<4_000_000 {
             var ipv6Address = in6_addr()
             let idx = Int(rng.next() % UInt64(ipv6MultipleIPs.count))
             _ = ipv6MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in

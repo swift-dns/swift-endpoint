@@ -119,14 +119,14 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     var ipv4MixedInetNtop = ipv4Mixed.address.bigEndian
 
     Benchmark(
-        "IPv4_Serializing_Mixed_inet_ntop_1M",
+        "IPv4_Serializing_Mixed_inet_ntop_2M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<1_000_000 {
+        for _ in 0..<2_000_000 {
             withUnsafeTemporaryAllocation(of: Int8.self, capacity: 16) { ptr in
                 unsafe inet_ntop(
                     AF_INET,

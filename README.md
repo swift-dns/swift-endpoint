@@ -145,10 +145,14 @@ For `IPv6Address`, the Arpa domain name format is supported. For example the fol
 ## Performance
 
 * Below are benchmarks of this library against inet C-library APIs of macOS's Darwin and Linux's glibc.
+* **In all cases, swift-endpoint wins against the inet C APIs.**
 * These benchmarks are meant to represent a slow-case scenario of real-world workloads.
+* The C API benchmarks represent a C language user's experience. Meaning that they don't contain any overhead coming from interfacing with Swift.
+  * For example converting C character-strings to `String`s for ip-address->string conversions. Specially if the character-string is over 15 bytes of length, which would force `String` to incur a heap allocation.
+  * To give you an idea: in a simple usage of C APIs in Swift, C API results for parsing can be up to 3 times slower due to heap-allocated `String`. For serialization the overhead can be marginal, or up to 50% higher.
+  * The swift-endpoint API benchmarks go through those overheads anyway, such as the `String`'s heap-allocation, but they still manage to beat the C API benchmarks.
 * Each benchmark runs against 16 different IPs one by one in a random manner, via a constant seed to keep the benchmarks consistent across benchmark runs.
-  * This means CPUs won't a clear pattern and over-optimize any of the operations, which would make the benchmarks less realistic.
-* Swift interaction overheads are not taken into account in the C API benchmarks. For example converting C character-strings to `String`s in ip-address->string conversions. Specially if the character-string is over 15 bytes of length, which would force `String` to incur a heap allocation.
+  * This means CPUs won't find a clear pattern to over-optimize for in any of the operations, which would make the benchmarks less realistic.
 
 #### Against Darwin
 
@@ -172,7 +176,10 @@ These were performed on a dedicated-cpu-core machine from Hetzner, on Ubuntu 24.
 | IPv6    | Serializing | 70.0          | 160.0        | 2.29x   |
 | IPv6    | Parsing     | 35.0          | 40.0         | 1.14x   |
 
-#### Notes
+#### Additional Notes
 
-- To see up to date information about performance of this package, please go to this [benchmarks list](https://github.com/swift-dns/swift-endpoint/actions/workflows/benchmarks.yml?query=branch%3Amain), and choose the most recent benchmark. You'll see a summary of the benchmark there.
-- The results above are all reproducible by simply running `scripts/benchmark.bash` on a machine of your own.
+* To see up to date information about performance of this package, please go to this [benchmarks list](https://github.com/swift-dns/swift-endpoint/actions/workflows/benchmarks.yml?query=branch%3Amain), and choose the most recent benchmark. You'll see a summary of the benchmark there.
+* The results above are all reproducible by simply running `scripts/benchmark.bash` on a machine of your own.
+* It's worth noting that swift-endpoint APIs win in pretty much any other situation as well, as visible in the benchmarks.
+  * For example even if you run a benchmark over only 1 IP so CPUs can over-optimize for the specific IP's case and run it as fast as possible. This might even widen the speed gap and be advantageous to swift-endpoint APIs.
+  * This is to say the above tables are not an over-representation of this library's capabilities.

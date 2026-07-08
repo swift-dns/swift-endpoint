@@ -348,7 +348,25 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv6_Serializing_Multiple_IPs_inet_ntop
 
-    var ipv6MultipleIPsInetNtop = ipv6MultipleIPs.map(\.address.bigEndian)
+    /// Same as ipv6MultipleIPs.map(\.address.bigEndian) but inlined
+    var ipv6MultipleIPsInetNtop: [UInt128] = [
+        0x0100_0000_0000_0000_0000_0000_0000_0000,
+        0x1111_0000_0000_0000_0000_0047_0047_0626,
+        0x8888_0000_0000_0000_0000_6048_6048_0120,
+        0xFE00_0000_0000_0000_0000_0000_FE00_2026,
+        0x3500_0000_0000_0000_0000_3500_1901_2026,
+        0xDE25_0000_0CB0_CEFA_8501_77F1_8028_032A,
+        0x8A00_0000_0000_0000_150C_0140_5014_002A,
+        0xE584_1068_0000_0000_0000_0000_0047_0626,
+        0xA193_407C_215A_0100_0058_4122_0090_0026,
+        0x3473_7003_2E8A_0000_0000_A385_B80D_0120,
+        0x0808_0808_0000_0000_0000_0000_9BFF_6400,
+        0x0A89_6745_23FE_FF01_0000_0000_0000_80FE,
+        0x0100_0000_0000_0000_0000_0000_0000_02FF,
+        0x8001_0000_0000_0000_0022_0203_D041_0120,
+        0x0100_0000_0000_0000_560D_10C0_F804_012A,
+        0x0418_9FA2_0000_0000_0100_4920_00CB_0024,
+    ]
 
     Benchmark(
         "IPv6_Serializing_Multiple_IPs_inet_ntop_1M",

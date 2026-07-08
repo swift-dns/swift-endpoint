@@ -155,10 +155,10 @@ These were performed on my M1 Pro MacBook, on macOS 27.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 14.6          | 241.0        | 16.51x  |
-| IPv4    | Parsing     | 18.7          | 46.3         | 2.48x   |
-| IPv6    | Serializing | 82.7          | 355.0        | 4.29x   |
-| IPv6    | Parsing     | 33.5          | 98.0         | 2.93x   |
+| IPv4    | Serializing | 14.6          | 176.0        | 12.05x  |
+| IPv4    | Parsing     | 18.7          | 45.7         | 2.44x   |
+| IPv6    | Serializing | 81.0          | 236.0        | 2.91x   |
+| IPv6    | Parsing     | 33.8          | 96.3         | 2.85x   |
 
 #### Against glibc
 
@@ -168,14 +168,12 @@ These were performed on a dedicated-cpu-core machine from Hetzner in the Falkens
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 20.0          | 130.0        | 6.50x   |
-| IPv4    | Parsing     | 28.3          | 26.7         | 0.94x   |
-| IPv6    | Serializing | 63.3          | 200.0        | 3.16x   |
-| IPv6    | Parsing     | 42.5          | 46.7         | 1.10x   |
+| IPv4    | Serializing | 20.0          | 100.0        | 5.00x   |
+| IPv4    | Parsing     | 28.3          | 33.3         | 1.18x   |
+| IPv6    | Serializing | 63.3          | 170.0        | 2.69x   |
+| IPv6    | Parsing     | 42.5          | 50.0         | 1.18x   |
 
 #### Notes
 
 - To see up to date information about performance of this package, please go to this [benchmarks list](https://github.com/swift-dns/swift-endpoint/actions/workflows/benchmarks.yml?query=branch%3Amain), and choose the most recent benchmark. You'll see a summary of the benchmark there.
 - The results above are all reproducible by simply running `scripts/benchmark.bash` on a machine of your own.
-- All benchmarks on all platforms commit similar allocations.
-- 3 of the benchmarks always do `0`, `IPv6_Serializing_Mixed` always does `1`.

@@ -317,8 +317,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     ) { benchmark in
         var rng = FastRNG()
         for _ in 0..<4_000_000 {
-            let idx = Int(rng.next() % 16)
-            let ip = unsafe IPv6Address(ipv6MultipleIPs[idx].span).unsafelyUnwrapped
+            let idx = Int(rng.next() % UInt64(ipv6MultipleIPs.count))
+            let ip = unsafe IPv6Address(
+                textualRepresentation: ipv6MultipleIPs[idx].span
+            ).unsafelyUnwrapped
             blackHole(ip)
         }
     }
@@ -331,8 +333,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        for ipString in ipv6MultipleIPs {
-            let ip = unsafe IPv6Address(ipString.span).unsafelyUnwrapped
+        for idx in ipv6MultipleIPs.indices {
+            let ip = unsafe IPv6Address(
+                textualRepresentation: ipv6MultipleIPs[idx].span
+            ).unsafelyUnwrapped
             blackHole(ip)
         }
     }
@@ -345,8 +349,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        for ipString in ipv6MultipleIPs {
-            let ip = unsafe IPv6Address(ipString.span).unsafelyUnwrapped
+        for idx in ipv6MultipleIPs.indices {
+            let ip = unsafe IPv6Address(
+                textualRepresentation: ipv6MultipleIPs[idx].span
+            ).unsafelyUnwrapped
             blackHole(ip)
         }
     }
@@ -440,7 +446,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         var rng = FastRNG()
         for _ in 0..<3_000_000 {
             var ipv6Address = in6_addr()
-            let idx = Int(rng.next() % 16)
+            let idx = Int(rng.next() % UInt64(ipv6MultipleIPs.count))
             _ = ipv6MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
                 unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, &ipv6Address)
             }
@@ -456,7 +462,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        for idx in 0..<16 {
+        for idx in ipv6MultipleIPs.indices {
             var ipv6Address = in6_addr()
             _ = ipv6MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
                 unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, &ipv6Address)
@@ -473,7 +479,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        for idx in 0..<16 {
+        for idx in ipv6MultipleIPs.indices {
             var ipv6Address = in6_addr()
             _ = ipv6MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
                 unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, &ipv6Address)

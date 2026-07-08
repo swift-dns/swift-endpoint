@@ -196,7 +196,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     ) { benchmark in
         var rng = FastRNG()
         for _ in 0..<8_000_000 {
-            let idx = Int(rng.next() % 16)
+            let idx = Int(rng.next() % UInt64(ipv4MultipleIPs.count))
             let description = ipv4MultipleIPs[idx].description
             blackHole(description)
         }
@@ -210,8 +210,8 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        for ip in ipv4MultipleIPs {
-            let description = ip.description
+        for idx in ipv4MultipleIPs.indices {
+            let description = ipv4MultipleIPs[idx].description
             blackHole(description)
         }
     }
@@ -224,8 +224,8 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        for ip in ipv4MultipleIPs {
-            let description = ip.description
+        for idx in ipv4MultipleIPs.indices {
+            let description = ipv4MultipleIPs[idx].description
             blackHole(description)
         }
     }
@@ -250,7 +250,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     ) { benchmark in
         var rng = FastRNG()
         for _ in 0..<1_000_000 {
-            let idx = Int(rng.next() % 16)
+            let idx = Int(rng.next() % UInt64(ipv4MultipleIPs.count))
             withUnsafeTemporaryAllocation(of: Int8.self, capacity: 16) { ptr in
                 unsafe inet_ntop(
                     AF_INET,
@@ -271,7 +271,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        for idx in 0..<16 {
+        for idx in ipv4MultipleIPs.indices {
             withUnsafeTemporaryAllocation(of: Int8.self, capacity: 16) { ptr in
                 unsafe inet_ntop(
                     AF_INET,
@@ -292,7 +292,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        for idx in 0..<16 {
+        for idx in ipv4MultipleIPs.indices {
             withUnsafeTemporaryAllocation(of: Int8.self, capacity: 16) { ptr in
                 unsafe inet_ntop(
                     AF_INET,

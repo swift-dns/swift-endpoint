@@ -179,7 +179,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: - IPv4_Serializing_Multiple_IPs
 
-    let ipv4MultipleIPs: [IPv4Address] = [
+    let ipv4MultipleIPs: [16 of IPv4Address] = [
         0x7F_00_00_01, 0x01_01_01_01, 0x08_08_08_08, 0x09_09_09_09,
         0xFF_FF_FF_FF, 0xC0_A8_01_01, 0x0A_00_00_01, 0xAC_10_00_01,
         0x64_40_00_01, 0xD0_43_DE_DE, 0xB9_C7_6C_99, 0x97_65_01_8C,
@@ -233,7 +233,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     // MARK: IPv4_Serializing_Multiple_IPs_inet_ntop
 
     /// Same as ipv4MultipleIPs.map(\.address.bigEndian) but inlined
-    var ipv4MultipleIPsInetNtop: [UInt32] = [
+    var ipv4MultipleIPsInetNtop: [16 of UInt32] = [
         0x01_00_00_7F, 0x01_01_01_01, 0x08_08_08_08, 0x09_09_09_09,
         0xFF_FF_FF_FF, 0x01_01_A8_C0, 0x01_00_00_0A, 0x01_00_10_AC,
         0x01_00_40_64, 0xDE_DE_43_D0, 0x99_6C_C7_B9, 0x8C_01_65_97,

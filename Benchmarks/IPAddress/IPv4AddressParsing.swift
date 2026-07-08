@@ -147,23 +147,74 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: - IPv4_Parsing_Multiple_IPs
 
-    let ipv4MultipleIPs = [
-        "127.0.0.1",
-        "1.1.1.1",
-        "8.8.8.8",
-        "9.9.9.9",
-        "255.255.255.255",
-        "192.168.1.1",
-        "10.0.0.1",
-        "172.16.0.1",
-        "100.64.0.1",
-        "208.67.222.222",
-        "185.199.108.153",
-        "151.101.1.140",
-        "104.16.132.229",
-        "142.250.185.78",
-        "13.107.42.14",
-        "23.185.0.2",
+    // [
+    //     "127.0.0.1",
+    //     "1.1.1.1",
+    //     "8.8.8.8",
+    //     "9.9.9.9",
+    //     "255.255.255.255",
+    //     "192.168.1.1",
+    //     "10.0.0.1",
+    //     "172.16.0.1",
+    //     "100.64.0.1",
+    //     "208.67.222.222",
+    //     "185.199.108.153",
+    //     "151.101.1.140",
+    //     "104.16.132.229",
+    //     "142.250.185.78",
+    //     "13.107.42.14",
+    //     "23.185.0.2",
+    // ]
+    let ipv4MultipleIPs: [16 of [UInt8]] = [
+        [0x31, 0x32, 0x37, 0x2E, 0x30, 0x2E, 0x30, 0x2E, 0x31],
+        [0x31, 0x2E, 0x31, 0x2E, 0x31, 0x2E, 0x31],
+        [0x38, 0x2E, 0x38, 0x2E, 0x38, 0x2E, 0x38],
+        [0x39, 0x2E, 0x39, 0x2E, 0x39, 0x2E, 0x39],
+        [
+            0x32, 0x35, 0x35, 0x2E, 0x32, 0x35, 0x35, 0x2E,
+            0x32, 0x35, 0x35, 0x2E, 0x32, 0x35, 0x35
+        ],
+        [
+            0x31, 0x39, 0x32, 0x2E, 0x31, 0x36, 0x38, 0x2E,
+            0x31, 0x2E, 0x31,
+        ],
+        [0x31, 0x30, 0x2E, 0x30, 0x2E, 0x30, 0x2E, 0x31],
+        [
+            0x31, 0x37, 0x32, 0x2E, 0x31, 0x36, 0x2E, 0x30, 0x2E,
+            0x31,
+        ],
+        [
+            0x31, 0x30, 0x30, 0x2E, 0x36, 0x34, 0x2E, 0x30, 0x2E,
+            0x31
+        ],
+        [
+            0x32, 0x30, 0x38, 0x2E, 0x36, 0x37, 0x2E, 0x32, 0x32,
+            0x32, 0x2E, 0x32, 0x32, 0x32
+        ],
+        [
+            0x31, 0x38, 0x35, 0x2E, 0x31, 0x39, 0x39, 0x2E, 0x31,
+            0x30, 0x38, 0x2E, 0x31, 0x35, 0x33
+        ],
+        [
+            0x31, 0x35, 0x31, 0x2E, 0x31, 0x30, 0x31, 0x2E, 0x31,
+            0x2E, 0x31, 0x34, 0x30
+        ],
+        [
+            0x31, 0x30, 0x34, 0x2E, 0x31, 0x36, 0x2E, 0x31, 0x33,
+            0x32, 0x2E, 0x32, 0x32, 0x39
+        ],
+        [
+            0x31, 0x34, 0x32, 0x2E, 0x32, 0x35, 0x30, 0x2E, 0x31,
+            0x38, 0x35, 0x2E, 0x37, 0x38
+        ],
+        [
+            0x31, 0x33, 0x2E, 0x31, 0x30, 0x37, 0x2E, 0x34, 0x32,
+            0x2E, 0x31, 0x34
+        ],
+        [
+            0x32, 0x33, 0x2E, 0x31, 0x38, 0x35, 0x2E, 0x30, 0x2E,
+            0x32
+        ],
     ]
 
     Benchmark(
@@ -177,7 +228,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         var rng = FastRNG()
         for _ in 0..<6_000_000 {
             let idx = Int(rng.next() % 16)
-            let ip = unsafe IPv4Address(ipv4MultipleIPs[idx]).unsafelyUnwrapped
+            let ip = unsafe IPv4Address(ipv4MultipleIPs[idx].span).unsafelyUnwrapped
             blackHole(ip)
         }
     }
@@ -191,7 +242,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for ipString in ipv4MultipleIPs {
-            let ip = unsafe IPv4Address(ipString).unsafelyUnwrapped
+            let ip = unsafe IPv4Address(ipString.span).unsafelyUnwrapped
             blackHole(ip)
         }
     }
@@ -205,7 +256,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for ipString in ipv4MultipleIPs {
-            let ip = unsafe IPv4Address(ipString).unsafelyUnwrapped
+            let ip = unsafe IPv4Address(ipString.span).unsafelyUnwrapped
             blackHole(ip)
         }
     }
@@ -213,7 +264,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: IPv4_Parsing_Multiple_IPs_inet_pton
 
     /// Same as ipv4MultipleIPs.map(\.utf8CString) but inlined
-    let ipv4MultipleIPsInet: [[Int8]] = [
+    let ipv4MultipleIPsInet: [16 of [Int8]] = [
         [0x31, 0x32, 0x37, 0x2E, 0x30, 0x2E, 0x30, 0x2E, 0x31, 0x0],
         [0x31, 0x2E, 0x31, 0x2E, 0x31, 0x2E, 0x31, 0x0],
         [0x38, 0x2E, 0x38, 0x2E, 0x38, 0x2E, 0x38, 0x0],

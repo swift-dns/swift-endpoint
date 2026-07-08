@@ -283,7 +283,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: - IPv6_Serializing_Multiple_IPs
 
-    let ipv6MultipleIPs: [IPv6Address] = [
+    let ipv6MultipleIPs: [16 of IPv6Address] = [
         0x0000_0000_0000_0000_0000_0000_0000_0001,
         0x2606_4700_4700_0000_0000_0000_0000_1111,
         0x2001_4860_4860_0000_0000_0000_0000_8888,
@@ -349,7 +349,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
     // MARK: IPv6_Serializing_Multiple_IPs_inet_ntop
 
     /// Same as ipv6MultipleIPs.map(\.address.bigEndian) but inlined
-    var ipv6MultipleIPsInetNtop: [UInt128] = [
+    var ipv6MultipleIPsInetNtop: [16 of UInt128] = [
         0x0100_0000_0000_0000_0000_0000_0000_0000,
         0x1111_0000_0000_0000_0000_0047_0047_0626,
         0x8888_0000_0000_0000_0000_6048_6048_0120,

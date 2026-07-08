@@ -147,7 +147,8 @@ For `IPv6Address`, the Arpa domain name format is supported. For example the fol
 * Below are benchmarks of this library against inet C-library APIs of macOS's Darwin and Linux's glibc.
 * These benchmarks are meant to represent a slow-case scenario of real-world workloads.
 * Each benchmark runs against 16 different IPs one by one in a random manner, via a constant seed to keep the benchmarks consistent across benchmark runs.
-* This means CPUs won't a clear pattern and over-optimize any of the operations, which would make the benchmarks less realistic.
+  * This means CPUs won't a clear pattern and over-optimize any of the operations, which would make the benchmarks less realistic.
+* Swift interaction overheads are not taken into account in the C API benchmarks. For example converting C character-strings to `String`s in ip-address->string conversions. Specially if the character-string is over 15 bytes of length, which would force `String` to incur a heap allocation.
 
 #### Against Darwin
 
@@ -155,23 +156,21 @@ These were performed on my M1 Pro MacBook, on macOS 27.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 14.6          | 176.0        | 12.05x  |
-| IPv4    | Parsing     | 18.7          | 45.7         | 2.44x   |
-| IPv6    | Serializing | 81.0          | 236.0        | 2.91x   |
-| IPv6    | Parsing     | 33.8          | 96.3         | 2.85x   |
+| IPv4    | Serializing | 16.1          | 176.0        | 10.93x  |
+| IPv4    | Parsing     | 14.3          | 45.7         | 3.20x   |
+| IPv6    | Serializing | 81.7          | 236.0        | 2.89x   |
+| IPv6    | Parsing     | 29.3          | 96.0         | 3.28x   |
 
 #### Against glibc
 
-These were performed on a dedicated-cpu-core machine from Hetzner in the Falkenstein region.
-
-> Host with 2 'x86_64' processors with 7 GB memory, running: #85-Ubuntu SMP PREEMPT_DYNAMIC
+These were performed on a dedicated-cpu-core machine from Hetzner, on Ubuntu 24.04.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 20.0          | 100.0        | 5.00x   |
-| IPv4    | Parsing     | 28.3          | 33.3         | 1.18x   |
-| IPv6    | Serializing | 63.3          | 170.0        | 2.69x   |
-| IPv6    | Parsing     | 42.5          | 50.0         | 1.18x   |
+| IPv4    | Serializing | 21.3          | 100.0        | 4.69x   |
+| IPv4    | Parsing     | 18.3          | 25.0         | 1.37x   |
+| IPv6    | Serializing | 70.0          | 160.0        | 2.29x   |
+| IPv6    | Parsing     | 35.0          | 40.0         | 1.14x   |
 
 #### Notes
 

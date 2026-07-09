@@ -39,7 +39,7 @@ The package contains a great amount of unit tests as well as benchmarks to ensur
 - [Performance](#performance)
   - [Against Darwin](#against-darwin)
   - [Against glibc](#against-glibc)
-  - [Notes](#notes)
+  - [Additional Notes](#additional-notes)
 
 ## Implementations
 
@@ -161,9 +161,9 @@ These were performed on my M1 Pro MacBook, on macOS 27.
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
 | IPv4    | Serializing | 16.1          | 176.0        | 10.93x  |
-| IPv4    | Parsing     | 14.3          | 45.7         | 3.20x   |
-| IPv6    | Serializing | 81.7          | 236.0        | 2.89x   |
-| IPv6    | Parsing     | 29.3          | 96.0         | 3.28x   |
+| IPv4    | Parsing     | 14.4          | 45.8         | 3.18x   |
+| IPv6    | Serializing | 84.0          | 237.0        | 2.82x   |
+| IPv6    | Parsing     | 29.3          | 96.5         | 3.29x   |
 
 #### Against glibc
 
@@ -171,10 +171,10 @@ These were performed on a dedicated-cpu-core machine from Hetzner, on Ubuntu 24.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 21.3          | 100.0        | 4.69x   |
-| IPv4    | Parsing     | 18.3          | 25.0         | 1.37x   |
+| IPv4    | Serializing | 20.0          | 100.0        | 5.00x   |
+| IPv4    | Parsing     | 17.0          | 25.0         | 1.47x   |
 | IPv6    | Serializing | 70.0          | 160.0        | 2.29x   |
-| IPv6    | Parsing     | 35.0          | 40.0         | 1.14x   |
+| IPv6    | Parsing     | 32.5          | 40.0         | 1.23x   |
 
 #### Additional Notes
 

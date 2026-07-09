@@ -149,7 +149,7 @@ For `IPv6Address`, the Arpa domain name format is supported. For example the fol
 * These benchmarks are meant to represent a slow-case scenario of real-world workloads.
 * The C API benchmarks represent a C language user's experience. Meaning that they don't contain any overhead coming from interfacing with Swift.
   * For example converting C character-strings to `String`s for ip-address->string conversions. Specially if the character-string is over 15 bytes of length, which would force `String` to incur a heap allocation.
-  * To give you an idea: in a simple usage of C APIs in Swift, C API results for parsing can be up to 3 times slower due to heap-allocated `String`. For serialization the overhead can be marginal, or up to 50% higher.
+  * To give you an idea: in a simple usage of C APIs in Swift, C API results for serialization can be up to 3 times slower due to heap-allocated `String`. For parsing the overhead can be marginal, or up to 50% higher.
   * The swift-endpoint API benchmarks go through those overheads anyway, such as the `String`'s heap-allocation, but they still manage to beat the C API benchmarks.
 * Each benchmark runs against 16 different IPs one by one in a random manner, via a constant seed to keep the benchmarks consistent across benchmark runs.
   * This means CPUs won't find a clear pattern to over-optimize for in any of the operations, which would make the benchmarks less realistic.

@@ -149,6 +149,7 @@ public struct IPv6Address: Sendable, Hashable {
     /// result in an IP address equal to `0102:0304:0506:0708:090A:0B0C:0D0E:0F10`.
     /// Or `IPv6Address(0x0102)` will result in an IP address equal to `::0102`.
     @available(SwiftStdlib 6.0, *)
+    @_disfavoredOverload
     public init(_ address: UInt128) {
         self.address = UnsignedInteger128(address)
     }

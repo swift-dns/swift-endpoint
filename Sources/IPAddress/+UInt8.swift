@@ -76,7 +76,7 @@ extension UInt8 {
 
         let shift = (count &- 1) &* 8
         let multiplier0 = (0x0064_0A00 as UInt32) &>> shift & 0xFF
-        let multiplier1 = (0x000A_0000 as UInt32) &>> shift & 0xFF
+        let multiplier1 = (0x0A_0000 as UInt32) &>> shift & 0xFF
 
         let value =
             UInt32(digit0) &* multiplier0

@@ -17,7 +17,6 @@ extension IPv4Address: CustomStringConvertible {
     /// Writes the textual representation of this address into `buffer` and returns the number of
     /// bytes written. `buffer` must have a capacity of at least 15 bytes.
     @inlinable
-    @inline(__always)
     func writeTextualRepresentation_RequiringMinimumCapacityOf15(
         into buffer: UnsafeMutableRawBufferPointer
     ) -> Int {
@@ -117,7 +116,6 @@ extension IPv4Address: LosslessStringConvertible {
     }
 
     @inlinable
-    @inline(__always)
     static func parseIPv4(
         span: Span<UInt8>,
         address: inout UInt32
@@ -176,7 +174,6 @@ extension IPv4Address: LosslessStringConvertible {
     }
 
     @inlinable
-    @inline(__always)
     static func _parseSegment(
         from span: Span<UInt8>,
         count: Int,

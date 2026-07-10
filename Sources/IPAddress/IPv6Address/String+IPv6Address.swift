@@ -32,7 +32,6 @@ extension IPv6Address: CustomDebugStringConvertible {
 @available(SwiftStdlib 5.1, *)
 extension IPv6Address {
     @inlinable
-    @inline(__always)
     package func makeDescription<Buffer>(
         enclosingInSquareBrackets: Bool,
         writingToUnsafeMutableBufferPointerOfUInt8: (
@@ -75,10 +74,13 @@ extension IPv6Address {
 
                 unsafe buffer[writeIdx] = .asciiColon
                 unsafe buffer[writeIdx &+ 1] = .asciiColon
-                /// We've reserved 2 speculative bytes worth of room so this is safe:
+                /// We've reserved 3 speculative bytes worth of room so this is safe:
                 writeIdx &+= idx == writeCsAtIdx ? 1 : 0
                 writeIdx &+= offset == 0 ? 0 : 1
 
+                /// We've reserved 3 speculative bytes worth of room so this is safe.
+                /// The forth byte is included in the reserved room since even a 0 segment needs 1 byte.
+                /// So the 4 needed bytes of room are all present.
                 unsafe self._writeSegmentAsLowercasedHexASCII_RequiringMinimumCapacityOf4(
                     into: buffer,
                     advancingIdx: &writeIdx,
@@ -86,7 +88,8 @@ extension IPv6Address {
                 )
             }
 
-            /// We've reserved 2 speculative bytes worth of room so this is safe:
+            /// We've reserved 3 speculative bytes worth of room so this is safe.
+            /// Also the tests would catch if there is an issue anyway
             unsafe buffer[writeIdx] = .asciiColon
             unsafe buffer[writeIdx &+ 1] = .asciiColon
             writeIdx &+= entry.writeCsAtEnd ? 2 : 0
@@ -103,7 +106,6 @@ extension IPv6Address {
     /// Returns a UInt8, each bit representing whether
     /// the corresponding IPv6 segment is all-zero (1) or not (0).
     @inlinable
-    @inline(__always)
     func makeSegmentsMask() -> UInt8 {
         let highNibble = IPv6Address.makeNibbleFor4Segments(of: self.address._high)
         let lowNibble = IPv6Address.makeNibbleFor4Segments(of: self.address._low)
@@ -113,7 +115,6 @@ extension IPv6Address {
     /// Makes a nibble for 4 segments of a 64-bit word,
     /// each bit representing whether the segment is all-zero (1) or not (0).
     @inlinable
-    @inline(__always)
     static func makeNibbleFor4Segments(of word: UInt64) -> UInt8 {
         /// 4x 16 bit lanes, each for a segment
         /// `0x7FFF` == `0b0111_1111_1111_1111`
@@ -145,7 +146,6 @@ extension IPv6Address {
     /// Counts the number of digits that will need to be written excluding the trailing
     /// digit that is always written even if it's 0.
     @inlinable
-    @inline(__always)
     func countDigitsRequiredToPrintExcludingTrailingDigits() -> Int {
         let high = IPv6Address.countDigitsRequiredToPrintExcludingTrailingDigits(
             of: self.address._high
@@ -161,7 +161,6 @@ extension IPv6Address {
     /// That is, for each segment, 0 if the segment is in range `0x0...0xF`, up to 3 if
     /// the segment is in range `0x1000...0xFFFF`. All-zero segments count as 0.
     @inlinable
-    @inline(__always)
     static func countDigitsRequiredToPrintExcludingTrailingDigits(of word: UInt64) -> Int {
         /// 4x 16 bit lanes, each for a segment
         /// `0x7777` == `0b0111_0111_0111_0111`
@@ -205,7 +204,6 @@ extension IPv6Address {
     /// The 16-bit segment at `segmentIdx`.
     /// Unchecked because `segmentIdx` is required to be in range of `0...7`.
     @inlinable
-    @inline(__always)
     func _segment(atUncheckedIndex segmentIdx: Int) -> UInt16 {
         assert(segmentIdx >= 0 && segmentIdx <= 7)
         let word = segmentIdx < 4 ? self.address._high : self.address._low
@@ -214,7 +212,6 @@ extension IPv6Address {
     }
 
     @inlinable
-    @inline(__always)
     func _writeSegmentAsLowercasedHexASCII_RequiringMinimumCapacityOf4(
         into buffer: UnsafeMutableBufferPointer<UInt8>,
         advancingIdx idx: inout Int,
@@ -330,7 +327,6 @@ extension IPv6Address: LosslessStringConvertible {
     }
 
     @inlinable
-    @inline(__always)
     static func parseIPv6(
         span: Span<UInt8>,
         address: inout _CompatibilityUInt128Typealias
@@ -524,7 +520,6 @@ extension IPv6Address {
         }
 
         @inlinable
-        @inline(__always)
         package func unpack() -> Unpacked {
             Unpacked(
                 packedIndices: UInt(truncatingIfNeeded: self.rawValue & 0xFF_FFFF),
@@ -538,7 +533,6 @@ extension IPv6Address {
     }
 
     @inlinable
-    @inline(__always)
     package static func entry(
         forMask mask: UInt8
     ) -> SegmentWriteTableEntry.Unpacked {

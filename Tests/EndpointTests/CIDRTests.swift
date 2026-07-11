@@ -716,7 +716,6 @@ extension _IPAddressProtocolAddressValueType {
 
 @available(SwiftStdlib 6.0, *)
 extension String {
-    @_disfavoredOverload
     fileprivate init<T: _IPAddressProtocolAddressValueType>(value: T, radix: Int) {
         switch T.self {
         case is UInt32.Type:

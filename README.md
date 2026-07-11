@@ -179,7 +179,7 @@ These were performed on a dedicated-cpu-core machine from Hetzner, on Ubuntu 24.
 #### Additional Notes
 
 * To see up to date information about performance of this package, please go to this [benchmarks list](https://github.com/swift-dns/swift-endpoint/actions/workflows/benchmarks.yml?query=branch%3Amain), and choose the most recent benchmark. You'll see a summary of the benchmark there.
-* The results above are all reproducible by simply running `scripts/benchmark.bash` on a machine of your own.
+* The results above are all reproducible by simply running `scripts/benchmark.sh` on a machine of your own.
 * It's worth noting that swift-endpoint APIs win in pretty much any other situation as well, as visible in the benchmarks.
   * For example even if you run a benchmark over only 1 IP so CPUs can over-optimize for the specific IP's case and run it as fast as possible. This might even widen the speed gap and be advantageous to swift-endpoint APIs.
   * This is to say the above tables are not an over-representation of this library's capabilities.

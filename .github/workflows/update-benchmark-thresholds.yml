@@ -27,6 +27,11 @@ on:
         description: "Regex filter for benchmark names to skip. If not provided, no benchmarks will be skipped."
         required: false
         type: string
+      swift_version:
+        description: "Swiftly Swift toolchain selector string to run benchmarks with. Empty uses the machine default. Example: '6.4.x-snapshot'. Must be pre-installed on the machine."
+        required: false
+        type: string
+        default: ""
 
 defaults:
   run:
@@ -44,6 +49,9 @@ jobs:
     permissions:
       pull-requests: write # For the comment action
       contents: write # For the committing the changes
+
+    env:
+      TOOLCHAIN_MODIFIER: ${{ inputs.swift_version && format('+{0}', inputs.swift_version) || '' }}
 
     steps:
       - name: Generate swift-dns-helper token
@@ -101,7 +109,9 @@ jobs:
           RUN_COUNT: ${{ inputs.run_count }}
         run: |
           COMMAND=(
-            swift package -c release
+            swiftly run swift ${TOOLCHAIN_MODIFIER}
+            package
+            -c release
             --package-path Benchmarks
             --allow-writing-to-package-directory
             benchmark thresholds update

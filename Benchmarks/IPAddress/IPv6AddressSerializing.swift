@@ -89,7 +89,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         "IPv6_Serializing_Compact_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 1,
+            warmupIterations: 10,
             maxIterations: 10
         )
     ) { benchmark in
@@ -145,7 +145,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         "IPv6_Serializing_Compact_inet_ntop_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 1,
+            warmupIterations: 10,
             maxIterations: 10
         )
     ) { benchmark in
@@ -210,7 +210,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         "IPv6_Serializing_Mixed_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 1,
+            warmupIterations: 10,
             maxIterations: 10
         )
     ) { benchmark in
@@ -266,7 +266,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         "IPv6_Serializing_Mixed_inet_ntop_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 1,
+            warmupIterations: 10,
             maxIterations: 10
         )
     ) { benchmark in
@@ -336,7 +336,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         "IPv6_Serializing_Multiple_IPs_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 1,
+            warmupIterations: 10,
             maxIterations: 10
         )
     ) { benchmark in
@@ -416,7 +416,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         "IPv6_Serializing_Multiple_IPs_inet_ntop_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 1,
+            warmupIterations: 10,
             maxIterations: 10
         )
     ) { benchmark in

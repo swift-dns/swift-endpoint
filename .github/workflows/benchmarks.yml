@@ -177,14 +177,26 @@ jobs:
           git config --global user.email "${{ vars.SWIFT_DNS_HELPER_BOT_ID }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ github.repository }}.git"
 
+      - name: Resolve Swift toolchain for cache key
+        id: swift-toolchain
+        run: |
+          SWIFT_VERSION_OUTPUT="$(swiftly run swift ${TOOLCHAIN_MODIFIER} --version)"
+          TOOLCHAIN_ID="$(printf '%s\n' "${SWIFT_VERSION_OUTPUT}" | sed -n 's/.*Swift version \([^ ]*\).*/\1/p' | head -n 1)"
+          if [[ -z "${TOOLCHAIN_ID}" ]]; then
+            printf '%s\n' "Failed to resolve Swift toolchain version from 'swift --version' output:" >&2
+            printf '%s\n' "${SWIFT_VERSION_OUTPUT}" >&2
+            exit 1
+          fi
+          printf '%s\n' "version=${TOOLCHAIN_ID}" >> "${GITHUB_OUTPUT}"
+
       - name: Restore .build
         if: ${{ runner.debug != '1' }}
         id: restore-cache
         uses: actions/cache/restore@v6
         with:
           path: Benchmarks/.build
-          key: "swiftpm-benchmark-build-${{ runner.os }}-${{ steps.commit-info.outputs.sha }}"
-          restore-keys: "swiftpm-benchmark-build-${{ runner.os }}-"
+          key: "swiftpm-benchmark-build-${{ runner.os }}-${{ steps.swift-toolchain.outputs.version }}-${{ steps.commit-info.outputs.sha }}"
+          restore-keys: "swiftpm-benchmark-build-${{ runner.os }}-${{ steps.swift-toolchain.outputs.version }}-"
 
       - name: Run benchmarks for '${{ steps.commit-info.outputs.title }}'
         run: |
@@ -244,7 +256,7 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: Benchmarks/.build
-          key: "swiftpm-benchmark-build-${{ runner.os }}-${{ steps.commit-info.outputs.sha }}"
+          key: "swiftpm-benchmark-build-${{ runner.os }}-${{ steps.swift-toolchain.outputs.version }}-${{ steps.commit-info.outputs.sha }}"
 
       - name: Update thresholds based on the failed benchmark
         if: steps.comparison.outputs.exit-status != '0'

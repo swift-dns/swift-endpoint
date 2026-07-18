@@ -120,10 +120,18 @@ struct ConnectionTargetTests {
 
 #if os(macOS) || os(Linux)
 extension ConnectionTargetTests {
-    @Test(arguments: [-1, 65536, Int.min, Int.max])
-    func `Port initializer crashes when the value is out of bounds`(value: Int) async {
-        await #expect(processExitsWith: .failure) { [value] in
-            blackHole(Port(value))
+    @Test func `Port initializer crashes when the value is out of bounds`() async {
+        await #expect(processExitsWith: .failure) {
+            blackHole(Port(identity(-1)))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(Port(identity(65536)))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(Port(identity(Int.min)))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(Port(identity(Int.max)))
         }
     }
 }

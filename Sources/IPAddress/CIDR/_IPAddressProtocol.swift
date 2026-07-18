@@ -38,7 +38,7 @@ extension _IPAddressProtocol {
     /// [IETF RFC 4632]: https://datatracker.ietf.org/doc/html/rfc4632
     @inlinable
     public var isContiguous: Bool {
-        self.address.nonzeroBitCount == (~self.address).leadingZeroBitCount
+        self.address == ~(AddressValueType.max >> (~self.address).leadingZeroBitCount)
     }
 }
 
@@ -54,7 +54,6 @@ public protocol _IPAddressProtocolAddressValueType:
     static var max: Self { get }
     var trailingZeroBitCount: Int { get }
     var leadingZeroBitCount: Int { get }
-    var nonzeroBitCount: Int { get }
 
     static func >> (lhs: Self, rhs: Int) -> Self
 

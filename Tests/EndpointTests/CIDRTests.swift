@@ -921,3 +921,27 @@ private let ipv6CIDRTruncationArguments: [TruncationTestCase] = [
         )
     ),
 ]
+
+#if os(macOS) || os(Linux)
+extension CIDRTests {
+    @available(SwiftStdlib 5.1, *)
+    @Test(arguments: [-1, 33, Int.min, Int.max])
+    func `ipv4 CIDR standard initializer crashes when prefixLength is out of bounds`(
+        prefixLength: Int
+    ) async {
+        await #expect(processExitsWith: .failure) { [prefixLength] in
+            blackHole(CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: prefixLength))
+        }
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test(arguments: [-1, 129, Int.min, Int.max])
+    func `ipv6 CIDR standard initializer crashes when prefixLength is out of bounds`(
+        prefixLength: Int
+    ) async {
+        await #expect(processExitsWith: .failure) { [prefixLength] in
+            blackHole(CIDR(prefix: IPv6Address(0x1), prefixLength: prefixLength))
+        }
+    }
+}
+#endif

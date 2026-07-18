@@ -117,3 +117,14 @@ struct ConnectionTargetTests {
         #expect(Port(canonicalValue: 8080).description == "Port(8080)")
     }
 }
+
+#if os(macOS) || os(Linux)
+extension ConnectionTargetTests {
+    @Test(arguments: [-1, 65536, Int.min, Int.max])
+    func `Port initializer crashes when the value is out of bounds`(value: Int) async {
+        await #expect(processExitsWith: .failure) { [value] in
+            blackHole(Port(value))
+        }
+    }
+}
+#endif

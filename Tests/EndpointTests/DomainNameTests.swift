@@ -596,3 +596,53 @@ private func enumeratedTopDomains() -> EnumeratedSequence<[String]> {
     .map(String.init)
     .enumerated()
 }
+
+#if os(macOS) || os(Linux)
+#if DEBUG
+extension DomainNameTests {
+    @available(SwiftStdlib 5.1, *)
+    @Test func `Label unchecked initializer crashes on empty bytes in debug builds`() async {
+        await #expect(processExitsWith: .failure) {
+            _ = DomainName.Label(_uncheckedAssumingValidBytes: ByteBuffer())
+        }
+    }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test func `Label unchecked initializer crashes on too-long bytes in debug builds`() async {
+        await #expect(processExitsWith: .failure) {
+            _ = DomainName.Label(
+                _uncheckedAssumingValidBytes: ByteBuffer(bytes: [UInt8](repeating: 0x61, count: 64))
+            )
+        }
+    }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test func `Label unchecked initializer crashes on invalid bytes in debug builds`() async {
+        await #expect(processExitsWith: .failure) {
+            _ = DomainName.Label(_uncheckedAssumingValidBytes: ByteBuffer([65]))
+        }
+    }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test func `DomainName unchecked initializer crashes on invalid label bytes in debug builds`()
+        async
+    {
+        await #expect(processExitsWith: .failure) {
+            _ = DomainName(_uncheckedAssumingValidWireFormatBytes: ByteBuffer([1, 65]))
+        }
+    }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test func `DomainName unchecked initializer crashes on too-long labels in debug builds`() async
+    {
+        await #expect(processExitsWith: .failure) {
+            _ = DomainName(
+                _uncheckedAssumingValidWireFormatBytes: ByteBuffer(
+                    bytes: [64] + [UInt8](repeating: 0x61, count: 64)
+                )
+            )
+        }
+    }
+}
+#endif
+#endif

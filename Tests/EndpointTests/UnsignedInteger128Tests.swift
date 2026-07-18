@@ -2,6 +2,13 @@ import IPAddress
 import Synchronization
 import Testing
 
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+/// We're in tests so should be fine
+import Foundation
+#endif
+
 @Suite
 struct UnsignedInteger128Tests {
     @available(SwiftStdlib 6.0, *)
@@ -603,6 +610,45 @@ struct UnsignedInteger128Tests {
     }
 
     @available(SwiftStdlib 6.0, *)
+    @Test(
+        arguments: [
+            "abc",
+            "12a",
+            "-1",
+            "+1",
+            " 1",
+            "1 ",
+        ]
+    )
+    func `init from invalid description is nil`(description: String) {
+        #expect(UnsignedInteger128(description) == nil)
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `Codable round-trip works as expected`() throws {
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        for lhs in generateRandomUInt128s() {
+            let unsignedInteger128 = UnsignedInteger128(lhs)
+            let encoded = try encoder.encode(unsignedInteger128)
+            #expect(String(decoding: encoded, as: UTF8.self) == "\"\(lhs.description)\"")
+            let decoded = try decoder.decode(UnsignedInteger128.self, from: encoded)
+            #expect(decoded == unsignedInteger128)
+        }
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `decoding an invalid description throws`() {
+        let decoder = JSONDecoder()
+        #expect(throws: DecodingError.self) {
+            try decoder.decode(
+                UnsignedInteger128.self,
+                from: Data("\"not-a-number\"".utf8)
+            )
+        }
+    }
+
+    @available(SwiftStdlib 6.0, *)
     private func generateRandomUInt128Pairs(
         range: ClosedRange<UInt128> = .min ... .max
     ) -> some Sequence<(UInt128, UInt128)> {
@@ -652,3 +698,127 @@ struct UnsignedInteger128Tests {
         return randomPairs
     }
 }
+
+#if os(macOS) || os(Linux)
+extension UnsignedInteger128Tests {
+    @available(SwiftStdlib 6.0, *)
+    @Test func `verify addition overflow crash against UInt128`() async {
+        await #expect(processExitsWith: .failure) {
+            let lhs = UnsignedInteger128(_low: .max, _high: identity(UInt64.max))
+            blackHole(lhs + UnsignedInteger128(_low: 1, _high: 0))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(identity(UInt128.max) + 1)
+        }
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `verify subtraction underflow crash against UInt128`() async {
+        await #expect(processExitsWith: .failure) {
+            let lhs = UnsignedInteger128(_low: identity(UInt64.zero), _high: 0)
+            blackHole(lhs - UnsignedInteger128(_low: 1, _high: 0))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(identity(UInt128.zero) - 1)
+        }
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `verify multiplication overflow crash against UInt128`() async {
+        await #expect(processExitsWith: .failure) {
+            let lhs = UnsignedInteger128(_low: .max, _high: identity(UInt64.max))
+            blackHole(lhs * UnsignedInteger128(_low: 2, _high: 0))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(identity(UInt128.max) * 2)
+        }
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `verify division by zero crash against UInt128`() async {
+        await #expect(processExitsWith: .failure) {
+            let divisor = UnsignedInteger128(_low: identity(UInt64.zero), _high: 0)
+            blackHole(UnsignedInteger128(_low: 2, _high: 0) / divisor)
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(UInt128(2) / identity(UInt128.zero))
+        }
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `verify remainder by zero crash against UInt128`() async {
+        await #expect(processExitsWith: .failure) {
+            let divisor = UnsignedInteger128(_low: identity(UInt64.zero), _high: 0)
+            blackHole(UnsignedInteger128(_low: 2, _high: 0) % divisor)
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(UInt128(2) % identity(UInt128.zero))
+        }
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `verify out-of-range integer initializer crash against UInt128`() async {
+        await #expect(processExitsWith: .failure) {
+            blackHole(UnsignedInteger128(identity(-1 as Int)))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(UInt128(identity(-1 as Int)))
+        }
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `verify out-of-range float initializer crash against UInt128`() async {
+        await #expect(processExitsWith: .failure) {
+            blackHole(UnsignedInteger128(identity(-1.0)))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(UInt128(identity(-1.0)))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(UnsignedInteger128(identity(0x1.0p128)))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(UInt128(identity(0x1.0p128)))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(UnsignedInteger128(identity(Double.nan)))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(UInt128(identity(Double.nan)))
+        }
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `verify out-of-bounds words subscript crash against UInt128`() async {
+        await #expect(processExitsWith: .failure) {
+            blackHole(UnsignedInteger128.zero.words[identity(-1)])
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(UInt128.zero.words[identity(-1)])
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(UnsignedInteger128.zero.words[identity(2)])
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(UInt128.zero.words[identity(2)])
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(UnsignedInteger128.zero.words[identity(Int.max)])
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(UInt128.zero.words[identity(Int.max)])
+        }
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `verify too-large distance crash against UInt128`() async {
+        await #expect(processExitsWith: .failure) {
+            let other = UnsignedInteger128(_low: 0, _high: identity(UInt64(1)))
+            blackHole(UnsignedInteger128.zero.distance(to: other))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(UInt128.zero.distance(to: identity(UInt128(1) << 64)))
+        }
+    }
+}
+#endif

@@ -46,15 +46,6 @@ extension IPv4Address: CustomStringConvertible {
     }
 }
 
-@available(SwiftStdlib 5.1, *)
-extension IPv4Address: CustomDebugStringConvertible {
-    /// The textual representation of an IPv4 address appropriate for debugging.
-    @inlinable
-    public var debugDescription: String {
-        "IPv4Address(\(self.description))"
-    }
-}
-
 @available(SwiftStdlib 6.2, *)
 extension IPv4Address {
     /// Initialize an IPv4 address from a `UTF8Span` of its textual representation.

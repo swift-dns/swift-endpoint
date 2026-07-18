@@ -118,6 +118,19 @@ struct IPv6AddressTests {
         #expect(parsedIP == ip)
     }
 
+    @available(SwiftStdlib 6.2, *)
+    @Test(arguments: 0..<16)
+    func `IPv6Address span parsing and serialization reject spans that are too small`(count: Int) {
+        let bytes = [UInt8](repeating: 0x1F, count: count)
+        #expect(IPv6Address(parsing: bytes.span) == nil)
+
+        let bufferPointer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: count)
+        defer { unsafe bufferPointer.deallocate() }
+        var outputSpan = unsafe OutputSpan(buffer: bufferPointer, initializedCount: 0)
+        let didSerialize = IPv6Address(0x1).serialize(into: &outputSpan)
+        #expect(!didSerialize)
+    }
+
     @available(SwiftStdlib 6.0, *)
     @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress.compactMap(\.ip))
     func ipv6AddressDescription(ipv6: IPv6Address, expectedDescription: String) {
@@ -201,7 +214,31 @@ struct IPv6AddressTests {
                     "b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6.arpa."
                 ),
                 IPv6Address("4321:0:1:2:3:4:567:89ab")!
-            )
+            ),
+            (
+                try! DomainName(
+                    "b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6"
+                ),
+                nil
+            ),
+            (
+                try! DomainName(
+                    "b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.arpa"
+                ),
+                nil
+            ),
+            (
+                try! DomainName(
+                    "b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6.arpe"
+                ),
+                nil
+            ),
+            (
+                try! DomainName(
+                    "b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ipx.arpa"
+                ),
+                nil
+            ),
         ]
     )
     func ipv6AddressFromStringThroughArpaDomainNameHardcodedCases(
@@ -223,41 +260,7 @@ struct IPv6AddressTests {
         let isValidIPv4 = testCase.isValidAsOtherIPVersion
 
         let plainIPv6Address = IPv6Address(string)
-        let arpa: String? = plainIPv6Address.map { address in
-            let bytes = address.bytes
-            func byteToLabel(_ byte: UInt8) -> String {
-                let _1 = String(byte & 0xF, radix: 16)
-                let _2 = String(byte >> 4, radix: 16)
-                return "\(_1).\(_2)"
-            }
-            let byte0 = byteToLabel(bytes.0)
-            let byte1 = byteToLabel(bytes.1)
-            let byte2 = byteToLabel(bytes.2)
-            let byte3 = byteToLabel(bytes.3)
-            let byte4 = byteToLabel(bytes.4)
-            let byte5 = byteToLabel(bytes.5)
-            let byte6 = byteToLabel(bytes.6)
-            let byte7 = byteToLabel(bytes.7)
-            let byte8 = byteToLabel(bytes.8)
-            let byte9 = byteToLabel(bytes.9)
-            let byte10 = byteToLabel(bytes.10)
-            let byte11 = byteToLabel(bytes.11)
-            let byte12 = byteToLabel(bytes.12)
-            let byte13 = byteToLabel(bytes.13)
-            let byte14 = byteToLabel(bytes.14)
-            let byte15 = byteToLabel(bytes.15)
-            let segment1 = "\(byte1).\(byte0)"
-            let segment2 = "\(byte3).\(byte2)"
-            let segment3 = "\(byte5).\(byte4)"
-            let segment4 = "\(byte7).\(byte6)"
-            let segment5 = "\(byte9).\(byte8)"
-            let segment6 = "\(byte11).\(byte10)"
-            let segment7 = "\(byte13).\(byte12)"
-            let segment8 = "\(byte15).\(byte14)"
-            let firstHalf = "\(segment8).\(segment7).\(segment6).\(segment5)"
-            let secondHalf = "\(segment4).\(segment3).\(segment2).\(segment1)"
-            return "\(firstHalf).\(secondHalf).ip6.arpa."
-        }
+        let arpa: String? = plainIPv6Address.map(\.arpaDomainNameString)
         let domainName = arpa.flatMap { try? DomainName($0) }
 
         let ipv6Address1 = domainName.flatMap { IPv6Address(arpaDomainName: $0) }
@@ -323,8 +326,7 @@ struct IPv6AddressTests {
     @available(SwiftStdlib 6.2, *)
     @Test(arguments: IPTestCase<AnyIPAddress>.rawByteReject)
     func `Non-ASCII byte inputs are rejected by the parser`(bytes: [UInt8]) {
-        let span = bytes.span
-        #expect(IPv6Address(textualRepresentation: span) == nil)
+        #expect(IPv6Address(textualRepresentation: bytes.span) == nil)
     }
 
     @available(SwiftStdlib 5.1, *)

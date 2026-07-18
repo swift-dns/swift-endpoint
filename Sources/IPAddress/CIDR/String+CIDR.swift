@@ -7,22 +7,12 @@ extension CIDR: CustomStringConvertible {
     }
 }
 
-@available(SwiftStdlib 5.1, *)
-extension CIDR: CustomDebugStringConvertible {
-    /// The textual representation of the CIDR, in form `IPAddressType(<ip-address>)/<prefix-length>`.
-    /// For example `"IPv4Address(192.168.1.98)/24"`, or `"IPv6Address([2001:db8:1111::])/64"`.
-    public var debugDescription: String {
-        "\(self.prefix.debugDescription)/\(self.prefixLength)"
-    }
-}
-
 @available(SwiftStdlib 6.2, *)
 extension CIDR {
     /// Initialize an CIDR from a `UTF8Span` of its textual representation.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
-    /// This initializer tolerates and clamps the prefix length if needed.
-    /// For example it'll ignore if the mask is greater than the address size.
-    /// e.g. 2001::/220 will be clamped to 2001::/128.
+    /// Prefix lengths greater than the address size are rejected.
+    /// e.g. 2001::/220 will result in nil.
     /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
     @inlinable
@@ -35,9 +25,8 @@ extension CIDR {
 extension CIDR: LosslessStringConvertible {
     /// Initialize an CIDR from its textual representation.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
-    /// This initializer tolerates and clamps the prefix length if needed.
-    /// For example it'll ignore if the mask is greater than the address size.
-    /// e.g. 2001::/220 will be clamped to 2001::/128.
+    /// Prefix lengths greater than the address size are rejected.
+    /// e.g. 2001::/220 will result in nil.
     /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
     public init?(_ description: String) {
@@ -54,9 +43,8 @@ extension CIDR: LosslessStringConvertible {
 
     /// Initialize an CIDR from its textual representation.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
-    /// This initializer tolerates and clamps the prefix length if needed.
-    /// For example it'll ignore if the mask is greater than the address size.
-    /// e.g. 2001::/220 will be clamped to 2001::/128.
+    /// Prefix lengths greater than the address size are rejected.
+    /// e.g. 2001::/220 will result in nil.
     /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
     public init?(_ description: Substring) {
@@ -73,9 +61,8 @@ extension CIDR: LosslessStringConvertible {
 
     /// Initialize an CIDR from a `Span<UInt8>` of its textual representation.
     /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
-    /// This initializer tolerates and clamps the prefix length if needed.
-    /// For example it'll ignore if the mask is greater than the address size.
-    /// e.g. 2001::/220 will be clamped to 2001::/128.
+    /// Prefix lengths greater than the address size are rejected.
+    /// e.g. 2001::/220 will result in nil.
     /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
     @inlinable
@@ -97,11 +84,16 @@ extension CIDR: LosslessStringConvertible {
                 let prefixLengthSpan = unsafe span.extracting(unchecked: maskSpanRange)
                 guard
                     let prefix = IPAddressType(textualRepresentation: prefixSpan),
-                    let prefixLength = UInt8(decimalRepresentation: prefixLengthSpan)
+                    let prefixLength = UInt8(decimalRepresentation: prefixLengthSpan),
+                    prefixLength <= AddressValueType.bitWidth
                 else {
                     return nil
                 }
-                self.init(prefix: prefix, prefixLength: prefixLength)
+
+                self.init(
+                    prefix: prefix,
+                    prefixLength: Int(prefixLength)
+                )
                 return
             }
         }
@@ -111,6 +103,6 @@ extension CIDR: LosslessStringConvertible {
         guard let prefix = IPAddressType(textualRepresentation: span) else {
             return nil
         }
-        self.init(prefix: prefix, prefixLength: UInt8(AddressValueType.bitWidth))
+        self.init(prefix: prefix, prefixLength: AddressValueType.bitWidth)
     }
 }

@@ -45,6 +45,32 @@ struct IPv4MappedIPv6TestCase: Sendable {
     }
 }
 
+extension IPv4Address {
+    @available(SwiftStdlib 5.1, *)
+    var arpaDomainNameString: String {
+        let bytes = self.bytes
+        return "\(bytes.3).\(bytes.2).\(bytes.1).\(bytes.0).in-addr.arpa."
+    }
+}
+
+extension IPv6Address {
+    @available(SwiftStdlib 5.1, *)
+    var arpaDomainNameString: String {
+        let bytes = self.bytes
+        let reversedBytes = [
+            bytes.15, bytes.14, bytes.13, bytes.12, bytes.11, bytes.10, bytes.9, bytes.8,
+            bytes.7, bytes.6, bytes.5, bytes.4, bytes.3, bytes.2, bytes.1, bytes.0,
+        ]
+        var labels: [String] = []
+        labels.reserveCapacity(32)
+        for byte in reversedBytes {
+            labels.append(String(byte & 0xF, radix: 16))
+            labels.append(String(byte >> 4, radix: 16))
+        }
+        return labels.joined(separator: ".") + ".ip6.arpa."
+    }
+}
+
 extension IPTestCase where IPAddressType == IPv4Address {
     @available(SwiftStdlib 5.1, *)
     var asAnyIPAddress: IPTestCase<AnyIPAddress>? {

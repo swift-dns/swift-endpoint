@@ -56,6 +56,18 @@ struct IPv4AddressTests {
         #expect(parsedIP == ip)
     }
 
+    @available(SwiftStdlib 6.2, *)
+    @Test func `IPv4Address span parsing and serialization reject spans that are too small`() {
+        let bytes: [UInt8] = [123, 251, 98]
+        #expect(IPv4Address(parsing: bytes.span) == nil)
+
+        let bufferPointer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: 3)
+        defer { unsafe bufferPointer.deallocate() }
+        var outputSpan = unsafe OutputSpan(buffer: bufferPointer, initializedCount: 0)
+        let didSerialize = IPv4Address(123, 251, 98, 234).serialize(into: &outputSpan)
+        #expect(!didSerialize)
+    }
+
     @Test(arguments: IPTestCase<IPv4Address>.stringAndAddress.compactMap(\.ip))
     func ipv4AddressDescription(ip: IPv4Address, expectedDescription: String) {
         #expect(ip.description == expectedDescription)
@@ -210,6 +222,36 @@ struct IPv4AddressTests {
                 }
             }
         }
+    }
+
+    @available(SwiftStdlib 6.2, *)
+    @Test(
+        arguments: [
+            (domainName: String, viaDomainName: IPv4Address?, viaArpaDomainName: IPv4Address?)
+        ]([
+            (
+                domainName: "4.3.2.1.in-addr.arpa",
+                viaDomainName: IPv4Address(1, 2, 3, 4),
+                viaArpaDomainName: IPv4Address(1, 2, 3, 4)
+            ),
+            (domainName: "4.3.2.1.in-addr.arpe", viaDomainName: nil, viaArpaDomainName: nil),
+            (domainName: "4.3.2.1.xn-addr.arpa", viaDomainName: nil, viaArpaDomainName: nil),
+            (domainName: "1.2.3", viaDomainName: nil, viaArpaDomainName: nil),
+            (
+                domainName: "1.2.3.4",
+                viaDomainName: IPv4Address(1, 2, 3, 4),
+                viaArpaDomainName: nil
+            ),
+        ])
+    )
+    func ipv4AddressFromArpaDomainNameHardcodedCases(
+        domainName: String,
+        viaDomainName: IPv4Address?,
+        viaArpaDomainName: IPv4Address?
+    ) throws {
+        let domainName = try DomainName(domainName)
+        #expect(IPv4Address(domainName: domainName) == viaDomainName)
+        #expect(IPv4Address(arpaDomainName: domainName) == viaArpaDomainName)
     }
 
     @available(SwiftStdlib 6.2, *)

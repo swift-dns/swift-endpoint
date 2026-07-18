@@ -10,10 +10,16 @@ struct DomainNameTests {
             (domainName: "*", isFQDN: false, data: ByteBuffer([1, 42])),
             (domainName: ".", isFQDN: true, data: ByteBuffer([])),
             (domainName: "\u{3002}", isFQDN: true, data: ByteBuffer([])),
+            (domainName: "\u{FF0E}", isFQDN: true, data: ByteBuffer([])),
+            (domainName: "\u{FF61}", isFQDN: true, data: ByteBuffer([])),
             (domainName: "a", isFQDN: false, data: ByteBuffer([1, 97])),
+            (domainName: "ab\u{3002}", isFQDN: true, data: ByteBuffer([2, 97, 98])),
+            (domainName: "ab\u{FF0E}", isFQDN: true, data: ByteBuffer([2, 97, 98])),
+            (domainName: "ab\u{FF61}", isFQDN: true, data: ByteBuffer([2, 97, 98])),
             (domainName: "*.b", isFQDN: false, data: ByteBuffer([1, 42, 1, 98])),
             (domainName: "a.b", isFQDN: false, data: ByteBuffer([1, 97, 1, 98])),
             (domainName: "*.b.c", isFQDN: false, data: ByteBuffer([1, 42, 1, 98, 1, 99])),
+            (domainName: "*.b.c.", isFQDN: true, data: ByteBuffer([1, 42, 1, 98, 1, 99])),
             (domainName: "a.b.c", isFQDN: false, data: ByteBuffer([1, 97, 1, 98, 1, 99])),
             (domainName: "a.b.c.", isFQDN: true, data: ByteBuffer([1, 97, 1, 98, 1, 99])),
             (
@@ -42,6 +48,14 @@ struct DomainNameTests {
                     2, 99, 111, 2, 117, 107,
                 ])
             ),
+            (
+                domainName: "helloß.co.uk",
+                isFQDN: false,
+                data: ByteBuffer([
+                    13, 120, 110, 45, 45, 104, 101, 108, 108, 111, 45, 112, 113, 97,
+                    2, 99, 111, 2, 117, 107,
+                ])
+            ),
         ]
     )
     func initFromString(domainName: String, isFQDN: Bool, data: ByteBuffer) throws {
@@ -58,6 +72,12 @@ struct DomainNameTests {
             #expect(domainName.isFQDN == isFQDN)
             #expect(domainName._data == data)
         }
+
+        if #available(SwiftStdlib 6.2, *) {
+            let domainName = try DomainName(textualRepresentation: domainName.utf8Span)
+            #expect(domainName.isFQDN == isFQDN)
+            #expect(domainName._data == data)
+        }
     }
 
     @Test(
@@ -66,15 +86,26 @@ struct DomainNameTests {
             "",
             "\(Array(repeating: "j", count: 64).joined()).example.com.",
             "s\(Array(repeating: "]", count: 61).joined())s.example.com.",
+            "\(Array(repeating: Array(repeating: "j", count: 63).joined(), count: 4).joined(separator: ".")).com",
             "..",
             "...",
             "....",
             ".........",
+            "a\u{3002}\u{3002}",
+            "a\u{3002}.",
         ]
     )
     func initInvalidFromString(domainName: String) throws {
         #expect(throws: (any Error).self) {
             try DomainName(domainName)
+        }
+        #expect(throws: (any Error).self) {
+            try DomainName(Substring(domainName))
+        }
+        if #available(SwiftStdlib 6.2, *) {
+            #expect(throws: (any Error).self) {
+                try DomainName(textualRepresentation: domainName.utf8Span)
+            }
         }
     }
 
@@ -177,6 +208,20 @@ struct DomainNameTests {
         #expect(weirdUnicodeLowercaseDomain != weirdPartiallyUppercaseDomain)
         #expect(weirdUnicodeLowercaseDomain != weirdUppercaseDomain)
         #expect(weirdPartiallyUppercaseDomain == weirdUppercaseDomain)
+
+        /// Hashing must be consistent with `==`, which ignores the FQDN flag.
+        #expect(domainName.hashValue == duplicate.hashValue)
+        #expect(domainName.hashValue == uppercased.hashValue)
+        #expect(domainName.hashValue == notFQDN.hashValue)
+        #expect(Set([domainName, duplicate, uppercased, notFQDN]).count == 1)
+    }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test func isRoot() throws {
+        #expect(DomainName.root.isRoot)
+        #expect(try DomainName(".").isRoot)
+        #expect(try !DomainName("ab.").isRoot)
+        #expect(try !DomainName("ab").isRoot)
     }
 
     @available(SwiftStdlib 5.1, *)
@@ -211,6 +256,16 @@ struct DomainNameTests {
                 options: .includeRootLabelIndicator
             ) == domainName
         )
+    }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test func `description falls back to ascii when IDNA to-unicode conversion fails`() {
+        let label: [UInt8] = Array("xn--999999999".utf8)
+        let domainName = DomainName(
+            isFQDN: false,
+            _uncheckedAssumingValidWireFormatBytes: ByteBuffer([UInt8(label.count)] + label)
+        )
+        #expect(domainName.description(format: .unicode) == "xn--999999999")
     }
 
     @Test(
@@ -249,6 +304,7 @@ struct DomainNameTests {
 
     @Test(
         arguments: [
+            (domainName: ".", isWildcard: false),
             (domainName: "*", isWildcard: true),
             (domainName: "a", isWildcard: false),
             (domainName: "*.b", isWildcard: true),
@@ -540,3 +596,53 @@ private func enumeratedTopDomains() -> EnumeratedSequence<[String]> {
     .map(String.init)
     .enumerated()
 }
+
+#if os(macOS) || os(Linux)
+#if DEBUG
+extension DomainNameTests {
+    @available(SwiftStdlib 5.1, *)
+    @Test func `Label unchecked initializer crashes on empty bytes in debug builds`() async {
+        await #expect(processExitsWith: .failure) {
+            _ = DomainName.Label(_uncheckedAssumingValidBytes: ByteBuffer())
+        }
+    }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test func `Label unchecked initializer crashes on too-long bytes in debug builds`() async {
+        await #expect(processExitsWith: .failure) {
+            _ = DomainName.Label(
+                _uncheckedAssumingValidBytes: ByteBuffer(bytes: [UInt8](repeating: 0x61, count: 64))
+            )
+        }
+    }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test func `Label unchecked initializer crashes on invalid bytes in debug builds`() async {
+        await #expect(processExitsWith: .failure) {
+            _ = DomainName.Label(_uncheckedAssumingValidBytes: ByteBuffer([65]))
+        }
+    }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test func `DomainName unchecked initializer crashes on invalid label bytes in debug builds`()
+        async
+    {
+        await #expect(processExitsWith: .failure) {
+            _ = DomainName(_uncheckedAssumingValidWireFormatBytes: ByteBuffer([1, 65]))
+        }
+    }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test func `DomainName unchecked initializer crashes on too-long labels in debug builds`() async
+    {
+        await #expect(processExitsWith: .failure) {
+            _ = DomainName(
+                _uncheckedAssumingValidWireFormatBytes: ByteBuffer(
+                    bytes: [64] + [UInt8](repeating: 0x61, count: 64)
+                )
+            )
+        }
+    }
+}
+#endif
+#endif

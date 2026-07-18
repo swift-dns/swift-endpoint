@@ -634,6 +634,72 @@ extension IPPropertyTestCase where IPAddressType == IPv6Address {
                 "!isLinkLocalUnicast",
                 { @Sendable in !$0.isLinkLocalUnicast }
             ),
+            IPPropertyTestCase(IPv6Address("::")!, "isUnspecified", \.isUnspecified),
+            IPPropertyTestCase(
+                IPv6Address("::1")!,
+                "!isUnspecified",
+                { @Sendable in !$0.isUnspecified }
+            ),
+            IPPropertyTestCase(IPv6Address("FC00::")!, "isUniqueLocal", \.isUniqueLocal),
+            IPPropertyTestCase(IPv6Address("FD12:3456::1")!, "isUniqueLocal", \.isUniqueLocal),
+            IPPropertyTestCase(
+                IPv6Address("FDFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF")!,
+                "isUniqueLocal",
+                \.isUniqueLocal
+            ),
+            IPPropertyTestCase(
+                IPv6Address("FB00::")!,
+                "!isUniqueLocal",
+                { @Sendable in !$0.isUniqueLocal }
+            ),
+            IPPropertyTestCase(
+                IPv6Address("FE00::")!,
+                "!isUniqueLocal",
+                { @Sendable in !$0.isUniqueLocal }
+            ),
+            IPPropertyTestCase(IPv6Address("2001:DB8::")!, "isDocumentation", \.isDocumentation),
+            IPPropertyTestCase(
+                IPv6Address("2001:DB8:1234::1")!,
+                "isDocumentation",
+                \.isDocumentation
+            ),
+            IPPropertyTestCase(
+                IPv6Address("2001:DB8:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF")!,
+                "isDocumentation",
+                \.isDocumentation
+            ),
+            IPPropertyTestCase(
+                IPv6Address("2001:DB7::")!,
+                "!isDocumentation",
+                { @Sendable in !$0.isDocumentation }
+            ),
+            IPPropertyTestCase(
+                IPv6Address("2001:DB9::")!,
+                "!isDocumentation",
+                { @Sendable in !$0.isDocumentation }
+            ),
+            IPPropertyTestCase(IPv6Address("::")!, "isContiguous", \.isContiguous),
+            IPPropertyTestCase(IPv6Address("FFFF::")!, "isContiguous", \.isContiguous),
+            IPPropertyTestCase(
+                IPv6Address("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF")!,
+                "isContiguous",
+                \.isContiguous
+            ),
+            IPPropertyTestCase(
+                IPv6Address("::FFFF")!,
+                "!isContiguous",
+                { @Sendable in !$0.isContiguous }
+            ),
+            IPPropertyTestCase(
+                IPv6Address("FFFF::FFFF")!,
+                "!isContiguous",
+                { @Sendable in !$0.isContiguous }
+            ),
+            IPPropertyTestCase(
+                IPv6Address("FEFF::")!,
+                "!isContiguous",
+                { @Sendable in !$0.isContiguous }
+            ),
         ]
     }
 }

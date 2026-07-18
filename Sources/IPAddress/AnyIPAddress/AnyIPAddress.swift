@@ -78,4 +78,22 @@ public enum AnyIPAddress: Sendable, Hashable {
             return ipv6.isMulticast
         }
     }
+
+    /// Whether this address is contiguous, and thus suitable for use as a CIDR mask.
+    ///
+    /// A contiguous address has some number of leading `1` bits followed by all `0` bits.
+    /// For example `255.255.0.0` is contiguous, but `255.0.255.0` is not.
+    ///
+    /// Classless Inter-Domain Routing is defined in [IETF RFC 4632].
+    ///
+    /// [IETF RFC 4632]: https://datatracker.ietf.org/doc/html/rfc4632
+    @inlinable
+    public var isContiguous: Bool {
+        switch self {
+        case .v4(let ipv4):
+            return ipv4.isContiguous
+        case .v6(let ipv6):
+            return ipv6.isContiguous
+        }
+    }
 }

@@ -1,9 +1,11 @@
 @available(SwiftStdlib 5.1, *)
 extension Span<UInt8> {
     /// Whether the span contains exactly the same bytes as `bytes`.
+    ///
+    /// `@_transparent` so it's inlined for when `[UInt8]` is a static array.
     @inlinable
     @_transparent
-    func swift_endpoint_equals(to bytes: [UInt8]) -> Bool {
+    package func swift_endpoint_equals(to bytes: [UInt8]) -> Bool {
         let count = bytes.count
         guard self.count == count else {
             return false

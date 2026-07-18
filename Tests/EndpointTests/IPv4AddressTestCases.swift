@@ -200,6 +200,113 @@ extension IPPropertyTestCase where IPAddressType == IPv4Address {
                 "!isLinkLocal",
                 { @Sendable in !$0.isLinkLocal }
             ),
+            IPPropertyTestCase(IPv4Address(0, 0, 0, 0), "isUnspecified", \.isUnspecified),
+            IPPropertyTestCase(
+                IPv4Address(0, 0, 0, 1),
+                "!isUnspecified",
+                { @Sendable in !$0.isUnspecified }
+            ),
+            IPPropertyTestCase(IPv4Address(255, 255, 255, 255), "isBroadcast", \.isBroadcast),
+            IPPropertyTestCase(
+                IPv4Address(255, 255, 255, 254),
+                "!isBroadcast",
+                { @Sendable in !$0.isBroadcast }
+            ),
+            IPPropertyTestCase(IPv4Address(10, 0, 0, 0), "isPrivate", \.isPrivate),
+            IPPropertyTestCase(IPv4Address(10, 255, 255, 255), "isPrivate", \.isPrivate),
+            IPPropertyTestCase(IPv4Address(172, 16, 0, 0), "isPrivate", \.isPrivate),
+            IPPropertyTestCase(IPv4Address(172, 31, 255, 255), "isPrivate", \.isPrivate),
+            IPPropertyTestCase(IPv4Address(192, 168, 0, 0), "isPrivate", \.isPrivate),
+            IPPropertyTestCase(IPv4Address(192, 168, 255, 255), "isPrivate", \.isPrivate),
+            IPPropertyTestCase(
+                IPv4Address(9, 255, 255, 255),
+                "!isPrivate",
+                { @Sendable in !$0.isPrivate }
+            ),
+            IPPropertyTestCase(
+                IPv4Address(11, 0, 0, 0),
+                "!isPrivate",
+                { @Sendable in !$0.isPrivate }
+            ),
+            IPPropertyTestCase(
+                IPv4Address(172, 15, 255, 255),
+                "!isPrivate",
+                { @Sendable in !$0.isPrivate }
+            ),
+            IPPropertyTestCase(
+                IPv4Address(172, 32, 0, 0),
+                "!isPrivate",
+                { @Sendable in !$0.isPrivate }
+            ),
+            IPPropertyTestCase(
+                IPv4Address(192, 167, 0, 0),
+                "!isPrivate",
+                { @Sendable in !$0.isPrivate }
+            ),
+            IPPropertyTestCase(
+                IPv4Address(192, 169, 0, 0),
+                "!isPrivate",
+                { @Sendable in !$0.isPrivate }
+            ),
+            IPPropertyTestCase(IPv4Address(100, 64, 0, 0), "isShared", \.isShared),
+            IPPropertyTestCase(IPv4Address(100, 127, 255, 255), "isShared", \.isShared),
+            IPPropertyTestCase(
+                IPv4Address(100, 63, 255, 255),
+                "!isShared",
+                { @Sendable in !$0.isShared }
+            ),
+            IPPropertyTestCase(
+                IPv4Address(100, 128, 0, 0),
+                "!isShared",
+                { @Sendable in !$0.isShared }
+            ),
+            IPPropertyTestCase(IPv4Address(192, 0, 2, 0), "isDocumentation", \.isDocumentation),
+            IPPropertyTestCase(IPv4Address(192, 0, 2, 255), "isDocumentation", \.isDocumentation),
+            IPPropertyTestCase(IPv4Address(198, 51, 100, 7), "isDocumentation", \.isDocumentation),
+            IPPropertyTestCase(IPv4Address(203, 0, 113, 200), "isDocumentation", \.isDocumentation),
+            IPPropertyTestCase(
+                IPv4Address(192, 0, 3, 0),
+                "!isDocumentation",
+                { @Sendable in !$0.isDocumentation }
+            ),
+            IPPropertyTestCase(
+                IPv4Address(198, 51, 101, 0),
+                "!isDocumentation",
+                { @Sendable in !$0.isDocumentation }
+            ),
+            IPPropertyTestCase(
+                IPv4Address(203, 0, 112, 0),
+                "!isDocumentation",
+                { @Sendable in !$0.isDocumentation }
+            ),
+            IPPropertyTestCase(IPv4Address(0, 0, 0, 0), "isContiguous", \.isContiguous),
+            IPPropertyTestCase(IPv4Address(255, 0, 0, 0), "isContiguous", \.isContiguous),
+            IPPropertyTestCase(IPv4Address(255, 255, 192, 0), "isContiguous", \.isContiguous),
+            IPPropertyTestCase(
+                IPv4Address(255, 255, 255, 255),
+                "isContiguous",
+                \.isContiguous
+            ),
+            IPPropertyTestCase(
+                IPv4Address(0, 255, 0, 0),
+                "!isContiguous",
+                { @Sendable in !$0.isContiguous }
+            ),
+            IPPropertyTestCase(
+                IPv4Address(255, 0, 0, 255),
+                "!isContiguous",
+                { @Sendable in !$0.isContiguous }
+            ),
+            IPPropertyTestCase(
+                IPv4Address(254, 255, 0, 0),
+                "!isContiguous",
+                { @Sendable in !$0.isContiguous }
+            ),
+            IPPropertyTestCase(
+                IPv4Address(0, 0, 0, 1),
+                "!isContiguous",
+                { @Sendable in !$0.isContiguous }
+            ),
         ]
     }
 }

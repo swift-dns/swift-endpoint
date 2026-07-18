@@ -2,6 +2,13 @@ import IPAddress
 import Synchronization
 import Testing
 
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
+/// We're in tests so should be fine
+import Foundation
+#endif
+
 @Suite
 struct UnsignedInteger128Tests {
     @available(SwiftStdlib 6.0, *)
@@ -599,6 +606,45 @@ struct UnsignedInteger128Tests {
                 #expect(uint128 == unsignedInteger128)
                 #expect(uint128 == unsignedInteger128_2)
             }
+        }
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test(
+        arguments: [
+            "abc",
+            "12a",
+            "-1",
+            "+1",
+            " 1",
+            "1 ",
+        ]
+    )
+    func `init from invalid description is nil`(description: String) {
+        #expect(UnsignedInteger128(description) == nil)
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `Codable round-trip works as expected`() throws {
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        for lhs in generateRandomUInt128s() {
+            let unsignedInteger128 = UnsignedInteger128(lhs)
+            let encoded = try encoder.encode(unsignedInteger128)
+            #expect(String(decoding: encoded, as: UTF8.self) == "\"\(lhs.description)\"")
+            let decoded = try decoder.decode(UnsignedInteger128.self, from: encoded)
+            #expect(decoded == unsignedInteger128)
+        }
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `decoding an invalid description throws`() {
+        let decoder = JSONDecoder()
+        #expect(throws: DecodingError.self) {
+            try decoder.decode(
+                UnsignedInteger128.self,
+                from: Data("\"not-a-number\"".utf8)
+            )
         }
     }
 

@@ -10,18 +10,6 @@ extension AnyIPAddress: CustomStringConvertible {
     }
 }
 
-@available(SwiftStdlib 5.1, *)
-extension AnyIPAddress: CustomDebugStringConvertible {
-    public var debugDescription: String {
-        switch self {
-        case .v4(let ipv4):
-            return "AnyIPAddress(.v4(\(ipv4.description)))"
-        case .v6(let ipv6):
-            return "AnyIPAddress(.v6(\(ipv6.description)))"
-        }
-    }
-}
-
 @available(SwiftStdlib 6.2, *)
 extension AnyIPAddress {
     /// Initialize an IP address from a `UTF8Span` of its textual representation.

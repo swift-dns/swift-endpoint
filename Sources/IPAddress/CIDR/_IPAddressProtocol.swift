@@ -11,8 +11,7 @@
 public protocol _IPAddressProtocol:
     Sendable,
     Hashable,
-    CustomStringConvertible,
-    CustomDebugStringConvertible
+    CustomStringConvertible
 {
     associatedtype AddressValueType: _IPAddressProtocolAddressValueType
 
@@ -27,6 +26,22 @@ public protocol _IPAddressProtocol:
     init?(textualRepresentation: Span<UInt8>)
 }
 
+@available(SwiftStdlib 5.1, *)
+extension _IPAddressProtocol {
+    /// Whether this address is contiguous, and thus suitable for use as a CIDR mask.
+    ///
+    /// A contiguous address has some number of leading `1` bits followed by all `0` bits.
+    /// For example `255.255.0.0` is contiguous, but `255.0.255.0` is not.
+    ///
+    /// Classless Inter-Domain Routing is defined in [IETF RFC 4632].
+    ///
+    /// [IETF RFC 4632]: https://datatracker.ietf.org/doc/html/rfc4632
+    @inlinable
+    public var isContiguous: Bool {
+        self.address.nonzeroBitCount == (~self.address).leadingZeroBitCount
+    }
+}
+
 /// DO NOT IMPLEMENT THIS PROTOCOL YOURSELF.
 /// THIS PROTOCOL IS NOT CONSIDERED PART OF THE PUBLIC API, DENOTED BY THE UNDERSCORED NAME.
 public protocol _IPAddressProtocolAddressValueType:
@@ -35,16 +50,13 @@ public protocol _IPAddressProtocolAddressValueType:
     Comparable,
     BitwiseCopyable
 {
-    static var zero: Self { get }
     static var bitWidth: Int { get }
     static var max: Self { get }
     var trailingZeroBitCount: Int { get }
+    var leadingZeroBitCount: Int { get }
+    var nonzeroBitCount: Int { get }
 
-    static func &>> (lhs: Self, rhs: Self) -> Self
-    static func &>> (lhs: Self, rhs: some BinaryInteger) -> Self
-
-    static func &<< (lhs: Self, rhs: Self) -> Self
-    static func &<< (lhs: Self, rhs: some BinaryInteger) -> Self
+    static func >> (lhs: Self, rhs: Int) -> Self
 
     static func & (lhs: Self, rhs: Self) -> Self
     static prefix func ~ (x: Self) -> Self

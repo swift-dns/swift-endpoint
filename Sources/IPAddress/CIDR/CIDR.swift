@@ -79,7 +79,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     ///     Example: in 127.0.0.0/8, the mask is `0b11111111_00000000_00000000_00000000`.
     @inlinable
     public init(prefix: IPAddressType, uncheckedMask mask: IPAddressType) {
-        assert(Self.makeMaskBasedOn(countOfTrailingZerosOf: mask) == mask)
+        assert(mask.isContiguous)
 
         self.prefix = prefix
         self.mask = mask
@@ -97,12 +97,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     ///     Example: in 127.0.0.0/8, the mask is `0b11111111_00000000_00000000_00000000`.
     @inlinable
     public init?(prefix: IPAddressType, mask: IPAddressType) {
-        /// Make sure the mask is "continuous" and has no leading zeros
-        /// e.g. 0b11110000 is good, but 0b11110001 is not. 0b00001111 is not good either.
-        guard Self.makeMaskBasedOn(countOfTrailingZerosOf: mask) == mask else {
-            return nil
-        }
-
+        guard mask.isContiguous else { return nil }
         self.init(prefix: prefix, uncheckedMask: mask)
     }
 
@@ -122,43 +117,17 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     ///     This shouldn't be greater than 32 for IPv4 or 128 for IPv6. The host bits will be ignored.
     ///     Example: in 192.168.1.0/24, the prefix length is 24.
     @inlinable
-    public init(prefix: IPAddressType, prefixLength: UInt8) {
+    public init(prefix: IPAddressType, prefixLength: Int) {
+        precondition(prefixLength >= 0 && prefixLength <= AddressValueType.bitWidth)
         let mask = Self.makeMaskBasedOn(prefixLength: prefixLength)
         self.init(prefix: prefix, uncheckedMask: mask)
     }
 
-    /// Creates a number with `prefixLength` amount of leading 1s followed by all zeros.
-    /// Parameters:
-    ///   - prefixLength: The number of leading 1s to have, followed by all zeros.
-    ///     Ignores amounts that are greater than the bit width of the IP address type,
-    ///     which means 32 for IPv4 or 128 for IPv6.
+    /// Makes a mask with `prefixLength` leading ones followed by all zeros.
+    /// Amounts greater than the bit width of the IP address type are clamped to the bit width.
     @inlinable
-    package static func makeMaskBasedOn(prefixLength: UInt8) -> IPAddressType {
-        let bitWidth = UInt8(AddressValueType.bitWidth)
-        if prefixLength >= bitWidth {
-            return IPAddressType(AddressValueType.max)
-        }
-        let mask = ~(AddressValueType.max &>> prefixLength)
-        return IPAddressType(mask)
-    }
-
-    /// Makes a mask based on the number of trailing zeros.
-    /// Parameters:
-    ///   - countOfTrailingZeros: The number of trailing zeros to have.
-    ///     This MUST NOT be greater than the bit width of `AddressValueType`,
-    ///     which means 32 for IPv4 or 128 for IPv6.
-    @inlinable
-    static func makeMaskBasedOn(countOfTrailingZerosOf ip: IPAddressType) -> IPAddressType {
-        let countOfTrailingZeros = ip.address.trailingZeroBitCount
-        if countOfTrailingZeros == AddressValueType.bitWidth {
-            return IPAddressType(.zero)
-        } else {
-            /// ~AddressValueType((AddressValueType(1) &<< countOfTrailingZeros) &- 1)
-            /// also works. The compiler optimizes these anyway, so doesn't matter which
-            /// one to use.
-            let mask = (AddressValueType.max &>> countOfTrailingZeros) &<< countOfTrailingZeros
-            return IPAddressType(mask)
-        }
+    package static func makeMaskBasedOn(prefixLength: Int) -> IPAddressType {
+        IPAddressType(~(AddressValueType.max >> prefixLength))
     }
 
     /// Whether or not the given AnyIPAddress is within this CIDR block.

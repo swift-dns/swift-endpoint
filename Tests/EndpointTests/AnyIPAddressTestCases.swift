@@ -50,6 +50,26 @@ extension IPPropertyTestCase where IPAddressType == AnyIPAddress {
                 "!isMulticast",
                 { @Sendable in !$0.isMulticast }
             ),
+            IPPropertyTestCase(
+                .v4(IPv4Address(255, 255, 192, 0)),
+                "isContiguous",
+                \.isContiguous
+            ),
+            IPPropertyTestCase(
+                .v6(IPv6Address("FFFF::")!),
+                "isContiguous",
+                \.isContiguous
+            ),
+            IPPropertyTestCase(
+                .v4(IPv4Address(255, 0, 0, 255)),
+                "!isContiguous",
+                { @Sendable in !$0.isContiguous }
+            ),
+            IPPropertyTestCase(
+                .v6(IPv6Address("FFFF::FFFF")!),
+                "!isContiguous",
+                { @Sendable in !$0.isContiguous }
+            ),
         ]
     }
 }

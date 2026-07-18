@@ -92,4 +92,28 @@ struct ConnectionTargetTests {
         #expect(target.description == expected)
         #expect(target.description == target.target.description)
     }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `invalid inputs throw errors with descriptive messages`() throws {
+        #expect(throws: ConnectionTarget.Error.self) {
+            try ConnectionTarget.ipAddress("256.0.0.1", port: 80)
+        }
+
+        #expect(throws: ConnectionTarget.Error.self) {
+            try ConnectionTarget.domainName(".invalid.example.com", port: 443)
+        }
+    }
+
+    @Test func `Port works as expected`() {
+        /// Use non-literal `Int`s so the `init(_ value: Int)` overload is exercised
+        /// instead of `init(integerLiteral:)`.
+        let low = 0
+        let high = 65535
+        #expect(Port(low) == Port(canonicalValue: 0))
+        #expect(Port(high) == Port(canonicalValue: 65535))
+        #expect(Port(low).value == 0)
+        #expect(Port(high).value == 65535)
+        #expect(Port(canonicalValue: 443).value == 443)
+        #expect(Port(canonicalValue: 8080).description == "Port(8080)")
+    }
 }

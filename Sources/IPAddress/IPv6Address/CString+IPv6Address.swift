@@ -13,16 +13,16 @@ extension IPv6Address {
     ///    span if you need to, for C interoperability.
     /// - Returns: The result of the closure.
     @inlinable
-    public func withCString<Result>(
-        _ body: (Span<CChar>) throws -> Result
-    ) rethrows -> Result {
+    public func withCString<Result, E: Error>(
+        _ body: (Span<CChar>) throws(E) -> Result
+    ) throws(E) -> Result {
         try unsafe self.makeDescription(
             enclosingInSquareBrackets: false
-        ) { (maxWriteableBytes, writeBytes) in
+        ) { (maxWriteableBytes, writeBytes) throws(E) in
             try withUnsafeTemporaryAllocation(
                 of: UInt8.self,
                 capacity: maxWriteableBytes
-            ) { buffer in
+            ) { buffer throws(E) in
                 let count = unsafe writeBytes(buffer)
                 /// We're counting on our own `makeDescription`'s underlying impl to never actually
                 /// write as many bytes as it has requested so we don't need 1 more byte of alloc
@@ -30,7 +30,7 @@ extension IPv6Address {
                 /// headroom for speculative writes it performs.
                 assert(count < buffer.count)
                 unsafe buffer[count] = 0
-                return try unsafe buffer.withMemoryRebound(to: CChar.self) { cBuffer in
+                return try unsafe buffer.withMemoryRebound(to: CChar.self) { cBuffer throws(E) in
                     let range = unsafe ClosedRange<Int>(uncheckedBounds: (0, count))
                     let limitedSpan = unsafe cBuffer.span.extracting(unchecked: range)
                     return try body(limitedSpan)

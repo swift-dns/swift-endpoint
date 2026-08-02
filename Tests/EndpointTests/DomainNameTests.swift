@@ -96,14 +96,14 @@ struct DomainNameTests {
         ]
     )
     func initInvalidFromString(domainName: String) throws {
-        #expect(throws: (any Error).self) {
+        #expect(throws: DomainName.ValidationError.self) {
             try DomainName(domainName)
         }
-        #expect(throws: (any Error).self) {
+        #expect(throws: DomainName.ValidationError.self) {
             try DomainName(Substring(domainName))
         }
         if #available(SwiftStdlib 6.2, *) {
-            #expect(throws: (any Error).self) {
+            #expect(throws: DomainName.ValidationError.self) {
                 try DomainName(textualRepresentation: domainName.utf8Span)
             }
         }

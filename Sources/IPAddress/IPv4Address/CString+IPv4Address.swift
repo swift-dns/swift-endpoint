@@ -12,16 +12,16 @@ extension IPv4Address {
     ///    span if you need to, for C interoperability.
     /// - Returns: The result of the closure.
     @inlinable
-    public func withCString<Result>(
-        _ body: (Span<CChar>) throws -> Result
-    ) rethrows -> Result {
+    public func withCString<Result, E: Error>(
+        _ body: (Span<CChar>) throws(E) -> Result
+    ) throws(E) -> Result {
         /// 15 bytes for the biggest possible textual representation, plus 1 for the null terminator.
-        try withUnsafeTemporaryAllocation(byteCount: 16, alignment: 1) { buffer in
+        try withUnsafeTemporaryAllocation(byteCount: 16, alignment: 1) { buffer throws(E) in
             let count = unsafe self.writeTextualRepresentation_RequiringMinimumCapacityOf15(
                 into: buffer
             )
             unsafe buffer[count] = 0
-            return try unsafe buffer.withMemoryRebound(to: CChar.self) { cBuffer in
+            return try unsafe buffer.withMemoryRebound(to: CChar.self) { cBuffer throws(E) in
                 let range = unsafe ClosedRange<Int>(uncheckedBounds: (0, count))
                 let limitedSpan = unsafe cBuffer.span.extracting(unchecked: range)
                 return try body(limitedSpan)

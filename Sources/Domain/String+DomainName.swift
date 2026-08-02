@@ -110,6 +110,7 @@ extension DomainName {
 /// MARK: - Initializers from String
 
 extension DomainName {
+    @available(SwiftStdlib 5.1, *)
     @nonexhaustive
     public enum ValidationError: Error {
         case domainNameMustBeASCII(ByteBuffer)
@@ -119,6 +120,7 @@ extension DomainName {
         case labelMustNotBeEmpty(in: ByteBuffer)
         case emptyDomainName
         case multipleRootLabelIndicatorsAreNotAllowed(in: ByteBuffer)
+        case idnaConversionFailed(IDNA.CollectedMappingErrors)
     }
 }
 
@@ -127,11 +129,14 @@ extension DomainName {
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName("mahdibm.com")
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
-    public init(_ description: String, idnaConfiguration: IDNA.Configuration = .default) throws {
+    public init(
+        _ description: String,
+        idnaConfiguration: IDNA.Configuration = .default
+    ) throws(ValidationError) {
         var description = description
-        self = try description.withSpan_Compatibility {
+        self = try description.withSpan_Compatibility { span throws(ValidationError) in
             try DomainName(
-                _uncheckedAssumingValidUTF8: $0,
+                _uncheckedAssumingValidUTF8: span,
                 idnaConfiguration: idnaConfiguration
             )
         }
@@ -140,11 +145,14 @@ extension DomainName {
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName("mahdibm.com")
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
-    public init(_ description: Substring, idnaConfiguration: IDNA.Configuration = .default) throws {
+    public init(
+        _ description: Substring,
+        idnaConfiguration: IDNA.Configuration = .default
+    ) throws(ValidationError) {
         var description = description
-        self = try description.withSpan_Compatibility {
+        self = try description.withSpan_Compatibility { span throws(ValidationError) in
             try DomainName(
-                _uncheckedAssumingValidUTF8: $0,
+                _uncheckedAssumingValidUTF8: span,
                 idnaConfiguration: idnaConfiguration
             )
         }
@@ -160,7 +168,7 @@ extension DomainName {
     public init(
         textualRepresentation span: UTF8Span,
         idnaConfiguration: IDNA.Configuration = .default
-    ) throws {
+    ) throws(ValidationError) {
         try self.init(
             _uncheckedAssumingValidUTF8: span.span,
             idnaConfiguration: idnaConfiguration
@@ -177,7 +185,7 @@ extension DomainName {
     public init(
         _uncheckedAssumingValidUTF8 span: Span<UInt8>,
         idnaConfiguration: IDNA.Configuration = .default
-    ) throws {
+    ) throws(ValidationError) {
         var span = span
         var bytesCount = span.count
         var isFQDN = false
@@ -228,19 +236,30 @@ extension DomainName {
         idnaConfiguration.verifyDNSLength = false
 
         /// This short-circuits most domain names which won't change with IDNA anyway.
-        let idnaConversionResult = try IDNA(configuration: idnaConfiguration)
-            .toASCII(_uncheckedAssumingValidUTF8: span)
+        let idnaConversionResult: IDNA.ConversionResult
+        do {
+            idnaConversionResult = try IDNA(configuration: idnaConfiguration)
+                .toASCII(_uncheckedAssumingValidUTF8: span)
+        } catch {
+            throw ValidationError.idnaConversionFailed(error)
+        }
 
-        self = try idnaConversionResult.withSpan { span in
-            try DomainName(
-                isFQDN: isFQDN,
-                asciiLowercasedNoRootLabelTextualRepresentationSpan: span
-            )
-        } ifNotAvailable: {
-            try DomainName(
-                isFQDN: isFQDN,
-                asciiLowercasedNoRootLabelTextualRepresentationSpan: span
-            )
+        do {
+            self = try idnaConversionResult.withSpan { span in
+                try DomainName(
+                    isFQDN: isFQDN,
+                    asciiLowercasedNoRootLabelTextualRepresentationSpan: span
+                )
+            } ifNotAvailable: {
+                try DomainName(
+                    isFQDN: isFQDN,
+                    asciiLowercasedNoRootLabelTextualRepresentationSpan: span
+                )
+            }
+        } catch let error as ValidationError {
+            throw error
+        } catch {
+            fatalError("Unreachable code path")
         }
     }
 
@@ -250,7 +269,7 @@ extension DomainName {
         from bytesSpan: inout Span<UInt8>,
         bytesCount: inout Int,
         isFQDN: inout Bool
-    ) throws {
+    ) throws(ValidationError) {
         /// In the initializer above, we already checked if the domain name is 1-2 bytes and those
         /// 2 bytes are the IDNA label separator. Here we don't need to check for that.
         guard bytesCount > 1 else {
@@ -337,7 +356,7 @@ extension DomainName {
     init(
         isFQDN: Bool,
         asciiLowercasedNoRootLabelTextualRepresentationSpan span: Span<UInt8>
-    ) throws {
+    ) throws(ValidationError) {
         debugOnly {
             DomainName.__debugAssertValidDomainNameSpan(span)
         }
@@ -357,7 +376,7 @@ extension DomainName {
 
         unsafe try self._data.writeWithUnsafeMutableBytes(
             minimumWritableBytes: totalLength
-        ) { dataPtr in
+        ) { dataPtr throws(ValidationError) in
             var dataPtr = unsafe dataPtr.baseAddress.unsafelyUnwrapped
             var startIndex = 0
             for idx in span.indices {
@@ -393,7 +412,7 @@ extension DomainName {
         to dataPtr: inout UnsafeMutableRawPointer,
         startIndex: Int,
         idx: Int
-    ) throws {
+    ) throws(ValidationError) {
         let range = unsafe Range(uncheckedBounds: (startIndex, idx))
         let chunk = span.extracting(range)
 

@@ -27,9 +27,25 @@ extension IPv6Address {
             _ callbackReturningBytesWritten: (UnsafeMutableBufferPointer<UInt8>) -> Int
         ) throws(E) -> Buffer
     ) throws(E) -> Buffer {
-        let mask = self.makeSegmentsMask()
+        var address = self
+
+        let isIPv4Mapped = CIDR<IPv6Address>.ipv4Mapped.contains(address)
+        let allMask = UnsignedInteger128(_low: .max, _high: .max)
+        let ipv4MappedMask = UnsignedInteger128(_low: 0xFFFF_FFFF_0000_0000, _high: .max)
+        let addressMask = isIPv4Mapped ? ipv4MappedMask : allMask
+        address.address &= addressMask
+        /// If this is an IPv4-mapped IPv6 address, we need to add 15 bytes for the IPv4 address.
+        /// However, the ipv6 address will write either "[::FFFF:0:0" or "::FFFF:0:0" before
+        /// it reached the ipv4-address-write code.
+        /// So we need to walk back 3 bytes as well (the tailing `0:0`).
+        /// In both cases, we can only reserve 3 less bytes (the bracket will need to be reinserted).
+        /// So `15 - 3` == 12.
+        let ipv4MappedWalkBackBytes = 3
+        let additionalCapacity = isIPv4Mapped ? 12 : 0
+
+        let mask = address.makeSegmentsMask()
         let entry = IPv6Address.entry(forMask: mask)
-        let digitsPrintCountNoTrailing = self.countDigitsRequiredToPrintExcludingTrailingDigits()
+        let digitsPrintCountNoTrailing = address.countDigitsRequiredToPrintExcludingTrailingDigits()
 
         let bracketsCount = enclosingInSquareBrackets ? 2 : 0
         /// If no brackets, we need 2 extra byte for the possible colon that we speculatively write
@@ -45,6 +61,7 @@ extension IPv6Address {
             &+ digitsPrintCountNoTrailing
             &+ bracketsCount
             &+ conservativeSpeculativeBytes
+            &+ additionalCapacity
 
         return try unsafe writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
             var writeIdx = 0
@@ -66,7 +83,7 @@ extension IPv6Address {
                 writeIdx &+= idx == writeCsAtIdx ? 1 : 0
                 writeIdx &+= offset == 0 ? 0 : 1
 
-                unsafe self._writeSegmentAsLowercasedHexASCII_RequiringMinimumCapacityOf4(
+                unsafe address._writeSegmentAsLowercasedHexASCII_RequiringMinimumCapacityOf4(
                     into: buffer,
                     advancingIdx: &writeIdx,
                     segmentIdx: idx
@@ -77,6 +94,18 @@ extension IPv6Address {
             unsafe buffer[writeIdx] = .asciiColon
             unsafe buffer[writeIdx &+ 1] = .asciiColon
             writeIdx &+= entry.writeCsAtEnd ? 2 : 0
+
+            if _slowPath(isIPv4Mapped) {
+                let ipv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
+                let lowerBound = writeIdx &- ipv4MappedWalkBackBytes
+                let upperBound = writeIdx &+ 15 &- ipv4MappedWalkBackBytes
+                let bounds = unsafe Range<Int>(uncheckedBounds: (lowerBound, upperBound))
+                let ipv4Buffer = buffer.extracting(bounds)
+                let written = unsafe ipv4.writeTextualRepresentation_RequiringMinimumCapacityOf15(
+                    into: UnsafeMutableRawBufferPointer(ipv4Buffer)
+                )
+                writeIdx &+= lowerBound &+ written
+            }
 
             unsafe buffer[writeIdx] = .asciiRightSquareBracket
             writeIdx &+= enclosingInSquareBrackets ? 1 : 0
@@ -469,11 +498,18 @@ extension IPv6Address {
 
         @usableFromInline
         package struct Unpacked: Sendable, Equatable {
+            /// The packed indices of the writable segments in the address.
             @usableFromInline package let packedIndices: UInt
+            /// The number of writable segments in the address.
             @usableFromInline package let segmentsCount: Int
+            /// The minimum number of bytes required to print the address in its raw layout, assuming
+            /// the each segment is only 1 hex digit long.
             @usableFromInline package let minRawLayoutBytes: Int
+            /// Write the compression sign at the index of this segment.
             @usableFromInline package let writeCsAtIdx: Int
+            /// Write the compression sign at the beginning of the address.
             @usableFromInline package let writeCsAtBeginning: Bool
+            /// Write the compression sign at the end of the address.
             @usableFromInline package let writeCsAtEnd: Bool
 
             @inlinable

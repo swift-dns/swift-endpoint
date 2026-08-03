@@ -37,11 +37,9 @@ extension IPv6Address {
         /// If this is an IPv4-mapped IPv6 address, we need to add 15 bytes for the IPv4 address.
         /// However, the ipv6 address will write either "[::FFFF:0:0" or "::FFFF:0:0" before
         /// it reached the ipv4-address-write code.
-        /// So we need to walk back 3 bytes as well (the tailing `0:0`).
-        /// In both cases, we can only reserve 3 less bytes (the bracket will need to be reinserted).
-        /// So `15 - 3` == 12.
+        /// So we need to walk back 3 bytes as well (the tailing `0:0`) so we can reserve 3 less bytes.
         let ipv4MappedWalkBackBytes = 3
-        let additionalCapacity = isIPv4Mapped ? 12 : 0
+        let additionalCapacity = isIPv4Mapped ? (15 - ipv4MappedWalkBackBytes) : 0
 
         let mask = address.makeSegmentsMask()
         let entry = IPv6Address.entry(forMask: mask)
@@ -104,7 +102,8 @@ extension IPv6Address {
                 let written = unsafe ipv4.writeTextualRepresentation_RequiringMinimumCapacityOf15(
                     into: UnsafeMutableRawBufferPointer(ipv4Buffer)
                 )
-                writeIdx &+= lowerBound &+ written
+                writeIdx = lowerBound &+ written
+                assert(writeIdx <= toReserve)
             }
 
             unsafe buffer[writeIdx] = .asciiRightSquareBracket

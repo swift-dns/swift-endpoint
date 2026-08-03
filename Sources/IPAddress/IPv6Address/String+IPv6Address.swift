@@ -20,13 +20,13 @@ extension IPv6Address: CustomStringConvertible {
 extension IPv6Address {
     @inlinable
     @inline(__always)
-    package func makeDescription<Buffer>(
+    package func makeDescription<Buffer, E: Error>(
         enclosingInSquareBrackets: Bool,
         writingToUnsafeMutableBufferPointerOfUInt8: (
             _ maxWriteableBytes: Int,
             _ callbackReturningBytesWritten: (UnsafeMutableBufferPointer<UInt8>) -> Int
-        ) throws -> Buffer
-    ) rethrows -> Buffer {
+        ) throws(E) -> Buffer
+    ) throws(E) -> Buffer {
         let mask = self.makeSegmentsMask()
         let entry = IPv6Address.entry(forMask: mask)
         let digitsPrintCountNoTrailing = self.countDigitsRequiredToPrintExcludingTrailingDigits()

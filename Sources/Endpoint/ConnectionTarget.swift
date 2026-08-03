@@ -6,7 +6,7 @@ public struct ConnectionTarget: Sendable, Hashable {
     @nonexhaustive
     public enum Error: Swift.Error {
         case invalidIPAddressString(String)
-        case failedToParseDomainName(any Swift.Error)
+        case failedToParseDomainName(DomainName.ValidationError)
     }
 
     /// The target of a connection.
@@ -54,7 +54,7 @@ public struct ConnectionTarget: Sendable, Hashable {
         _ domainName: String,
         port: Port,
         idnaConfiguration: IDNA.Configuration = .default
-    ) throws -> Self {
+    ) throws(ConnectionTarget.Error) -> Self {
         do {
             let domainName = try DomainName(domainName, idnaConfiguration: idnaConfiguration)
             return .domainName(domainName, port: port)

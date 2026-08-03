@@ -12,9 +12,9 @@ extension AnyIPAddress {
     ///    span if you need to, for C interoperability.
     /// - Returns: The result of the closure.
     @inlinable
-    public func withCString<Result>(
-        _ body: (Span<CChar>) throws -> Result
-    ) rethrows -> Result {
+    public func withCString<Result, E: Error>(
+        _ body: (Span<CChar>) throws(E) -> Result
+    ) throws(E) -> Result {
         switch self {
         case .v4(let ipv4):
             return try ipv4.withCString(body)

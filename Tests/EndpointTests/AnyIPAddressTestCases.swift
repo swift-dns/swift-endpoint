@@ -91,7 +91,7 @@ extension IPTestCase where IPAddressType == AnyIPAddress {
                 "0:0:0:0:0:FFFF:204.152.189.116",
                 ip: (
                     .v6(IPv6Address(0x0000_0000_0000_0000_0000_FFFF_CC98_BD74)),
-                    "[::ffff:cc98:bd74]"
+                    "[::ffff:204.152.189.116]"
                 )
             ),
             IPTestCase(

@@ -87,8 +87,8 @@ print(ipv6Address2) /// prints "[2001:db8:85a3::100]"
 /// Define an IPv4-mapped IPv6 address (RFC 4291).
 let ipv4InIPv6Address1 = IPv6Address("::FFFF:192.168.1.1")!
 let ipv4InIPv6Address2 = IPv6Address("[0:0:0:0:0:FFFF:204.152.189.116]")!
-print(ipv4InIPv6Address1) /// prints "[::ffff:c0a8:101]"
-print(ipv4InIPv6Address2) /// prints "[::ffff:cc98:bd74]"
+print(ipv4InIPv6Address1) /// prints "[::ffff:192.168.1.1]"
+print(ipv4InIPv6Address2) /// prints "[::ffff:204.152.189.116]"
 
 /// Define an any-ip-address. The type will automatically parse the ip address into the corrext type.
 let anyIPv4Address = AnyIPAddress("192.168.1.1")

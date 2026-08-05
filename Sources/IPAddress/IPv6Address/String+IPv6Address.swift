@@ -10,7 +10,7 @@ extension IPv6Address: CustomStringConvertible {
         unsafe self.makeDescription(enclosingInSquareBrackets: true) {
             (maxWriteableBytes, callback) in
             unsafe String(unsafeUninitializedCapacity_Compatibility: maxWriteableBytes) { buffer in
-                unsafe callback(buffer)
+                unsafe callback(UnsafeMutableRawBufferPointer(buffer))
             }
         }
     }
@@ -24,7 +24,7 @@ extension IPv6Address {
         enclosingInSquareBrackets: Bool,
         writingToUnsafeMutableBufferPointerOfUInt8: (
             _ maxWriteableBytes: Int,
-            _ callbackReturningBytesWritten: (UnsafeMutableBufferPointer<UInt8>) -> Int
+            _ callbackReturningBytesWritten: (UnsafeMutableRawBufferPointer) -> Int
         ) throws(E) -> Buffer
     ) throws(E) -> Buffer {
         var address = self
@@ -36,8 +36,8 @@ extension IPv6Address {
         address.address &= addressMask
         /// If this is an IPv4-mapped IPv6 address, we need to add 15 bytes for the IPv4 address.
         /// However, the ipv6 address will write either "[::FFFF:0:0" or "::FFFF:0:0" before
-        /// it reached the ipv4-address-write code.
-        /// So we need to walk back 3 bytes as well (the tailing `0:0`) so we can reserve 3 less bytes.
+        /// it reaches the ipv4-address-write code.
+        /// So we walk back 3 bytes as well (the tailing `0:0`); therefore we reserve 3 bytes less.
         let ipv4MappedWalkBackBytes = 3
         let additionalCapacity = isIPv4Mapped ? (15 - ipv4MappedWalkBackBytes) : 0
 
@@ -93,17 +93,15 @@ extension IPv6Address {
             unsafe buffer[writeIdx &+ 1] = .asciiColon
             writeIdx &+= entry.writeCsAtEnd ? 2 : 0
 
-            if _slowPath(isIPv4Mapped) {
+            if isIPv4Mapped {
                 let ipv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
                 let lowerBound = writeIdx &- ipv4MappedWalkBackBytes
-                let upperBound = writeIdx &+ 15 &- ipv4MappedWalkBackBytes
-                let bounds = unsafe Range<Int>(uncheckedBounds: (lowerBound, upperBound))
-                let ipv4Buffer = buffer.extracting(bounds)
+                let start = unsafe buffer.baseAddress.unsafelyUnwrapped.advanced(by: lowerBound)
+                let ipv4Buffer = unsafe UnsafeMutableRawBufferPointer(start: start, count: 15)
                 let written = unsafe ipv4.writeTextualRepresentation_RequiringMinimumCapacityOf15(
-                    into: UnsafeMutableRawBufferPointer(ipv4Buffer)
+                    into: ipv4Buffer
                 )
                 writeIdx = lowerBound &+ written
-                assert(writeIdx <= toReserve)
             }
 
             unsafe buffer[writeIdx] = .asciiRightSquareBracket
@@ -227,7 +225,7 @@ extension IPv6Address {
 
     @inlinable
     func _writeSegmentAsLowercasedHexASCII_RequiringMinimumCapacityOf4(
-        into buffer: UnsafeMutableBufferPointer<UInt8>,
+        into buffer: UnsafeMutableRawBufferPointer,
         advancingIdx idx: inout Int,
         segmentIdx: Int
     ) {
@@ -265,7 +263,7 @@ extension IPv6Address {
         let zeroDigitsCountMax3 = min(3, zeroDigitsCount)
         let toStore = systemRepresentationBytes &>> (zeroDigitsCountMax3 &* 8)
 
-        unsafe UnsafeMutableRawBufferPointer(buffer).storeBytes(
+        unsafe buffer.storeBytes(
             of: toStore,
             toByteOffset: idx,
             as: UInt32.self

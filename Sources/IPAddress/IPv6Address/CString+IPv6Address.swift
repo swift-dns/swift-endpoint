@@ -20,8 +20,8 @@ extension IPv6Address {
             enclosingInSquareBrackets: false
         ) { (maxWriteableBytes, writeBytes) throws(E) in
             try withUnsafeTemporaryAllocation(
-                of: UInt8.self,
-                capacity: maxWriteableBytes
+                byteCount: maxWriteableBytes,
+                alignment: 1
             ) { buffer throws(E) in
                 let count = unsafe writeBytes(buffer)
                 /// We're counting on our own `makeDescription`'s underlying impl to never actually

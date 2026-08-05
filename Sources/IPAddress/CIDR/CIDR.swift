@@ -8,10 +8,10 @@
 /// [IETF RFC 4632]: https://datatracker.ietf.org/doc/html/rfc4632
 /// [IETF RFC 4291]: https://datatracker.ietf.org/doc/html/rfc4291
 ///
-/// This types stores the raw `prefix` as provided, but for most purposes other than computing a string
-/// representation, the host bits are ignored.
-/// For example, 127.0.0.100/8 and 127.0.0.0/8 represent the same network, but their prefixes
-/// are stored as `127.0.0.100` and `127.0.0.0` respectively, regardless of their equivalence.
+/// This types stores the raw `prefix` as provided. The host bits are only ignored by containment
+/// checks. Everywhere else, including equality and hashing, they are significant.
+/// For example, 127.0.0.100/8 and 127.0.0.0/8 contain the same addresses, but are not equal,
+/// because their prefixes are stored as `127.0.0.100` and `127.0.0.0` respectively.
 @available(SwiftStdlib 5.1, *)
 public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
 
@@ -28,9 +28,9 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     /// Example: in 127.0.0.100/8, the prefix is 127.0.0.100.
     /// in 0xFF00::/8, the prefix is 0xFF00::.
     ///
-    /// Note that this can contain host bits although nonsignificant in context of a CIDR block.
-    /// For example, 127.0.0.100/8 and 127.0.0.1/8 represent the same network, but their prefix
-    /// would be stored as `127.0.0.100` and `127.0.0.1` respectively, regardless of their equivalence.
+    /// Note that this can contain host bits although nonsignificant for containment checks.
+    /// For example, 127.0.0.100/8 and 127.0.0.1/8 contain the same addresses, but their prefix
+    /// would be stored as `127.0.0.100` and `127.0.0.1` respectively, which makes them unequal.
     public let prefix: IPAddressType
     /// The masked part of the address.
     /// Of type `UInt32` for `IPv4Address` or `UInt128` for `IPv6Address`.
@@ -150,20 +150,23 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
 
 @available(SwiftStdlib 5.1, *)
 extension CIDR: Hashable {
-    /// Whether or now 2 CIDR blocks represent the same network.
-    /// For example, 127.0.0.100/8 and 127.0.0.0/8 represent the same network.
+    /// Whether or not 2 CIDR blocks have the same prefix and mask.
+    /// The host bits of ``prefix`` are significant here.
+    /// For example, 127.0.0.100/8 and 127.0.0.0/8 are not equal, although they contain the
+    /// same addresses.
     @inlinable
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.mask == rhs.mask
-            && lhs.networkAddress == rhs.networkAddress
+            && lhs.prefix == rhs.prefix
     }
 
-    /// Hashes the network this CIDR describes, consistent with ``==(_:_:)``.
-    /// The host bits of ``prefix`` are masked off so equal CIDRs hash equally.
-    /// For example, 127.0.0.100/8 and 127.0.0.0/8 represent the same network.
+    /// Hashes the prefix and the mask, consistent with ``==(_:_:)``.
+    /// The host bits of ``prefix`` are significant here.
+    /// For example, 127.0.0.100/8 and 127.0.0.0/8 are not required to hash equally, although
+    /// they contain the same addresses.
     @inlinable
     public func hash(into hasher: inout Hasher) {
         hasher.combine(self.mask)
-        hasher.combine(self.networkAddress)
+        hasher.combine(self.prefix)
     }
 }

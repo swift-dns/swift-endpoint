@@ -151,17 +151,24 @@ struct CIDRTests {
     }
 
     @available(SwiftStdlib 5.1, *)
-    @Test func `CIDR equality and hashing ignore the prefix host bits`() {
-        /// Same network, different host bits: must be equal and hash equally.
+    @Test func `CIDR equality and hashing account for the prefix host bits`() {
+        /// Same prefix and mask: must be equal and hash equally.
         let a = CIDR(prefix: IPv4Address(127, 0, 0, 18), prefixLength: 8)
-        let b = CIDR(prefix: IPv4Address(127, 0, 0, 0), prefixLength: 8)
+        let b = CIDR(prefix: IPv4Address(127, 0, 0, 18), prefixLength: 8)
         #expect(a == b)
         #expect(a.hashValue == b.hashValue)
-        /// But the un-normalized prefix is still preserved for display.
+        /// The un-normalized prefix is preserved for display.
         #expect(a.prefix == IPv4Address(127, 0, 0, 18))
         #expect(a.description == "127.0.0.18/8")
 
-        /// Different mask, same masked prefix: must not be equal.
+        /// Same network, different host bits: must not be equal, although containment is unaffected.
+        let c = CIDR(prefix: IPv4Address(127, 0, 0, 0), prefixLength: 8)
+        #expect(a != c)
+        #expect(a.networkAddress == c.networkAddress)
+        #expect(a.contains(c.prefix))
+        #expect(c.contains(a.prefix))
+
+        /// Different mask, same prefix: must not be equal.
         #expect(
             CIDR(prefix: IPv4Address(127, 0, 0, 0), prefixLength: 8)
                 != CIDR(prefix: IPv4Address(127, 0, 0, 0), prefixLength: 16)

@@ -26,77 +26,8 @@ env:
   THRESHOLDS_PATH: "Benchmarks/Thresholds/"
 
 jobs:
-  check-benchmark-relevance:
-    runs-on: ubuntu-latest
-
-    container: swift:6.3-noble
-
-    timeout-minutes: 10
-
-    permissions:
-      pull-requests: write # For the skip comment
-      contents: read
-
-    outputs:
-      should-run: ${{ steps.decide.outputs.should-run }}
-
-    steps:
-      - name: Generate swift-dns-helper token
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ vars.SWIFT_DNS_HELPER_CLIENT_ID }}
-          private-key: ${{ secrets.SWIFT_DNS_HELPER_PRIVATE_KEY }}
-
-      - name: Install jq
-        run: apt-get update -y && apt-get install -y jq
-
-      - name: Check out code
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Configure git
-        run: git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-
-      - name: Decide whether benchmarks must run
-        id: decide
-        env:
-          GITHUB_OBJECT: ${{ toJson(github) }}
-        run: |
-          HAS_BENCHMARKS="$([[ -d "Benchmarks" ]] && printf 'true' || printf 'false')"
-          BENCHMARKS_CHANGED="$(.github/scripts/check-benchmark-relevance.sh)"
-          SHOULD_RUN="$([[ "${HAS_BENCHMARKS}" == "true" && "${BENCHMARKS_CHANGED}" == "true" ]] && printf 'true' || printf 'false')"
-
-          printf '%s\n' "has-benchmarks=${HAS_BENCHMARKS}" >> "${GITHUB_OUTPUT}"
-          printf '%s\n' "benchmarks-changed=${BENCHMARKS_CHANGED}" >> "${GITHUB_OUTPUT}"
-          printf '%s\n' "should-run=${SHOULD_RUN}" >> "${GITHUB_OUTPUT}"
-
-      - name: Construct skip comment
-        if: steps.decide.outputs.should-run == 'false' && startsWith(github.event_name, 'pull_request')
-        run: |
-          printf '%s\n' "## [Benchmark](${RUN_LINK}) Report" >> skip-comment.md
-          if [[ '${{ steps.decide.outputs.has-benchmarks }}' == 'false' ]]; then
-            printf '%s\n' '**⏭️ No benchmarks present — benchmarks skipped ⏭️**' >> skip-comment.md
-          else
-            printf '%s\n' '**⏭️ No benchmark-relevant changes — benchmarks skipped ⏭️**' >> skip-comment.md
-          fi
-
-      - name: Comment in PR
-        if: steps.decide.outputs.should-run == 'false' && startsWith(github.event_name, 'pull_request')
-        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
-        with:
-          github-token: ${{ steps.app-token.outputs.token }}
-          pr-number: ${{ github.event.pull_request.number }}
-          file-path: skip-comment.md
-          comment-tag: benchmark-ci-comment
-
   benchmark-vs-thresholds:
     runs-on: [self-hosted, linux, x64]
-
-    needs: check-benchmark-relevance
-    if: ${{ !cancelled() && needs.check-benchmark-relevance.outputs.should-run != 'false' }}
 
     permissions:
       pull-requests: write # For the comment action

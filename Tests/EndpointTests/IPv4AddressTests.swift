@@ -80,7 +80,7 @@ struct IPv4AddressTests {
     }
 
     @available(SwiftStdlib 6.2, *)
-    @Test(arguments: IPTestCase<IPv4Address>.stringAndAddress.compactMap(\.ip?.address))
+    @Test(arguments: IPTestCase<IPv4Address>.stringAndAddress.compactMap({ $0.ip?.address }))
     func `IPv4Address description and serialization round-trip`(ip: IPv4Address) {
         #expect(IPv4Address(ip.description) == ip)
 
@@ -268,7 +268,7 @@ struct IPv4AddressTests {
     }
 
     @available(SwiftStdlib 5.1, *)
-    @Test(arguments: IPTestCase<IPv4Address>.stringAndAddress.compactMap(\.ip?.address))
+    @Test(arguments: IPTestCase<IPv4Address>.stringAndAddress.compactMap({ $0.ip?.address }))
     func `IPv4Address cString APIs compatibility with C`(ip: IPv4Address) {
         let expectedBytes = [ip.bytes.0, ip.bytes.1, ip.bytes.2, ip.bytes.3]
 

@@ -145,7 +145,7 @@ struct IPv6AddressTests {
     }
 
     @available(SwiftStdlib 6.2, *)
-    @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress.compactMap(\.ip?.address))
+    @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress.compactMap({ $0.ip?.address }))
     func `IPv6Address description and serialization round-trip`(ip: IPv6Address) {
         #expect(IPv6Address(ip.description) == ip)
 
@@ -300,7 +300,7 @@ struct IPv6AddressTests {
     }
 
     @available(SwiftStdlib 6.0, *)
-    @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress.compactMap(\.ip?.address))
+    @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress.compactMap({ $0.ip?.address }))
     func `IPv6Address cString APIs compatibility with C`(ip: IPv6Address) {
         let bytes = ip.bytes
         let expectedBytes = [

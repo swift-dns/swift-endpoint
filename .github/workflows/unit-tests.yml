@@ -226,6 +226,7 @@ jobs:
 
     env:
       ASAN_OPTIONS: "detect_leaks=1"
+      LSAN_OPTIONS: "suppressions=.github/lsan-suppressions.txt:print_suppressions=1"
       UBSAN_OPTIONS: "halt_on_error=1:print_stacktrace=1"
       SWIFTLY_HOME_DIR: "/Users/runner/.swiftly"
       SWIFTLY_BIN_DIR: "/Users/runner/.swiftly/bin"

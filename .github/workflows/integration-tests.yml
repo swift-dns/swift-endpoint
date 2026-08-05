@@ -69,6 +69,7 @@ jobs:
         run: |
           swift build \
             --build-tests \
+            --disable-xctest \
             --explicit-target-dependency-import-check error \
             -Xswiftc -require-explicit-sendable \
             -c ${{ matrix.config.mode }}
@@ -92,6 +93,7 @@ jobs:
           swift test \
             --filter "IntegrationTests." \
             --skip-build \
+            --disable-xctest \
             -Xswiftc -require-explicit-sendable \
             -c ${{ matrix.config.mode }}
           printf '%s\n' "exit-status=$?" >> "${GITHUB_OUTPUT}"
@@ -342,6 +344,7 @@ jobs:
         run: |
           swift build \
             --build-tests \
+            --disable-xctest \
             --enable-code-coverage \
             --explicit-target-dependency-import-check error \
             -Xswiftc -require-explicit-sendable \
@@ -366,6 +369,7 @@ jobs:
           swift test \
             --filter "IntegrationTests." \
             --skip-build \
+            --disable-xctest \
             -Xswiftc -require-explicit-sendable \
             -c ${{ matrix.config.mode }}
           printf '%s\n' "exit-status=$?" >> "${GITHUB_OUTPUT}"

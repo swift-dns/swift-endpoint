@@ -71,6 +71,7 @@ jobs:
           # keeping code coverage flag to check for regressions
           swift build \
             --build-tests \
+            --disable-xctest \
             --enable-code-coverage \
             --sanitize=address \
             --explicit-target-dependency-import-check error \
@@ -91,6 +92,7 @@ jobs:
           swift test \
             --skip "IntegrationTests." \
             --skip-build \
+            --disable-xctest \
             --enable-code-coverage \
             --sanitize=address \
             -Xswiftc -require-explicit-sendable \
@@ -316,6 +318,7 @@ jobs:
         run: |
           swift build \
             --build-tests \
+            --disable-xctest \
             --enable-code-coverage \
             --sanitize=address --sanitize=undefined \
             --explicit-target-dependency-import-check error \
@@ -336,6 +339,7 @@ jobs:
           swift test \
             --skip "IntegrationTests." \
             --skip-build \
+            --disable-xctest \
             --enable-code-coverage \
             --sanitize=address --sanitize=undefined \
             -Xswiftc -require-explicit-sendable \

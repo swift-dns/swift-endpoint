@@ -74,34 +74,34 @@ extension IPPropertyTestCase where IPAddressType == AnyIPAddress {
     }
 }
 
-extension IPTestCase where IPAddressType == AnyIPAddress {
+extension AnyIPAddressTestCase {
     @available(SwiftStdlib 6.0, *)
     static var stringAndAddress: [Self] {
         [
-            IPTestCase(
+            AnyIPAddressTestCase(
                 "192.168.1.1",
                 ip: (.v4(IPv4Address(192, 168, 1, 1)), "192.168.1.1")
             ),
-            IPTestCase("[192.168.1.256]", ip: nil),
-            IPTestCase(
+            AnyIPAddressTestCase("[192.168.1.256]", ip: nil),
+            AnyIPAddressTestCase(
                 "[2001:0:0:1::]",
                 ip: (.v6(IPv6Address(0x2001_0000_0000_0001_0000_0000_0000_0000)), "[2001:0:0:1::]")
             ),
-            IPTestCase(
+            AnyIPAddressTestCase(
                 "0:0:0:0:0:FFFF:204.152.189.116",
                 ip: (
                     .v6(IPv6Address(0x0000_0000_0000_0000_0000_FFFF_CC98_BD74)),
                     "[::ffff:204.152.189.116]"
                 )
             ),
-            IPTestCase(
+            AnyIPAddressTestCase(
                 "[2001:db8:85a3::100]",
                 ip: (
                     .v6(IPv6Address(0x2001_0DB8_85A3_0000_0000_0000_0000_0100)),
                     "[2001:db8:85a3::100]"
                 )
             ),
-            IPTestCase("[0:1:2:3:4:0:5:6::]", ip: nil),
+            AnyIPAddressTestCase("[0:1:2:3:4:0:5:6::]", ip: nil),
         ]
     }
 

@@ -2,12 +2,69 @@
 extension IPv6Address: CustomStringConvertible {
     /// The textual representation of an IPv6 address.
     /// That is, 8 16-bits (2-bytes) separated by `:`, enclosed in `[]`, while using
-    /// the compression sign (`::`) when possible.
+    /// the compression sign (`::`) and mixed ipv4-embedded notation where applicable.
     ///
     /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
+    ///
+    /// As examples, as discussed in the aforementioned RFC, the following descriptions might
+    /// be emitted for their corresponding IP addresses:
+    /// `[::]`, `[::ffff:192.168.1.1]`, `[2001:db8:85a3::100]`.
+    /// Letters are always lowercased and the square brackets are always present.
+    /// For certain subnets such as `::ffff:0:0/96`, the mixed notation is emitted.
+    ///
+    /// Use `IPv6Address.description(options:)` for a customized description.
     @inlinable
     public var description: String {
-        unsafe self.makeDescription(enclosingInSquareBrackets: true) {
+        self.description(options: .standardOptions)
+    }
+
+    public struct DescriptionOptions: Sendable, OptionSet {
+        public let rawValue: UInt
+
+        @inlinable
+        public init(rawValue: UInt) {
+            self.rawValue = rawValue
+        }
+
+        /// Print the last 32 bits in the mixed notation of
+        /// [RFC 4291, Section 2.2](https://datatracker.ietf.org/doc/html/rfc4291#section-2.2),
+        /// where applicable.
+        /// Example: `[::ffff:204.152.189.116]` instead of `[::ffff:cc98:bd74]`.
+        @inlinable
+        public static var useMixedNotation: Self {
+            Self(rawValue: 1 << 0)
+        }
+
+        /// Enclose the description in square brackets.
+        /// Example: `[2001:db8::1]` instead of `2001:db8::1`.
+        @inlinable
+        public static var encloseInSquareBrackets: Self {
+            Self(rawValue: 1 << 1)
+        }
+
+        /// Options for compliance with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
+        @inlinable
+        public static var standardOptions: Self {
+            [.useMixedNotation, .encloseInSquareBrackets]
+        }
+    }
+
+    /// The textual representation of an IPv6 address.
+    /// That is, 8 16-bits (2-bytes) separated by `:`,
+    /// while using the compression sign (`::`) where applicable.
+    /// Default options also add mixed ipv4-embedded notation where applicable,
+    /// as well as enclosing the description in square brackets.
+    ///
+    /// As examples, as discussed in the aforementioned RFC, the following descriptions might
+    /// be emitted for their corresponding IP addresses.
+    ///
+    /// `[::]`, `[::ffff:192.168.1.1]`, `[2001:db8:85a3::100]`.
+    /// If `useMixedNotation` is disabled, `[::ffff:192.168.1.1]` will be emitted as `[::ffff:cc98:bd74]`.
+    /// If `encloseInSquareBrackets` is disabled, `[2001:db8:85a3::100]` will be emitted as `2001:db8:85a3::100`.
+    /// Letters are always in lowercase.
+    @inlinable
+    public func description(options: DescriptionOptions = .standardOptions) -> String {
+        unsafe self.makeDescription(options: options) {
             (maxWriteableBytes, callback) in
             unsafe String(unsafeUninitializedCapacity_Compatibility: maxWriteableBytes) { buffer in
                 unsafe callback(UnsafeMutableRawBufferPointer(buffer))
@@ -21,7 +78,7 @@ extension IPv6Address {
     @inlinable
     @inline(__always)
     package func makeDescription<Buffer, E: Error>(
-        enclosingInSquareBrackets: Bool,
+        options: DescriptionOptions,
         writingToUnsafeMutableBufferPointerOfUInt8: (
             _ maxWriteableBytes: Int,
             _ callbackReturningBytesWritten: (UnsafeMutableRawBufferPointer) -> Int
@@ -29,30 +86,33 @@ extension IPv6Address {
     ) throws(E) -> Buffer {
         var address = self
 
-        let isIPv4Mapped = CIDR<IPv6Address>.ipv4Mapped.contains(address)
+        let encloseInSquareBrackets = options.contains(.encloseInSquareBrackets)
+        let useMixedNotation = options.contains(.useMixedNotation)
+        let isIPv4Embedded = CIDR<IPv6Address>.ipv4Mapped.contains(address)
+        let shouldUseMixedNotation = useMixedNotation && isIPv4Embedded
         let allMask = UnsignedInteger128(_low: .max, _high: .max)
-        let ipv4MappedMask = UnsignedInteger128(_low: 0xFFFF_FFFF_0000_0000, _high: .max)
-        let addressMask = isIPv4Mapped ? ipv4MappedMask : allMask
+        let ipv4EmbeddedMask = UnsignedInteger128(_low: 0xFFFF_FFFF_0000_0000, _high: .max)
+        let addressMask = shouldUseMixedNotation ? ipv4EmbeddedMask : allMask
         address.address &= addressMask
         /// If this is an IPv4-mapped IPv6 address, we need to add 15 bytes for the IPv4 address.
         /// However, the ipv6 address will write either "[::FFFF:0:0" or "::FFFF:0:0" before
         /// it reaches the ipv4-address-write code.
         /// So we walk back 3 bytes as well (the tailing `0:0`); therefore we reserve 3 bytes less.
-        let ipv4MappedWalkBackBytes = 3
-        let additionalCapacity = isIPv4Mapped ? (15 - ipv4MappedWalkBackBytes) : 0
+        let ipv4EmbeddedWalkBackBytes = 3
+        let additionalCapacity = shouldUseMixedNotation ? (15 - ipv4EmbeddedWalkBackBytes) : 0
 
         let mask = address.makeSegmentsMask()
         let entry = IPv6Address.entry(forMask: mask)
         let digitsPrintCountNoTrailing = address.countDigitsRequiredToPrintExcludingTrailingDigits()
 
-        let bracketsCount = enclosingInSquareBrackets ? 2 : 0
+        let bracketsCount = encloseInSquareBrackets ? 2 : 0
         /// If no brackets, we need 2 extra byte for the possible colon that we speculatively write
         /// Also _writeSegmentAsLowercasedHexASCII needs 4 bytes of room, 1 of which is guaranteed to be
         /// present in the byte-count since the segments are non-zero. So 3.
         let speculativeBytes = 3
-        /// `enclosingInSquareBrackets` if true, gives 1 byte worth of trailing room
+        /// `encloseInSquareBrackets` if true, gives 1 byte worth of trailing room
         let conservativeSpeculativeBytes =
-            enclosingInSquareBrackets ? speculativeBytes &- 1 : speculativeBytes
+            encloseInSquareBrackets ? speculativeBytes &- 1 : speculativeBytes
         /// Exact required bytes to print, including headroom bytes for speculative writes.
         let toReserve =
             entry.minRawLayoutBytes
@@ -65,7 +125,7 @@ extension IPv6Address {
             var writeIdx = 0
 
             unsafe buffer[0] = .asciiLeftSquareBracket
-            writeIdx &+= enclosingInSquareBrackets ? 1 : 0
+            writeIdx &+= encloseInSquareBrackets ? 1 : 0
 
             unsafe buffer[writeIdx] = .asciiColon
             writeIdx &+= entry.writeCsAtBeginning ? 1 : 0
@@ -93,9 +153,9 @@ extension IPv6Address {
             unsafe buffer[writeIdx &+ 1] = .asciiColon
             writeIdx &+= entry.writeCsAtEnd ? 2 : 0
 
-            if isIPv4Mapped {
+            if shouldUseMixedNotation {
                 let ipv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
-                let lowerBound = writeIdx &- ipv4MappedWalkBackBytes
+                let lowerBound = writeIdx &- ipv4EmbeddedWalkBackBytes
                 let start = unsafe buffer.baseAddress.unsafelyUnwrapped.advanced(by: lowerBound)
                 let ipv4Buffer = unsafe UnsafeMutableRawBufferPointer(start: start, count: 15)
                 let written = unsafe ipv4.writeTextualRepresentation_RequiringMinimumCapacityOf15(
@@ -105,7 +165,7 @@ extension IPv6Address {
             }
 
             unsafe buffer[writeIdx] = .asciiRightSquareBracket
-            writeIdx &+= enclosingInSquareBrackets ? 1 : 0
+            writeIdx &+= encloseInSquareBrackets ? 1 : 0
 
             assert(writeIdx <= toReserve - 2)
 
@@ -289,7 +349,10 @@ extension IPv6Address: LosslessStringConvertible {
     /// Initialize an IPv6 address from its textual representation.
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
+    ///
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
+    /// Parses all IPv4-embedded address forms where the embedded IPv4 is in the last 32 bits.
+    /// This includes blocks that are not used for embedded IPv4 addresses in practice or are deprecated.
     public init?(_ description: String) {
         var description = description
         guard

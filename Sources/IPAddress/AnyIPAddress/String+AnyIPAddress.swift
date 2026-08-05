@@ -1,11 +1,41 @@
 @available(SwiftStdlib 5.1, *)
 extension AnyIPAddress: CustomStringConvertible {
+    /// The textual representation of an IP address.
+    /// The `v4` case is formatted in dot-decimal notation, and the `v6` case as
+    /// 8 16-bits (2-bytes) separated by `:`, enclosed in `[]`, while using
+    /// the compression sign (`::`) and mixed ipv4-embedded notation where applicable.
+    ///
+    /// As examples, the following descriptions might be emitted for their corresponding
+    /// IP addresses:
+    /// `192.168.1.1`, `[::]`, `[::ffff:192.168.1.1]`, `[2001:db8:85a3::100]`.
+    ///
+    /// Use `AnyIPAddress.description(ipv6Options:)` for a customized description.
+    @inlinable
     public var description: String {
+        self.description(ipv6Options: .standardOptions)
+    }
+
+    /// The textual representation of an IP address.
+    /// The `v4` case is formatted in dot-decimal notation, and the `v6` case as
+    /// 8 16-bits (2-bytes) separated by `:`,
+    /// while using the compression sign (`::`) where applicable.
+    /// Default options also add mixed ipv4-embedded notation where applicable,
+    /// as well as enclosing the description in square brackets.
+    ///
+    /// `ipv6Options` only applies to the `v6` case. The `v4` case has no options and
+    /// is always formatted in dot-decimal notation.
+    ///
+    /// Parameters:
+    /// - `ipv6Options`: The options to use for the description of the `v6` case.
+    @inlinable
+    public func description(
+        ipv6Options: IPv6Address.DescriptionOptions = .standardOptions
+    ) -> String {
         switch self {
         case .v4(let ipv4):
             return ipv4.description
         case .v6(let ipv6):
-            return ipv6.description
+            return ipv6.description(options: ipv6Options)
         }
     }
 }

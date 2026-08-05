@@ -80,8 +80,8 @@ struct IPv4AddressTests {
     }
 
     @available(SwiftStdlib 6.2, *)
-    @Test(arguments: IPv4ByteLengthTestCase.all)
-    func `IPv4Address exhaustive byte-length cases`(testCase: IPv4ByteLengthTestCase) throws {
+    @Test(arguments: IPv4DecimalLengthTestCase.all)
+    func `IPv4Address exhaustive byte-length cases`(testCase: IPv4DecimalLengthTestCase) throws {
         let ip = testCase.address
         #expect(IPv4Address(testCase.string) == ip)
         #expect(IPv4Address(Substring(testCase.string)) == ip)
@@ -304,9 +304,9 @@ struct IPv4AddressTests {
     }
 
     @available(SwiftStdlib 5.1, *)
-    @Test(arguments: IPv4ByteLengthTestCase.all)
+    @Test(arguments: IPv4DecimalLengthTestCase.all)
     func `IPv4Address cString APIs compatibility with C in byte-length test cases`(
-        testCase: IPv4ByteLengthTestCase
+        testCase: IPv4DecimalLengthTestCase
     ) {
         let ip = testCase.address
         let expectedBytes = [ip.bytes.0, ip.bytes.1, ip.bytes.2, ip.bytes.3]

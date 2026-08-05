@@ -135,7 +135,7 @@ struct IPv6AddressTests {
     @Test(arguments: IPv6AddressTestCase.stringAndAddress.compactMap(\.ip))
     func ipv6AddressDescription(
         ipv6: IPv6Address,
-        expectedDescription: String,
+        _: String,
         expectedMixedNotationDescription: String
     ) {
         #expect(ipv6.description == "[\(expectedMixedNotationDescription)]")
@@ -168,11 +168,11 @@ struct IPv6AddressTests {
     @available(SwiftStdlib 6.0, *)
     @Test(
         arguments: IPv6AddressTestCase.stringAndAddress.filter { $0.ip != nil },
-        IPv6Address.IPv6AddressDescriptionOptions.allCombos
+        IPv6Address.DescriptionOptions.allCombos
     )
     func `IPv6Address description honours every description-options combination`(
         testCase: IPv6AddressTestCase,
-        options: IPv6Address.IPv6AddressDescriptionOptions
+        options: IPv6Address.DescriptionOptions
     ) throws {
         let ip = try #require(testCase.ip?.address)
         let expected = try #require(testCase.expectedDescription(options: options))
@@ -183,11 +183,11 @@ struct IPv6AddressTests {
     @available(SwiftStdlib 6.0, *)
     @Test(
         arguments: IPv6AddressTestCase.stringAndAddress.filter { $0.ip != nil },
-        IPv6Address.IPv6AddressDescriptionOptions.allCombos
+        IPv6Address.DescriptionOptions.allCombos
     )
     func `IPv6Address withCString honours every description-options combination`(
         testCase: IPv6AddressTestCase,
-        options: IPv6Address.IPv6AddressDescriptionOptions
+        options: IPv6Address.DescriptionOptions
     ) throws {
         let ip = try #require(testCase.ip?.address)
         let expected = try #require(testCase.expectedDescription(options: options))
@@ -366,11 +366,11 @@ struct IPv6AddressTests {
     @available(SwiftStdlib 6.0, *)
     @Test(
         arguments: IPv6AddressTestCase.stringAndAddress.filter { $0.ip != nil },
-        IPv6Address.IPv6AddressDescriptionOptions.allCombos
+        IPv6Address.DescriptionOptions.allCombos
     )
     func `IPv6Address cString APIs compatibility with C`(
         testCase: IPv6AddressTestCase,
-        options: IPv6Address.IPv6AddressDescriptionOptions
+        options: IPv6Address.DescriptionOptions
     ) throws {
         let ip = try #require(testCase.ip?.address)
         let bytes = ip.bytes

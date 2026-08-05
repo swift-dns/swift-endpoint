@@ -690,7 +690,7 @@ extension IPv6AddressTestCase {
     /// Derived from the exhaustive IPv4 octet cases, so the IPv4-mapped forms are hardcoded
     /// in exactly one place.
     private static var ipv4Embedded: [Self] {
-        IPv4ByteLengthTestCase.all.map { octets in
+        IPv4DecimalLengthTestCase.all.map { octets in
             Self(
                 "::ffff:\(octets.string)",
                 ip: (octets.ipv4EmbeddedAddress, "::ffff:\(octets.expandedIPv6SegmentHex)"),
@@ -714,7 +714,7 @@ extension IPv6AddressTestCase {
     }
 }
 
-extension IPv6Address.IPv6AddressDescriptionOptions {
+extension IPv6Address.DescriptionOptions {
     static var allCombos: [Self] {
         [
             Self([]),

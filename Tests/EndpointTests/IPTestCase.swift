@@ -40,7 +40,7 @@ struct IPv6AddressTestCase: Sendable {
 
     @available(SwiftStdlib 5.1, *)
     func expectedDescription(
-        options: IPv6Address.IPv6AddressDescriptionOptions
+        options: IPv6Address.DescriptionOptions
     ) -> String? {
         guard let ip = self.ip else {
             return nil
@@ -53,7 +53,7 @@ struct IPv6AddressTestCase: Sendable {
     }
 }
 
-struct IPv4ByteLengthTestCase: Sendable {
+struct IPv4DecimalLengthTestCase: Sendable {
     /// The textual representation to parse. May contain leading zeros.
     let string: String
     let rawAddress: UInt32

@@ -5,17 +5,18 @@ extension IPv6Address {
     /// results in the C string `"2001:db8::1"`.
     /// Notice no brackets are present by default, as that's what most C APIs expect.
     ///
-    /// Unlike `description`, the textual representation is **not** enclosed in square brackets,
+    /// Unlike `description`, the textual representation is **not** enclosed in square brackets by default,
     /// because that is the presentation format expected by C APIs, which reject the bracketed form.
     ///
     /// Parameters:
+    /// - `options`: The options to use for the description.
     /// - `body`: A closure that allows access to a `Span<CChar>` of the address's textual representation.
     ///    You can use `span.withUnsafeBufferPointer { $0.baseAddress! /*UnsafePointer<CChar>*/ }` on the
     ///    span if you need to, for C interoperability.
     /// - Returns: The result of the closure.
     @inlinable
     public func withCString<Result, E: Error>(
-        options: IPv6AddressDescriptionOptions = .standardOptions
+        options: DescriptionOptions = .standardOptions
             .subtracting(.encloseInSquareBrackets),
         _ body: (Span<CChar>) throws(E) -> Result
     ) throws(E) -> Result {

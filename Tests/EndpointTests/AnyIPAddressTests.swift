@@ -22,6 +22,52 @@ struct AnyIPAddressTests {
         #expect(produced == bracketLess)
     }
 
+    @available(SwiftStdlib 6.0, *)
+    @Test(
+        arguments: IPv6AddressTestCase.stringAndAddress.filter { $0.ip != nil },
+        IPv6Address.DescriptionOptions.allCombos
+    )
+    func `AnyIPAddress v6 description honours every ipv6Options combination`(
+        testCase: IPv6AddressTestCase,
+        ipv6Options: IPv6Address.DescriptionOptions
+    ) throws {
+        let ip = AnyIPAddress.v6(try #require(testCase.ip?.address))
+        let expected = try #require(testCase.expectedDescription(options: ipv6Options))
+        #expect(ip.description(ipv6Options: ipv6Options) == expected)
+        #expect(AnyIPAddress(expected) == ip)
+
+        let produced = ip.withCString(ipv6Options: ipv6Options) { span in
+            #expect(span.count == expected.utf8.count + 1)
+            #expect(span[span.count - 1] == 0)
+            return span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
+        }
+        #expect(produced == expected)
+
+        let reparsed = ip.withCString(ipv6Options: ipv6Options) { span in
+            span.withUnsafeBufferPointer { unsafe AnyIPAddress(cString: $0.baseAddress!) }
+        }
+        #expect(reparsed == ip)
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test(
+        arguments: IPv4AddressTestCase.stringAndAddress
+            .compactMap({ $0.ip?.address }).map(AnyIPAddress.v4)
+            + IPv6AddressTestCase.stringAndAddress
+            .compactMap({ $0.ip?.address }).map(AnyIPAddress.v6)
+    )
+    func `AnyIPAddress description and withCString defaults`(ip: AnyIPAddress) {
+        #expect(ip.description == ip.description(ipv6Options: .standardOptions))
+
+        let cStringDefault = ip.withCString { span in
+            span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
+        }
+        let cStringExplicit = ip.withCString(ipv6Options: [.useMixedNotation]) { span in
+            span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
+        }
+        #expect(cStringDefault == cStringExplicit)
+    }
+
     @available(SwiftStdlib 6.2, *)
     @Test(
         arguments: IPv4AddressTestCase.stringAndAddress

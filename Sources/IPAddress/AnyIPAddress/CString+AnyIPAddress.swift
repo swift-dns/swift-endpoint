@@ -2,24 +2,32 @@
 extension AnyIPAddress {
     /// Calls `body` with a pointer to a null-terminated C string of this address's textual
     /// representation. The `v4` case is formatted in dot-decimal notation, and the `v6` case is
-    /// formatted in the bracket-less presentation format.
+    /// formatted in the bracket-less presentation format by default.
+    /// Notice no brackets are present by default, as that's what most C APIs expect.
     ///
-    /// The textual representation is in the presentation format expected by C APIs.
+    /// Unlike `description`, the `v6` case is **not** enclosed in square brackets by default,
+    /// because that is the presentation format expected by C APIs, which reject the bracketed form.
+    ///
+    /// `ipv6Options` only applies to the `v6` case. The `v4` case has no options and
+    /// is always formatted in dot-decimal notation.
     ///
     /// Parameters:
+    /// - `ipv6Options`: The options to use for the description of the `v6` case.
     /// - `body`: A closure that allows access to a `Span<CChar>` of the address's textual representation.
     ///    You can use `span.withUnsafeBufferPointer { $0.baseAddress! /*UnsafePointer<CChar>*/ }` on the
     ///    span if you need to, for C interoperability.
     /// - Returns: The result of the closure.
     @inlinable
     public func withCString<Result, E: Error>(
+        ipv6Options: IPv6Address.DescriptionOptions = .standardOptions
+            .subtracting(.encloseInSquareBrackets),
         _ body: (Span<CChar>) throws(E) -> Result
     ) throws(E) -> Result {
         switch self {
         case .v4(let ipv4):
             return try ipv4.withCString(body)
         case .v6(let ipv6):
-            return try ipv6.withCString(body)
+            return try ipv6.withCString(options: ipv6Options, body)
         }
     }
 

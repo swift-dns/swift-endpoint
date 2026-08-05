@@ -349,7 +349,10 @@ extension IPv6Address: LosslessStringConvertible {
     /// Initialize an IPv6 address from its textual representation.
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
+    ///
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
+    /// Parses all IPv4-embedded address forms where the embedded IPv4 is in the last 32 bits.
+    /// This includes blocks that are not used for embedded IPv4 addresses in practice or are deprecated.
     public init?(_ description: String) {
         var description = description
         guard

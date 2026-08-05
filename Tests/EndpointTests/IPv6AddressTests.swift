@@ -217,9 +217,7 @@ struct IPv6AddressTests {
         let cStringDefault = ip.withCString { span in
             span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
         }
-        let cStringExplicit = ip.withCString(
-            options: [.useMixedNotation]
-        ) { span in
+        let cStringExplicit = ip.withCString(options: [.useMixedNotation]) { span in
             span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
         }
         #expect(cStringDefault == cStringExplicit)

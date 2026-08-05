@@ -3,6 +3,7 @@ extension IPv6Address {
     /// Calls `body` with a pointer to a null-terminated C string of this address's textual
     /// representation. For example `IPv6Address(0x2001, 0x0DB8, 0, 0, 0, 0, 0, 1)`
     /// results in the C string `"2001:db8::1"`.
+    /// Notice no brackets are present by default, as that's what most C APIs expect.
     ///
     /// Unlike `description`, the textual representation is **not** enclosed in square brackets,
     /// because that is the presentation format expected by C APIs, which reject the bracketed form.
@@ -14,10 +15,12 @@ extension IPv6Address {
     /// - Returns: The result of the closure.
     @inlinable
     public func withCString<Result, E: Error>(
+        options: IPv6AddressDescriptionOptions = .standardOptions
+            .subtracting(.encloseInSquareBrackets),
         _ body: (Span<CChar>) throws(E) -> Result
     ) throws(E) -> Result {
         try unsafe self.makeDescription(
-            enclosingInSquareBrackets: false
+            options: options
         ) { (maxWriteableBytes, writeBytes) throws(E) in
             try withUnsafeTemporaryAllocation(
                 byteCount: maxWriteableBytes,

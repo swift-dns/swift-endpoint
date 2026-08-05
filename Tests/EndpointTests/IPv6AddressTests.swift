@@ -132,20 +132,23 @@ struct IPv6AddressTests {
     }
 
     @available(SwiftStdlib 6.0, *)
-    @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress.compactMap(\.ip))
-    func ipv6AddressDescription(ipv6: IPv6Address, expectedDescription: String) {
-        #expect(ipv6.description == expectedDescription)
+    @Test(arguments: IPv6AddressTestCase.stringAndAddress.compactMap(\.ip))
+    func ipv6AddressDescription(
+        ipv6: IPv6Address,
+        expectedDescription: String,
+        expectedMixedNotationDescription: String
+    ) {
+        #expect(ipv6.description == "[\(expectedMixedNotationDescription)]")
 
-        let bracketLess = String(expectedDescription.dropFirst().dropLast())
         let produced = ipv6.withCString { span in
-            #expect(span.count - 1 == bracketLess.utf8.count)
+            #expect(span.count - 1 == expectedMixedNotationDescription.utf8.count)
             return span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
         }
-        #expect(produced == bracketLess)
+        #expect(produced == expectedMixedNotationDescription)
     }
 
     @available(SwiftStdlib 6.2, *)
-    @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress.compactMap({ $0.ip?.address }))
+    @Test(arguments: IPv6AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
     func `IPv6Address description and serialization round-trip`(ip: IPv6Address) {
         #expect(IPv6Address(ip.description) == ip)
 
@@ -162,18 +165,79 @@ struct IPv6AddressTests {
         #expect(IPv6Address(parsing: outputSpan.span) == ip)
     }
 
+    @available(SwiftStdlib 6.0, *)
+    @Test(
+        arguments: IPv6AddressTestCase.stringAndAddress.filter { $0.ip != nil },
+        IPv6Address.IPv6AddressDescriptionOptions.allCombos
+    )
+    func `IPv6Address description honours every description-options combination`(
+        testCase: IPv6AddressTestCase,
+        options: IPv6Address.IPv6AddressDescriptionOptions
+    ) throws {
+        let ip = try #require(testCase.ip?.address)
+        let expected = try #require(testCase.expectedDescription(options: options))
+        #expect(ip.description(options: options) == expected)
+        #expect(IPv6Address(expected) == ip)
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test(
+        arguments: IPv6AddressTestCase.stringAndAddress.filter { $0.ip != nil },
+        IPv6Address.IPv6AddressDescriptionOptions.allCombos
+    )
+    func `IPv6Address withCString honours every description-options combination`(
+        testCase: IPv6AddressTestCase,
+        options: IPv6Address.IPv6AddressDescriptionOptions
+    ) throws {
+        let ip = try #require(testCase.ip?.address)
+        let expected = try #require(testCase.expectedDescription(options: options))
+        let produced = ip.withCString(options: options) { span in
+            #expect(span.count == expected.utf8.count + 1)
+            #expect(span[span.count - 1] == 0)
+            return span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
+        }
+        #expect(produced == expected)
+
+        let reparsed = ip.withCString(options: options) { span in
+            span.withUnsafeBufferPointer { unsafe IPv6Address(cString: $0.baseAddress!) }
+        }
+        #expect(reparsed == ip)
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test(arguments: IPv6AddressTestCase.stringAndAddress.filter { $0.ip != nil })
+    func `IPv6Address description and withCString defaults`(
+        testCase: IPv6AddressTestCase
+    ) throws {
+        let mixedNotationDescription = try #require(testCase.ip?.mixedNotationDescription)
+        let ip = try #require(testCase.ip?.address)
+        #expect(ip.description == ip.description(options: .standardOptions))
+        #expect(ip.description == "[\(mixedNotationDescription)]")
+
+        let cStringDefault = ip.withCString { span in
+            span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
+        }
+        let cStringExplicit = ip.withCString(
+            options: [.useMixedNotation]
+        ) { span in
+            span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
+        }
+        #expect(cStringDefault == cStringExplicit)
+        #expect(cStringDefault == mixedNotationDescription)
+    }
+
     @available(SwiftStdlib 6.2, *)
     @Test(
-        arguments: IPTestCase<IPv6Address>.stringAndAddress
-            + IPTestCase<IPv6Address>.idnaStringAndAddress.map {
-                IPTestCase<IPv6Address>(
+        arguments: IPv6AddressTestCase.stringAndAddress
+            + IPv6AddressTestCase.idnaStringAndAddress.map {
+                IPv6AddressTestCase(
                     $0.string,
                     ip: nil,
                     isValidAsOtherIPVersion: $0.isValidAsOtherIPVersion
                 )
             }
     )
-    func ipv6AddressFromString(testCase: IPTestCase<IPv6Address>) {
+    func ipv6AddressFromString(testCase: IPv6AddressTestCase) {
         let string = testCase.string
         let expectedAddress = testCase.ip?.address
         let isValidIPv4 = testCase.isValidAsOtherIPVersion
@@ -253,8 +317,8 @@ struct IPv6AddressTests {
     }
 
     @available(SwiftStdlib 6.2, *)
-    @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress)
-    func ipv6AddressFromStringThroughArpaDomainName(testCase: IPTestCase<IPv6Address>) {
+    @Test(arguments: IPv6AddressTestCase.stringAndAddress)
+    func ipv6AddressFromStringThroughArpaDomainName(testCase: IPv6AddressTestCase) {
         let string = testCase.string
         let expectedAddress = testCase.ip?.address
         let isValidIPv4 = testCase.isValidAsOtherIPVersion
@@ -286,8 +350,8 @@ struct IPv6AddressTests {
     }
 
     @available(SwiftStdlib 6.2, *)
-    @Test(arguments: IPv4MappedIPv6TestCase.all.filter { $0.ipv4 != nil })
-    func ipv6AddressFromIpv4Address(testCase: IPv4MappedIPv6TestCase) throws {
+    @Test(arguments: IPv4EmbeddedIPv6TestCase.all.filter { $0.ipv4 != nil })
+    func ipv6AddressFromIpv4Address(testCase: IPv4EmbeddedIPv6TestCase) throws {
         let ipv6 = try #require(IPv6Address(testCase.ipv6String))
         let ipv4 = try #require(testCase.ipv4)
         #expect(ipv6 == IPv6Address(ipv4: ipv4))
@@ -300,8 +364,15 @@ struct IPv6AddressTests {
     }
 
     @available(SwiftStdlib 6.0, *)
-    @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress.compactMap({ $0.ip?.address }))
-    func `IPv6Address cString APIs compatibility with C`(ip: IPv6Address) {
+    @Test(
+        arguments: IPv6AddressTestCase.stringAndAddress.filter { $0.ip != nil },
+        IPv6Address.IPv6AddressDescriptionOptions.allCombos
+    )
+    func `IPv6Address cString APIs compatibility with C`(
+        testCase: IPv6AddressTestCase,
+        options: IPv6Address.IPv6AddressDescriptionOptions
+    ) throws {
+        let ip = try #require(testCase.ip?.address)
         let bytes = ip.bytes
         let expectedBytes = [
             bytes.0, bytes.1, bytes.2, bytes.3, bytes.4, bytes.5, bytes.6, bytes.7,
@@ -309,11 +380,16 @@ struct IPv6AddressTests {
         ]
 
         var in6Address = in6_addr()
-        let pton = ip.withCString { span in
+        let pton = ip.withCString(options: options) { span in
             span.withUnsafeBufferPointer {
                 unsafe inet_pton(AF_INET6, $0.baseAddress!, &in6Address)
             }
         }
+        if options.contains(.encloseInSquareBrackets) {
+            #expect(pton == 0)
+            return
+        }
+
         #expect(pton == 1)
         #expect(withUnsafeBytes(of: in6Address) { unsafe Array($0) } == expectedBytes)
 
@@ -324,7 +400,7 @@ struct IPv6AddressTests {
     }
 
     @available(SwiftStdlib 6.2, *)
-    @Test(arguments: IPTestCase<AnyIPAddress>.rawByteReject)
+    @Test(arguments: AnyIPAddressTestCase.rawByteReject)
     func `Non-ASCII byte inputs are rejected by the parser`(bytes: [UInt8]) {
         #expect(IPv6Address(textualRepresentation: bytes.span) == nil)
     }

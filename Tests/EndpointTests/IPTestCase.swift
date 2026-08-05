@@ -1,18 +1,98 @@
 import Endpoint
 
-struct IPTestCase<IPAddressType: Sendable & Hashable>: Sendable {
+struct IPv4AddressTestCase: Sendable {
     let string: String
-    let ip: (address: IPAddressType, description: String)?
+    let ip: (address: IPv4Address, description: String)?
     let isValidAsOtherIPVersion: Bool
 
     init(
         _ string: String,
-        ip: (address: IPAddressType, description: String)?,
+        ip: (address: IPv4Address, description: String)?,
         isValidAsOtherIPVersion: Bool = false
     ) {
         self.string = string
         self.ip = ip
         self.isValidAsOtherIPVersion = isValidAsOtherIPVersion
+    }
+}
+
+struct IPv6AddressTestCase: Sendable {
+    let string: String
+    /// Neither description is enclosed in square brackets. The tests add the brackets themselves.
+    /// `description` is the address as printed without `useMixedNotation`,
+    /// `mixedNotationDescription` is the address as printed with it.
+    /// The two are identical unless the address has a mixed-notation form.
+    let ip: (address: IPv6Address, description: String, mixedNotationDescription: String)?
+    let isValidAsOtherIPVersion: Bool
+
+    init(
+        _ string: String,
+        ip: (address: IPv6Address, description: String)?,
+        mixedNotationDescription: String? = nil,
+        isValidAsOtherIPVersion: Bool = false
+    ) {
+        self.string = string
+        self.ip = ip.map {
+            ($0.address, $0.description, mixedNotationDescription ?? $0.description)
+        }
+        self.isValidAsOtherIPVersion = isValidAsOtherIPVersion
+    }
+
+    @available(SwiftStdlib 5.1, *)
+    func expectedDescription(
+        options: IPv6Address.IPv6AddressDescriptionOptions
+    ) -> String? {
+        guard let ip = self.ip else {
+            return nil
+        }
+        let useMixedNotation = options.contains(.useMixedNotation)
+        let encloseInSquareBrackets = options.contains(.encloseInSquareBrackets)
+        let withMixedNotation = useMixedNotation ? ip.mixedNotationDescription : ip.description
+        let withBrackets = encloseInSquareBrackets ? "[\(withMixedNotation)]" : withMixedNotation
+        return withBrackets
+    }
+}
+
+struct IPv4ByteLengthTestCase: Sendable {
+    /// The textual representation to parse. May contain leading zeros.
+    let string: String
+    let rawAddress: UInt32
+    /// The canonical textual representation, without leading zeros.
+    let description: String
+    /// The last two segments of the corresponding IPv4-mapped IPv6 address, in lowercased hex.
+    let expandedIPv6SegmentHex: String
+
+    init(
+        _ string: String,
+        _ rawAddress: UInt32,
+        _ description: String,
+        _ expandedIPv6SegmentHex: String
+    ) {
+        self.string = string
+        self.rawAddress = rawAddress
+        self.description = description
+        self.expandedIPv6SegmentHex = expandedIPv6SegmentHex
+    }
+
+    var address: IPv4Address {
+        IPv4Address(self.rawAddress)
+    }
+
+    var ipv4EmbeddedAddress: IPv6Address {
+        IPv6Address(UnsignedInteger128(_low: 0xFFFF_0000_0000 | UInt64(self.rawAddress), _high: 0))
+    }
+}
+
+struct AnyIPAddressTestCase: Sendable {
+    let string: String
+    let ip: (address: AnyIPAddress, description: String)?
+
+    init(
+        _ string: String,
+        ip: (address: AnyIPAddress, description: String)?
+    ) {
+        self.string = string
+        self.ip = ip
     }
 }
 
@@ -32,7 +112,7 @@ struct IPPropertyTestCase<IPAddressType: Sendable>: Sendable {
     }
 }
 
-struct IPv4MappedIPv6TestCase: Sendable {
+struct IPv4EmbeddedIPv6TestCase: Sendable {
     let ipv6String: String
     let ipv4: IPv4Address?
 
@@ -71,24 +151,24 @@ extension IPv6Address {
     }
 }
 
-extension IPTestCase where IPAddressType == IPv4Address {
+extension IPv4AddressTestCase {
     @available(SwiftStdlib 5.1, *)
-    var asAnyIPAddress: IPTestCase<AnyIPAddress>? {
+    var asAnyIPAddress: AnyIPAddressTestCase? {
         guard !isValidAsOtherIPVersion else { return nil }
-        return IPTestCase<AnyIPAddress>(
+        return AnyIPAddressTestCase(
             string,
             ip: ip.map { (AnyIPAddress.v4($0.address), $0.description) }
         )
     }
 }
 
-extension IPTestCase where IPAddressType == IPv6Address {
+extension IPv6AddressTestCase {
     @available(SwiftStdlib 5.1, *)
-    var asAnyIPAddress: IPTestCase<AnyIPAddress>? {
+    var asAnyIPAddress: AnyIPAddressTestCase? {
         guard !isValidAsOtherIPVersion else { return nil }
-        return IPTestCase<AnyIPAddress>(
+        return AnyIPAddressTestCase(
             string,
-            ip: ip.map { (AnyIPAddress.v6($0.address), $0.description) }
+            ip: ip.map { (AnyIPAddress.v6($0.address), "[\($0.mixedNotationDescription)]") }
         )
     }
 }

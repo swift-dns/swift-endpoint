@@ -5,10 +5,10 @@ import Testing
 struct AnyIPAddressTests {
     @available(SwiftStdlib 6.0, *)
     @Test(
-        arguments: IPTestCase<AnyIPAddress>.stringAndAddress.compactMap(\.ip)
-            + IPTestCase<IPv4Address>.stringAndAddress
+        arguments: AnyIPAddressTestCase.stringAndAddress.compactMap(\.ip)
+            + IPv4AddressTestCase.stringAndAddress
             .compactMap(\.asAnyIPAddress?.ip)
-            + IPTestCase<IPv6Address>.stringAndAddress
+            + IPv6AddressTestCase.stringAndAddress
             .compactMap(\.asAnyIPAddress?.ip)
     )
     func `AnyIPAddress description`(ip: AnyIPAddress, expectedDescription: String) {
@@ -24,9 +24,9 @@ struct AnyIPAddressTests {
 
     @available(SwiftStdlib 6.2, *)
     @Test(
-        arguments: IPTestCase<IPv4Address>.stringAndAddress
+        arguments: IPv4AddressTestCase.stringAndAddress
             .compactMap({ $0.ip?.address }).map(AnyIPAddress.v4)
-            + IPTestCase<IPv6Address>.stringAndAddress
+            + IPv6AddressTestCase.stringAndAddress
             .compactMap({ $0.ip?.address }).map(AnyIPAddress.v6)
     )
     func `AnyIPAddress description round-trip`(ip: AnyIPAddress) {
@@ -40,11 +40,11 @@ struct AnyIPAddressTests {
 
     @available(SwiftStdlib 6.2, *)
     @Test(
-        arguments: IPTestCase<AnyIPAddress>.stringAndAddress
-            + IPTestCase<IPv4Address>.stringAndAddress.compactMap(\.asAnyIPAddress)
-            + IPTestCase<IPv6Address>.stringAndAddress.compactMap(\.asAnyIPAddress)
+        arguments: AnyIPAddressTestCase.stringAndAddress
+            + IPv4AddressTestCase.stringAndAddress.compactMap(\.asAnyIPAddress)
+            + IPv6AddressTestCase.stringAndAddress.compactMap(\.asAnyIPAddress)
     )
-    func `AnyIPAddress from string`(testCase: IPTestCase<AnyIPAddress>) {
+    func `AnyIPAddress from string`(testCase: AnyIPAddressTestCase) {
         let string = testCase.string
         let expectedAddress = testCase.ip?.address
 
@@ -63,9 +63,9 @@ struct AnyIPAddressTests {
 
     @available(SwiftStdlib 6.0, *)
     @Test(
-        arguments: IPTestCase<IPv4Address>.stringAndAddress
+        arguments: IPv4AddressTestCase.stringAndAddress
             .compactMap({ $0.ip?.address }).map(AnyIPAddress.v4)
-            + IPTestCase<IPv6Address>.stringAndAddress
+            + IPv6AddressTestCase.stringAndAddress
             .compactMap({ $0.ip?.address }).map(AnyIPAddress.v6)
     )
     func `AnyIPAddress version accessors work correctly`(ip: AnyIPAddress) {
@@ -88,7 +88,7 @@ struct AnyIPAddressTests {
     }
 
     @available(SwiftStdlib 6.2, *)
-    @Test(arguments: IPTestCase<IPv4Address>.stringAndAddress.compactMap({ $0.ip?.address }))
+    @Test(arguments: IPv4AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
     func `AnyIPAddress from v4 arpa domain name`(ipv4: IPv4Address) throws {
         let domainName = try DomainName(ipv4.arpaDomainNameString)
         #expect(AnyIPAddress(arpaDomainName: domainName) == .v4(ipv4))
@@ -96,7 +96,7 @@ struct AnyIPAddressTests {
     }
 
     @available(SwiftStdlib 6.2, *)
-    @Test(arguments: IPTestCase<IPv6Address>.stringAndAddress.compactMap({ $0.ip?.address }))
+    @Test(arguments: IPv6AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
     func `AnyIPAddress from v6 arpa domain name`(ipv6: IPv6Address) throws {
         let domainName = try DomainName(ipv6.arpaDomainNameString)
         #expect(AnyIPAddress(arpaDomainName: domainName) == .v6(ipv6))

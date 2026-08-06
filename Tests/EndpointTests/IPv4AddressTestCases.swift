@@ -73,6 +73,14 @@ extension IPv4AddressTestCase {
         IPv4AddressTestCase("192.0.2.27", ip: (IPv4Address(192, 0, 2, 27), "192.0.2.27")),
         IPv4AddressTestCase("10.20.30.40", ip: (IPv4Address(10, 20, 30, 40), "10.20.30.40")),
         IPv4AddressTestCase("010.020.030.040", ip: (IPv4Address(10, 20, 30, 40), "10.20.30.40")),
+        /// A fourth digit is rejected even when the padding digits are all zeros.
+        IPv4AddressTestCase("0000.1.2.3", ip: nil),
+        IPv4AddressTestCase("1.0000.2.3", ip: nil),
+        IPv4AddressTestCase("1.2.0000.3", ip: nil),
+        IPv4AddressTestCase("1.2.3.0000", ip: nil),
+        IPv4AddressTestCase("0255.1.2.3", ip: nil),
+        IPv4AddressTestCase("1.2.3.0255", ip: nil),
+        IPv4AddressTestCase("0000.0000.0000.0000", ip: nil),
     ]
 
     static let idnaStringAndAddress: [Self] = [

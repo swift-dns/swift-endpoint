@@ -337,6 +337,37 @@ extension IPv6AddressTestCase {
         IPv6AddressTestCase("0:00:000:0000:0:0:0:0", ip: (0, "::")),
         IPv6AddressTestCase("0000:0000:0000:0000:0000:0000:0000:0001", ip: (1, "::1")),
         IPv6AddressTestCase("[0:00:000:0000:0:0:0:1]", ip: (1, "::1")),
+        IPv6AddressTestCase(
+            "0001:0002:0003:0004:0005:0006:0007:0008",
+            ip: (0x0001_0002_0003_0004_0005_0006_0007_0008, "1:2:3:4:5:6:7:8")
+        ),
+        IPv6AddressTestCase(
+            "[0000:0001::0000:0002]",
+            ip: (0x0000_0001_0000_0000_0000_0000_0000_0002, "0:1::2")
+        ),
+        IPv6AddressTestCase(
+            "[0000:0000:0000:0000:0000:00ff:0000:0001]",
+            ip: (0x0000_0000_0000_0000_0000_00FF_0000_0001, "::ff:0:1")
+        ),
+        IPv6AddressTestCase(
+            "00ff::00ff",
+            ip: (0x00FF_0000_0000_0000_0000_0000_0000_00FF, "ff::ff")
+        ),
+        IPv6AddressTestCase("::0000", ip: (0, "::")),
+        IPv6AddressTestCase("0000::", ip: (0, "::")),
+        IPv6AddressTestCase("::0000:0000", ip: (0, "::")),
+        IPv6AddressTestCase("0:0000::00", ip: (0, "::")),
+        IPv6AddressTestCase("::00000", ip: nil),
+        IPv6AddressTestCase("00000::", ip: nil),
+        IPv6AddressTestCase("00001::", ip: nil),
+        IPv6AddressTestCase("0:0:0:0:0:0:0:00000", ip: nil),
+        IPv6AddressTestCase("1:2:3:4:5:6:7:00008", ip: nil),
+        IPv6AddressTestCase("[00000:0:0:0:0:0:0:0]", ip: nil),
+        IPv6AddressTestCase("::ffff:0000.0.0.1", ip: nil),
+        IPv6AddressTestCase("::ffff:1.2.3.0000", ip: nil),
+        IPv6AddressTestCase("::0000.1.2.3", ip: nil),
+        IPv6AddressTestCase("2001:db8::1.2.3.0000", ip: nil),
+        IPv6AddressTestCase("[0000:0000:0000:0000:0000:FFFF:0255.255.255.255]", ip: nil),
         IPv6AddressTestCase("192.168.1.255", ip: nil, isValidAsOtherIPVersion: true),
         IPv6AddressTestCase("0:0:0:0:0:0:FFFF:1.1.1.1", ip: nil),
         IPv6AddressTestCase("0:0:0:0:FFFF:1.1.1.1:FFFF", ip: nil),
@@ -670,7 +701,8 @@ extension IPv6AddressTestCase {
     ]
 
     /// Derived from the exhaustive IPv4 octet cases, so the IPv4-embedded forms are hardcoded
-    /// in exactly one place. Covers both well-known IPv4-embedding prefixes.
+    /// in exactly one place. Covers both well-known IPv4-embedding prefixes, plus a compressed
+    /// and an uncompressed prefix that are not well-known, for which mixed notation never applies.
     private static let ipv4Embedded: [Self] = IPv4DecimalLengthTestCase.all.flatMap { octets in
         [
             Self(
@@ -685,6 +717,20 @@ extension IPv6AddressTestCase {
                     octets.nat64ExpandedIPv6Description
                 ),
                 mixedNotationDescription: "64:ff9b::\(octets.description)"
+            ),
+            Self(
+                "2001:db8::\(octets.string)",
+                ip: (
+                    octets.documentationEmbeddedIPv6,
+                    octets.documentationEmbeddedIPv6Description
+                )
+            ),
+            Self(
+                "1:2:3:4:5:6:\(octets.string)",
+                ip: (
+                    octets.uncompressedPrefixEmbeddedIPv6,
+                    octets.uncompressedPrefixEmbeddedIPv6Description
+                )
             ),
         ]
     }

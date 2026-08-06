@@ -82,20 +82,61 @@ struct IPv4DecimalLengthTestCase: Sendable {
     }
 
     /// The description of `address.asNAT64WellKnownIPv4EmbeddedIPv6` without mixed notation.
+    var nat64ExpandedIPv6Description: String {
+        self.expandedIPv6Description(compressedPrefix: "64:ff9b")
+    }
+
+    /// The IPv4 address embedded in `2001:db8::/96`, which is not a well-known IPv4-embedding
+    /// prefix, so mixed notation never applies to it.
+    var documentationEmbeddedIPv6: IPv6Address {
+        IPv6Address(
+            UnsignedInteger128(
+                _low: UInt64(self.rawAddress),
+                _high: 0x2001_0DB8_0000_0000
+            )
+        )
+    }
+
+    /// The description of `documentationEmbeddedIPv6`, with or without mixed notation.
+    var documentationEmbeddedIPv6Description: String {
+        self.expandedIPv6Description(compressedPrefix: "2001:db8")
+    }
+
+    /// The IPv4 address embedded in `1:2:3:4:5:6::/96`, whose prefix is written out in full
+    /// instead of being compressed, and to which mixed notation never applies either.
+    var uncompressedPrefixEmbeddedIPv6: IPv6Address {
+        IPv6Address(
+            UnsignedInteger128(
+                _low: 0x0005_0006_0000_0000 | UInt64(self.rawAddress),
+                _high: 0x0001_0002_0003_0004
+            )
+        )
+    }
+
+    /// The description of `uncompressedPrefixEmbeddedIPv6`, with or without mixed notation.
+    /// Only an entirely zeroed embedded IPv4 leaves a zero run long enough to compress.
+    var uncompressedPrefixEmbeddedIPv6Description: String {
+        if self.rawAddress == 0 {
+            return "1:2:3:4:5:6::"
+        }
+        return "1:2:3:4:5:6:\(self.expandedIPv6SegmentHex)"
+    }
+
+    /// The description of the address embedded right after a `<prefix>::` compression sign.
     ///
     /// Unlike the IPv4-mapped form, there is no non-zero `ffff` segment separating the embedded
     /// IPv4 from the zeroed middle segments. So when the 7th segment is zero too, it is swallowed
     /// by the compression sign instead of being written out.
-    var nat64ExpandedIPv6Description: String {
+    private func expandedIPv6Description(compressedPrefix prefix: String) -> String {
         let high = self.rawAddress &>> 16
         let low = self.rawAddress & 0xFFFF
         switch (high, low) {
         case (0, 0):
-            return "64:ff9b::"
+            return "\(prefix)::"
         case (0, let low):
-            return "64:ff9b::\(String(low, radix: 16))"
+            return "\(prefix)::\(String(low, radix: 16))"
         default:
-            return "64:ff9b::\(self.expandedIPv6SegmentHex)"
+            return "\(prefix)::\(self.expandedIPv6SegmentHex)"
         }
     }
 }

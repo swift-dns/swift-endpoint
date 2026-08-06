@@ -265,6 +265,20 @@ struct IPv4AddressTests {
                 viaDomainName: IPv4Address(1, 2, 3, 4),
                 viaArpaDomainName: IPv4Address(1, 2, 3, 4)
             ),
+            (
+                domainName: "004.003.002.001.in-addr.arpa",
+                viaDomainName: IPv4Address(1, 2, 3, 4),
+                viaArpaDomainName: IPv4Address(1, 2, 3, 4)
+            ),
+            (
+                domainName: "001.002.003.004",
+                viaDomainName: IPv4Address(1, 2, 3, 4),
+                viaArpaDomainName: nil
+            ),
+            /// A fourth digit is rejected even when the padding digits are all zeros.
+            (domainName: "0004.3.2.1.in-addr.arpa", viaDomainName: nil, viaArpaDomainName: nil),
+            (domainName: "4.3.2.0001.in-addr.arpa", viaDomainName: nil, viaArpaDomainName: nil),
+            (domainName: "0001.0002.0003.0004", viaDomainName: nil, viaArpaDomainName: nil),
             (domainName: "4.3.2.1.in-addr.arpe", viaDomainName: nil, viaArpaDomainName: nil),
             (domainName: "4.3.2.1.xn-addr.arpa", viaDomainName: nil, viaArpaDomainName: nil),
             (domainName: "1.2.3", viaDomainName: nil, viaArpaDomainName: nil),

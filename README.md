@@ -152,11 +152,12 @@ For `IPv6Address`, the Arpa domain name format is supported. For example the fol
 * Below are benchmarks of this library against inet C-library APIs of macOS's Darwin and Linux's glibc.
 * **In all cases, swift-endpoint wins against the inet C APIs.**
 * These benchmarks are meant to represent a slow-case scenario of real-world workloads.
-* The C API benchmarks represent a C language user's experience. Meaning that they don't contain any overhead coming from interfacing with Swift.
-  * For example converting C character-strings to `String`s for ip-address->string conversions. Specially if the character-string is over 15 bytes of length, which would force `String` to incur a heap allocation.
-  * To give you an idea: in a simple usage of C APIs in Swift, C API results for serialization can be up to 3 times slower due to heap-allocated `String`. For parsing the overhead can be marginal, or up to 50% higher.
-  * The swift-endpoint API benchmarks go through those overheads anyway, such as the `String`'s heap-allocation, but they still manage to beat the C API benchmarks.
-* Each benchmark runs against 16 different IPs one by one in a random manner, via a constant seed to keep the benchmarks consistent across benchmark runs.
+* The C API benchmarks represent a C language user's experience.
+  * Meaning They don't contain any possible overhead coming from interfacing with other Swift APIs.
+* The benchmarks write into stack-allocated space if/where needed to avoid malloc and show their full potential.
+  * swift-endpoint would win by good margins anyway even if it used malloc and C APIs continued to use alloca.
+* Each benchmark runs against 16 different IPs one by one in a random manner.
+  * There is a constant seed to keep the benchmarks consistent across benchmark runs.
   * This means CPUs won't find a clear pattern to over-optimize for in any of the operations, which would make the benchmarks less realistic.
 
 #### Against Darwin
@@ -165,10 +166,10 @@ These were performed on my M1 Pro MacBook, on macOS 27.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 16.1          | 176.0        | 10.93x  |
+| IPv4    | Serializing | 9.6           | 177.0        | 18.44x  |
 | IPv4    | Parsing     | 14.4          | 45.8         | 3.18x   |
-| IPv6    | Serializing | 84.0          | 237.0        | 2.82x   |
-| IPv6    | Parsing     | 29.3          | 96.5         | 3.29x   |
+| IPv6    | Serializing | 32.3          | 240.0        | 7.44x   |
+| IPv6    | Parsing     | 29.5          | 98.5         | 3.34x   |
 
 #### Against glibc
 
@@ -176,15 +177,12 @@ These were performed on a dedicated-cpu-core machine from Hetzner, on Ubuntu 24.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 20.0          | 100.0        | 5.00x   |
-| IPv4    | Parsing     | 17.0          | 25.0         | 1.47x   |
-| IPv6    | Serializing | 70.0          | 160.0        | 2.29x   |
-| IPv6    | Parsing     | 32.5          | 40.0         | 1.23x   |
+| IPv4    | Serializing | 17.0          | 120.0        | 7.06x   |
+| IPv4    | Parsing     | 17.0          | 26.7         | 1.57x   |
+| IPv6    | Serializing | 40.0          | 180.0        | 4.50x   |
+| IPv6    | Parsing     | 37.5          | 47.5         | 1.27x   |
 
 #### Additional Notes
 
 * To see up to date information about performance of this package, please go to this [benchmarks list](https://github.com/swift-dns/swift-endpoint/actions/workflows/benchmarks.yml?query=branch%3Amain), and choose the most recent benchmark. You'll see a summary of the benchmark there.
 * The results above are all reproducible by simply running `scripts/benchmark.sh` on a machine of your own.
-* It's worth noting that swift-endpoint APIs win in pretty much any other situation as well, as visible in the benchmarks.
-  * For example even if you run a benchmark over only 1 IP so CPUs can over-optimize for the specific IP's case and run it as fast as possible. This might even widen the speed gap and be advantageous to swift-endpoint APIs.
-  * This is to say the above tables are not an over-representation of this library's capabilities.

@@ -765,8 +765,12 @@ extension IPv6AddressTestCase {
 extension IPv6Address.DescriptionOptions {
     static let allCombos: [Self] = [
         Self([]),
+        Self([.useMixedNotationForIPv4MappedAddresses]),
+        Self([.useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses]),
         Self([.useMixedNotation]),
         Self([.encloseInSquareBrackets]),
+        Self([.useMixedNotationForIPv4MappedAddresses, .encloseInSquareBrackets]),
+        Self([.useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses, .encloseInSquareBrackets]),
         Self([.useMixedNotation, .encloseInSquareBrackets]),
     ]
 }

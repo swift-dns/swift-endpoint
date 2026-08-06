@@ -30,20 +30,17 @@ extension IPv6Address: CustomStringConvertible {
             self.rawValue = rawValue
         }
 
-        /// Print the last 32 bits in the mixed notation of
-        /// [RFC 4291, Section 2.2](https://datatracker.ietf.org/doc/html/rfc4291#section-2.2),
-        /// where applicable.
+        /// For IPv4-mapped addresses, print the last 32 bits in the mixed notation of
+        /// [RFC 4291, Section 2.2](https://datatracker.ietf.org/doc/html/rfc4291#section-2.2).
         ///
-        /// That is, for the well-known IPv4-embedding subnets
-        /// `::ffff:0:0/96` of [RFC 4291](https://datatracker.ietf.org/doc/html/rfc4291#section-2.5.5.2)
-        /// and `64:ff9b::/96` of [RFC 6052](https://datatracker.ietf.org/doc/html/rfc6052#section-2.4).
+        /// That is, for the well-known IPv4-embedding subnet
+        /// `::ffff:0:0/96` of [RFC 4291](https://datatracker.ietf.org/doc/html/rfc4291#section-2.5.5.2).
         ///
-        /// Use `ipv6.isWellKnownIPv4Embedded` to check if `useMixedNotation` will apply to an IPv6 address.
+        /// Use `ipv6.isIPv4Mapped` to check if this option will apply to an IPv6 address.
         ///
-        /// Example: `::ffff:204.152.189.116` instead of `::ffff:cc98:bd74`,
-        /// or `64:ff9b::192.0.2.33` instead of `64:ff9b::c000:221`.
+        /// Example: `::ffff:204.152.189.116` instead of `::ffff:cc98:bd74`.
         @inlinable
-        public static var useMixedNotation: Self {
+        public static var useMixedNotationForIPv4MappedAddresses: Self {
             Self(rawValue: 1 << 0)
         }
 
@@ -55,11 +52,42 @@ extension IPv6Address: CustomStringConvertible {
             Self(rawValue: 1 << 1)
         }
 
+        /// For NAT64 well-known IPv4-embedded addresses, print the last 32 bits in the mixed
+        /// notation of [RFC 4291, Section 2.2](https://datatracker.ietf.org/doc/html/rfc4291#section-2.2).
+        ///
+        /// That is, for the well-known IPv4-embedding subnet
+        /// `64:ff9b::/96` of [RFC 6052](https://datatracker.ietf.org/doc/html/rfc6052#section-2.4).
+        ///
+        /// Use `ipv6.isNAT64WellKnownIPv4Embedded` to check if this option will apply to an
+        /// IPv6 address.
+        ///
+        /// Example: `64:ff9b::192.0.2.33` instead of `64:ff9b::c000:221`.
+        @inlinable
+        public static var useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses: Self {
+            Self(rawValue: 1 << 2)
+        }
+
+        /// Print the last 32 bits of every well-known IPv4-embedded address in the mixed notation of
+        /// [RFC 4291, Section 2.2](https://datatracker.ietf.org/doc/html/rfc4291#section-2.2).
+        /// Consists of `useMixedNotationForIPv4MappedAddresses` and `useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses`.
+        ///
+        /// Use `ipv6.isWellKnownIPv4Embedded` to check if this option will apply to an IPv6 address.
+        @inlinable
+        public static var useMixedNotation: Self {
+            [
+                .useMixedNotationForIPv4MappedAddresses,
+                .useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses,
+            ]
+        }
+
         /// Options for compliance with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
-        /// Consists of `useMixedNotation`.
+        /// Consists of `useMixedNotationForIPv4MappedAddresses` and `useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses`.
         @inlinable
         public static var standardOptions: Self {
-            [.useMixedNotation]
+            [
+                .useMixedNotationForIPv4MappedAddresses,
+                .useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses,
+            ]
         }
     }
 
@@ -72,8 +100,10 @@ extension IPv6Address: CustomStringConvertible {
     /// be emitted for their corresponding IP addresses.
     ///
     /// `::`, `::ffff:192.168.1.1`, `64:ff9b::192.0.2.33`, `2001:db8:85a3::100`.
-    /// If `useMixedNotation` is disabled, `::ffff:192.168.1.1` will be emitted as `::ffff:c0a8:101`,
-    /// and `64:ff9b::192.0.2.33` as `64:ff9b::c000:221`.
+    /// If `useMixedNotationForIPv4MappedAddresses` is disabled, `::ffff:192.168.1.1` will be
+    /// emitted as `::ffff:c0a8:101`.
+    /// If `useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses` is disabled,
+    /// `64:ff9b::192.0.2.33` will be emitted as `64:ff9b::c000:221`.
     /// If `encloseInSquareBrackets` is enabled, `2001:db8:85a3::100` will be emitted as `[2001:db8:85a3::100]`.
     /// Letters are always in lowercase.
     @inlinable
@@ -101,11 +131,17 @@ extension IPv6Address {
         var address = self
 
         let encloseInSquareBrackets = options.contains(.encloseInSquareBrackets)
+        let useMixedNotationForIPv4EmbeddedAddresses =
+            options.contains(.useMixedNotationForIPv4MappedAddresses)
+        let useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses =
+            options.contains(.useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses)
         let isIPv4Mapped = self.isIPv4Mapped
         let isNAT64WellKnownIPv4Embedded = self.isNAT64WellKnownIPv4Embedded
-        let isWellKnownIPv4Embedded = isIPv4Mapped || isNAT64WellKnownIPv4Embedded
-        let shouldUseMixedNotation = options.contains(.useMixedNotation)
-        let useMixedNotation = shouldUseMixedNotation && isWellKnownIPv4Embedded
+        let useMixedNotationForIPv4Mapped =
+            isIPv4Mapped && useMixedNotationForIPv4EmbeddedAddresses
+        let useMixedNotationForNAT64 =
+            isNAT64WellKnownIPv4Embedded && useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses
+        let useMixedNotation = useMixedNotationForIPv4Mapped || useMixedNotationForNAT64
         let allMask = UnsignedInteger128(_low: .max, _high: .max)
         let ipv4EmbeddedMask = UnsignedInteger128(_low: 0xFFFF_FFFF_0000_0000, _high: .max)
         let addressMask = useMixedNotation ? ipv4EmbeddedMask : allMask

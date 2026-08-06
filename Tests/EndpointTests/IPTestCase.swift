@@ -39,9 +39,7 @@ struct IPv6AddressTestCase: Sendable {
     }
 
     @available(SwiftStdlib 5.1, *)
-    func expectedDescription(
-        options: IPv6Address.DescriptionOptions
-    ) -> String? {
+    func expectedDescription(options: IPv6Address.DescriptionOptions) -> String? {
         guard let ip = self.ip else {
             return nil
         }
@@ -59,7 +57,7 @@ struct IPv4DecimalLengthTestCase: Sendable {
     let rawAddress: UInt32
     /// The canonical textual representation, without leading zeros.
     let description: String
-    /// The last two segments of the corresponding IPv4-mapped IPv6 address, in lowercased hex.
+    /// The last two segments of the corresponding IPv4-embedded IPv6 address, in lowercased hex.
     let expandedIPv6SegmentHex: String
 
     init(
@@ -78,8 +76,27 @@ struct IPv4DecimalLengthTestCase: Sendable {
         IPv4Address(self.rawAddress)
     }
 
-    var ipv4EmbeddedAddress: IPv6Address {
-        IPv6Address(UnsignedInteger128(_low: 0xFFFF_0000_0000 | UInt64(self.rawAddress), _high: 0))
+    /// The description of `address.asIPv4MappedIPv6` without mixed notation.
+    var ipv4MappedExpandedIPv6Description: String {
+        "::ffff:\(self.expandedIPv6SegmentHex)"
+    }
+
+    /// The description of `address.asNAT64WellKnownIPv4EmbeddedIPv6` without mixed notation.
+    ///
+    /// Unlike the IPv4-mapped form, there is no non-zero `ffff` segment separating the embedded
+    /// IPv4 from the zeroed middle segments. So when the 7th segment is zero too, it is swallowed
+    /// by the compression sign instead of being written out.
+    var nat64ExpandedIPv6Description: String {
+        let high = self.rawAddress &>> 16
+        let low = self.rawAddress & 0xFFFF
+        switch (high, low) {
+        case (0, 0):
+            return "64:ff9b::"
+        case (0, let low):
+            return "64:ff9b::\(String(low, radix: 16))"
+        default:
+            return "64:ff9b::\(self.expandedIPv6SegmentHex)"
+        }
     }
 }
 
@@ -87,10 +104,7 @@ struct AnyIPAddressTestCase: Sendable {
     let string: String
     let ip: (address: AnyIPAddress, description: String)?
 
-    init(
-        _ string: String,
-        ip: (address: AnyIPAddress, description: String)?
-    ) {
+    init(_ string: String, ip: (address: AnyIPAddress, description: String)?) {
         self.string = string
         self.ip = ip
     }
@@ -109,19 +123,6 @@ struct IPPropertyTestCase<IPAddressType: Sendable>: Sendable {
         self.ip = ip
         self.testCaseDescription = testCaseDescription
         self.predicate = predicate
-    }
-}
-
-struct IPv4EmbeddedIPv6TestCase: Sendable {
-    let ipv6String: String
-    let ipv4: IPv4Address?
-
-    init(
-        _ ipv6String: String,
-        _ ipv4: IPv4Address? = nil
-    ) {
-        self.ipv6String = ipv6String
-        self.ipv4 = ipv4
     }
 }
 

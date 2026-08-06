@@ -79,6 +79,19 @@ struct IPv4AddressTests {
         #expect(produced == expectedDescription)
     }
 
+    @available(SwiftStdlib 5.1, *)
+    @Test(arguments: IPv4DecimalLengthTestCase.all.map(\.address))
+    func `IPv4Address from IPv4-embedded IPv6 addresses`(ipv4: IPv4Address) {
+        #expect(IPv4Address(ipv6: ipv4.asIPv4MappedIPv6) == ipv4)
+        #expect(IPv4Address(ipv6: ipv4.asNAT64WellKnownIPv4EmbeddedIPv6) == ipv4)
+
+        let deprecatedIPv4Compatible = IPv6Address(
+            UnsignedInteger128(_low: UInt64(ipv4.address), _high: 0x0000_0000_0000_0000)
+        )
+        #expect(IPv4Address(ipv6: deprecatedIPv4Compatible) == nil)
+        #expect(!deprecatedIPv4Compatible.isWellKnownIPv4Embedded)
+    }
+
     @available(SwiftStdlib 6.2, *)
     @Test(arguments: IPv4DecimalLengthTestCase.all)
     func `IPv4Address exhaustive byte-length cases`(testCase: IPv4DecimalLengthTestCase) throws {
@@ -273,10 +286,10 @@ struct IPv4AddressTests {
     }
 
     @available(SwiftStdlib 6.2, *)
-    @Test(arguments: IPv4EmbeddedIPv6TestCase.all)
-    func ipv4AddressFromIpv6Address(testCase: IPv4EmbeddedIPv6TestCase) throws {
-        let ipv6 = try #require(IPv6Address(testCase.ipv6String))
-        #expect(testCase.ipv4 == IPv4Address(ipv6: ipv6))
+    @Test(arguments: IPv6AddressTestCase.nonIPv4EmbeddedStrings)
+    func ipv4AddressFromNonIPv4EmbeddedIPv6Address(ipv6String: String) throws {
+        let ipv6 = try #require(IPv6Address(ipv6String))
+        #expect(IPv4Address(ipv6: ipv6) == nil)
     }
 
     @available(SwiftStdlib 5.1, *)

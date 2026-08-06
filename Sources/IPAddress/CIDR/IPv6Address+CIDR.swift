@@ -83,7 +83,7 @@ extension CIDR<IPv6Address> {
             prefix: IPv6Address(
                 UnsignedInteger128(
                     _low: 0x0000_0000_0000_0000,
-                    _high: 0x64FF_9B00_0000_0000
+                    _high: 0x0064_FF9B_0000_0000
                 )
             ),
             prefixLength: 96

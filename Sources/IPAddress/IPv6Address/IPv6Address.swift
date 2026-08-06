@@ -11,11 +11,15 @@
 ///
 /// To assist in the transition from IPv4 to IPv6 two types of IPv6 addresses that embed an IPv4 address were defined:
 /// IPv4-compatible and IPv4-mapped addresses. Of these IPv4-compatible addresses have been officially deprecated.
+/// [IETF RFC 6052] later defined IPv4-embedded IPv6 addresses for IPv4/IPv6 translation,
+/// including the NAT64 Well-Known Prefix `64:ff9b::/96`.
 ///
-/// Both types of addresses are not assigned any special meaning by this implementation,
+/// None of these addresses are assigned any special meaning by this implementation,
 /// other than what the relevant standards prescribe. This means that an address like `::ffff:127.0.0.1`,
 /// while representing an IPv4 loopback address, is not itself an IPv6 loopback address; only `::1` is.
 /// To handle these so called "IPv4-in-IPv6" addresses, they have to first be converted to their canonical IPv4 address.
+///
+/// [IETF RFC 6052]: https://datatracker.ietf.org/doc/html/rfc6052
 ///
 /// ### IPv4-Compatible IPv6 Addresses
 ///
@@ -46,6 +50,28 @@
 /// So `::ffff:a.b.c.d` would be an IPv4-mapped IPv6 address representing the IPv4 address `a.b.c.d`.
 ///
 /// [IETF RFC 4291 Section 2.5.5.2]: https://datatracker.ietf.org/doc/html/rfc4291#section-2.5.5.2
+///
+/// ### NAT64 Well-Known-Prefixed IPv4-Embedded IPv6 Addresses
+///
+/// The NAT64 Well-Known Prefix is defined in [IETF RFC 6052 Section 2.1] as `64:ff9b::/96`.
+/// Being a `/96` prefix, the embedded IPv4 address occupies the last 32 bits, as described in
+/// [IETF RFC 6052 Section 2.2]:
+///
+/// ```text
+/// |                     96 bits                    |    32 bits     |
+/// +------------------------------------------------+----------------+
+/// |0064:ff9b:0000:0000:0000:0000...............0000|  IPv4 address  |
+/// +------------------------------------------------+----------------+
+/// ```
+/// So `64:ff9b::a.b.c.d` would be a well-known-prefixed IPv4-embedded IPv6 address
+/// representing the IPv4 address `a.b.c.d`.
+///
+/// The Network-Specific Prefixes of the same RFC, as well as the local-use prefix `64:ff9b:1::/48`
+/// of [IETF RFC 8215], are not assigned any special meaning by this implementation.
+///
+/// [IETF RFC 6052 Section 2.1]: https://datatracker.ietf.org/doc/html/rfc6052#section-2.1
+/// [IETF RFC 6052 Section 2.2]: https://datatracker.ietf.org/doc/html/rfc6052#section-2.2
+/// [IETF RFC 8215]: https://datatracker.ietf.org/doc/html/rfc8215
 ///
 /// # Textual representation
 ///

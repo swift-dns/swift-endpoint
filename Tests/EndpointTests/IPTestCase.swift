@@ -210,7 +210,7 @@ extension IPv6AddressTestCase {
         guard !isValidAsOtherIPVersion else { return nil }
         return AnyIPAddressTestCase(
             string,
-            ip: ip.map { (AnyIPAddress.v6($0.address), "[\($0.mixedNotationDescription)]") }
+            ip: ip.map { (AnyIPAddress.v6($0.address), $0.mixedNotationDescription) }
         )
     }
 }

@@ -3,10 +3,8 @@ extension AnyIPAddress {
     /// Calls `body` with a pointer to a null-terminated C string of this address's textual
     /// representation. The `v4` case is formatted in dot-decimal notation, and the `v6` case is
     /// formatted in the bracket-less presentation format by default.
-    /// Notice no brackets are present by default, as that's what most C APIs expect.
     ///
-    /// Unlike `description`, the `v6` case is **not** enclosed in square brackets by default,
-    /// because that is the presentation format expected by C APIs, which reject the bracketed form.
+    /// Note that no brackets are present by default, as that's what most C APIs require.
     ///
     /// `ipv6Options` only applies to the `v6` case. The `v4` case has no options and
     /// is always formatted in dot-decimal notation.
@@ -19,8 +17,7 @@ extension AnyIPAddress {
     /// - Returns: The result of the closure.
     @inlinable
     public func withCString<Result, E: Error>(
-        ipv6Options: IPv6Address.DescriptionOptions = .standardOptions
-            .subtracting(.encloseInSquareBrackets),
+        ipv6Options: IPv6Address.DescriptionOptions = .standardOptions,
         _ body: (Span<CChar>) throws(E) -> Result
     ) throws(E) -> Result {
         switch self {

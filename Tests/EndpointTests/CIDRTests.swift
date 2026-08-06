@@ -395,26 +395,26 @@ struct CIDRTests {
                     prefix: IPv6Address(0x2001_0DB8_85A3_0000_0000_0000_0000_0100),
                     prefixLength: 24
                 ),
-                expectedDescription: "[2001:db8:85a3::100]/24"
+                expectedDescription: "2001:db8:85a3::100/24"
             ),
             (
                 cidr: CIDR(prefix: IPv6Address("FF00::")!, prefixLength: 8),
-                expectedDescription: "[ff00::]/8"
+                expectedDescription: "ff00::/8"
             ),
             (
                 cidr: CIDR(prefix: 0x0, prefixLength: 0),
-                expectedDescription: "[::]/0"
+                expectedDescription: "::/0"
             ),
             (
                 cidr: CIDR(prefix: IPv6Address(UInt128.max), prefixLength: 128),
-                expectedDescription: "[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]/128"
+                expectedDescription: "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128"
             ),
             (
                 cidr: CIDR(
                     prefix: IPv6Address(0x2001_0DB8_85A3_0000_0000_0000_0000_0000),
                     prefixLength: 48
                 ),
-                expectedDescription: "[2001:db8:85a3::]/48"
+                expectedDescription: "2001:db8:85a3::/48"
             ),
         ])
     )

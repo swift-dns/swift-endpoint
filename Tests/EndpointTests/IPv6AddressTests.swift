@@ -138,7 +138,7 @@ struct IPv6AddressTests {
         _: String,
         expectedMixedNotationDescription: String
     ) {
-        #expect(ipv6.description == "[\(expectedMixedNotationDescription)]")
+        #expect(ipv6.description == expectedMixedNotationDescription)
 
         let produced = ipv6.withCString { span in
             #expect(span.count - 1 == expectedMixedNotationDescription.utf8.count)
@@ -212,7 +212,7 @@ struct IPv6AddressTests {
         let mixedNotationDescription = try #require(testCase.ip?.mixedNotationDescription)
         let ip = try #require(testCase.ip?.address)
         #expect(ip.description == ip.description(options: .standardOptions))
-        #expect(ip.description == "[\(mixedNotationDescription)]")
+        #expect(ip.description == mixedNotationDescription)
 
         let cStringDefault = ip.withCString { span in
             span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }

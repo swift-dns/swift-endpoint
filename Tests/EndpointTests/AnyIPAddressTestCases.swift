@@ -71,19 +71,19 @@ extension AnyIPAddressTestCase {
         AnyIPAddressTestCase("[192.168.1.256]", ip: nil),
         AnyIPAddressTestCase(
             "[2001:0:0:1::]",
-            ip: (.v6(IPv6Address(0x2001_0000_0000_0001_0000_0000_0000_0000)), "[2001:0:0:1::]")
+            ip: (.v6(IPv6Address(0x2001_0000_0000_0001_0000_0000_0000_0000)), "2001:0:0:1::")
         ),
         AnyIPAddressTestCase(
             "0:0:0:0:0:FFFF:204.152.189.116",
             ip: (
                 .v6(IPv6Address(0x0000_0000_0000_0000_0000_FFFF_CC98_BD74)),
-                "[::ffff:204.152.189.116]"
+                "::ffff:204.152.189.116"
             )
         ),
         AnyIPAddressTestCase(
             "[2001:db8:85a3::100]",
             ip: (
-                .v6(IPv6Address(0x2001_0DB8_85A3_0000_0000_0000_0000_0100)), "[2001:db8:85a3::100]"
+                .v6(IPv6Address(0x2001_0DB8_85A3_0000_0000_0000_0000_0100)), "2001:db8:85a3::100"
             )
         ),
         AnyIPAddressTestCase("[0:1:2:3:4:0:5:6::]", ip: nil),

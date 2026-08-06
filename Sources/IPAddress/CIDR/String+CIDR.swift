@@ -1,7 +1,7 @@
 @available(SwiftStdlib 5.1, *)
 extension CIDR: CustomStringConvertible {
     /// The textual representation of the CIDR, in form `<ip-address>/<prefix-length>`.
-    /// For example `"192.168.1.98/24"`, or `"[2001:db8:1111::]/64"`.
+    /// For example `"192.168.1.98/24"`, or `"2001:db8:1111::/64"`.
     public var description: String {
         "\(self.prefix)/\(self.prefixLength)"
     }

@@ -1,15 +1,15 @@
 @available(SwiftStdlib 5.1, *)
 extension IPv6Address: CustomStringConvertible {
     /// The textual representation of an IPv6 address.
-    /// That is, 8 16-bits (2-bytes) separated by `:`, enclosed in `[]`, while using
+    /// That is, 8 16-bits (2-bytes) separated by `:`, while using
     /// the compression sign (`::`) and mixed ipv4-embedded notation where applicable.
     ///
     /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
     ///
     /// As examples, as discussed in the aforementioned RFC, the following descriptions might
     /// be emitted for their corresponding IP addresses:
-    /// `[::]`, `[::ffff:192.168.1.1]`, `[64:ff9b::192.0.2.33]`, `[2001:db8:85a3::100]`.
-    /// Letters are always lowercased and the square brackets are always present.
+    /// `::`, `::ffff:192.168.1.1`, `64:ff9b::192.0.2.33`, `2001:db8:85a3::100`.
+    /// Letters are always lowercased and no square brackets are present.
     /// For the well-known IPv4-embedding subnets `::ffff:0:0/96` and `64:ff9b::/96`,
     /// the mixed notation is emitted.
     ///
@@ -40,14 +40,15 @@ extension IPv6Address: CustomStringConvertible {
         ///
         /// Use `ipv6.isWellKnownIPv4Embedded` to check if `useMixedNotation` will apply to an IPv6 address.
         ///
-        /// Example: `[::ffff:204.152.189.116]` instead of `[::ffff:cc98:bd74]`,
-        /// or `[64:ff9b::192.0.2.33]` instead of `[64:ff9b::c000:221]`.
+        /// Example: `::ffff:204.152.189.116` instead of `::ffff:cc98:bd74`,
+        /// or `64:ff9b::192.0.2.33` instead of `64:ff9b::c000:221`.
         @inlinable
         public static var useMixedNotation: Self {
             Self(rawValue: 1 << 0)
         }
 
         /// Enclose the description in square brackets.
+        /// Useful for when the description is used in different contexts such as when followed by a port number.
         /// Example: `[2001:db8::1]` instead of `2001:db8::1`.
         @inlinable
         public static var encloseInSquareBrackets: Self {
@@ -55,26 +56,25 @@ extension IPv6Address: CustomStringConvertible {
         }
 
         /// Options for compliance with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
-        /// Consists of `useMixedNotation` and `encloseInSquareBrackets`.
+        /// Consists of `useMixedNotation`.
         @inlinable
         public static var standardOptions: Self {
-            [.useMixedNotation, .encloseInSquareBrackets]
+            [.useMixedNotation]
         }
     }
 
     /// The textual representation of an IPv6 address.
     /// That is, 8 16-bits (2-bytes) separated by `:`,
     /// while using the compression sign (`::`) where applicable.
-    /// Default options also add mixed ipv4-embedded notation where applicable,
-    /// as well as enclosing the description in square brackets.
+    /// Default options also add mixed ipv4-embedded notation where applicable.
     ///
     /// As examples, as discussed in the aforementioned RFC, the following descriptions might
     /// be emitted for their corresponding IP addresses.
     ///
-    /// `[::]`, `[::ffff:192.168.1.1]`, `[64:ff9b::192.0.2.33]`, `[2001:db8:85a3::100]`.
-    /// If `useMixedNotation` is disabled, `[::ffff:192.168.1.1]` will be emitted as `[::ffff:c0a8:101]`,
-    /// and `[64:ff9b::192.0.2.33]` as `[64:ff9b::c000:221]`.
-    /// If `encloseInSquareBrackets` is disabled, `[2001:db8:85a3::100]` will be emitted as `2001:db8:85a3::100`.
+    /// `::`, `::ffff:192.168.1.1`, `64:ff9b::192.0.2.33`, `2001:db8:85a3::100`.
+    /// If `useMixedNotation` is disabled, `::ffff:192.168.1.1` will be emitted as `::ffff:c0a8:101`,
+    /// and `64:ff9b::192.0.2.33` as `64:ff9b::c000:221`.
+    /// If `encloseInSquareBrackets` is enabled, `2001:db8:85a3::100` will be emitted as `[2001:db8:85a3::100]`.
     /// Letters are always in lowercase.
     @inlinable
     public func description(options: DescriptionOptions = .standardOptions) -> String {

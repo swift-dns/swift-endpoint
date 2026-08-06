@@ -136,6 +136,39 @@ public struct IPv6Address: Sendable, Hashable {
         CIDR<Self>.documentation.contains(self)
     }
 
+    /// Whether this address is an IPv4-mapped address, or not.
+    /// Equivalent to `::FFFF:0:0/96` (aka `::FFFF:0.0.0.0/96`) in CIDR notation.
+    ///
+    /// Defined in [IETF RFC 4291].
+    ///
+    /// [IETF RFC 4291]: https://datatracker.ietf.org/doc/html/rfc4291
+    @inlinable
+    public var isIPv4Mapped: Bool {
+        CIDR<Self>.ipv4Mapped.contains(self)
+    }
+
+    /// Whether this address is a NAT64 well-known IPv4-embedded address, or not.
+    /// Equivalent to `64:ff9b::/96` in CIDR notation.
+    ///
+    /// Defined in [IETF RFC 6052].
+    ///
+    /// [IETF RFC 6052]: https://datatracker.ietf.org/doc/html/rfc6052#section-2.4
+    @inlinable
+    public var isNAT64WellKnownIPv4Embedded: Bool {
+        CIDR<Self>.nat64WellKnownIPv4Embedded.contains(self)
+    }
+
+    /// Whether this address is a well-known IPv4-embedded address, or not.
+    /// Equivalent to `::ffff:0:0/96` (aka `::FFFF:0.0.0.0/96`) or `64:ff9b::/96` in CIDR notation.
+    ///
+    /// Defined in [IETF RFC 5952].
+    ///
+    /// [IETF RFC 5952]: https://datatracker.ietf.org/doc/html/rfc5952#section-5
+    @inlinable
+    public var isWellKnownIPv4Embedded: Bool {
+        self.isIPv4Mapped || self.isNAT64WellKnownIPv4Embedded
+    }
+
     /// Initialize an `IPv6Address` from its raw 128-bit unsigned integer representation.
     /// For example `IPv6Address(0x0102_0304_0506_0708_090A_0B0C_0D0E_0F10)` will
     /// result in an IP address equal to `0102:0304:0506:0708:090A:0B0C:0D0E:0F10`.

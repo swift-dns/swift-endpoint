@@ -72,6 +72,24 @@ extension CIDR<IPv6Address> {
         )
     }
 
+    /// Representing 64:ff9b::/96
+    ///
+    /// Defined in [IETF RFC 6052].
+    ///
+    /// [IETF RFC 6052]: https://datatracker.ietf.org/doc/html/rfc6052#section-2.4
+    @inlinable
+    public static var nat64WellKnownIPv4Embedded: Self {
+        Self(
+            prefix: IPv6Address(
+                UnsignedInteger128(
+                    _low: 0x0000_0000_0000_0000,
+                    _high: 0x64FF_9B00_0000_0000
+                )
+            ),
+            prefixLength: 96
+        )
+    }
+
     /// Representing FC00::/7
     ///
     /// Defined in [IETF RFC 4193].

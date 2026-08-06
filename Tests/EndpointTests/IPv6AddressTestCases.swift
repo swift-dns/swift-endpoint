@@ -143,6 +143,21 @@ extension IPv6AddressTestCase {
             mixedNotationDescription: "::ffff:1.1.1.1"
         ),
         IPv6AddressTestCase(
+            "::ffff:0:0",
+            ip: (0x0000_0000_0000_0000_0000_FFFF_0000_0000, "::ffff:0:0"),
+            mixedNotationDescription: "::ffff:0.0.0.0"
+        ),
+        IPv6AddressTestCase(
+            "::ffff:0.0.0.0",
+            ip: (0x0000_0000_0000_0000_0000_FFFF_0000_0000, "::ffff:0:0"),
+            mixedNotationDescription: "::ffff:0.0.0.0"
+        ),
+        IPv6AddressTestCase(
+            "64:ff9b::0.0.0.0",
+            ip: (0x0064_FF9B_0000_0000_0000_0000_0000_0000, "64:ff9b::"),
+            mixedNotationDescription: "64:ff9b::0.0.0.0"
+        ),
+        IPv6AddressTestCase(
             "64:ff9b::192.0.2.33",
             ip: (0x0064_FF9B_0000_0000_0000_0000_C000_0221, "64:ff9b::c000:221"),
             mixedNotationDescription: "64:ff9b::192.0.2.33"

@@ -81,8 +81,8 @@ print(ipv4Address2) /// prints "192.168.1.1"
 let ipv6Address1 = IPv6Address("[FF::]")!
 let ipv6Address2 = IPv6Address("2001:db8:85a3:0:0:0:0:100")!
 /// Prints the ipv6 representations according to RFC 5952
-print(ipv6Address1) /// prints "[ff::]"
-print(ipv6Address2) /// prints "[2001:db8:85a3::100]"
+print(ipv6Address1) /// prints "ff::"
+print(ipv6Address2) /// prints "2001:db8:85a3::100"
 
 /// Define IPv4-embedded IPv6 addresses via the mixed IPv4-embedded notation.
 /// An IPv4-mapped IPv6 address (RFC 4291).
@@ -91,15 +91,15 @@ let ipv4InIPv6Address1 = IPv6Address("::FFFF:192.168.1.1")!
 let ipv4InIPv6Address2 = IPv6Address("[64:ff9b:0:0:0:0:c000:221]")!
 /// Any other non-well-known IPv4-embedded IPv6 address containing an IPv4 in the trailing 32 bits.
 let ipv4InIPv6Address3 = IPv6Address("[2001:db8:122:344::192.0.2.33]")!
-print(ipv4InIPv6Address1) /// prints "[::ffff:192.168.1.1]"
-print(ipv4InIPv6Address2) /// prints "[64:ff9b::192.0.2.33]"
-print(ipv4InIPv6Address3) /// prints "[2001:db8:122:344::c000:221]", Not well-known so no mixed notation
+print(ipv4InIPv6Address1) /// prints "::ffff:192.168.1.1"
+print(ipv4InIPv6Address2) /// prints "64:ff9b::192.0.2.33"
+print(ipv4InIPv6Address3) /// prints "2001:db8:122:344::c000:221", Not well-known so no mixed notation
 
 /// Define an any-ip-address. The type will automatically parse the ip address into the corrext type.
 let anyIPv4Address = AnyIPAddress("192.168.1.1")
 let anyIPv6Address = AnyIPAddress("[2001:DB8:85A3::100]")
 print(anyIPv4Address) /// prints "192.168.1.1"
-print(anyIPv6Address) /// prints "[2001:db8:85a3::100]"
+print(anyIPv6Address) /// prints "2001:db8:85a3::100"
 
 /// Define a domain name containing an ip v4 address.
 let domainName3 = try DomainName(ipv4: ipv4Address2)

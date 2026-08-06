@@ -104,21 +104,21 @@ extension IPv6Address {
         let isIPv4Mapped = self.isIPv4Mapped
         let isNAT64WellKnownIPv4Embedded = self.isNAT64WellKnownIPv4Embedded
         let isWellKnownIPv4Embedded = isIPv4Mapped || isNAT64WellKnownIPv4Embedded
-        let useMixedNotation = options.contains(.useMixedNotation)
-        let shouldUseMixedNotation = useMixedNotation && isWellKnownIPv4Embedded
+        let shouldUseMixedNotation = options.contains(.useMixedNotation)
+        let useMixedNotation = shouldUseMixedNotation && isWellKnownIPv4Embedded
         let allMask = UnsignedInteger128(_low: .max, _high: .max)
         let ipv4EmbeddedMask = UnsignedInteger128(_low: 0xFFFF_FFFF_0000_0000, _high: .max)
-        let addressMask = shouldUseMixedNotation ? ipv4EmbeddedMask : allMask
+        let addressMask = useMixedNotation ? ipv4EmbeddedMask : allMask
         address.address &= addressMask
 
         /// If this is a well-known IPv4-embedded IPv6 address, we need to add 15 bytes for the
         /// IPv4 address. However, the ipv6 address will write the 2 zeroed-out trailing segments
         /// before it reaches the ipv4-address-write code.
         /// They're either written as a literal `0:0` (e.g. "::ffff:0:0"), or swallowed by the
-        /// trailing compression sign (e.g. "64:ff9b::"). In the first case we walk back 3 bytes;
-        /// therefore we reserve 3 bytes less.
+        /// trailing compression sign (e.g. "64:ff9b::"). In the first case we walk back 3 bytes
+        /// and reserve 3 bytes less.
         let ipv4EmbeddedWalkBackBytes = isIPv4Mapped ? 3 : 0
-        let additionalCapacity = shouldUseMixedNotation ? (15 &- ipv4EmbeddedWalkBackBytes) : 0
+        let additionalCapacity = useMixedNotation ? (15 &- ipv4EmbeddedWalkBackBytes) : 0
 
         let mask = address.makeSegmentsMask()
         let entry = IPv6Address.entry(forMask: mask)
@@ -172,7 +172,7 @@ extension IPv6Address {
             unsafe buffer[writeIdx &+ 1] = .asciiColon
             writeIdx &+= entry.writeCsAtEnd ? 2 : 0
 
-            if shouldUseMixedNotation {
+            if useMixedNotation {
                 let ipv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
                 let lowerBound = writeIdx &- ipv4EmbeddedWalkBackBytes
                 let start = unsafe buffer.baseAddress.unsafelyUnwrapped.advanced(by: lowerBound)

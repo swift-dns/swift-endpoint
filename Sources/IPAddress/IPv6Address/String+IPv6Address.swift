@@ -141,13 +141,16 @@ extension IPv6Address {
             options.contains(.useMixedNotationForIPv4MappedAddresses)
         let useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses =
             options.contains(.useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses)
+
         let isIPv4Mapped = self.isIPv4Mapped
         let isNAT64WellKnownIPv4Embedded = self.isNAT64WellKnownIPv4Embedded
+
         let useMixedNotationForIPv4Mapped =
             isIPv4Mapped && useMixedNotationForIPv4EmbeddedAddresses
         let useMixedNotationForNAT64 =
             isNAT64WellKnownIPv4Embedded && useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses
         let useMixedNotation = useMixedNotationForIPv4Mapped || useMixedNotationForNAT64
+
         let allMask = UnsignedInteger128(_low: .max, _high: .max)
         let ipv4EmbeddedMask = UnsignedInteger128(_low: 0xFFFF_FFFF_0000_0000, _high: .max)
         let addressMask = useMixedNotation ? ipv4EmbeddedMask : allMask
@@ -159,6 +162,10 @@ extension IPv6Address {
         /// They're either written as a literal `0:0` (e.g. "::ffff:0:0"), or swallowed by the
         /// trailing compression sign (e.g. "64:ff9b::"). In the first case we walk back 3 bytes
         /// and reserve 3 bytes less.
+        ///
+        /// In the future we might want to modify this to be more dynamic and count the
+        /// walk back bytes on the fly.
+        /// For example if we want to provide a "forceMixedNotation" option, e.g. for NAT64.
         let ipv4EmbeddedWalkBackBytes = isIPv4Mapped ? 3 : 0
         let additionalCapacity = useMixedNotation ? (15 &- ipv4EmbeddedWalkBackBytes) : 0
 

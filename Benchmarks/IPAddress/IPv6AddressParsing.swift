@@ -33,7 +33,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<5_000_000 {
-            let ip = unsafe IPv6Address("[2001:0db8:85a3:f109:197a:8a2e:0370:7334]")
+            let ip = unsafe IPv6Address("[2600:9000:2241:5800:0001:5a21:7c40:93a1]")
                 .unsafelyUnwrapped
             blackHole(ip)
         }
@@ -99,7 +99,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<5_000_000 {
-            let ip = unsafe IPv6Address("2001:0db8:85a3::8a2e:0370:7334").unsafelyUnwrapped
+            let ip = unsafe IPv6Address("2a03:2880:f177::face:b00c:25de").unsafelyUnwrapped
             blackHole(ip)
         }
     }
@@ -112,7 +112,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        let ip = unsafe IPv6Address("2001:0db8:85a3::8a2e:0370:7334").unsafelyUnwrapped
+        let ip = unsafe IPv6Address("2a03:2880:f177::face:b00c:25de").unsafelyUnwrapped
         blackHole(ip)
     }
 
@@ -124,7 +124,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        let ip = unsafe IPv6Address("2001:0db8:85a3::8a2e:0370:7334").unsafelyUnwrapped
+        let ip = unsafe IPv6Address("2a03:2880:f177::face:b00c:25de").unsafelyUnwrapped
         blackHole(ip)
     }
 
@@ -139,7 +139,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<5_000_000 {
-            let ip = unsafe IPv6Address("[2001:0db8:85a3:8a2e:0370:7334::]").unsafelyUnwrapped
+            let ip = unsafe IPv6Address("[2a03:2880:f177:0185:face:b00c::]").unsafelyUnwrapped
             blackHole(ip)
         }
     }
@@ -155,7 +155,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<5_000_000 {
-            let ip = unsafe IPv6Address("[::2001:0db8:85a3:8a2e:0370:7334]").unsafelyUnwrapped
+            let ip = unsafe IPv6Address("[::2a03:2880:f177:face:b00c:25de]").unsafelyUnwrapped
             blackHole(ip)
         }
     }
@@ -163,7 +163,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton
 
     let cString2GroupsCompressedInTheMiddleNoBrackets =
-        "2001:0db8:85a3::8a2e:0370:7334".utf8CString
+        "2a03:2880:f177::face:b00c:25de".utf8CString
 
     Benchmark(
         "IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets_inet_pton_4M",
@@ -224,7 +224,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     //     "2a00:1450:4001:c15::8a",
     //     "2606:4700::6810:84e5",
     //     "2600:9000:2241:5800:1:5a21:7c40:93a1",
-    //     "2001:db8:85a3::8a2e:370:7334",
+    //     "::ffff:151.101.1.140",
     //     "64:ff9b::808:808",
     //     "fe80::1ff:fe23:4567:890a",
     //     "ff02::1",
@@ -275,10 +275,9 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
             0x37, 0x63, 0x34, 0x30, 0x3A, 0x39, 0x33, 0x61, 0x31,
         ],
         [
-            0x32, 0x30, 0x30, 0x31, 0x3A, 0x64, 0x62, 0x38, 0x3A,
-            0x38, 0x35, 0x61, 0x33, 0x3A, 0x3A, 0x38, 0x61, 0x32,
-            0x65, 0x3A, 0x33, 0x37, 0x30, 0x3A, 0x37, 0x33, 0x33,
-            0x34,
+            0x3A, 0x3A, 0x66, 0x66, 0x66, 0x66, 0x3A, 0x31, 0x35,
+            0x31, 0x2E, 0x31, 0x30, 0x31, 0x2E, 0x31, 0x2E, 0x31,
+            0x34, 0x30,
         ],
         [
             0x36, 0x34, 0x3A, 0x66, 0x66, 0x39, 0x62, 0x3A, 0x3A,
@@ -403,10 +402,9 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
             0x37, 0x63, 0x34, 0x30, 0x3A, 0x39, 0x33, 0x61, 0x31, 0x0,
         ],
         [
-            0x32, 0x30, 0x30, 0x31, 0x3A, 0x64, 0x62, 0x38, 0x3A,
-            0x38, 0x35, 0x61, 0x33, 0x3A, 0x3A, 0x38, 0x61, 0x32,
-            0x65, 0x3A, 0x33, 0x37, 0x30, 0x3A, 0x37, 0x33, 0x33,
-            0x34, 0x0,
+            0x3A, 0x3A, 0x66, 0x66, 0x66, 0x66, 0x3A, 0x31, 0x35,
+            0x31, 0x2E, 0x31, 0x30, 0x31, 0x2E, 0x31, 0x2E, 0x31,
+            0x34, 0x30, 0x0,
         ],
         [
             0x36, 0x34, 0x3A, 0x66, 0x66, 0x39, 0x62, 0x3A, 0x3A,

@@ -154,11 +154,13 @@ For `IPv6Address`, the Arpa domain name format is supported. For example the fol
 * These benchmarks are meant to represent a slow-case scenario of real-world workloads.
 * The C API benchmarks represent a C language user's experience.
   * Meaning They don't contain any possible overhead coming from interfacing with other Swift APIs.
-* The benchmarks write into stack-allocated space if/where needed to avoid malloc and show their full potential.
+* The benchmarks write into stack-allocated space if/where needed, to avoid malloc and show their full potential.
   * swift-endpoint would win by good margins anyway even if it used malloc and C APIs continued to use alloca.
 * Each benchmark runs against 16 different IPs one by one in a random manner.
   * There is a constant seed to keep the benchmarks consistent across benchmark runs.
   * This means CPUs won't find a clear pattern to over-optimize for in any of the operations, which would make the benchmarks less realistic.
+  * 1 of the IPv6 IPs is an IPv4-mapped IPv6 address, to benchmark that case as well.
+    * IPv4-mapped addresses have a mixed-notation representation, per RFC 5952.
 
 #### Against Darwin
 

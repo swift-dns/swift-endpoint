@@ -99,7 +99,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: - IPv4_Serializing_Mixed
 
-    let ipv4Mixed = IPv4Address(123, 45, 6, 0)
+    let ipv4Mixed = IPv4Address(23, 185, 0, 2)
     Benchmark(
         "IPv4_Serializing_Mixed_15M",
         configuration: .init(

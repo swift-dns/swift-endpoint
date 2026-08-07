@@ -1,24 +1,5 @@
 @available(SwiftStdlib 5.1, *)
 extension IPv6Address: CustomStringConvertible {
-    /// The textual representation of an IPv6 address.
-    /// That is, 8 16-bits (2-bytes) separated by `:`, while using
-    /// the compression sign (`::`) and mixed ipv4-embedded notation where applicable.
-    ///
-    /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
-    ///
-    /// As examples, as discussed in the aforementioned RFC, the following descriptions might
-    /// be emitted for their corresponding IP addresses:
-    /// `::`, `::ffff:192.168.1.1`, `64:ff9b::192.0.2.33`, `2001:db8:85a3::100`.
-    /// Letters are always lowercased and no square brackets are present.
-    /// For the well-known IPv4-embedding subnets `::ffff:0:0/96` and `64:ff9b::/96`,
-    /// the mixed notation is emitted.
-    ///
-    /// Use `IPv6Address.description(options:)` for a customized description.
-    @inlinable
-    public var description: String {
-        self.description(options: .standardOptions)
-    }
-
     /// Options for adjusting the textual representation of an IPv6 address.
     public struct DescriptionOptions: Sendable, OptionSet {
         /// The raw value of the description options.
@@ -92,6 +73,25 @@ extension IPv6Address: CustomStringConvertible {
     }
 
     /// The textual representation of an IPv6 address.
+    /// That is, 8 16-bits (2-bytes) separated by `:`, while using
+    /// the compression sign (`::`) and mixed ipv4-embedded notation where applicable.
+    ///
+    /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
+    ///
+    /// As examples, as discussed in the aforementioned RFC, the following descriptions might
+    /// be emitted for their corresponding IP addresses:
+    /// `::`, `::ffff:192.168.1.1`, `64:ff9b::192.0.2.33`, `2001:db8:85a3::100`.
+    /// Letters are always lowercased and no square brackets are present.
+    /// For the well-known IPv4-embedding subnets `::ffff:0:0/96` and `64:ff9b::/96`,
+    /// the mixed notation is emitted.
+    ///
+    /// Use `IPv6Address.description(options:)` for a customized description.
+    @inlinable
+    public var description: String {
+        self._description_inlined(options: .standardOptions)
+    }
+
+    /// The textual representation of an IPv6 address.
     /// That is, 8 16-bits (2-bytes) separated by `:`,
     /// while using the compression sign (`::`) where applicable.
     /// Default options also add mixed ipv4-embedded notation where applicable.
@@ -108,6 +108,12 @@ extension IPv6Address: CustomStringConvertible {
     /// Letters are always in lowercase.
     @inlinable
     public func description(options: DescriptionOptions = .standardOptions) -> String {
+        self._description_inlined(options: options)
+    }
+
+    @inlinable
+    @inline(always)
+    func _description_inlined(options: DescriptionOptions) -> String {
         unsafe self.makeDescription(options: options) {
             (maxWriteableBytes, callback) in
             unsafe String(unsafeUninitializedCapacity_Compatibility: maxWriteableBytes) { buffer in
@@ -120,7 +126,7 @@ extension IPv6Address: CustomStringConvertible {
 @available(SwiftStdlib 5.1, *)
 extension IPv6Address {
     @inlinable
-    @inline(__always)
+    @inline(always)
     package func makeDescription<Buffer, E: Error>(
         options: DescriptionOptions,
         writingToUnsafeMutableBufferPointerOfUInt8: (
@@ -231,7 +237,7 @@ extension IPv6Address {
     /// Returns a UInt8, each bit representing whether
     /// the corresponding IPv6 segment is all-zero (1) or not (0).
     @inlinable
-    @inline(__always)
+    @inline(always)
     func makeSegmentsMask() -> UInt8 {
         let highNibble = IPv6Address.makeNibbleFor4Segments(of: self.address._high)
         let lowNibble = IPv6Address.makeNibbleFor4Segments(of: self.address._low)
@@ -272,7 +278,7 @@ extension IPv6Address {
     /// Counts the number of digits that will need to be written excluding the trailing
     /// digit that is always written even if it's 0.
     @inlinable
-    @inline(__always)
+    @inline(always)
     func countDigitsRequiredToPrintExcludingTrailingDigits() -> Int {
         let high = IPv6Address.countDigitsRequiredToPrintExcludingTrailingDigits(
             of: self.address._high
@@ -457,7 +463,7 @@ extension IPv6Address: LosslessStringConvertible {
     }
 
     @inlinable
-    @inline(__always)
+    @inline(always)
     static func parseIPv6(
         span: Span<UInt8>,
         address: inout _CompatibilityUInt128Typealias
@@ -671,7 +677,7 @@ extension IPv6Address {
     }
 
     @inlinable
-    @inline(__always)
+    @inline(always)
     package static func entry(
         forMask mask: UInt8
     ) -> SegmentWriteTableEntry.Unpacked {

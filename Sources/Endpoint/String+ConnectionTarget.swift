@@ -15,9 +15,9 @@ extension ConnectionTarget.Target: CustomStringConvertible {
             /// [RFC 5952, Section 6](https://datatracker.ietf.org/doc/html/rfc5952#section-6).
             let options = IPv6Address.DescriptionOptions.standardOptions
                 .union(.encloseInSquareBrackets)
-            return "\(ipAddress.description(ipv6Options: options)):\(port.value)"
+            return "\(ipAddress.description(ipv6Options: options)):\(port.description)"
         case .domainName(let domainName, let port):
-            return "\(domainName.description):\(port.value)"
+            return "\(domainName.description):\(port.description)"
         case .unixDomainSocketAddress(let unixDomainSocketAddress):
             return unixDomainSocketAddress
         }

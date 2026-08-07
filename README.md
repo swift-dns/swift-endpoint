@@ -49,6 +49,7 @@ The package contains a great amount of unit tests as well as benchmarks to ensur
   - [x] Unicode-17-compliant IDNA support for non-ASCII domain names.
 - [x] `IPv4Address`, `IPv6Address`, `AnyIPAddress`
 - [x] `CIDR`
+- [x] `Port`
 - [ ] `UnixDomainSocketAddress`
 
 ## Usage

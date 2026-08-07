@@ -971,32 +971,32 @@ extension CIDRTests {
     @available(SwiftStdlib 5.1, *)
     @Test func `ipv4 CIDR standard initializer crashes when prefixLength is out of bounds`() async {
         await #expect(processExitsWith: .failure) {
-            blackHole(CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: identity(-1)))
+            blackHole(CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: noOptimize(-1)))
         }
         await #expect(processExitsWith: .failure) {
-            blackHole(CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: identity(33)))
+            blackHole(CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: noOptimize(33)))
         }
         await #expect(processExitsWith: .failure) {
-            blackHole(CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: identity(Int.min)))
+            blackHole(CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: noOptimize(Int.min)))
         }
         await #expect(processExitsWith: .failure) {
-            blackHole(CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: identity(Int.max)))
+            blackHole(CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: noOptimize(Int.max)))
         }
     }
 
     @available(SwiftStdlib 6.0, *)
     @Test func `ipv6 CIDR standard initializer crashes when prefixLength is out of bounds`() async {
         await #expect(processExitsWith: .failure) {
-            blackHole(CIDR(prefix: IPv6Address(0x1), prefixLength: identity(-1)))
+            blackHole(CIDR(prefix: IPv6Address(0x1), prefixLength: noOptimize(-1)))
         }
         await #expect(processExitsWith: .failure) {
-            blackHole(CIDR(prefix: IPv6Address(0x1), prefixLength: identity(129)))
+            blackHole(CIDR(prefix: IPv6Address(0x1), prefixLength: noOptimize(129)))
         }
         await #expect(processExitsWith: .failure) {
-            blackHole(CIDR(prefix: IPv6Address(0x1), prefixLength: identity(Int.min)))
+            blackHole(CIDR(prefix: IPv6Address(0x1), prefixLength: noOptimize(Int.min)))
         }
         await #expect(processExitsWith: .failure) {
-            blackHole(CIDR(prefix: IPv6Address(0x1), prefixLength: identity(Int.max)))
+            blackHole(CIDR(prefix: IPv6Address(0x1), prefixLength: noOptimize(Int.max)))
         }
     }
 }

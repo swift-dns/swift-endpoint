@@ -18,7 +18,7 @@ extension IPv4Address: CustomStringConvertible {
     /// bytes written. `buffer` must have a capacity of at least 15 bytes.
     @inlinable
     @inline(always)
-    func writeTextualRepresentation_RequiringMinimumCapacityOf15(
+    package func writeTextualRepresentation_RequiringMinimumCapacityOf15(
         into buffer: UnsafeMutableRawBufferPointer
     ) -> Int {
         assert(buffer.count >= 15)

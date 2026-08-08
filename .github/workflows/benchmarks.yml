@@ -104,8 +104,6 @@ jobs:
       - name: Configure git
         run: |
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
-          git config --global user.name "${{ steps.app-token.outputs.app-slug }}[bot]"
-          git config --global user.email "${{ vars.SWIFT_DNS_HELPER_BOT_ID }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/${{ github.repository }}.git"
 
       - name: Resolve Swift toolchain for cache key
@@ -225,6 +223,10 @@ jobs:
         id: commit-update
         env:
           BOT_NAME: "${{ steps.app-token.outputs.app-slug }}[bot]"
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPOSITORY: ${{ github.repository }}
+          WORK_DIR: "."
+          PATHSPEC: ${{ env.THRESHOLDS_PATH }}
         run: |
           SOURCE_BRANCH="${{ github.head_ref || github.ref_name }}"
 
@@ -245,15 +247,21 @@ jobs:
 
           printf '%s\n' "branch=${TARGET_BRANCH}" >> "${GITHUB_OUTPUT}"
 
+          BASE_SHA="$(git rev-parse "origin/${SOURCE_BRANCH}")"
           git checkout -B "${TARGET_BRANCH}" "origin/${SOURCE_BRANCH}"
-          git add "${{ env.THRESHOLDS_PATH }}"
-          git commit -m "Update of benchmark thresholds with the deviated baseline
 
-          Committed to ${TARGET_BRANCH} by ${RUN_LINK}"
+          COMMIT_MESSAGE="$(
+            printf -- '%s\n\n%s\n' \
+              "Update of benchmark thresholds with the deviated baseline" \
+              "Committed to ${TARGET_BRANCH} by ${RUN_LINK}"
+          )"
+          BRANCH="${TARGET_BRANCH}"
+          OUTPUT_FILE="${GITHUB_OUTPUT}"
+          export BRANCH BASE_SHA COMMIT_MESSAGE OUTPUT_FILE
 
-          git push -f origin "${TARGET_BRANCH}" || printf '%s\n' "Failed to push threshold changes to '${TARGET_BRANCH}'; continuing without failing the job."
-
-          printf '%s\n' "commit-sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+          if ! .github/scripts/commit-signed.sh; then
+            printf '%s\n' "Failed to commit thresholds to '${TARGET_BRANCH}'; continuing anyway."
+          fi
 
       - name: Construct result comment if the benchmark-process succeeded
         run: |
@@ -279,8 +287,8 @@ jobs:
                   ;;
           esac
 
-          if [[ '${{ steps.check-modifications.outputs.has-modifications }}' == 'true' ]]; then
-            COMMIT_SHA='${{ steps.commit-update.outputs.commit-sha }}'
+          COMMIT_SHA='${{ steps.commit-update.outputs.commit-sha }}'
+          if [[ -n "${COMMIT_SHA}" ]]; then
             BRANCH_NAME='${{ steps.commit-update.outputs.branch }}'
             SHORT_SHA="$(printf '%s' "${COMMIT_SHA}" | cut -c 1-7)"
             COMMIT_LINK="https://github.com/${{ github.repository }}/commit/${COMMIT_SHA}"

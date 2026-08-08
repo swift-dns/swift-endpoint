@@ -1,0 +1,5 @@
+# https://docs.codecov.com/docs/codecovyml-reference
+
+ignore:
+  # Generated from the IANA registry by utils/IANAServicePortsGenerator.swift.
+  - "Sources/IPAddress/Port/IANAServicePorts.swift"

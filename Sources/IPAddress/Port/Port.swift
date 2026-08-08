@@ -13,6 +13,7 @@ public struct Port: Sendable, Hashable {
     }
 
     /// Create a new port with the given canonical value.
+    @inlinable
     public init(canonicalValue: UInt16) {
         self.canonicalValue = canonicalValue
     }
@@ -31,12 +32,5 @@ extension Port: ExpressibleByIntegerLiteral {
     /// Create a new port with the given canonical value.
     public init(integerLiteral value: UInt16) {
         self.init(canonicalValue: value)
-    }
-}
-
-extension Port: CustomStringConvertible {
-    /// The textual representation of a port, for example `Port(324)`.
-    public var description: String {
-        "Port(\(self.canonicalValue))"
     }
 }

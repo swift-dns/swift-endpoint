@@ -85,14 +85,14 @@ let benchmarks: @Sendable () -> Void = {
     let name1 = try! DomainName("google.com.")
     let name2 = try! DomainName("google.com.")
     Benchmark(
-        "Equality_Check_CPU_12M",
+        "Equality_Check_CPU_9M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 100_000_000,
         )
     ) { benchmark in
-        for _ in 0..<12_000_000 {
+        for _ in 0..<9_000_000 {
             blackHole(name1 == name2)
         }
     }

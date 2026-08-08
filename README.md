@@ -49,6 +49,7 @@ The package contains a great amount of unit tests as well as benchmarks to ensur
   - [x] Unicode-17-compliant IDNA support for non-ASCII domain names.
 - [x] `IPv4Address`, `IPv6Address`, `AnyIPAddress`
 - [x] `CIDR`
+- [x] `Port`
 - [ ] `UnixDomainSocketAddress`
 
 ## Usage
@@ -168,10 +169,10 @@ These were performed on my M1 Pro MacBook, on macOS 27.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 9.6           | 177.0        | 18.44x  |
-| IPv4    | Parsing     | 14.4          | 45.8         | 3.18x   |
-| IPv6    | Serializing | 32.3          | 240.0        | 7.44x   |
-| IPv6    | Parsing     | 29.5          | 98.5         | 3.34x   |
+| IPv4    | Serializing | 8.6           | 176.6        | 20.53x  |
+| IPv4    | Parsing     | 14.5          | 46.0         | 3.17x   |
+| IPv6    | Serializing | 31.0          | 236.2        | 7.62x   |
+| IPv6    | Parsing     | 29.5          | 95.9         | 3.25x   |
 
 #### Against glibc
 
@@ -179,10 +180,10 @@ These were performed on a dedicated-cpu-core machine from Hetzner, on Ubuntu 24.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 17.0          | 120.0        | 7.06x   |
+| IPv4    | Serializing | 20.0          | 120.0        | 6.00x   |
 | IPv4    | Parsing     | 17.0          | 26.7         | 1.57x   |
-| IPv6    | Serializing | 40.0          | 180.0        | 4.50x   |
-| IPv6    | Parsing     | 37.5          | 47.5         | 1.27x   |
+| IPv6    | Serializing | 37.5          | 180.0        | 4.80x   |
+| IPv6    | Parsing     | 37.5          | 46.7         | 1.25x   |
 
 #### Additional Notes
 

@@ -11,6 +11,6 @@ func blackHole(_: some Any) {}
 /// division by zero) and stops release builds from constant-folding a trap away.
 /// Borrowed from swift-collections benchmark, as used by ordo-one/package-benchmark.
 @_optimize(none)
-func identity<T>(_ value: T) -> T {
+func noOptimize<T>(_ value: T) -> T {
     value
 }

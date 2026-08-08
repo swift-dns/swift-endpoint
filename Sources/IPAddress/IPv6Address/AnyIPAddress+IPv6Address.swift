@@ -2,41 +2,14 @@
 extension IPv6Address {
     /// The exact translation of an `AnyIPAddress` to an `IPv4Address`.
     ///
-    /// This intentionally does not handle ipv4-mapped ipv6 addresses. Use `init(ipv4:)` for that.
+    /// This intentionally does not handle ipv4-embedded ipv6 addresses.
+    /// Use `IPv4Address.asIPv4MappedIPv6` or
+    /// `IPv4Address.asNAT64WellKnownIPv4EmbeddedIPv6` for that.
     @available(SwiftStdlib 5.1, *)
     public init?(exactly ipAddress: AnyIPAddress) {
         guard let ipv6 = ipAddress.ipv6Value else {
             return nil
         }
         self = ipv6
-    }
-
-    /// Maps an IPv4 address to an IPv6 address in the reserved address space by [RFC 4291, IP Version 6 Addressing Architecture, February 2006](https://datatracker.ietf.org/doc/rfc4291#section-2.5.5.2).
-    ///
-    /// ```text
-    /// 2.5.5.2.  IPv4-Mapped IPv6 Address
-    ///
-    ///    A second type of IPv6 address that holds an embedded IPv4 address is
-    ///    defined.  This address type is used to represent the addresses of
-    ///    IPv4 nodes as IPv6 addresses.  The format of the "IPv4-mapped IPv6
-    ///    address" is as follows:
-    ///
-    /// Hinden                      Standards Track                    [Page 10]
-    /// RFC 4291              IPv6 Addressing Architecture         February 2006
-    ///
-    ///    |                80 bits               | 16 |      32 bits        |
-    ///    +--------------------------------------+--------------------------+
-    ///    |0000..............................0000|FFFF|    IPv4 address     |
-    ///    +--------------------------------------+----+---------------------+
-    ///
-    ///    See [RFC4038] for background on the usage of the "IPv4-mapped IPv6
-    ///    address".
-    /// ```
-    @inlinable
-    public init(ipv4: IPv4Address) {
-        self.address = UnsignedInteger128(
-            _low: 0x0000_FFFF_0000_0000 | UInt64(ipv4.address),
-            _high: 0
-        )
     }
 }

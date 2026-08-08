@@ -14,12 +14,10 @@ struct AnyIPAddressTests {
     func `AnyIPAddress description`(ip: AnyIPAddress, expectedDescription: String) {
         #expect(ip.description == expectedDescription)
 
-        let droppedFirstLast = String(expectedDescription.dropFirst().dropLast())
-        let bracketLess = ip.isIPv6 ? droppedFirstLast : expectedDescription
         let produced = ip.withCString { span in
             span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
         }
-        #expect(produced == bracketLess)
+        #expect(produced == expectedDescription)
     }
 
     @available(SwiftStdlib 6.0, *)

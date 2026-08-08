@@ -19,8 +19,9 @@ struct IPv4AddressTestCase: Sendable {
 struct IPv6AddressTestCase: Sendable {
     let string: String
     /// Neither description is enclosed in square brackets. The tests add the brackets themselves.
-    /// `description` is the address as printed without `useMixedNotation`,
-    /// `mixedNotationDescription` is the address as printed with it.
+    /// `description` is the address as printed without any mixed-notation option,
+    /// `mixedNotationDescription` is the address as printed with the option matching its
+    /// well-known IPv4-embedding prefix.
     /// The two are identical unless the address has a mixed-notation form.
     let ip: (address: IPv6Address, description: String, mixedNotationDescription: String)?
     let isValidAsOtherIPVersion: Bool
@@ -39,13 +40,15 @@ struct IPv6AddressTestCase: Sendable {
     }
 
     @available(SwiftStdlib 5.1, *)
-    func expectedDescription(
-        options: IPv6Address.DescriptionOptions
-    ) -> String? {
+    func expectedDescription(options: IPv6Address.DescriptionOptions) -> String? {
         guard let ip = self.ip else {
             return nil
         }
-        let useMixedNotation = options.contains(.useMixedNotation)
+        let useMixedNotation =
+            (ip.address.isIPv4Mapped
+                && options.contains(.useMixedNotationForIPv4MappedAddresses))
+            || (ip.address.isNAT64WellKnownIPv4Embedded
+                && options.contains(.useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses))
         let encloseInSquareBrackets = options.contains(.encloseInSquareBrackets)
         let withMixedNotation = useMixedNotation ? ip.mixedNotationDescription : ip.description
         let withBrackets = encloseInSquareBrackets ? "[\(withMixedNotation)]" : withMixedNotation
@@ -59,7 +62,7 @@ struct IPv4DecimalLengthTestCase: Sendable {
     let rawAddress: UInt32
     /// The canonical textual representation, without leading zeros.
     let description: String
-    /// The last two segments of the corresponding IPv4-mapped IPv6 address, in lowercased hex.
+    /// The last two segments of the corresponding IPv4-embedded IPv6 address, in lowercased hex.
     let expandedIPv6SegmentHex: String
 
     init(
@@ -78,8 +81,68 @@ struct IPv4DecimalLengthTestCase: Sendable {
         IPv4Address(self.rawAddress)
     }
 
-    var ipv4EmbeddedAddress: IPv6Address {
-        IPv6Address(UnsignedInteger128(_low: 0xFFFF_0000_0000 | UInt64(self.rawAddress), _high: 0))
+    /// The description of `address.asIPv4MappedIPv6` without mixed notation.
+    var ipv4MappedExpandedIPv6Description: String {
+        "::ffff:\(self.expandedIPv6SegmentHex)"
+    }
+
+    /// The description of `address.asNAT64WellKnownIPv4EmbeddedIPv6` without mixed notation.
+    var nat64ExpandedIPv6Description: String {
+        self.expandedIPv6Description(compressedPrefix: "64:ff9b")
+    }
+
+    /// The IPv4 address embedded in `2001:db8::/96`, which is not a well-known IPv4-embedding
+    /// prefix, so mixed notation never applies to it.
+    var documentationEmbeddedIPv6: IPv6Address {
+        IPv6Address(
+            UnsignedInteger128(
+                _low: UInt64(self.rawAddress),
+                _high: 0x2001_0DB8_0000_0000
+            )
+        )
+    }
+
+    /// The description of `documentationEmbeddedIPv6`, with or without mixed notation.
+    var documentationEmbeddedIPv6Description: String {
+        self.expandedIPv6Description(compressedPrefix: "2001:db8")
+    }
+
+    /// The IPv4 address embedded in `1:2:3:4:5:6::/96`, whose prefix is written out in full
+    /// instead of being compressed, and to which mixed notation never applies either.
+    var uncompressedPrefixEmbeddedIPv6: IPv6Address {
+        IPv6Address(
+            UnsignedInteger128(
+                _low: 0x0005_0006_0000_0000 | UInt64(self.rawAddress),
+                _high: 0x0001_0002_0003_0004
+            )
+        )
+    }
+
+    /// The description of `uncompressedPrefixEmbeddedIPv6`, with or without mixed notation.
+    /// Only an entirely zeroed embedded IPv4 leaves a zero run long enough to compress.
+    var uncompressedPrefixEmbeddedIPv6Description: String {
+        if self.rawAddress == 0 {
+            return "1:2:3:4:5:6::"
+        }
+        return "1:2:3:4:5:6:\(self.expandedIPv6SegmentHex)"
+    }
+
+    /// The description of the address embedded right after a `<prefix>::` compression sign.
+    ///
+    /// Unlike the IPv4-mapped form, there is no non-zero `ffff` segment separating the embedded
+    /// IPv4 from the zeroed middle segments. So when the 7th segment is zero too, it is swallowed
+    /// by the compression sign instead of being written out.
+    private func expandedIPv6Description(compressedPrefix prefix: String) -> String {
+        let high = self.rawAddress &>> 16
+        let low = self.rawAddress & 0xFFFF
+        switch (high, low) {
+        case (0, 0):
+            return "\(prefix)::"
+        case (0, let low):
+            return "\(prefix)::\(String(low, radix: 16))"
+        default:
+            return "\(prefix)::\(self.expandedIPv6SegmentHex)"
+        }
     }
 }
 
@@ -87,10 +150,7 @@ struct AnyIPAddressTestCase: Sendable {
     let string: String
     let ip: (address: AnyIPAddress, description: String)?
 
-    init(
-        _ string: String,
-        ip: (address: AnyIPAddress, description: String)?
-    ) {
+    init(_ string: String, ip: (address: AnyIPAddress, description: String)?) {
         self.string = string
         self.ip = ip
     }
@@ -109,19 +169,6 @@ struct IPPropertyTestCase<IPAddressType: Sendable>: Sendable {
         self.ip = ip
         self.testCaseDescription = testCaseDescription
         self.predicate = predicate
-    }
-}
-
-struct IPv4EmbeddedIPv6TestCase: Sendable {
-    let ipv6String: String
-    let ipv4: IPv4Address?
-
-    init(
-        _ ipv6String: String,
-        _ ipv4: IPv4Address? = nil
-    ) {
-        self.ipv6String = ipv6String
-        self.ipv4 = ipv4
     }
 }
 
@@ -168,7 +215,7 @@ extension IPv6AddressTestCase {
         guard !isValidAsOtherIPVersion else { return nil }
         return AnyIPAddressTestCase(
             string,
-            ip: ip.map { (AnyIPAddress.v6($0.address), "[\($0.mixedNotationDescription)]") }
+            ip: ip.map { (AnyIPAddress.v6($0.address), $0.mixedNotationDescription) }
         )
     }
 }

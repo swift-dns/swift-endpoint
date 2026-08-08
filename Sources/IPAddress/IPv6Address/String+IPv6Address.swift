@@ -1,69 +1,119 @@
 @available(SwiftStdlib 5.1, *)
 extension IPv6Address: CustomStringConvertible {
-    /// The textual representation of an IPv6 address.
-    /// That is, 8 16-bits (2-bytes) separated by `:`, enclosed in `[]`, while using
-    /// the compression sign (`::`) and mixed ipv4-embedded notation where applicable.
-    ///
-    /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
-    ///
-    /// As examples, as discussed in the aforementioned RFC, the following descriptions might
-    /// be emitted for their corresponding IP addresses:
-    /// `[::]`, `[::ffff:192.168.1.1]`, `[2001:db8:85a3::100]`.
-    /// Letters are always lowercased and the square brackets are always present.
-    /// For certain subnets such as `::ffff:0:0/96`, the mixed notation is emitted.
-    ///
-    /// Use `IPv6Address.description(options:)` for a customized description.
-    @inlinable
-    public var description: String {
-        self.description(options: .standardOptions)
-    }
-
+    /// Options for adjusting the textual representation of an IPv6 address.
     public struct DescriptionOptions: Sendable, OptionSet {
-        public let rawValue: UInt
+        /// The raw value of the description options.
+        public let rawValue: Int
 
+        /// Initialize a description options with a raw value.
         @inlinable
-        public init(rawValue: UInt) {
+        public init(rawValue: Int) {
             self.rawValue = rawValue
         }
 
-        /// Print the last 32 bits in the mixed notation of
-        /// [RFC 4291, Section 2.2](https://datatracker.ietf.org/doc/html/rfc4291#section-2.2),
-        /// where applicable.
-        /// Example: `[::ffff:204.152.189.116]` instead of `[::ffff:cc98:bd74]`.
+        /// For IPv4-mapped addresses, print the last 32 bits in the mixed notation of
+        /// [RFC 4291, Section 2.2](https://datatracker.ietf.org/doc/html/rfc4291#section-2.2).
+        ///
+        /// That is, for the well-known IPv4-embedding subnet
+        /// `::ffff:0:0/96` of [RFC 4291](https://datatracker.ietf.org/doc/html/rfc4291#section-2.5.5.2).
+        ///
+        /// Use `ipv6.isIPv4Mapped` to check if this option will apply to an IPv6 address.
+        ///
+        /// Example: `::ffff:204.152.189.116` instead of `::ffff:cc98:bd74`.
         @inlinable
-        public static var useMixedNotation: Self {
+        public static var useMixedNotationForIPv4MappedAddresses: Self {
             Self(rawValue: 1 << 0)
         }
 
         /// Enclose the description in square brackets.
+        /// Useful for when the description is used in different contexts such as when followed by a port number.
         /// Example: `[2001:db8::1]` instead of `2001:db8::1`.
         @inlinable
         public static var encloseInSquareBrackets: Self {
             Self(rawValue: 1 << 1)
         }
 
+        /// For NAT64 well-known IPv4-embedded addresses, print the last 32 bits in the mixed
+        /// notation of [RFC 4291, Section 2.2](https://datatracker.ietf.org/doc/html/rfc4291#section-2.2).
+        ///
+        /// That is, for the well-known IPv4-embedding subnet
+        /// `64:ff9b::/96` of [RFC 6052](https://datatracker.ietf.org/doc/html/rfc6052#section-2.4).
+        ///
+        /// Use `ipv6.isNAT64WellKnownIPv4Embedded` to check if this option will apply to an
+        /// IPv6 address.
+        ///
+        /// Example: `64:ff9b::192.0.2.33` instead of `64:ff9b::c000:221`.
+        @inlinable
+        public static var useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses: Self {
+            Self(rawValue: 1 << 2)
+        }
+
+        /// Print the last 32 bits of every well-known IPv4-embedded address in the mixed notation of
+        /// [RFC 4291, Section 2.2](https://datatracker.ietf.org/doc/html/rfc4291#section-2.2).
+        /// Consists of `useMixedNotationForIPv4MappedAddresses` and `useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses`.
+        ///
+        /// Use `ipv6.isWellKnownIPv4Embedded` to check if this option will apply to an IPv6 address.
+        @inlinable
+        public static var useMixedNotation: Self {
+            [
+                .useMixedNotationForIPv4MappedAddresses,
+                .useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses,
+            ]
+        }
+
         /// Options for compliance with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
+        /// Consists of `useMixedNotationForIPv4MappedAddresses` and `useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses`.
         @inlinable
         public static var standardOptions: Self {
-            [.useMixedNotation, .encloseInSquareBrackets]
+            [
+                .useMixedNotationForIPv4MappedAddresses,
+                .useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses,
+            ]
         }
+    }
+
+    /// The textual representation of an IPv6 address.
+    /// That is, 8 16-bits (2-bytes) separated by `:`, while using
+    /// the compression sign (`::`) and mixed ipv4-embedded notation where applicable.
+    ///
+    /// Compliant with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
+    ///
+    /// As examples, as discussed in the aforementioned RFC, the following descriptions might
+    /// be emitted for their corresponding IP addresses:
+    /// `::`, `::ffff:192.168.1.1`, `64:ff9b::192.0.2.33`, `2001:db8:85a3::100`.
+    /// Letters are always lowercased and no square brackets are present.
+    /// For the well-known IPv4-embedding subnets `::ffff:0:0/96` and `64:ff9b::/96`,
+    /// the mixed notation is emitted.
+    ///
+    /// Use `IPv6Address.description(options:)` for a customized description.
+    @inlinable
+    public var description: String {
+        self._description_inlined(options: .standardOptions)
     }
 
     /// The textual representation of an IPv6 address.
     /// That is, 8 16-bits (2-bytes) separated by `:`,
     /// while using the compression sign (`::`) where applicable.
-    /// Default options also add mixed ipv4-embedded notation where applicable,
-    /// as well as enclosing the description in square brackets.
+    /// Default options also add mixed ipv4-embedded notation where applicable.
     ///
     /// As examples, as discussed in the aforementioned RFC, the following descriptions might
     /// be emitted for their corresponding IP addresses.
     ///
-    /// `[::]`, `[::ffff:192.168.1.1]`, `[2001:db8:85a3::100]`.
-    /// If `useMixedNotation` is disabled, `[::ffff:192.168.1.1]` will be emitted as `[::ffff:cc98:bd74]`.
-    /// If `encloseInSquareBrackets` is disabled, `[2001:db8:85a3::100]` will be emitted as `2001:db8:85a3::100`.
+    /// `::`, `::ffff:192.168.1.1`, `64:ff9b::192.0.2.33`, `2001:db8:85a3::100`.
+    /// If `useMixedNotationForIPv4MappedAddresses` is disabled, `::ffff:192.168.1.1` will be
+    /// emitted as `::ffff:c0a8:101`.
+    /// If `useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses` is disabled,
+    /// `64:ff9b::192.0.2.33` will be emitted as `64:ff9b::c000:221`.
+    /// If `encloseInSquareBrackets` is enabled, `2001:db8:85a3::100` will be emitted as `[2001:db8:85a3::100]`.
     /// Letters are always in lowercase.
     @inlinable
     public func description(options: DescriptionOptions = .standardOptions) -> String {
+        self._description_inlined(options: options)
+    }
+
+    @inlinable
+    @inline(always)
+    func _description_inlined(options: DescriptionOptions) -> String {
         unsafe self.makeDescription(options: options) {
             (maxWriteableBytes, callback) in
             unsafe String(unsafeUninitializedCapacity_Compatibility: maxWriteableBytes) { buffer in
@@ -76,7 +126,7 @@ extension IPv6Address: CustomStringConvertible {
 @available(SwiftStdlib 5.1, *)
 extension IPv6Address {
     @inlinable
-    @inline(__always)
+    @inline(always)
     package func makeDescription<Buffer, E: Error>(
         options: DescriptionOptions,
         writingToUnsafeMutableBufferPointerOfUInt8: (
@@ -87,19 +137,37 @@ extension IPv6Address {
         var address = self
 
         let encloseInSquareBrackets = options.contains(.encloseInSquareBrackets)
-        let useMixedNotation = options.contains(.useMixedNotation)
-        let isIPv4Embedded = CIDR<IPv6Address>.ipv4Mapped.contains(address)
-        let shouldUseMixedNotation = useMixedNotation && isIPv4Embedded
+        let useMixedNotationForIPv4EmbeddedAddresses =
+            options.contains(.useMixedNotationForIPv4MappedAddresses)
+        let useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses =
+            options.contains(.useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses)
+
+        let isIPv4Mapped = self.isIPv4Mapped
+        let isNAT64WellKnownIPv4Embedded = self.isNAT64WellKnownIPv4Embedded
+
+        let useMixedNotationForIPv4Mapped =
+            isIPv4Mapped && useMixedNotationForIPv4EmbeddedAddresses
+        let useMixedNotationForNAT64 =
+            isNAT64WellKnownIPv4Embedded && useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses
+        let useMixedNotation = useMixedNotationForIPv4Mapped || useMixedNotationForNAT64
+
         let allMask = UnsignedInteger128(_low: .max, _high: .max)
         let ipv4EmbeddedMask = UnsignedInteger128(_low: 0xFFFF_FFFF_0000_0000, _high: .max)
-        let addressMask = shouldUseMixedNotation ? ipv4EmbeddedMask : allMask
+        let addressMask = useMixedNotation ? ipv4EmbeddedMask : allMask
         address.address &= addressMask
-        /// If this is an IPv4-mapped IPv6 address, we need to add 15 bytes for the IPv4 address.
-        /// However, the ipv6 address will write either "[::FFFF:0:0" or "::FFFF:0:0" before
-        /// it reaches the ipv4-address-write code.
-        /// So we walk back 3 bytes as well (the tailing `0:0`); therefore we reserve 3 bytes less.
-        let ipv4EmbeddedWalkBackBytes = 3
-        let additionalCapacity = shouldUseMixedNotation ? (15 - ipv4EmbeddedWalkBackBytes) : 0
+
+        /// If this is a well-known IPv4-embedded IPv6 address, we need to add 15 bytes for the
+        /// IPv4 address. However, the ipv6 address will write the 2 zeroed-out trailing segments
+        /// before it reaches the ipv4-address-write code.
+        /// They're either written as a literal `0:0` (e.g. "::ffff:0:0"), or swallowed by the
+        /// trailing compression sign (e.g. "64:ff9b::"). In the first case we walk back 3 bytes
+        /// and reserve 3 bytes less.
+        ///
+        /// In the future we might want to modify this to be more dynamic and count the
+        /// walk back bytes on the fly.
+        /// For example if we want to provide a "forceMixedNotation" option, e.g. for NAT64.
+        let ipv4EmbeddedWalkBackBytes = isIPv4Mapped ? 3 : 0
+        let additionalCapacity = useMixedNotation ? (15 &- ipv4EmbeddedWalkBackBytes) : 0
 
         let mask = address.makeSegmentsMask()
         let entry = IPv6Address.entry(forMask: mask)
@@ -153,7 +221,7 @@ extension IPv6Address {
             unsafe buffer[writeIdx &+ 1] = .asciiColon
             writeIdx &+= entry.writeCsAtEnd ? 2 : 0
 
-            if shouldUseMixedNotation {
+            if useMixedNotation {
                 let ipv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
                 let lowerBound = writeIdx &- ipv4EmbeddedWalkBackBytes
                 let start = unsafe buffer.baseAddress.unsafelyUnwrapped.advanced(by: lowerBound)
@@ -176,7 +244,7 @@ extension IPv6Address {
     /// Returns a UInt8, each bit representing whether
     /// the corresponding IPv6 segment is all-zero (1) or not (0).
     @inlinable
-    @inline(__always)
+    @inline(always)
     func makeSegmentsMask() -> UInt8 {
         let highNibble = IPv6Address.makeNibbleFor4Segments(of: self.address._high)
         let lowNibble = IPv6Address.makeNibbleFor4Segments(of: self.address._low)
@@ -217,7 +285,7 @@ extension IPv6Address {
     /// Counts the number of digits that will need to be written excluding the trailing
     /// digit that is always written even if it's 0.
     @inlinable
-    @inline(__always)
+    @inline(always)
     func countDigitsRequiredToPrintExcludingTrailingDigits() -> Int {
         let high = IPv6Address.countDigitsRequiredToPrintExcludingTrailingDigits(
             of: self.address._high
@@ -402,7 +470,7 @@ extension IPv6Address: LosslessStringConvertible {
     }
 
     @inlinable
-    @inline(__always)
+    @inline(always)
     static func parseIPv6(
         span: Span<UInt8>,
         address: inout _CompatibilityUInt128Typealias
@@ -616,7 +684,7 @@ extension IPv6Address {
     }
 
     @inlinable
-    @inline(__always)
+    @inline(always)
     package static func entry(
         forMask mask: UInt8
     ) -> SegmentWriteTableEntry.Unpacked {

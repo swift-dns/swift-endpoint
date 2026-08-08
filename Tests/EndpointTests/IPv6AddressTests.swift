@@ -138,7 +138,7 @@ struct IPv6AddressTests {
         _: String,
         expectedMixedNotationDescription: String
     ) {
-        #expect(ipv6.description == "[\(expectedMixedNotationDescription)]")
+        #expect(ipv6.description == expectedMixedNotationDescription)
 
         let produced = ipv6.withCString { span in
             #expect(span.count - 1 == expectedMixedNotationDescription.utf8.count)
@@ -212,7 +212,7 @@ struct IPv6AddressTests {
         let mixedNotationDescription = try #require(testCase.ip?.mixedNotationDescription)
         let ip = try #require(testCase.ip?.address)
         #expect(ip.description == ip.description(options: .standardOptions))
-        #expect(ip.description == "[\(mixedNotationDescription)]")
+        #expect(ip.description == mixedNotationDescription)
 
         let cStringDefault = ip.withCString { span in
             span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
@@ -347,12 +347,16 @@ struct IPv6AddressTests {
         }
     }
 
-    @available(SwiftStdlib 6.2, *)
-    @Test(arguments: IPv4EmbeddedIPv6TestCase.all.filter { $0.ipv4 != nil })
-    func ipv6AddressFromIpv4Address(testCase: IPv4EmbeddedIPv6TestCase) throws {
-        let ipv6 = try #require(IPv6Address(testCase.ipv6String))
-        let ipv4 = try #require(testCase.ipv4)
-        #expect(ipv6 == IPv6Address(ipv4: ipv4))
+    @available(SwiftStdlib 5.1, *)
+    @Test(arguments: IPv4DecimalLengthTestCase.all)
+    func ipv6AddressFromIPv4Address(testCase: IPv4DecimalLengthTestCase) {
+        let mapped = testCase.address.asIPv4MappedIPv6
+        let nat64 = testCase.address.asNAT64WellKnownIPv4EmbeddedIPv6
+
+        #expect(mapped == IPv6Address(testCase.ipv4MappedExpandedIPv6Description))
+        #expect(nat64 == IPv6Address(testCase.nat64ExpandedIPv6Description))
+        #expect(mapped.isIPv4Mapped)
+        #expect(nat64.isNAT64WellKnownIPv4Embedded)
     }
 
     @available(SwiftStdlib 6.2, *)

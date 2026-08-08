@@ -70,12 +70,32 @@ struct CIDRTests {
                 text: "0.0.0.0/0",
                 expectedCIDR: CIDR(prefix: IPv4Address(0, 0, 0, 0), prefixLength: 0)
             ),
+            (
+                text: "192.168.1.0/024",
+                expectedCIDR: CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: 24)
+            ),
+            (
+                text: "192.168.1.0/00",
+                expectedCIDR: CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: 0)
+            ),
+            (
+                text: "192.168.1.0/032",
+                expectedCIDR: CIDR(prefix: IPv4Address(192, 168, 1, 0), prefixLength: 32)
+            ),
+            (
+                text: "010.020.030.040/024",
+                expectedCIDR: CIDR(prefix: IPv4Address(10, 20, 30, 40), prefixLength: 24)
+            ),
             (text: "256.122.61.98/8", expectedCIDR: nil),
             (text: "9.56.223.1782", expectedCIDR: nil),
             (text: "5.5.5.5/-1", expectedCIDR: nil),
             (text: "/", expectedCIDR: nil),
             (text: "/20", expectedCIDR: nil),
             (text: "1.1.1.1/", expectedCIDR: nil),
+            /// A fourth prefix-length digit is rejected even when the padding digits are all zeros.
+            (text: "192.168.1.0/0024", expectedCIDR: nil),
+            (text: "192.168.1.0/0032", expectedCIDR: nil),
+            (text: "192.168.1.0/0000", expectedCIDR: nil),
         ])
     )
     func `ipv4 CIDR description is read correctly`(
@@ -375,26 +395,26 @@ struct CIDRTests {
                     prefix: IPv6Address(0x2001_0DB8_85A3_0000_0000_0000_0000_0100),
                     prefixLength: 24
                 ),
-                expectedDescription: "[2001:db8:85a3::100]/24"
+                expectedDescription: "2001:db8:85a3::100/24"
             ),
             (
                 cidr: CIDR(prefix: IPv6Address("FF00::")!, prefixLength: 8),
-                expectedDescription: "[ff00::]/8"
+                expectedDescription: "ff00::/8"
             ),
             (
                 cidr: CIDR(prefix: 0x0, prefixLength: 0),
-                expectedDescription: "[::]/0"
+                expectedDescription: "::/0"
             ),
             (
                 cidr: CIDR(prefix: IPv6Address(UInt128.max), prefixLength: 128),
-                expectedDescription: "[ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]/128"
+                expectedDescription: "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128"
             ),
             (
                 cidr: CIDR(
                     prefix: IPv6Address(0x2001_0DB8_85A3_0000_0000_0000_0000_0000),
                     prefixLength: 48
                 ),
-                expectedDescription: "[2001:db8:85a3::]/48"
+                expectedDescription: "2001:db8:85a3::/48"
             ),
         ])
     )
@@ -406,53 +426,70 @@ struct CIDRTests {
     }
 
     @available(SwiftStdlib 6.2, *)
-    @Test(
-        arguments: [(text: String, expectedCIDR: CIDR<IPv6Address>?)]([
-            (
-                text: "FF::/24",
-                expectedCIDR: CIDR(prefix: IPv6Address("FF::")!, prefixLength: 24)
-            ),
-            (
-                text: "12::/111",
-                expectedCIDR: CIDR(prefix: IPv6Address("12::")!, prefixLength: 111)
-            ),
-            (
-                text: "[1234:5678::]/188",
-                expectedCIDR: nil
-            ),
-            (
-                text: "::1234/0",
-                expectedCIDR: CIDR(prefix: IPv6Address("::1234")!, prefixLength: 0)
-            ),
-            (
-                text: "[::]/8",
-                expectedCIDR: CIDR(prefix: IPv6Address("::")!, prefixLength: 8)
-            ),
-            (
-                text: "[FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF]/32",
-                expectedCIDR: CIDR(
-                    prefix: IPv6Address("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF")!,
-                    prefixLength: 32
-                )
-            ),
-            (
-                text: "[1:2:33:Ff:AAaa::]",
-                expectedCIDR: CIDR(prefix: IPv6Address("1:2:33:ff:aaaa::")!, prefixLength: 128)
-            ),
-            (
-                text: "[::]/0",
-                expectedCIDR: CIDR(prefix: IPv6Address("::")!, prefixLength: 0)
-            ),
-            (text: "[::]/-1", expectedCIDR: nil),
-            (text: "/", expectedCIDR: nil),
-            (text: "/20", expectedCIDR: nil),
-            (text: "[::]/", expectedCIDR: nil),
-            (
-                text: "[FFFF:FFFF:FFFF:FFGF:FFFF:FFFF:FFFF:FFFF]/100",
-                expectedCIDR: nil
-            ),
-        ])
-    )
+    static let ipv6ParseTestCases: [(text: String, expectedCIDR: CIDR<IPv6Address>?)] = [
+        (
+            text: "FF::/24",
+            expectedCIDR: CIDR(prefix: IPv6Address("FF::")!, prefixLength: 24)
+        ),
+        (
+            text: "12::/111",
+            expectedCIDR: CIDR(prefix: IPv6Address("12::")!, prefixLength: 111)
+        ),
+        (
+            text: "[1234:5678::]/188",
+            expectedCIDR: nil
+        ),
+        (
+            text: "::1234/0",
+            expectedCIDR: CIDR(prefix: IPv6Address("::1234")!, prefixLength: 0)
+        ),
+        (
+            text: "[::]/8",
+            expectedCIDR: CIDR(prefix: IPv6Address("::")!, prefixLength: 8)
+        ),
+        (
+            text: "[FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF]/32",
+            expectedCIDR: CIDR(
+                prefix: IPv6Address("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF")!,
+                prefixLength: 32
+            )
+        ),
+        (
+            text: "[1:2:33:Ff:AAaa::]",
+            expectedCIDR: CIDR(prefix: IPv6Address("1:2:33:ff:aaaa::")!, prefixLength: 128)
+        ),
+        (
+            text: "[::]/0",
+            expectedCIDR: CIDR(prefix: IPv6Address("::")!, prefixLength: 0)
+        ),
+        (
+            text: "[2001:db8::]/064",
+            expectedCIDR: CIDR(prefix: IPv6Address("2001:db8::")!, prefixLength: 64)
+        ),
+        (
+            text: "[::]/000",
+            expectedCIDR: CIDR(prefix: IPv6Address("::")!, prefixLength: 0)
+        ),
+        (
+            text: "[0000:0db8::]/0",
+            expectedCIDR: CIDR(prefix: IPv6Address("0:db8::")!, prefixLength: 0)
+        ),
+        (text: "[::]/-1", expectedCIDR: nil),
+        (text: "/", expectedCIDR: nil),
+        (text: "/20", expectedCIDR: nil),
+        (text: "[::]/", expectedCIDR: nil),
+        (
+            text: "[FFFF:FFFF:FFFF:FFGF:FFFF:FFFF:FFFF:FFFF]/100",
+            expectedCIDR: nil
+        ),
+        /// A fourth prefix-length digit is rejected even when the padding digits are all zeros.
+        (text: "[2001:db8::]/0064", expectedCIDR: nil),
+        (text: "[2001:db8::]/0128", expectedCIDR: nil),
+        (text: "[::]/0000", expectedCIDR: nil),
+    ]
+
+    @available(SwiftStdlib 6.2, *)
+    @Test(arguments: CIDRTests.ipv6ParseTestCases)
     func `ipv6 CIDR description is read correctly`(
         text: String,
         expectedCIDR: CIDR<IPv6Address>?

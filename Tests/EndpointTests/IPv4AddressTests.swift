@@ -79,6 +79,19 @@ struct IPv4AddressTests {
         #expect(produced == expectedDescription)
     }
 
+    @available(SwiftStdlib 5.1, *)
+    @Test(arguments: IPv4DecimalLengthTestCase.all.map(\.address))
+    func `IPv4Address from IPv4-embedded IPv6 addresses`(ipv4: IPv4Address) {
+        #expect(IPv4Address(ipv6: ipv4.asIPv4MappedIPv6) == ipv4)
+        #expect(IPv4Address(ipv6: ipv4.asNAT64WellKnownIPv4EmbeddedIPv6) == ipv4)
+
+        let deprecatedIPv4Compatible = IPv6Address(
+            UnsignedInteger128(_low: UInt64(ipv4.address), _high: 0x0000_0000_0000_0000)
+        )
+        #expect(IPv4Address(ipv6: deprecatedIPv4Compatible) == nil)
+        #expect(!deprecatedIPv4Compatible.isWellKnownIPv4Embedded)
+    }
+
     @available(SwiftStdlib 6.2, *)
     @Test(arguments: IPv4DecimalLengthTestCase.all)
     func `IPv4Address exhaustive byte-length cases`(testCase: IPv4DecimalLengthTestCase) throws {
@@ -252,6 +265,20 @@ struct IPv4AddressTests {
                 viaDomainName: IPv4Address(1, 2, 3, 4),
                 viaArpaDomainName: IPv4Address(1, 2, 3, 4)
             ),
+            (
+                domainName: "004.003.002.001.in-addr.arpa",
+                viaDomainName: IPv4Address(1, 2, 3, 4),
+                viaArpaDomainName: IPv4Address(1, 2, 3, 4)
+            ),
+            (
+                domainName: "001.002.003.004",
+                viaDomainName: IPv4Address(1, 2, 3, 4),
+                viaArpaDomainName: nil
+            ),
+            /// A fourth digit is rejected even when the padding digits are all zeros.
+            (domainName: "0004.3.2.1.in-addr.arpa", viaDomainName: nil, viaArpaDomainName: nil),
+            (domainName: "4.3.2.0001.in-addr.arpa", viaDomainName: nil, viaArpaDomainName: nil),
+            (domainName: "0001.0002.0003.0004", viaDomainName: nil, viaArpaDomainName: nil),
             (domainName: "4.3.2.1.in-addr.arpe", viaDomainName: nil, viaArpaDomainName: nil),
             (domainName: "4.3.2.1.xn-addr.arpa", viaDomainName: nil, viaArpaDomainName: nil),
             (domainName: "1.2.3", viaDomainName: nil, viaArpaDomainName: nil),
@@ -273,10 +300,10 @@ struct IPv4AddressTests {
     }
 
     @available(SwiftStdlib 6.2, *)
-    @Test(arguments: IPv4EmbeddedIPv6TestCase.all)
-    func ipv4AddressFromIpv6Address(testCase: IPv4EmbeddedIPv6TestCase) throws {
-        let ipv6 = try #require(IPv6Address(testCase.ipv6String))
-        #expect(testCase.ipv4 == IPv4Address(ipv6: ipv6))
+    @Test(arguments: IPv6AddressTestCase.nonIPv4EmbeddedStrings)
+    func ipv4AddressFromNonIPv4EmbeddedIPv6Address(ipv6String: String) throws {
+        let ipv6 = try #require(IPv6Address(ipv6String))
+        #expect(IPv4Address(ipv6: ipv6) == nil)
     }
 
     @available(SwiftStdlib 5.1, *)

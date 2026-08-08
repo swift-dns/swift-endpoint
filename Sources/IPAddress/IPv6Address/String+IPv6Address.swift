@@ -11,6 +11,14 @@ extension IPv6Address: CustomStringConvertible {
             self.rawValue = rawValue
         }
 
+        /// Enclose the description in square brackets.
+        /// Useful for when the description is used in different contexts such as when followed by a port number.
+        /// Example: `[2001:db8::1]` instead of `2001:db8::1`.
+        @inlinable
+        public static var encloseInSquareBrackets: Self {
+            Self(rawValue: 1 << 1)
+        }
+
         /// For IPv4-mapped addresses, print the last 32 bits in the mixed notation of
         /// [RFC 4291, Section 2.2](https://datatracker.ietf.org/doc/html/rfc4291#section-2.2).
         ///
@@ -23,14 +31,6 @@ extension IPv6Address: CustomStringConvertible {
         @inlinable
         public static var useMixedNotationForIPv4MappedAddresses: Self {
             Self(rawValue: 1 << 0)
-        }
-
-        /// Enclose the description in square brackets.
-        /// Useful for when the description is used in different contexts such as when followed by a port number.
-        /// Example: `[2001:db8::1]` instead of `2001:db8::1`.
-        @inlinable
-        public static var encloseInSquareBrackets: Self {
-            Self(rawValue: 1 << 1)
         }
 
         /// For NAT64 well-known IPv4-embedded addresses, print the last 32 bits in the mixed

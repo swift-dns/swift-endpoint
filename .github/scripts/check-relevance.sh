@@ -11,6 +11,9 @@ fatal() { error "$@"; exit 1; }
 readonly repository="${GITHUB_REPOSITORY:?the 'owner/repo' slug, e.g. 'swift-dns/swift-dns'}"
 readonly workflow_ref="${GITHUB_WORKFLOW_REF:?the workflow ref, e.g. 'swift-dns/swift-dns/.github/workflows/unit-tests.yml@refs/heads/main'}"
 readonly head_sha="${HEAD_SHA:?the sha of the commit this workflow is running for}"
+readonly run_id="${GITHUB_RUN_ID:?the id of the current workflow run}"
+readonly run_attempt="${GITHUB_RUN_ATTEMPT:?the attempt number of the current workflow run}"
+readonly runner_name="${RUNNER_NAME:-}"
 readonly github_token="${GITHUB_TOKEN:?a token with 'contents: read' and 'actions: read' permissions}"
 
 # Both the benchmark and the threshold-update workflows commit with this subject prefix.
@@ -73,18 +76,54 @@ readonly parent_commit_json
 is_benchmark_update_commit "${parent_commit_json}" "Parent ${parent_sha:0:7}" \
   || run_and_exit "Parent commit ${parent_sha:0:7} is not a benchmark thresholds update"
 
+[[ -n "${runner_name}" ]] \
+  || run_and_exit "RUNNER_NAME is not set, so the current job cannot be identified"
+
+current_run_jobs_json="$(
+  github_api "repos/${repository}/actions/runs/${run_id}/attempts/${run_attempt}/jobs?per_page=100"
+)" || run_and_exit "Could not fetch the jobs of the current run ${run_id}"
+readonly current_run_jobs_json
+
+# A GitHub runner only ever hosts one running job at a time, so this identifies the current job,
+# matrix values included, without having to reconstruct its display name by hand.
+job_name="$(
+  jq -r --arg runner_name "${runner_name}" '
+    [.jobs[] | select(.runner_name == $runner_name and .status == "in_progress") | .name]
+    | if length == 1 then .[0] else "" end
+  ' <<< "${current_run_jobs_json}"
+)"
+readonly job_name
+[[ -n "${job_name}" ]] \
+  || run_and_exit "Could not identify the current job among the jobs of run ${run_id} using runner '${runner_name}'"
+
 parent_runs_json="$(
   github_api "repos/${repository}/actions/workflows/${workflow_file}/runs?head_sha=${parent_sha}&per_page=100"
 )" || run_and_exit "Could not fetch the '${workflow_file}' runs of parent commit ${parent_sha:0:7}"
 readonly parent_runs_json
 
-parent_successful_runs="$(
-  jq '[.workflow_runs[] | select(.conclusion == "success")] | length' <<< "${parent_runs_json}"
-)"
-readonly parent_successful_runs
-[[ "${parent_successful_runs}" -gt 0 ]] \
-  || run_and_exit "No successful '${workflow_file}' run found for parent commit ${parent_sha:0:7}"
+mapfile -t parent_run_ids < <(jq -r '.workflow_runs[].id' <<< "${parent_runs_json}")
+readonly parent_run_ids
+[[ "${#parent_run_ids[@]}" -gt 0 ]] \
+  || run_and_exit "No '${workflow_file}' run found for parent commit ${parent_sha:0:7}"
 
-log "Both ${head_sha:0:7} and its parent ${parent_sha:0:7} are benchmark thresholds updates, and '${workflow_file}' succeeded on the parent; skipping."
-printf 'false\n'
-exit 0
+# A run is cancelled as a whole when a newer commit supersedes it, even though the jobs that had
+# already finished did succeed, so this looks at the job instead of at the run that contains it.
+for parent_run_id in "${parent_run_ids[@]}"; do
+  parent_run_jobs_json="$(
+    github_api "repos/${repository}/actions/runs/${parent_run_id}/jobs?per_page=100"
+  )" || continue
+
+  succeeded="$(
+    jq --arg job_name "${job_name}" \
+      '[.jobs[] | select(.name == $job_name and .conclusion == "success")] | length' \
+      <<< "${parent_run_jobs_json}"
+  )"
+
+  if [[ "${succeeded}" -gt 0 ]]; then
+    log "Both ${head_sha:0:7} and its parent ${parent_sha:0:7} are benchmark thresholds updates, and '${job_name}' succeeded on the parent in run ${parent_run_id}; skipping."
+    printf 'false\n'
+    exit 0
+  fi
+done
+
+run_and_exit "No successful '${job_name}' job found for parent commit ${parent_sha:0:7} in ${#parent_run_ids[@]} '${workflow_file}' run(s)"

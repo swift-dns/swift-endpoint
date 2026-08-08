@@ -98,7 +98,7 @@ jobs:
 
       - name: Submit code coverage
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
-        uses: vapor/swift-codecov-action@v0.3
+        uses: vapor/swift-codecov-action@2f478f2fd22e06ca363967d0fb6c6593a8548cee # v0.3.5
         with:
           build_parameters: "-c ${{ matrix.config.mode }}"
           codecov_token: "${{ secrets.CODECOV_TOKEN }}"
@@ -249,7 +249,7 @@ jobs:
 
       - name: Setup appropriate Xcode version
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
-        uses: maxim-lobanov/setup-xcode@v1
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
           xcode-version: ${{ matrix.xcode.version }}
 
@@ -344,7 +344,7 @@ jobs:
 
       - name: Submit code coverage
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
-        uses: vapor/swift-codecov-action@v0.3
+        uses: vapor/swift-codecov-action@2f478f2fd22e06ca363967d0fb6c6593a8548cee # v0.3.5
         with:
           build_parameters: "-c ${{ matrix.config.mode }}"
           codecov_token: "${{ secrets.CODECOV_TOKEN }}"

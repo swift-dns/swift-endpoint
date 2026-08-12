@@ -160,6 +160,7 @@ For `IPv6Address`, the Arpa domain name format is supported. For example the fol
 * Each benchmark runs against 16 different IPs one by one in a random manner.
   * There is a constant seed to keep the benchmarks consistent across benchmark runs.
   * This means CPUs won't find a clear pattern to over-optimize for in any of the operations, which would make the benchmarks less realistic.
+  * The randomization itself only adds minimal runtime (~0.3ns = 1 cycle) to the benchmarks and is not subtracted.
   * 1 of the IPv6 IPs is an IPv4-mapped IPv6 address, to benchmark that case as well.
     * IPv4-mapped addresses have a mixed-notation representation, per RFC 5952.
 

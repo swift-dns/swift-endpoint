@@ -22,7 +22,6 @@ let benchmarks: @Sendable () -> Void = {
         }
     }
 
-    fastRNGBenchmarks()
     cidrBenchmarks()
 
     ipv4AddressFromStringBenchmarks()

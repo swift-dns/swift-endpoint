@@ -81,7 +81,7 @@ public enum AnyIPAddress: Sendable, Hashable {
 
     /// Whether this address is contiguous, and thus suitable for use as a CIDR mask.
     ///
-    /// A contiguous address has some number of leading `1` bits followed by all `0` bits.
+    /// A contiguous address has n contiguous 1-bits from the most significant bit and all other bits set to 0.
     /// For example `255.255.0.0` is contiguous, but `255.0.255.0` is not.
     ///
     /// Classless Inter-Domain Routing is defined in [IETF RFC 4632].

@@ -442,7 +442,7 @@ struct IPv6AddressTests {
         rawValue |= (writeCsAtEnd ? 1 : 0) &<< 49
         let entry = IPv6Address.SegmentWriteTableEntry(rawValue)
 
-        #expect(IPv6Address._segmentWriteTable[index] == entry)
+        #expect(IPv6Address._entry(forMask: UInt8(index)) == entry)
 
         let unpacked = IPv6Address.entry(forMask: UInt8(index))
         #expect(unpacked == entry.unpack())

@@ -691,8 +691,16 @@ extension IPv6Address {
         IPv6Address._segmentWriteTable[Int(mask)].unpack()
     }
 
+    #if canImport(Darwin)
     @usableFromInline
-    package static let _segmentWriteTable: [SegmentWriteTableEntry] = [
+    package typealias _SegmentsStorage = [SegmentWriteTableEntry]
+    #else
+    @usableFromInline
+    package typealias _SegmentsStorage = InlineArray<256, SegmentWriteTableEntry>
+    #endif
+
+    @usableFromInline
+    package static let _segmentWriteTable: _SegmentsStorage = [
         IPv6Address.SegmentWriteTableEntry(0x0000_100F_08FA_C688),
         IPv6Address.SegmentWriteTableEntry(0x0000_100F_08FA_C688),
         IPv6Address.SegmentWriteTableEntry(0x0000_100F_08FA_C688),

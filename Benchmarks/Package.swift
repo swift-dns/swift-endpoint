@@ -55,10 +55,8 @@ let package = Package(
         ),
         .target(
             name: "IPAddress",
-            dependencies: ["CSwiftEndpoint"],
             swiftSettings: settings
         ),
-        .target(name: "CSwiftEndpoint"),
         .target(
             name: "DomainIPAddressCompat",
             dependencies: [

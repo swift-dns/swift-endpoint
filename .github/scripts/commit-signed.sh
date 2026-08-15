@@ -164,7 +164,7 @@ desired_tree_sha() {
 
 # Fetches the remote branch head into 'branch_head_file'; returns 1 when the branch is absent.
 fetch_remote_branch_head() {
-  local url="${api_url}/repos/${repository}/commits/${branch}"
+  local url="${api_url}/repos/${repository}/branches/${branch}"
   local status
   status="$(github_api GET "${url}" "" "${branch_head_file}")"
 
@@ -268,8 +268,8 @@ wanted_tree="$(desired_tree_sha)"
 readonly wanted_tree
 
 if fetch_remote_branch_head; then
-  branch_head_sha="$(jq --raw-output '.sha' "${branch_head_file}")"
-  branch_tree_sha="$(jq --raw-output '.commit.tree.sha' "${branch_head_file}")"
+  branch_head_sha="$(jq --raw-output '.commit.sha' "${branch_head_file}")"
+  branch_tree_sha="$(jq --raw-output '.commit.commit.tree.sha' "${branch_head_file}")"
 
   if [[ "${wanted_tree}" == "${branch_tree_sha}" ]]; then
     log "Branch '${branch}' already holds tree ${wanted_tree:0:7}; no new commit needed."

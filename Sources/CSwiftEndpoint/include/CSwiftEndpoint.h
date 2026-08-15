@@ -7,10 +7,10 @@
 extern "C" {
 #endif
 
-// The IPv6 segment-write table is indexed by the 8-bit mask of which of the 8 segments of an
-// IPv6 address are all-zero, and describes how the address is laid out when serialized.
-//
-// The top 14 bits of an entry are unused. The rest is the packed layout description:
+// The IPv6 segment-write table is indexed by a mask, and describes how the
+// address is laid out when serialized.
+// The mask is 8-bits, each bit representing whether the corresponding IPv6
+// segment is all-zero (1) or not (0).
 //
 //   - Bits 0-23: 8 segment indices, 3 bits each.
 //   - Bits 24-31: segments count.
@@ -19,9 +19,7 @@ extern "C" {
 //   - Bit 48: whether to write the compression sign at the beginning.
 //   - Bit 49: whether to write the compression sign at the end.
 //
-// The entries are unpacked by `IPv6Address.SegmentWriteTableEntry` in
-// Sources/IPAddress/IPv6Address/String+IPv6Address.swift, and are exhaustively verified
-// against an independently derived layout by the IPv6 address tests.
+// The entries are unpacked by `IPv6Address.SegmentWriteTableEntry` in `String+IPv6Address.swift`.
 
 extern const uint64_t cswift_endpoint_ipv6_segment_write_table[256];
 
@@ -40,13 +38,16 @@ static inline uint8_t cswift_endpoint_hexadecimal_digit(uint8_t ascii_byte) {
     return cswift_endpoint_hexadecimal_digit_table[ascii_byte];
 }
 
-// The decimal-digits table is indexed by a byte and describes how to print it in base 10:
+// The decimal-digits table is indexed by a byte and describes how to print it
+// in base 10:
 //
-//   - Bytes 0-2: the ASCII digits, most significant first, zero-padded on the right.
-//   - Byte 3: how many of those digits are significant, 1 to 3.
+//   - Bytes 0, 1, 2: the ASCII digits, most significant first, zero-padded on
+//   the right.
+//   - Byte 3: how many of the above digits are significant, 1 to 3.
 //
-// So 7 is `{'7', 0, 0, 1}` and 255 is `{'2', '5', '5', 3}`. Writing all 3 digit bytes and
-// advancing by only the significant count leaves the insignificant ones to be overwritten.
+// So 7 is `{'7', 0, 0, 1}` and 255 is `{'2', '5', '5', 3}`.
+// This enables speculative writes, where you write all 3 bytes and only advance an index
+// by the number of significant bytes, to leave the insignificant bytes to be overwritten.
 
 extern const uint32_t cswift_endpoint_decimal_digits_table[256];
 

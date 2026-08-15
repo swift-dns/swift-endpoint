@@ -386,22 +386,17 @@ struct DomainNameTests {
         #expect(name1InDottedQuad.debugDescription == "192.168.1.1.")
     }
 
-    /// `255.255.255.255` in particular fills the dotted-quad buffer exactly.
     @available(SwiftStdlib 5.1, *)
-    @Test func `ipv4 name is correct for every octet value`() {
-        for octet in (UInt8(0)...UInt8(255)) {
-            let ipAddress = IPv4Address(octet, octet, octet, octet)
-            let dottedQuad = String(repeating: "\(octet).", count: 4)
+    @Test func `ipv4 name is correct for every byte`() {
+        for byte in UInt8(0)...UInt8(255) {
+            let ipAddress = IPv4Address(byte, byte, byte, byte)
+            let ipDescription = ipAddress.description
 
-            #expect(
-                DomainName(ipv4: ipAddress, format: .dottedQuad).debugDescription == dottedQuad,
-                "octet: \(octet)"
-            )
-            #expect(
-                DomainName(ipv4: ipAddress, format: .arpa).debugDescription
-                    == dottedQuad + "in-addr.arpa.",
-                "octet: \(octet)"
-            )
+            let dottedQuadDomain = DomainName(ipv4: ipAddress, format: .dottedQuad)
+            #expect(dottedQuadDomain.debugDescription == ipDescription)
+
+            let arpaDomain = DomainName(ipv4: ipAddress, format: .arpa)
+            #expect(arpaDomain.debugDescription == ipDescription + "in-addr.arpa.")
         }
     }
 
@@ -442,12 +437,9 @@ struct DomainNameTests {
             )
             let low = hexDigits[Int(byte & 0x0F)]
             let high = hexDigits[Int(byte >> 4)]
-            let expectedDescription =
-                String(repeating: "\(low).\(high).", count: 16) + "ip6.arpa."
-            #expect(
-                DomainName(ipv6: ipAddress).debugDescription == expectedDescription,
-                "byte: \(byte)"
-            )
+            let domainLabels = String(repeating: "\(low).\(high).", count: 16)
+            let expectedDescription = domainLabels + "ip6.arpa."
+            #expect(DomainName(ipv6: ipAddress).debugDescription == expectedDescription)
         }
     }
 

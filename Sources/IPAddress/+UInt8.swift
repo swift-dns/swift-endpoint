@@ -1,3 +1,5 @@
+public import CSwiftEndpoint
+
 extension UInt8 {
     @inlinable
     package static var ascii0: UInt8 {
@@ -12,21 +14,6 @@ extension UInt8 {
     @inlinable
     package static var asciiLowercasedA: UInt8 {
         0x61
-    }
-
-    @inlinable
-    static var asciiLowercasedF: UInt8 {
-        0x66
-    }
-
-    @inlinable
-    static var asciiUppercasedA: UInt8 {
-        0x41
-    }
-
-    @inlinable
-    static var asciiUppercasedF: UInt8 {
-        0x46
     }
 
     @inlinable
@@ -102,27 +89,13 @@ extension UInt8 {
         return utf8Byte &- UInt8.ascii0
     }
 
+    /// Maps a hexadecimal ASCII byte to its `0...15` value.
     @inlinable
+    @inline(always)
     package static func mapHexadecimalByteToUInt8(_ asciiByte: UInt8) -> UInt8? {
-        if asciiByte <= UInt8.ascii9,
-            asciiByte >= UInt8.ascii0
-        {
-            return asciiByte &- UInt8.ascii0
-        }
-
-        if asciiByte >= UInt8.asciiLowercasedA,
-            asciiByte <= UInt8.asciiLowercasedF
-        {
-            return asciiByte &- UInt8.asciiLowercasedA &+ 10
-        }
-
-        if asciiByte >= UInt8.asciiUppercasedA,
-            asciiByte <= UInt8.asciiUppercasedF
-        {
-            return asciiByte &- UInt8.asciiUppercasedA &+ 10
-        }
-
-        return nil
+        let digit = cswift_endpoint_hexadecimal_digit(asciiByte)
+        let isInvalid = digit == 0xFF
+        return isInvalid ? nil : digit
     }
 }
 

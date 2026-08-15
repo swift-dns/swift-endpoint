@@ -551,31 +551,32 @@ extension IPv6Address: LosslessStringConvertible {
                     return false
                 }
 
-                if segmentsCountBeforeCs == -1 {
-                    beforeCs =
-                        (beforeCs &<< 32) | _CompatibilityUInt128Typealias(ipv4Address)
-                } else {
-                    afterCs = (afterCs &<< 32) | _CompatibilityUInt128Typealias(ipv4Address)
-                }
+                let isBeforeCs = segmentsCountBeforeCs == -1
+                let forBeforeCs =
+                    (beforeCs &<< 32) | _CompatibilityUInt128Typealias(ipv4Address)
+                let forAfterCs =
+                    (afterCs &<< 32) | _CompatibilityUInt128Typealias(ipv4Address)
+                beforeCs = isBeforeCs ? forBeforeCs : beforeCs
+                afterCs = isBeforeCs ? afterCs : forAfterCs
+
                 segmentsCount &+= 2
                 segmentDigitIdx = 0
 
                 break
             }
 
-            /// A colon reached here always follows at least one digit: both colons of a
-            /// compression sign are consumed either by the leading special case above or by
-            /// the lookahead below.
             guard byte == .asciiColon, segmentDigitIdx > 0 else {
                 return false
             }
 
-            if segmentsCountBeforeCs == -1 {
-                beforeCs =
-                    (beforeCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
-            } else {
-                afterCs = (afterCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
-            }
+            let isBeforeCs = segmentsCountBeforeCs == -1
+            let forBeforeCs =
+                (beforeCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
+            let forAfterCs =
+                (afterCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
+            beforeCs = isBeforeCs ? forBeforeCs : beforeCs
+            afterCs = isBeforeCs ? afterCs : forAfterCs
+
             segmentsCount &+= 1
             currentSegmentValue = 0
             segmentDigitIdx = 0
@@ -587,7 +588,7 @@ extension IPv6Address: LosslessStringConvertible {
             }
 
             if unsafe span[unchecked: idx] == .asciiColon {
-                guard segmentsCountBeforeCs == -1 else {
+                guard isBeforeCs else {
                     return false
                 }
                 segmentsCountBeforeCs = segmentsCount
@@ -595,17 +596,20 @@ extension IPv6Address: LosslessStringConvertible {
             }
         }
 
+        let isBeforeCs = segmentsCountBeforeCs == -1
+
         if segmentDigitIdx > 0 {
-            if segmentsCountBeforeCs == -1 {
-                beforeCs =
-                    (beforeCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
-            } else {
-                afterCs = (afterCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
-            }
+            let forBeforeCs =
+                (beforeCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
+            let forAfterCs =
+                (afterCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
+            beforeCs = isBeforeCs ? forBeforeCs : beforeCs
+            afterCs = isBeforeCs ? afterCs : forAfterCs
+
             segmentsCount &+= 1
         }
 
-        guard segmentsCountBeforeCs != -1 else {
+        guard !isBeforeCs else {
             address = beforeCs
             return segmentsCount == 8
         }

@@ -390,7 +390,7 @@ struct DomainNameTests {
     @Test func `ipv4 name is correct for every byte`() {
         for byte in UInt8(0)...UInt8(255) {
             let ipAddress = IPv4Address(byte, byte, byte, byte)
-            let ipDescription = ipAddress.description
+            let ipDescription = ipAddress.description + "."
 
             let dottedQuadDomain = DomainName(ipv4: ipAddress, format: .dottedQuad)
             #expect(dottedQuadDomain.debugDescription == ipDescription)
@@ -409,7 +409,7 @@ struct DomainNameTests {
                 || byte == 0x5F
                 || byte == 0x2A
                 || byte == 0x20
-            #expect(byte.isAcceptableDomainNameCharacter == expected, "byte: \(byte)")
+            #expect(byte.isAcceptableDomainNameCharacter == expected)
         }
     }
 

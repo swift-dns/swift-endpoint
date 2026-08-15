@@ -500,26 +500,26 @@ extension IPv6Address: LosslessStringConvertible {
             return false
         }
 
+        let count = span.count
+        /// cs == compression sign
+        var beforeCs = _CompatibilityUInt128Typealias.zero
+        var afterCs = _CompatibilityUInt128Typealias.zero
+        var segmentsCount = 0
+        var segmentsCountBeforeCs = -1
+        var currentSegmentValue: UInt16 = 0
+        var segmentDigitIdx = 0
+        var idx = 0
+
         /// Special-case handling for when there is a compression sign at the beginning
         if span[0] == .asciiColon {
-            span = span.extracting(1..<span.count)
-            if span[0] != .asciiColon {
+            guard unsafe span[unchecked: 1] == .asciiColon else {
                 return false
             }
+            segmentsCountBeforeCs = 0
+            idx = 2
         }
 
-        let endIdx = span.count &- 1
-        var segmentDigitIdx = 0
-        var latestColonIdx = -1
-        var currentSegmentValue: UInt16 = 0
-        var remainingBytesCount = 16
-        /// cs == compression sign
-        var beforeCsBytesCountRemaining = -1
-
-        var idx = 0
-        while idx < span.count {
-            defer { idx &+= 1 }
-
+        while idx < count {
             let byte = unsafe span[unchecked: idx]
 
             if let digit = UInt8.mapHexadecimalByteToUInt8(byte) {
@@ -527,48 +527,22 @@ extension IPv6Address: LosslessStringConvertible {
                     return false
                 }
 
-                currentSegmentValue &<<= 4
-                currentSegmentValue |= UInt16(digit)
+                currentSegmentValue = (currentSegmentValue &<< 4) | UInt16(digit)
                 segmentDigitIdx &+= 1
-
-                continue
-            }
-
-            if byte == .asciiColon {
-                latestColonIdx = idx
-                if segmentDigitIdx == 0 {
-                    if beforeCsBytesCountRemaining != -1 {
-                        return false
-                    }
-                    beforeCsBytesCountRemaining = remainingBytesCount
-                    continue
-                } else if idx == endIdx {
-                    return false
-                }
-
-                /// We only do decrements of 2x to remainingBytesCount so it can't be 1.
-                if remainingBytesCount == 0 {
-                    return false
-                }
-
-                remainingBytesCount &-= 2
-                let shift = remainingBytesCount &* 8
-                address |= _CompatibilityUInt128Typealias(currentSegmentValue) &<< shift
-
-                segmentDigitIdx = 0
-                currentSegmentValue = 0
+                idx &+= 1
 
                 continue
             }
 
             if byte == .asciiDot {
+                /// The embedded IPv4 address starts where the digits of this segment started.
                 var ipv4Address: UInt32 = 0
                 guard
-                    remainingBytesCount >= 4,
+                    segmentDigitIdx > 0,
                     IPv4Address.parseIPv4(
                         span: unsafe span.extracting(
                             unchecked: Range(
-                                uncheckedBounds: (latestColonIdx &+ 1, span.count)
+                                uncheckedBounds: (idx &- segmentDigitIdx, count)
                             )
                         ),
                         address: &ipv4Address
@@ -577,43 +551,76 @@ extension IPv6Address: LosslessStringConvertible {
                     return false
                 }
 
-                remainingBytesCount &-= 4
-                let shift = remainingBytesCount &* 8
-                address |= _CompatibilityUInt128Typealias(ipv4Address) &<< shift
-
+                if segmentsCountBeforeCs == -1 {
+                    beforeCs =
+                        (beforeCs &<< 32) | _CompatibilityUInt128Typealias(ipv4Address)
+                } else {
+                    afterCs = (afterCs &<< 32) | _CompatibilityUInt128Typealias(ipv4Address)
+                }
+                segmentsCount &+= 2
                 segmentDigitIdx = 0
-                currentSegmentValue = 0
 
                 break
             }
 
-            /// Bad character
-            return false
+            /// A colon reached here always follows at least one digit: both colons of a
+            /// compression sign are consumed either by the leading special case above or by
+            /// the lookahead below.
+            guard byte == .asciiColon, segmentDigitIdx > 0 else {
+                return false
+            }
+
+            if segmentsCountBeforeCs == -1 {
+                beforeCs =
+                    (beforeCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
+            } else {
+                afterCs = (afterCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
+            }
+            segmentsCount &+= 1
+            currentSegmentValue = 0
+            segmentDigitIdx = 0
+            idx &+= 1
+
+            /// A trailing colon is only valid as part of a compression sign.
+            guard idx < count else {
+                return false
+            }
+
+            if unsafe span[unchecked: idx] == .asciiColon {
+                guard segmentsCountBeforeCs == -1 else {
+                    return false
+                }
+                segmentsCountBeforeCs = segmentsCount
+                idx &+= 1
+            }
         }
 
         if segmentDigitIdx > 0 {
-            guard remainingBytesCount >= 2 else {
-                return false
+            if segmentsCountBeforeCs == -1 {
+                beforeCs =
+                    (beforeCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
+            } else {
+                afterCs = (afterCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
             }
-            remainingBytesCount &-= 2
-            let shift = remainingBytesCount &* 8
-            address |= _CompatibilityUInt128Typealias(currentSegmentValue) &<< shift
+            segmentsCount &+= 1
         }
 
-        if beforeCsBytesCountRemaining == -1 {
-            return remainingBytesCount == 0
+        guard segmentsCountBeforeCs != -1 else {
+            address = beforeCs
+            return segmentsCount == 8
         }
 
-        guard remainingBytesCount >= 2 else {
+        /// The compression sign has to stand for at least one segment.
+        guard segmentsCount <= 7 else {
             return false
         }
 
-        let beforeBits = beforeCsBytesCountRemaining &* 8
-        let aboveBits = _CompatibilityUInt128Typealias.bitWidth &- beforeBits
-        let afterShift = remainingBytesCount &* 8
-        let beforeSegments = (address &>> beforeBits) << beforeBits
-        let afterSegments = ((address &<< aboveBits) &>> aboveBits) &>> afterShift
-        address = beforeSegments | afterSegments
+        guard segmentsCountBeforeCs > 0 else {
+            address = afterCs
+            return true
+        }
+
+        address = (beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs))) | afterCs
 
         return true
     }

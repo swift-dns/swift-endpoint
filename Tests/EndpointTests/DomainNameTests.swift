@@ -386,6 +386,71 @@ struct DomainNameTests {
         #expect(name1InDottedQuad.debugDescription == "192.168.1.1.")
     }
 
+    /// `255.255.255.255` in particular fills the dotted-quad buffer exactly.
+    @available(SwiftStdlib 5.1, *)
+    @Test func `ipv4 name is correct for every octet value`() {
+        for octet in (UInt8(0)...UInt8(255)) {
+            let ipAddress = IPv4Address(octet, octet, octet, octet)
+            let dottedQuad = String(repeating: "\(octet).", count: 4)
+
+            #expect(
+                DomainName(ipv4: ipAddress, format: .dottedQuad).debugDescription == dottedQuad,
+                "octet: \(octet)"
+            )
+            #expect(
+                DomainName(ipv4: ipAddress, format: .arpa).debugDescription
+                    == dottedQuad + "in-addr.arpa.",
+                "octet: \(octet)"
+            )
+        }
+    }
+
+    @Test func `isAcceptableDomainNameCharacter is correct for every byte`() {
+        for byte in (UInt8(0)...UInt8(255)) {
+            let expected =
+                (byte >= 0x61 && byte <= 0x7A)
+                || (byte >= 0x30 && byte <= 0x39)
+                || byte == 0x2D
+                || byte == 0x5F
+                || byte == 0x2A
+                || byte == 0x20
+            #expect(byte.isAcceptableDomainNameCharacter == expected, "byte: \(byte)")
+        }
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `ipv6 arpa name is correct for every address byte`() {
+        let hexDigits = Array("0123456789abcdef")
+        for byte in (UInt8(0)...UInt8(255)) {
+            let ipAddress = IPv6Address(
+                byte,
+                byte,
+                byte,
+                byte,
+                byte,
+                byte,
+                byte,
+                byte,
+                byte,
+                byte,
+                byte,
+                byte,
+                byte,
+                byte,
+                byte,
+                byte
+            )
+            let low = hexDigits[Int(byte & 0x0F)]
+            let high = hexDigits[Int(byte >> 4)]
+            let expectedDescription =
+                String(repeating: "\(low).\(high).", count: 16) + "ip6.arpa."
+            #expect(
+                DomainName(ipv6: ipAddress).debugDescription == expectedDescription,
+                "byte: \(byte)"
+            )
+        }
+    }
+
     @available(SwiftStdlib 6.0, *)
     @Test func ipv6AddressToName() {
         let ipAddress: IPv6Address = 0x2a01_5cc0_0001_0002_0000_0000_0000_0004

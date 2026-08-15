@@ -40,6 +40,21 @@ static inline uint8_t cswift_endpoint_hexadecimal_digit(uint8_t ascii_byte) {
     return cswift_endpoint_hexadecimal_digit_table[ascii_byte];
 }
 
+// The decimal-digits table is indexed by a byte and describes how to print it in base 10:
+//
+//   - Bytes 0-2: the ASCII digits, most significant first, zero-padded on the right.
+//   - Byte 3: how many of those digits are significant, 1 to 3.
+//
+// So 7 is `{'7', 0, 0, 1}` and 255 is `{'2', '5', '5', 3}`. Writing all 3 digit bytes and
+// advancing by only the significant count leaves the insignificant ones to be overwritten.
+
+extern const uint32_t cswift_endpoint_decimal_digits_table[256];
+
+// Returns the packed decimal-digits entry for the given byte.
+static inline uint32_t cswift_endpoint_decimal_digits(uint8_t byte) {
+    return cswift_endpoint_decimal_digits_table[byte];
+}
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

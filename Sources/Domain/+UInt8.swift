@@ -5,39 +5,22 @@ extension UInt8 {
     /// Underscores are allowed for service names like "_sip._tcp.example.com".
     /// Stars are allowed for wildcards like "*.example.com".
     /// Whitespaces are allowed for labels like "Mijia Cloud" which some Xiaomi devices use.
+    ///
+    /// Looked up in a 128-bit bitmap instead of range-checked. Every acceptable byte is below
+    /// 0x80, so the two halves cover `0x00...0x3F` and `0x40...0x7F` respectively.
     @inlinable
     public var isAcceptableDomainNameCharacter: Bool {
-        self.isLowercasedLetter
-            || self.isDigit
-            || self == .asciiHyphenMinus
-            || self == .asciiUnderscore
-            || self == .asciiStar
-            || self == .asciiWhitespace
-    }
+        /// `0x20`, `0x2A`, `0x2D`, and `0x30...0x39`.
+        let lowHalf: UInt64 = 0x03FF_2401_0000_0000
+        /// `0x5F`, and `0x61...0x7A`.
+        let highHalf: UInt64 = 0x07FF_FFFE_8000_0000
 
-    @inlinable
-    var isLowercasedLetter: Bool {
-        self >= 0x61 && self <= 0x7A
-    }
+        guard self < 0x80 else {
+            return false
+        }
 
-    @inlinable
-    var isDigit: Bool {
-        self >= 0x30 && self <= 0x39
-    }
-
-    @inlinable
-    static var asciiHyphenMinus: UInt8 {
-        0x2D
-    }
-
-    @inlinable
-    static var asciiUnderscore: UInt8 {
-        0x5F
-    }
-
-    @inlinable
-    static var asciiWhitespace: UInt8 {
-        0x20
+        let half = self < 64 ? lowHalf : highHalf
+        return (half &>> (self & 63)) & 1 == 1
     }
 
     @inlinable

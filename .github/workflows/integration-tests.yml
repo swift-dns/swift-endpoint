@@ -154,6 +154,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Update bash via Homebrew
+        run: brew install bash
+
       - name: Check relevance
         id: check-relevance
         env:
@@ -261,6 +264,9 @@ jobs:
         uses: actions/checkout@v7
         with:
           persist-credentials: false
+
+      - name: Update bash via Homebrew
+        run: brew install bash
 
       - name: Check relevance
         id: check-relevance

@@ -60,4 +60,23 @@ struct UInt8Tests {
             #expect(UInt8(decimalRepresentation: span) == nil)
         }
     }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test func `mapHexadecimalByteToUInt8 works correctly`() {
+        for byte in (UInt8(0)...UInt8(255)) {
+            let expected: UInt8?
+            switch byte {
+            case UInt8(ascii: "0")...UInt8(ascii: "9"):
+                expected = byte &- UInt8(ascii: "0")
+            case UInt8(ascii: "a")...UInt8(ascii: "f"):
+                expected = byte &- UInt8(ascii: "a") &+ 10
+            case UInt8(ascii: "A")...UInt8(ascii: "F"):
+                expected = byte &- UInt8(ascii: "A") &+ 10
+            default:
+                expected = nil
+            }
+
+            #expect(UInt8.mapHexadecimalByteToUInt8(byte) == expected)
+        }
+    }
 }

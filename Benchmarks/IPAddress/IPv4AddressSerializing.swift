@@ -26,7 +26,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
 
     let ipv4Zero = IPv4Address(0, 0, 0, 0)
     Benchmark(
-        "IPv4_Serializing_Zero_12M",
+        "IPv4_Serializing_Zero_30M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -36,7 +36,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         var address = ipv4Zero
         withUnsafeMutablePointer(to: &address) { addressPointer in
             unsafe blackHole(addressPointer)
-            for _ in 0..<12_000_000 {
+            for _ in 0..<30_000_000 {
                 withUnsafeTemporaryAllocation(byteCount: 15, alignment: 1) { buffer in
                     let written = unsafe addressPointer.pointee
                         .writeTextualRepresentation_RequiringMinimumCapacityOf15(into: buffer)
@@ -51,7 +51,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
 
     let ipv4Localhost = IPv4Address(127, 0, 0, 1)
     Benchmark(
-        "IPv4_Serializing_Localhost_12M",
+        "IPv4_Serializing_Localhost_30M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -61,7 +61,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         var address = ipv4Localhost
         withUnsafeMutablePointer(to: &address) { addressPointer in
             unsafe blackHole(addressPointer)
-            for _ in 0..<12_000_000 {
+            for _ in 0..<30_000_000 {
                 withUnsafeTemporaryAllocation(byteCount: 15, alignment: 1) { buffer in
                     let written = unsafe addressPointer.pointee
                         .writeTextualRepresentation_RequiringMinimumCapacityOf15(into: buffer)
@@ -76,7 +76,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
 
     let ipv4LocalBroadcast = IPv4Address(255, 255, 255, 255)
     Benchmark(
-        "IPv4_Serializing_Local_Broadcast_12M",
+        "IPv4_Serializing_Local_Broadcast_30M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -86,7 +86,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         var address = ipv4LocalBroadcast
         withUnsafeMutablePointer(to: &address) { addressPointer in
             unsafe blackHole(addressPointer)
-            for _ in 0..<12_000_000 {
+            for _ in 0..<30_000_000 {
                 withUnsafeTemporaryAllocation(byteCount: 15, alignment: 1) { buffer in
                     let written = unsafe addressPointer.pointee
                         .writeTextualRepresentation_RequiringMinimumCapacityOf15(into: buffer)
@@ -101,7 +101,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
 
     let ipv4Mixed = IPv4Address(23, 185, 0, 2)
     Benchmark(
-        "IPv4_Serializing_Mixed_12M",
+        "IPv4_Serializing_Mixed_30M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -111,7 +111,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         var address = ipv4Mixed
         withUnsafeMutablePointer(to: &address) { addressPointer in
             unsafe blackHole(addressPointer)
-            for _ in 0..<12_000_000 {
+            for _ in 0..<30_000_000 {
                 withUnsafeTemporaryAllocation(byteCount: 15, alignment: 1) { buffer in
                     let written = unsafe addressPointer.pointee
                         .writeTextualRepresentation_RequiringMinimumCapacityOf15(into: buffer)
@@ -167,14 +167,14 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     var ipv4MixedInetNtop = ipv4Mixed.address.bigEndian
 
     Benchmark(
-        "IPv4_Serializing_Mixed_inet_ntop_2M",
+        "IPv4_Serializing_Mixed_inet_ntop_1M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<2_000_000 {
+        for _ in 0..<1_000_000 {
             withUnsafeTemporaryAllocation(of: Int8.self, capacity: 16) { ptr in
                 unsafe inet_ntop(
                     AF_INET,
@@ -235,7 +235,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "IPv4_Serializing_Multiple_IPs_8M",
+        "IPv4_Serializing_Multiple_IPs_20M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -243,7 +243,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<8_000_000 {
+        for _ in 0..<20_000_000 {
             let idx = Int(rng.next() % UInt64(ipv4MultipleIPs.count))
             withUnsafeTemporaryAllocation(byteCount: 15, alignment: 1) { buffer in
                 let written = unsafe ipv4MultipleIPs[idx]

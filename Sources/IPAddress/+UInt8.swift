@@ -1,3 +1,5 @@
+public import CSwiftEndpoint
+
 extension UInt8 {
     @inlinable
     package static var ascii0: UInt8 {
@@ -12,21 +14,6 @@ extension UInt8 {
     @inlinable
     package static var asciiLowercasedA: UInt8 {
         0x61
-    }
-
-    @inlinable
-    static var asciiLowercasedF: UInt8 {
-        0x66
-    }
-
-    @inlinable
-    static var asciiUppercasedA: UInt8 {
-        0x41
-    }
-
-    @inlinable
-    static var asciiUppercasedF: UInt8 {
-        0x46
     }
 
     @inlinable
@@ -102,27 +89,13 @@ extension UInt8 {
         return utf8Byte &- UInt8.ascii0
     }
 
+    /// Maps a hexadecimal ASCII byte to its `0...15` value.
     @inlinable
+    @inline(always)
     package static func mapHexadecimalByteToUInt8(_ asciiByte: UInt8) -> UInt8? {
-        if asciiByte <= UInt8.ascii9,
-            asciiByte >= UInt8.ascii0
-        {
-            return asciiByte &- UInt8.ascii0
-        }
-
-        if asciiByte >= UInt8.asciiLowercasedA,
-            asciiByte <= UInt8.asciiLowercasedF
-        {
-            return asciiByte &- UInt8.asciiLowercasedA &+ 10
-        }
-
-        if asciiByte >= UInt8.asciiUppercasedA,
-            asciiByte <= UInt8.asciiUppercasedF
-        {
-            return asciiByte &- UInt8.asciiUppercasedA &+ 10
-        }
-
-        return nil
+        let digit = cswift_endpoint_hexadecimal_digit(asciiByte)
+        let isInvalid = digit == 0xFF
+        return isInvalid ? nil : digit
     }
 }
 
@@ -132,25 +105,23 @@ extension UInt8 {
         buffer: UnsafeMutableRawBufferPointer,
         advancingIdx idx: inout Int
     ) {
-        assert(buffer.count >= 3)
+        assert(buffer.count >= idx &+ 3)
 
-        /// The compiler is smart enough to not actually do division by 10, but instead use the
-        /// multiply-by-205-then-bitshift-by-11 trick.
-        /// See it for yourself: https://godbolt.org/z/vYxTj78qd
-        let (q, r1) = self.quotientAndRemainder(dividingBy: 10)
-        let (q2, r2) = q.quotientAndRemainder(dividingBy: 10)
-        let r3 = q2 % 10
+        let entry = cswift_endpoint_decimal_digits(self)
 
-        /// Always write, but only advance past it when it should be kept.
-        var notAllZerosSoFar = r3 != 0
-        unsafe buffer[idx] = r3 &+ UInt8.ascii0
-        idx &+= notAllZerosSoFar ? 1 : 0
+        /// Always write all 3 digits, but only advance past the significant ones.
+        /// The insignificant ones are overwritten by whatever is written next.
+        unsafe buffer.storeBytes(
+            of: UInt16(truncatingIfNeeded: entry),
+            toByteOffset: idx,
+            as: UInt16.self
+        )
+        unsafe buffer.storeBytes(
+            of: UInt8(truncatingIfNeeded: entry &>> 16),
+            toByteOffset: idx &+ 2,
+            as: UInt8.self
+        )
 
-        notAllZerosSoFar = notAllZerosSoFar || r2 != 0
-        unsafe buffer[idx] = r2 &+ UInt8.ascii0
-        idx &+= notAllZerosSoFar ? 1 : 0
-
-        unsafe buffer[idx] = r1 &+ UInt8.ascii0
-        idx &+= 1
+        idx &+= Int(entry &>> 24)
     }
 }

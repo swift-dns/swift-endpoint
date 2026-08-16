@@ -42,14 +42,14 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - IPv6_Parsing_Zero_Compressed
 
     Benchmark(
-        "IPv6_Parsing_Zero_Compressed_12M",
+        "IPv6_Parsing_Zero_Compressed_15M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<12_000_000 {
+        for _ in 0..<15_000_000 {
             let ip = unsafe IPv6Address("[::]").unsafelyUnwrapped
             blackHole(ip)
         }
@@ -75,14 +75,14 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - IPv6_Parsing_Localhost_Compressed
 
     Benchmark(
-        "IPv6_Parsing_Localhost_Compressed_10M",
+        "IPv6_Parsing_Localhost_Compressed_15M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<10_000_000 {
+        for _ in 0..<15_000_000 {
             let ip = unsafe IPv6Address("[::1]").unsafelyUnwrapped
             blackHole(ip)
         }

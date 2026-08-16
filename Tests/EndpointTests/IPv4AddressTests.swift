@@ -110,6 +110,34 @@ struct IPv4AddressTests {
         #expect(produced == testCase.description)
     }
 
+    @available(SwiftStdlib 5.1, *)
+    @Test(arguments: IPv4DecimalLengthTestCase.all)
+    func `IPv4Address textual representation length and write capacity byte-length cases`(
+        testCase: IPv4DecimalLengthTestCase
+    ) {
+        testTextualRepresentationLengths(of: testCase.address)
+    }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test func `IPv4Address textual representation length and write capacity`() {
+        /// Every value of every byte, against every digit count of the neighbouring bytes.
+        for position in 0..<4 {
+            for value in 0...UInt32(255) {
+                for other in [UInt32]([0, 0x0909_0909, 0x6363_6363, 0xFFFF_FFFF]) {
+                    let shift = UInt32(24 - position * 8)
+                    let address = (other & ~(0xFF << shift)) | (value << shift)
+                    testTextualRepresentationLengths(of: IPv4Address(address))
+                }
+            }
+        }
+
+        /// Every combination of the two low bytes, and of the two high bytes.
+        for value in 0...UInt32(0xFFFF) {
+            testTextualRepresentationLengths(of: IPv4Address(value))
+            testTextualRepresentationLengths(of: IPv4Address(value << 16))
+        }
+    }
+
     @available(SwiftStdlib 6.2, *)
     @Test(arguments: IPv4AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
     func `IPv4Address description and serialization round-trip`(ip: IPv4Address) {
@@ -357,4 +385,30 @@ struct IPv4AddressTests {
         let span = bytes.span
         #expect(IPv4Address(textualRepresentation: span) == nil)
     }
+}
+
+@available(SwiftStdlib 5.1, *)
+private func testTextualRepresentationLengths(
+    of ip: IPv4Address,
+    sourceLocation: SourceLocation = #_sourceLocation
+) {
+    let description = ip.description
+    let length = description.utf8.count
+    let lastByteDigits = String(ip.bytes.3).utf8.count
+
+    #expect(ip.textualRepresentationLength == length, sourceLocation: sourceLocation)
+    /// `_textualRepresentationWriteRequiredCapacity` includes possible extra 2 bytes of
+    /// headroom for speculative writes.
+    #expect(
+        ip._textualRepresentationWriteRequiredCapacity == length + 3 - lastByteDigits,
+        sourceLocation: sourceLocation
+    )
+
+    let capacity = ip._textualRepresentationWriteRequiredCapacity
+    let buffer = UnsafeMutableRawBufferPointer.allocate(byteCount: capacity, alignment: 1)
+    defer { unsafe buffer.deallocate() }
+    let written = unsafe ip.writeTextualRepresentation_Requiring2HeadroomBytes(into: buffer)
+    #expect(written == length, sourceLocation: sourceLocation)
+    let produced = unsafe String(decoding: buffer[0..<written], as: UTF8.self)
+    #expect(produced == description, sourceLocation: sourceLocation)
 }

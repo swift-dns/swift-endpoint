@@ -118,33 +118,45 @@ extension IPv6Address {
         let isIPv4Mapped = self.isIPv4Mapped
         let useMixedNotationApplies = useMixedNotationOption && isIPv4Mapped
         let mustUseMixedNotation = forceMixedNotationOption || useMixedNotationApplies
+        let embeddedIPv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
+        let embeddedIPv4TextualRepresentationLength = embeddedIPv4.textualRepresentationLength
+        let ipv4BitsInLowHalf = self.address._low & 0xFFFF_FFFF
         let ipv4EmbeddedWalkBackBytes =
             IPv6Address.countDigitsRequiredToPrintExcludingTrailingDigits(
-                of: self.address._low & 0xFFFF_FFFF
+                of: ipv4BitsInLowHalf
             ) &+ 3
 
-        let trailingSegmentsMask: UInt8 = mustUseMixedNotation ? ~0xC0 : .max
+        let trailingSegmentsMask: UInt8 = mustUseMixedNotation ? 0b0011_1111 : 0b1111_1111
         let mask = self.makeSegmentsMask() & trailingSegmentsMask
         let entry = IPv6Address.entry(forMask: mask)
-        let digitsPrintCountNoTrailing = self.countDigitsRequiredToPrintExcludingTrailingDigits()
+        let digitsPrintCountNoTrailing = self.countAllDigitsRequiredToPrintExcludingTrailingDigits()
 
-        let mixedNotationAdditionalReserve = (15 &- ipv4EmbeddedWalkBackBytes)
-        let mixedNotationReserve = mustUseMixedNotation ? mixedNotationAdditionalReserve : 0
+        /// The embedded IPv4 replaces the last two segments, which the walk-back bytes account for.
+        /// The 2 headroom bytes the IPv4 write needs are already part of `headroomBytes` below.
+        let mixedNotationReserveMaybe =
+            embeddedIPv4TextualRepresentationLength &- ipv4EmbeddedWalkBackBytes
+        let mixedNotationReserve = mustUseMixedNotation ? mixedNotationReserveMaybe : 0
 
         let bracketsCount = encloseInSquareBrackets ? 2 : 0
-        /// If no brackets, we need 2 extra byte for the possible colon that we speculatively write
-        /// Also _writeSegmentAsLowercasedHexASCII needs 4 bytes of room, 1 of which is guaranteed to be
-        /// present in the byte-count since the segments are non-zero. So 3.
-        let speculativeBytes = 3
-        /// `encloseInSquareBrackets` if true, gives 1 byte worth of trailing room
-        let conservativeSpeculativeBytes =
-            encloseInSquareBrackets ? speculativeBytes &- 1 : speculativeBytes
+        let lastSegmentBits = self.address._low & 0xFFFF
+        /// Unless the description ends in a compression sign or in an embedded IPv4, the last
+        /// written segment is always segment 7, for which
+        /// `_writeSegmentAsLowercasedHexASCII` stores 4 bytes while advancing by as few as 1.
+        /// A trailing compression sign or closing square bracket occupies that headroom itself.
+        let lastWrittenIsSingleDigitSegment =
+            !mustUseMixedNotation && (lastSegmentBits <= 0xF)
+        let bracketsReserveSubtract = entry.writeCsAtEnd ? 1 : 0
+        let bracketsReserveInitial = encloseInSquareBrackets ? 1 : 2
+        let bracketsReserve = bracketsReserveInitial &- bracketsReserveSubtract
+        let lastWrittenReserveInitial = lastWrittenIsSingleDigitSegment ? 1 : 0
+        let lastWrittenReserve = entry.writeCsAtEnd ? 0 : lastWrittenReserveInitial
+        let headroomBytes = bracketsReserve &+ lastWrittenReserve
         /// Exact required bytes to print, including headroom bytes for speculative writes.
         let toReserve =
             entry.minRawLayoutBytes
             &+ digitsPrintCountNoTrailing
             &+ bracketsCount
-            &+ conservativeSpeculativeBytes
+            &+ headroomBytes
             &+ mixedNotationReserve
 
         return try unsafe writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
@@ -180,20 +192,21 @@ extension IPv6Address {
             writeIdx &+= entry.writeCsAtEnd ? 2 : 0
 
             if mustUseMixedNotation {
-                let ipv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
                 let lowerBound = writeIdx &- ipv4EmbeddedWalkBackBytes
-                let start = unsafe buffer.baseAddress.unsafelyUnwrapped.advanced(by: lowerBound)
-                let ipv4Buffer = unsafe UnsafeMutableRawBufferPointer(start: start, count: 15)
-                let written = unsafe ipv4.writeTextualRepresentation_RequiringMinimumCapacityOf15(
-                    into: ipv4Buffer
+                let ipv4Buffer = unsafe UnsafeMutableRawBufferPointer(
+                    rebasing: buffer[lowerBound...]
                 )
+                let written =
+                    unsafe embeddedIPv4.writeTextualRepresentation_Requiring2HeadroomBytes(
+                        into: ipv4Buffer
+                    )
                 writeIdx = lowerBound &+ written
             }
 
             unsafe buffer[writeIdx] = .asciiRightSquareBracket
             writeIdx &+= encloseInSquareBrackets ? 1 : 0
 
-            assert(writeIdx <= toReserve - 2)
+            assert(writeIdx == toReserve &- headroomBytes)
 
             return writeIdx
         }
@@ -244,7 +257,7 @@ extension IPv6Address {
     /// digit that is always written even if it's 0.
     @inlinable
     @inline(always)
-    func countDigitsRequiredToPrintExcludingTrailingDigits() -> Int {
+    func countAllDigitsRequiredToPrintExcludingTrailingDigits() -> Int {
         let high = IPv6Address.countDigitsRequiredToPrintExcludingTrailingDigits(
             of: self.address._high
         )

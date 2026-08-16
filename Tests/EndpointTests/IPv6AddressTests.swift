@@ -430,7 +430,14 @@ struct IPv6AddressTests {
             packedIndices |= UInt64(idx) &<< (offset * 3)
         }
         let segmentsCount = UInt64(exactly: indices.count)!
-        let colonsCount: UInt64 = max(2, min(segmentsCount + 1, 7))
+        let colonsCount: UInt64
+        if upperBound == 16 {
+            colonsCount = segmentsCount - 1
+        } else if writeCsAtBeginning || writeCsAtEnd {
+            colonsCount = max(2, segmentsCount + 1)
+        } else {
+            colonsCount = segmentsCount
+        }
         let minRawLayoutBytes = UInt64(exactly: colonsCount + segmentsCount)!
         var rawValue = packedIndices
         rawValue |= segmentsCount &<< 24

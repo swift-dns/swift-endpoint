@@ -79,7 +79,6 @@ extension UInt8 {
     }
 
     @inlinable
-    @inline(always)
     static func mapUTF8ByteToUInt8(_ utf8Byte: UInt8) -> UInt8? {
         guard
             utf8Byte <= UInt8.ascii9,

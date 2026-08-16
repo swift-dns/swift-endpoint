@@ -133,18 +133,16 @@ struct IPv6AddressTests {
 
     @available(SwiftStdlib 6.0, *)
     @Test(arguments: IPv6AddressTestCase.stringAndAddress.compactMap(\.ip))
-    func ipv6AddressDescription(
-        ipv6: IPv6Address,
-        _: String,
-        expectedMixedNotationDescription: String
-    ) {
-        #expect(ipv6.description == expectedMixedNotationDescription)
+    func ipv6AddressDescription(ip: IPv6AddressTestCase.IP) {
+        let expected = ip.standardDescription
 
-        let produced = ipv6.withCString { span in
-            #expect(span.count - 1 == expectedMixedNotationDescription.utf8.count)
+        #expect(ip.address.description == expected)
+
+        let produced = ip.address.withCString { span in
+            #expect(span.count - 1 == expected.utf8.count)
             return span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
         }
-        #expect(produced == expectedMixedNotationDescription)
+        #expect(produced == expected)
     }
 
     @available(SwiftStdlib 6.2, *)
@@ -209,10 +207,10 @@ struct IPv6AddressTests {
     func `IPv6Address description and withCString defaults`(
         testCase: IPv6AddressTestCase
     ) throws {
-        let mixedNotationDescription = try #require(testCase.ip?.mixedNotationDescription)
+        let expected = try #require(testCase.expectedDescription(options: .standardOptions))
         let ip = try #require(testCase.ip?.address)
         #expect(ip.description == ip.description(options: .standardOptions))
-        #expect(ip.description == mixedNotationDescription)
+        #expect(ip.description == expected)
 
         let cStringDefault = ip.withCString { span in
             span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
@@ -221,7 +219,7 @@ struct IPv6AddressTests {
             span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
         }
         #expect(cStringDefault == cStringExplicit)
-        #expect(cStringDefault == mixedNotationDescription)
+        #expect(cStringDefault == expected)
     }
 
     @available(SwiftStdlib 6.2, *)

@@ -425,9 +425,15 @@ struct IPv6AddressTests {
                 compressionSignIdx = upperBound &+ 1
             }
         }
-        var packedIndices: UInt64 = 0
+        var packedSegmentInfos: UInt64 = 0
+        var colonsInSegmentInfos: UInt64 = 0
         for (offset, idx) in indices.enumerated() {
-            packedIndices |= UInt64(idx) &<< (offset * 3)
+            let colons =
+                UInt64(idx == compressionSignIdx ? 1 : 0)
+                + UInt64(offset == 0 ? (writeCsAtBeginning ? 1 : 0) : 1)
+            #expect(colons <= 3)
+            colonsInSegmentInfos += colons
+            packedSegmentInfos |= (UInt64(idx) | (colons &<< 3)) &<< (offset * 5)
         }
         let segmentsCount = UInt64(exactly: indices.count)!
         let colonsCount: UInt64
@@ -438,24 +444,22 @@ struct IPv6AddressTests {
         } else {
             colonsCount = segmentsCount
         }
+        #expect(colonsCount == colonsInSegmentInfos + (writeCsAtEnd ? 2 : 0))
         let minRawLayoutBytes = UInt64(exactly: colonsCount + segmentsCount)!
-        var rawValue = packedIndices
-        rawValue |= segmentsCount &<< 24
-        rawValue |= minRawLayoutBytes &<< 32
-        rawValue |= UInt64(exactly: compressionSignIdx)! &<< 40
-        rawValue |= (writeCsAtBeginning ? 1 : 0) &<< 48
-        rawValue |= (writeCsAtEnd ? 1 : 0) &<< 49
+        let minReserveBytes = minRawLayoutBytes + 2 - (writeCsAtEnd ? 1 : 0)
+        var rawValue = packedSegmentInfos
+        rawValue |= segmentsCount &<< 40
+        rawValue |= minReserveBytes &<< 44
+        rawValue |= (writeCsAtEnd ? 1 : 0) &<< 50
         let entry = IPv6Address.SegmentWriteTableEntry(rawValue)
 
-        #expect(IPv6Address._entry(forMask: UInt8(index)) == entry)
+        #expect(IPv6Address.SegmentWriteTableEntry(forMask: UInt8(index)) == entry)
 
-        let unpacked = IPv6Address.entry(forMask: UInt8(index))
+        let unpacked = IPv6Address.SegmentWriteTableEntry.Unpacked(forMask: UInt8(index))
         #expect(unpacked == entry.unpack())
-        #expect(unpacked.packedIndices == UInt(packedIndices))
+        #expect(unpacked.packedSegmentInfos == packedSegmentInfos)
         #expect(unpacked.segmentsCount == indices.count)
-        #expect(unpacked.minRawLayoutBytes == Int(minRawLayoutBytes))
-        #expect(unpacked.writeCsAtIdx == compressionSignIdx)
-        #expect(unpacked.writeCsAtBeginning == writeCsAtBeginning)
+        #expect(unpacked.minReserveBytes == Int(minReserveBytes))
         #expect(unpacked.writeCsAtEnd == writeCsAtEnd)
     }
 }

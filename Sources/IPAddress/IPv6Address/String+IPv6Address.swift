@@ -148,13 +148,14 @@ extension IPv6Address {
         let lastSegmentBits = self.address._low & 0xFFFF
         let lastSegmentIsSingleDigit = lastSegmentBits <= 0xF
         let noMixedNotation = !mustUseMixedNotation
-        /// Unless the description ends in a compression sign (`entry.writeCsAtEnd`) or in
-        /// an embedded IPv4 (`mustUseMixedNotation`), the last written segment is always segment 7,
-        /// for which `_writeSegmentAsLowercasedHexASCII` stores 4 bytes while possibly only
-        /// advancing by 1. A trailing compression sign or closing square bracket occupies that headroom itself.
-        let lastWrittenIsSingleDigitSegment = lastSegmentIsSingleDigit && noMixedNotation
-        let lastWrittenReserveInitial = lastWrittenIsSingleDigitSegment ? 1 : 0
-        let lastWrittenReserve = entry.writeCsAtEnd ? 0 : lastWrittenReserveInitial
+        /// We do speculative writes, but if the last segment is a single hex digit, then we only
+        /// write 1 byte while we still need to reserve 4 bytes of headroom so the speculative write
+        /// can fit. So we need to reserve 1 extra byte for that to have the full room needed.
+        /// This only needs to happen if this is not a mixed-notation writing.
+        /// Also if `writeCsAtEnd` is true, then we already have the needed speculative bytes room.
+        let lastSegmentIsSingleDigitHex = lastSegmentIsSingleDigit && noMixedNotation
+        let lastSegmentReserveInitial = lastSegmentIsSingleDigitHex ? 1 : 0
+        let lastSegmentReserve = entry.writeCsAtEnd ? 0 : lastSegmentReserveInitial
         /// `minReserveBytes` already contains the 2 speculative bytes needed without square
         /// brackets. One of the brackets is written at the end so it can consume one of those
         /// speculative bytes of room, so we only need to reserve 1 extra.
@@ -164,7 +165,7 @@ extension IPv6Address {
             entry.minReserveBytes
             &+ digitsPrintCountNoTrailing
             &+ bracketsReserve
-            &+ lastWrittenReserve
+            &+ lastSegmentReserve
             &+ mixedNotationReserve
 
         return try unsafe writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
@@ -219,7 +220,7 @@ extension IPv6Address {
                     == toReserve
                     &- (encloseInSquareBrackets ? 1 : 2)
                     &+ (entry.writeCsAtEnd ? 1 : 0)
-                    &- lastWrittenReserve
+                    &- lastSegmentReserve
             )
 
             return writeIdx

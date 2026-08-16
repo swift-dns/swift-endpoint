@@ -1,13 +1,13 @@
 {
-  "originHash" : "e7f81f3327bc504a913a2bf4fd509ef286c2ec328932f79fc7ffa50bc81ec30a",
+  "originHash" : "663219a3cf68b08b12d90eb30285722010ad6500792d6fe81793999fd419d3de",
   "pins" : [
     {
       "identity" : "benchmark",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/MahdiBM/benchmark.git",
       "state" : {
-        "branch" : "mmbm-range-relative-thresholds-options",
-        "revision" : "591c22f4ce6087b0642ff1b37ac65092ca3ecc21"
+        "branch" : "mmbm-cpu-user-precision",
+        "revision" : "9294475b83d1a13f3ff0b92a05baf58de7d017ed"
       }
     },
     {

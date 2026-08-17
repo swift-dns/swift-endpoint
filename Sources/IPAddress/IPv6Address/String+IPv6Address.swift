@@ -254,19 +254,14 @@ extension IPv6Address {
         let topBitsSetIfLaneNonZero = partial_topBitsSetIfLaneNonZero | word
         /// Make sure all bits are set to 0, other than the top bits, which are set to 1 if it was a non-zero segment.
         let topBitsZeroIfLaneZero = ~topBitsSetIfLaneNonZero
-
-        let _0IsZero = (topBitsZeroIfLaneZero &>> 63) & 1
-        let _1IsZero = (topBitsZeroIfLaneZero &>> 47) & 1
-        let _2IsZero = (topBitsZeroIfLaneZero &>> 31) & 1
-        let _3IsZero = (topBitsZeroIfLaneZero &>> 15) & 1
-
-        return UInt8(
-            truncatingIfNeeded:
-                _0IsZero
-                | (_1IsZero &<< 1)
-                | (_2IsZero &<< 2)
-                | (_3IsZero &<< 3)
-        )
+        let m1111: UInt64 = 0b1000000000000000_1000000000000000_1000000000000000_1000000000000000
+        let lowBitsZeroIfLaneZero = ((topBitsZeroIfLaneZero & m1111) &>> 15)
+        let m1000100101: UInt64 =
+            0b0000000000001000_0000000000000100_0000000000000010_0000000000000001
+        /// Puts each low bit of a lane, into bits 49th-52nd.
+        /// Then we bit shift by 48 to get each lane's bits into bits 1st-4th.
+        let mask = ((lowBitsZeroIfLaneZero &* m1000100101) &>> 48)
+        return UInt8(truncatingIfNeeded: mask)
     }
 
     /// Counts the number of digits that will need to be written excluding the trailing

@@ -61,7 +61,7 @@ extension IPv4Address: CustomStringConvertible {
     /// beyond its first one which is always written even if 0 (Example: "0.0.0.0").
     @inlinable
     @inline(always)
-    var _extraDecimalDigitsPerByte: UInt32 {
+    var _extraDecimalDigitsToPrintPerByte: UInt32 {
         let address = self.address
         /// `0x7F` == `0b0111_1111`
         let m7f: UInt32 = 0x7F7F_7F7F
@@ -81,9 +81,9 @@ extension IPv4Address: CustomStringConvertible {
         let atLeast10 = ((low7Bits &+ m76) | address) & m80
         /// We do the same as above, but via m1c (`128 - 100`).
         let atLeast100 = ((low7Bits &+ m1c) | address) & m80
-        /// 1 if yes, 0 if no.
+        /// 1 in each lane if yes, 0 if no.
         let isAtLeast10 = atLeast10 &>> 7
-        /// 1 if yes, 0 if no.
+        /// 1 in each lane if yes, 0 if no.
         let isAtLeast100 = atLeast100 &>> 7
         return isAtLeast10 &+ isAtLeast100
     }
@@ -98,10 +98,11 @@ extension IPv4Address: CustomStringConvertible {
     package var _textualRepresentationWriteRequiredCapacity: Int {
         /// Mask out the last byte to avoid counting the extra digits it would require.
         /// At the end, we add 2 headroom bytes anyways.
-        let extraDigits = self._extraDecimalDigitsPerByte & 0xFFFF_FF00
-        /// Sum of all 4 lanes.
+        let extraDigits = self._extraDecimalDigitsToPrintPerByte & 0xFFFF_FF00
+        /// Puts sum of all 4 lanes into bits 25th-28th.
+        /// Then we bit shift by 24 to get the sum into bits 1st-3rd.
         let extraDigitsCount = (extraDigits &* 0x0101_0101) &>> 24
-        /// 3 dots plus the first digit of each of the 4 bytes + 2 headroom bytes.
+        /// 3 dots + the first digit of each of the 4 bytes + 2 headroom bytes.
         return 9 &+ Int(extraDigitsCount)
     }
 
@@ -109,9 +110,11 @@ extension IPv4Address: CustomStringConvertible {
     @inlinable
     @inline(always)
     package var textualRepresentationLength: Int {
-        /// Sum of all 4 lanes.
-        let extraDigitsCount = (self._extraDecimalDigitsPerByte &* 0x0101_0101) &>> 24
-        /// 3 dots plus the first digit of each of the 4 bytes.
+        let allDigits = self._extraDecimalDigitsToPrintPerByte
+        /// Puts sum of all 4 lanes into bits 25th-28th.
+        /// Then we bit shift by 24 to get the sum into bits 1st-3rd.
+        let extraDigitsCount = (allDigits &* 0x0101_0101) &>> 24
+        /// 3 dots + the first digit of each of the 4 bytes.
         return 7 &+ Int(extraDigitsCount)
     }
 }

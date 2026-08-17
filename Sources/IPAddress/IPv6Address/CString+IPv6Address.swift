@@ -26,9 +26,8 @@ extension IPv6Address {
             ) { buffer throws(E) in
                 /// `makeDescription` must only see the capacity it asked for, so the last byte
                 /// stays reserved for the null terminator.
-                let count = unsafe writeBytes(
-                    UnsafeMutableRawBufferPointer(rebasing: buffer[0..<maxWriteableBytes])
-                )
+                let count = unsafe writeBytes(buffer)
+                assert(count <= maxWriteableBytes)
                 unsafe buffer[count] = 0
                 return try unsafe buffer.withMemoryRebound(to: CChar.self) { cBuffer throws(E) in
                     let range = unsafe ClosedRange<Int>(uncheckedBounds: (0, count))

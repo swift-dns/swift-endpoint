@@ -8,7 +8,7 @@ log() { printf -- "** %s\n" "$*" >&2; }
 error() { printf -- "** ERROR: %s\n" "$*" >&2; }
 fatal() { error "$@"; exit 1; }
 
-readonly granularity=1000000 # 1ms in nanoseconds
+readonly granularity=100000 # 100µs in nanoseconds
 readonly thresholds_path="${THRESHOLDS_PATH:?THRESHOLDS_PATH must point at the benchmark Thresholds directory}"
 [[ -d "${thresholds_path}" ]] || fatal "Thresholds directory not found: '${thresholds_path}'"
 
@@ -31,7 +31,7 @@ cpu_user_threshold_shape() {
   return 0
 }
 
-# Floors '.cpuUser' min and max (or a scalar absolute value) down to the 1ms granularity.
+# Floors '.cpuUser' min and max (or a scalar absolute value) down to the 100µs granularity.
 floor_cpu_user_threshold() {
   local threshold_file="${1:?floor_cpu_user_threshold requires a threshold file path}"
 
@@ -66,4 +66,4 @@ for threshold_file in "${threshold_files[@]}"; do
   fi
 done
 
-log "✅ Floored cpuUser thresholds (min and max) to 1ms in ${floored_count} file(s)."
+log "✅ Floored cpuUser thresholds (min and max) to 100µs in ${floored_count} file(s)."

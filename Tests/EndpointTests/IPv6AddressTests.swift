@@ -133,18 +133,16 @@ struct IPv6AddressTests {
 
     @available(SwiftStdlib 6.0, *)
     @Test(arguments: IPv6AddressTestCase.stringAndAddress.compactMap(\.ip))
-    func ipv6AddressDescription(
-        ipv6: IPv6Address,
-        _: String,
-        expectedMixedNotationDescription: String
-    ) {
-        #expect(ipv6.description == expectedMixedNotationDescription)
+    func ipv6AddressDescription(ip: IPv6AddressTestCase.IP) {
+        let expected = ip.standardDescription
 
-        let produced = ipv6.withCString { span in
-            #expect(span.count - 1 == expectedMixedNotationDescription.utf8.count)
+        #expect(ip.address.description == expected)
+
+        let produced = ip.address.withCString { span in
+            #expect(span.count - 1 == expected.utf8.count)
             return span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
         }
-        #expect(produced == expectedMixedNotationDescription)
+        #expect(produced == expected)
     }
 
     @available(SwiftStdlib 6.2, *)
@@ -209,10 +207,10 @@ struct IPv6AddressTests {
     func `IPv6Address description and withCString defaults`(
         testCase: IPv6AddressTestCase
     ) throws {
-        let mixedNotationDescription = try #require(testCase.ip?.mixedNotationDescription)
+        let expected = try #require(testCase.expectedDescription(options: .standardOptions))
         let ip = try #require(testCase.ip?.address)
         #expect(ip.description == ip.description(options: .standardOptions))
-        #expect(ip.description == mixedNotationDescription)
+        #expect(ip.description == expected)
 
         let cStringDefault = ip.withCString { span in
             span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
@@ -221,7 +219,7 @@ struct IPv6AddressTests {
             span.withUnsafeBufferPointer { unsafe String(cString: $0.baseAddress!) }
         }
         #expect(cStringDefault == cStringExplicit)
-        #expect(cStringDefault == mixedNotationDescription)
+        #expect(cStringDefault == expected)
     }
 
     @available(SwiftStdlib 6.2, *)
@@ -427,30 +425,41 @@ struct IPv6AddressTests {
                 compressionSignIdx = upperBound &+ 1
             }
         }
-        var packedIndices: UInt64 = 0
+        var packedSegmentInfos: UInt64 = 0
+        var colonsInSegmentInfos: UInt64 = 0
         for (offset, idx) in indices.enumerated() {
-            packedIndices |= UInt64(idx) &<< (offset * 3)
+            let colons =
+                UInt64(idx == compressionSignIdx ? 1 : 0)
+                + UInt64(offset == 0 ? (writeCsAtBeginning ? 1 : 0) : 1)
+            #expect(colons <= 3)
+            colonsInSegmentInfos += colons
+            packedSegmentInfos |= (UInt64(idx) | (colons &<< 3)) &<< (offset * 5)
         }
         let segmentsCount = UInt64(exactly: indices.count)!
-        let colonsCount: UInt64 = max(2, min(segmentsCount + 1, 7))
+        let colonsCount: UInt64
+        if upperBound == 16 {
+            colonsCount = segmentsCount - 1
+        } else if writeCsAtBeginning || writeCsAtEnd {
+            colonsCount = max(2, segmentsCount + 1)
+        } else {
+            colonsCount = segmentsCount
+        }
+        #expect(colonsCount == colonsInSegmentInfos + (writeCsAtEnd ? 2 : 0))
         let minRawLayoutBytes = UInt64(exactly: colonsCount + segmentsCount)!
-        var rawValue = packedIndices
-        rawValue |= segmentsCount &<< 24
-        rawValue |= minRawLayoutBytes &<< 32
-        rawValue |= UInt64(exactly: compressionSignIdx)! &<< 40
-        rawValue |= (writeCsAtBeginning ? 1 : 0) &<< 48
-        rawValue |= (writeCsAtEnd ? 1 : 0) &<< 49
+        let minReserveBytes = minRawLayoutBytes + 2 - (writeCsAtEnd ? 1 : 0)
+        var rawValue = packedSegmentInfos
+        rawValue |= segmentsCount &<< 40
+        rawValue |= minReserveBytes &<< 44
+        rawValue |= (writeCsAtEnd ? 1 : 0) &<< 50
         let entry = IPv6Address.SegmentWriteTableEntry(rawValue)
 
-        #expect(IPv6Address._entry(forMask: UInt8(index)) == entry)
+        #expect(IPv6Address.SegmentWriteTableEntry(forMask: UInt8(index)) == entry)
 
-        let unpacked = IPv6Address.entry(forMask: UInt8(index))
+        let unpacked = IPv6Address.SegmentWriteTableEntry.Unpacked(forMask: UInt8(index))
         #expect(unpacked == entry.unpack())
-        #expect(unpacked.packedIndices == UInt(packedIndices))
+        #expect(unpacked.packedSegmentInfos == packedSegmentInfos)
         #expect(unpacked.segmentsCount == indices.count)
-        #expect(unpacked.minRawLayoutBytes == Int(minRawLayoutBytes))
-        #expect(unpacked.writeCsAtIdx == compressionSignIdx)
-        #expect(unpacked.writeCsAtBeginning == writeCsAtBeginning)
+        #expect(unpacked.minReserveBytes == Int(minReserveBytes))
         #expect(unpacked.writeCsAtEnd == writeCsAtEnd)
     }
 }

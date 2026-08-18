@@ -5,24 +5,36 @@ extension IPv4Address: CustomStringConvertible {
     public var description: String {
         /// 15 is enough for the biggest possible IPv4Address description.
         /// For example for "255.255.255.255".
-        /// Coincidentally, Swift's `_SmallString` usually supports up to 15 bytes, which helps make
-        /// this implementation as efficient as possible without a heap allocation.
-        unsafe String(unsafeUninitializedCapacity_Compatibility: 15) { buffer in
-            unsafe self.writeTextualRepresentation_RequiringMinimumCapacityOf15(
+        ///
+        /// This impl relies on an impl detail of `String` in `_SmallString.capacity` where it will
+        /// inline-allocate 15 bytes at all times, for up to exactly 15 utf8 bytes.
+        ///
+        /// So if we know `String` will inline-allocate 15 bytes anyway (`_pointerBitWidth(_64) == true`),
+        /// then we don't bother with calculating the exact required capacity. Otherwise we
+        /// will calculate the exact required capacity to possibly avoid a heap allocation.
+        #if _pointerBitWidth(_64)
+        let requiredCapacity = 15
+        #else
+        let requiredCapacity = self._textualRepresentationWriteRequiredCapacity
+        #endif
+
+        return unsafe String(
+            unsafeUninitializedCapacity_Compatibility: requiredCapacity
+        ) { buffer in
+            unsafe self.writeTextualRepresentation_Requiring2HeadroomBytes(
                 into: UnsafeMutableRawBufferPointer(buffer)
             )
         }
     }
 
     /// Writes the textual representation of this address into `buffer` and returns the number of
-    /// bytes written. `buffer` must have a capacity of at least 15 bytes.
+    /// bytes written.
+    /// Requires 3 bytes worth of room for the least significant byte at all times.
     @inlinable
     @inline(always)
-    package func writeTextualRepresentation_RequiringMinimumCapacityOf15(
+    package func writeTextualRepresentation_Requiring2HeadroomBytes(
         into buffer: UnsafeMutableRawBufferPointer
     ) -> Int {
-        assert(buffer.count >= 15)
-
         var resultIdx = 0
 
         let byte = UInt8(truncatingIfNeeded: self.address &>> 24)
@@ -43,6 +55,67 @@ extension IPv4Address: CustomStringConvertible {
         }
 
         return resultIdx
+    }
+
+    /// 4x 8-bit lanes, one for each byte, each holding how many decimal digits that byte needs
+    /// beyond its first one which is always written even if 0 (Example: "0.0.0.0").
+    @inlinable
+    @inline(always)
+    var _extraDecimalDigitsToPrintPerByte: UInt32 {
+        let address = self.address
+        /// `0x7F` == `0b0111_1111`
+        let m7f: UInt32 = 0x7F7F_7F7F
+        /// `0x76` == `0b0111_0110` == `118` == `128 - 10`
+        let m76: UInt32 = 0x7676_7676
+        /// `0x1C` == `0b0001_1100` == `28` == `128 - 100`
+        let m1c: UInt32 = 0x1C1C_1C1C
+        /// `0x80` == `0b1000_0000` == `128`
+        let m80: UInt32 = 0x8080_8080
+        /// Turn the most significant bit (MSB) off so next operations don't carry over per lane, or overflow.
+        let low7Bits = address & m7f
+        /// We add m76 to each lane (`128 - 10`), if the MSB is turned on, we know that the number
+        /// was at least 10. This only misses to cover the case where the number is 0b1000_0000,
+        /// because in `low7bits` we turned off the 8th bit in each lane.
+        /// If 8th bit was on then the number was above 10 anyway, so a `| address` is enough.
+        /// `& m80` is to only keep the 8th bit in each lane. If it's on, then the number was at least 10.
+        let atLeast10 = ((low7Bits &+ m76) | address) & m80
+        /// We do the same as above, but via m1c (`128 - 100`).
+        let atLeast100 = ((low7Bits &+ m1c) | address) & m80
+        /// 1 in each lane if yes, 0 if no.
+        let isAtLeast10 = atLeast10 &>> 7
+        /// 1 in each lane if yes, 0 if no.
+        let isAtLeast100 = atLeast100 &>> 7
+        return isAtLeast10 &+ isAtLeast100
+    }
+
+    /// The number of bytes that the textual representation of this address will occupy, plus up
+    /// to 2 extra headroom bytes for speculative writes.
+    ///
+    /// Essentially, this var has to assume that the least significant byte of the address which is
+    /// written last, will require 3 bytes of room at all times.
+    @inlinable
+    @inline(always)
+    package var _textualRepresentationWriteRequiredCapacity: Int {
+        /// Mask out the last byte to avoid counting the extra digits it would require.
+        /// At the end, we add 2 headroom bytes anyways.
+        let extraDigits = self._extraDecimalDigitsToPrintPerByte & 0xFFFF_FF00
+        /// Puts sum of all 4 lanes into bits 25th-28th.
+        /// Then we bit shift by 24 to get the sum into bits 1st-3rd.
+        let extraDigitsCount = (extraDigits &* 0x0101_0101) &>> 24
+        /// 3 dots + the first digit of each of the 4 bytes + 2 headroom bytes.
+        return 9 &+ Int(extraDigitsCount)
+    }
+
+    /// The exact number of bytes that the textual representation of this address occupies.
+    @inlinable
+    @inline(always)
+    package var textualRepresentationLength: Int {
+        let allDigits = self._extraDecimalDigitsToPrintPerByte
+        /// Puts sum of all 4 lanes into bits 25th-28th.
+        /// Then we bit shift by 24 to get the sum into bits 1st-3rd.
+        let extraDigitsCount = (allDigits &* 0x0101_0101) &>> 24
+        /// 3 dots + the first digit of each of the 4 bytes.
+        return 7 &+ Int(extraDigitsCount)
     }
 }
 

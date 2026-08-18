@@ -8,7 +8,7 @@ log() { printf -- "** %s\n" "$*" >&2; }
 error() { printf -- "** ERROR: %s\n" "$*" >&2; }
 fatal() { error "$@"; exit 1; }
 
-readonly granularity=1000000   # 1ms in nanoseconds
+readonly granularity=100000    # 100µs in nanoseconds
 readonly p90_index=4           # index of p90 in Statistics.defaultPercentilesToCalculate
 readonly percentile_count=7    # number of entries in Statistics.defaultPercentilesToCalculate
 readonly sentinel_p90=917000000 # 917ms, used to verify the package still honors the percentile cache
@@ -34,7 +34,7 @@ readonly baseline_files=("${baselines_dir}"/*/"${baseline_name}"/*results.json)
 
 # Sets the cpuUser percentile cache so that 'statistics.percentiles()' returns a known p90 instead of
 # recomputing it from the histogram. When 'from_lookup' is true the raw p90 is read from the lookup
-# and floored to 1ms; otherwise the provided 'fixed_value' is used verbatim (for the self-test).
+# and floored to 100µs; otherwise the provided 'fixed_value' is used verbatim (for the self-test).
 inject_cpu_user_p90() {
   local baseline_file="${1:?inject_cpu_user_p90 requires a baseline results file}"
   local from_lookup="${2:?inject_cpu_user_p90 requires from_lookup (true|false)}"
@@ -149,4 +149,4 @@ for baseline_file in "${baseline_files[@]}"; do
   floored_count=$((floored_count + 1))
 done
 
-log "✅ Floored measured cpuUser p90 to 1ms in ${floored_count} baseline file(s)."
+log "✅ Floored measured cpuUser p90 to 100µs in ${floored_count} baseline file(s)."

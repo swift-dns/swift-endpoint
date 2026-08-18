@@ -17,25 +17,40 @@ struct IPv4AddressTestCase: Sendable {
 }
 
 struct IPv6AddressTestCase: Sendable {
+    struct IP: Sendable {
+        let address: IPv6Address
+        /// Not enclosed in square brackets.
+        let description: String
+        /// Not enclosed in square brackets.
+        let mixedNotationDescription: String
+
+        @available(SwiftStdlib 5.1, *)
+        var standardDescription: String {
+            self.address.isIPv4Mapped ? self.mixedNotationDescription : self.description
+        }
+
+        init(
+            _ address: IPv6Address,
+            _ description: String,
+            _ mixedNotationDescription: String
+        ) {
+            self.address = address
+            self.description = description
+            self.mixedNotationDescription = mixedNotationDescription
+        }
+    }
+
     let string: String
-    /// Neither description is enclosed in square brackets. The tests add the brackets themselves.
-    /// `description` is the address as printed without any mixed-notation option,
-    /// `mixedNotationDescription` is the address as printed with the option matching its
-    /// well-known IPv4-embedding prefix.
-    /// The two are identical unless the address has a mixed-notation form.
-    let ip: (address: IPv6Address, description: String, mixedNotationDescription: String)?
+    let ip: IP?
     let isValidAsOtherIPVersion: Bool
 
     init(
         _ string: String,
-        ip: (address: IPv6Address, description: String)?,
-        mixedNotationDescription: String? = nil,
+        ip: IP?,
         isValidAsOtherIPVersion: Bool = false
     ) {
         self.string = string
-        self.ip = ip.map {
-            ($0.address, $0.description, mixedNotationDescription ?? $0.description)
-        }
+        self.ip = ip
         self.isValidAsOtherIPVersion = isValidAsOtherIPVersion
     }
 
@@ -45,14 +60,11 @@ struct IPv6AddressTestCase: Sendable {
             return nil
         }
         let useMixedNotation =
-            (ip.address.isIPv4Mapped
-                && options.contains(.useMixedNotationForIPv4MappedAddresses))
-            || (ip.address.isNAT64WellKnownIPv4Embedded
-                && options.contains(.useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses))
+            options.contains(.forceMixedNotation)
+            || (options.contains(.useMixedNotation) && ip.address.isIPv4Mapped)
+        let expected = useMixedNotation ? ip.mixedNotationDescription : ip.description
         let encloseInSquareBrackets = options.contains(.encloseInSquareBrackets)
-        let withMixedNotation = useMixedNotation ? ip.mixedNotationDescription : ip.description
-        let withBrackets = encloseInSquareBrackets ? "[\(withMixedNotation)]" : withMixedNotation
-        return withBrackets
+        return encloseInSquareBrackets ? "[\(expected)]" : expected
     }
 }
 
@@ -215,7 +227,7 @@ extension IPv6AddressTestCase {
         guard !isValidAsOtherIPVersion else { return nil }
         return AnyIPAddressTestCase(
             string,
-            ip: ip.map { (AnyIPAddress.v6($0.address), $0.mixedNotationDescription) }
+            ip: ip.map { (AnyIPAddress.v6($0.address), $0.standardDescription) }
         )
     }
 }

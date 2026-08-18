@@ -12,12 +12,11 @@ extern "C" {
 // The mask is 8-bits, each bit representing whether the corresponding IPv6
 // segment is all-zero (1) or not (0).
 //
-//   - Bits 0-23: 8 segment indices, 3 bits each.
-//   - Bits 24-31: segments count.
-//   - Bits 32-39: min raw layout bytes.
-//   - Bits 40-47: index at which to write the compression sign.
-//   - Bit 48: whether to write the compression sign at the beginning.
-//   - Bit 49: whether to write the compression sign at the end.
+//   - Bits 0-39: 8 segment-infos, 5 bits each. Bits 0-2 of a segment-info are
+//   the segment index, bits 3-4 are how many colons precede that segment.
+//   - Bits 40-43: segments count.
+//   - Bits 44-49: min reserve bytes.
+//   - Bit 50: whether to write the compression sign at the end.
 //
 // The entries are unpacked by `IPv6Address.SegmentWriteTableEntry` in `String+IPv6Address.swift`.
 

@@ -18,59 +18,37 @@ extension IPv6Address: CustomStringConvertible {
         /// Example: `[2001:db8::1]` instead of `2001:db8::1`.
         @inlinable
         public static var encloseInSquareBrackets: Self {
-            Self(rawValue: 1 << 1)
-        }
-
-        /// For IPv4-mapped addresses, print the last 32 bits in the mixed notation of
-        /// [RFC 4291, Section 2.2](https://datatracker.ietf.org/doc/html/rfc4291#section-2.2).
-        ///
-        /// That is, for the well-known IPv4-embedding subnet
-        /// `::ffff:0:0/96` of [RFC 4291](https://datatracker.ietf.org/doc/html/rfc4291#section-2.5.5.2).
-        ///
-        /// Use `ipv6.isIPv4Mapped` to check if this option will apply to an IPv6 address.
-        ///
-        /// Example: `::ffff:204.152.189.116` instead of `::ffff:cc98:bd74`.
-        @inlinable
-        public static var useMixedNotationForIPv4MappedAddresses: Self {
             Self(rawValue: 1 << 0)
         }
 
-        /// For NAT64 well-known IPv4-embedded addresses, print the last 32 bits in the mixed
-        /// notation of [RFC 4291, Section 2.2](https://datatracker.ietf.org/doc/html/rfc4291#section-2.2).
+        /// If suitable, print the last 32 bits in the mixed notation format as described in
+        /// [RFC 4291, Section 2.2](https://datatracker.ietf.org/doc/html/rfc4291#section-2.2),
+        /// Currently only happens for well-known IPv4-mapped IP addresses (`::ffff:0:0/96`).
         ///
-        /// That is, for the well-known IPv4-embedding subnet
-        /// `64:ff9b::/96` of [RFC 6052](https://datatracker.ietf.org/doc/html/rfc6052#section-2.4).
+        /// Example: `::ffff:204.152.189.116` instead of `::ffff:cc98:bd74`.
+        @inlinable
+        public static var useMixedNotation: Self {
+            Self(rawValue: 1 << 1)
+        }
+
+        /// Unconditionally print the last 32 bits in the mixed notation format as described in
+        /// [RFC 4291, Section 2.2](https://datatracker.ietf.org/doc/html/rfc4291#section-2.2).
         ///
-        /// Use `ipv6.isNAT64WellKnownIPv4Embedded` to check if this option will apply to an
-        /// IPv6 address.
+        /// Supersedes `useMixedNotation`.
+        /// Useful for IPv4-embedding subnets other than `::ffff:0:0/96`, such as the NAT64 subnets,
+        /// so they can generate mixed notation descriptions on demand.
         ///
         /// Example: `64:ff9b::192.0.2.33` instead of `64:ff9b::c000:221`.
         @inlinable
-        public static var useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses: Self {
+        public static var forceMixedNotation: Self {
             Self(rawValue: 1 << 2)
         }
 
-        /// Print the last 32 bits of every well-known IPv4-embedded address in the mixed notation of
-        /// [RFC 4291, Section 2.2](https://datatracker.ietf.org/doc/html/rfc4291#section-2.2).
-        /// Consists of `useMixedNotationForIPv4MappedAddresses` and `useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses`.
-        ///
-        /// Use `ipv6.isWellKnownIPv4Embedded` to check if this option will apply to an IPv6 address.
-        @inlinable
-        public static var useMixedNotation: Self {
-            [
-                .useMixedNotationForIPv4MappedAddresses,
-                .useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses,
-            ]
-        }
-
         /// Options for compliance with [RFC 5952, A Recommendation for IPv6 Address Text Representation, August 2010](https://datatracker.ietf.org/doc/html/rfc5952).
-        /// Consists of `useMixedNotationForIPv4MappedAddresses` and `useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses`.
+        /// Consists of `useMixedNotation`.
         @inlinable
         public static var standardOptions: Self {
-            [
-                .useMixedNotationForIPv4MappedAddresses,
-                .useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses,
-            ]
+            [.useMixedNotation]
         }
     }
 
@@ -82,10 +60,9 @@ extension IPv6Address: CustomStringConvertible {
     ///
     /// As examples, as discussed in the aforementioned RFC, the following descriptions might
     /// be emitted for their corresponding IP addresses:
-    /// `::`, `::ffff:192.168.1.1`, `64:ff9b::192.0.2.33`, `2001:db8:85a3::100`.
+    /// `::`, `::ffff:192.168.1.1`, `2001:db8:85a3::100`.
     /// Letters are always lowercased and no square brackets are present.
-    /// For the well-known IPv4-embedding subnets `::ffff:0:0/96` and `64:ff9b::/96`,
-    /// the mixed notation is emitted.
+    /// For the well-known IPv4-mapped subnet `::ffff:0:0/96`, the mixed notation is emitted.
     ///
     /// Use `IPv6Address.description(options:)` for a customized description.
     @inlinable
@@ -101,11 +78,10 @@ extension IPv6Address: CustomStringConvertible {
     /// As examples, as discussed in the aforementioned RFC, the following descriptions might
     /// be emitted for their corresponding IP addresses.
     ///
-    /// `::`, `::ffff:192.168.1.1`, `64:ff9b::192.0.2.33`, `2001:db8:85a3::100`.
-    /// If `useMixedNotationForIPv4MappedAddresses` is disabled, `::ffff:192.168.1.1` will be
-    /// emitted as `::ffff:c0a8:101`.
-    /// If `useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses` is disabled,
-    /// `64:ff9b::192.0.2.33` will be emitted as `64:ff9b::c000:221`.
+    /// `::`, `::ffff:192.168.1.1`, `2001:db8:85a3::100`.
+    /// If `useMixedNotation` is disabled, `::ffff:192.168.1.1` will be emitted as `::ffff:c0a8:101`.
+    /// If `forceMixedNotation` is enabled, `2001:db8:85a3::100` will be emitted as
+    /// `2001:db8:85a3::0.0.1.0`.
     /// If `encloseInSquareBrackets` is enabled, `2001:db8:85a3::100` will be emitted as `[2001:db8:85a3::100]`.
     /// Letters are always in lowercase.
     @inlinable
@@ -136,85 +112,85 @@ extension IPv6Address {
             _ callbackReturningBytesWritten: (UnsafeMutableRawBufferPointer) -> Int
         ) throws(E) -> Buffer
     ) throws(E) -> Buffer {
-        var address = self
-
-        let encloseInSquareBrackets = options.contains(.encloseInSquareBrackets)
-        let useMixedNotationForIPv4EmbeddedAddresses =
-            options.contains(.useMixedNotationForIPv4MappedAddresses)
-        let useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses =
-            options.contains(.useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses)
+        let encloseInSquareBracketsOption = options.contains(.encloseInSquareBrackets)
+        let forceMixedNotationOption = options.contains(.forceMixedNotation)
+        let useMixedNotationOption = options.contains(.useMixedNotation)
 
         let isIPv4Mapped = self.isIPv4Mapped
-        let isNAT64WellKnownIPv4Embedded = self.isNAT64WellKnownIPv4Embedded
+        let useMixedNotationApplies = useMixedNotationOption && isIPv4Mapped
+        let mustUseMixedNotation = forceMixedNotationOption || useMixedNotationApplies
+        let embeddedIPv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
+        let embeddedIPv4TextualRepresentationLength = embeddedIPv4.textualRepresentationLength
+        /// The last 2 segments are always written as "0:0", which is 3 bytes.
+        /// Never as a trailing compression sign "::" because `writeCsAtEnd` is only set when
+        /// `upperBound == 7`, and since we mask off 2 segments, upperBound <= 5.
+        let ipv4EmbeddedWalkBackBytes = 3
+        let lowMask: UInt64 = mustUseMixedNotation ? 0xFFFF_FFFF_0000_0000 : .max
+        let addressToPrint = IPv6Address(
+            UnsignedInteger128(
+                _low: self.address._low & lowMask,
+                _high: self.address._high
+            )
+        )
 
-        let useMixedNotationForIPv4Mapped =
-            isIPv4Mapped && useMixedNotationForIPv4EmbeddedAddresses
-        let useMixedNotationForNAT64 =
-            isNAT64WellKnownIPv4Embedded && useMixedNotationForNAT64WellKnownIPv4EmbeddedAddresses
-        let useMixedNotation = useMixedNotationForIPv4Mapped || useMixedNotationForNAT64
+        let trailingSegmentsMask: UInt8 = mustUseMixedNotation ? 0b0011_1111 : 0b1111_1111
+        let mask = self.makeSegmentsMask() & trailingSegmentsMask
+        let entry = SegmentWriteTableEntry.Unpacked(forMask: mask)
+        let digitsPrintCountNoTrailing =
+            addressToPrint.countAllDigitsRequiredToPrintExcludingTrailingDigits()
 
-        let allMask = UnsignedInteger128(_low: .max, _high: .max)
-        let ipv4EmbeddedMask = UnsignedInteger128(_low: 0xFFFF_FFFF_0000_0000, _high: .max)
-        let addressMask = useMixedNotation ? ipv4EmbeddedMask : allMask
-        address.address &= addressMask
+        /// The embedded IPv4 replaces the masked-off last two segments, which the walk-back bytes
+        /// account for.
+        /// The 2 headroom bytes the IPv4 write needs are already part of `minReserveBytes`.
+        let mixedNotationReserveMaybe =
+            embeddedIPv4TextualRepresentationLength &- ipv4EmbeddedWalkBackBytes
+        let mixedNotationReserve = mustUseMixedNotation ? mixedNotationReserveMaybe : 0
 
-        /// If this is a well-known IPv4-embedded IPv6 address, we need to add 15 bytes for the
-        /// IPv4 address. However, the ipv6 address will write the 2 zeroed-out trailing segments
-        /// before it reaches the ipv4-address-write code.
-        /// They're either written as a literal `0:0` (e.g. "::ffff:0:0"), or swallowed by the
-        /// trailing compression sign (e.g. "64:ff9b::"). In the first case we walk back 3 bytes
-        /// and reserve 3 bytes less.
-        ///
-        /// In the future we might want to modify this to be more dynamic and count the
-        /// walk back bytes on the fly.
-        /// For example if we want to provide a "forceMixedNotation" option, e.g. for NAT64.
-        let ipv4EmbeddedWalkBackBytes = isIPv4Mapped ? 3 : 0
-        let additionalCapacity = useMixedNotation ? (15 &- ipv4EmbeddedWalkBackBytes) : 0
-
-        let mask = address.makeSegmentsMask()
-        let entry = IPv6Address.entry(forMask: mask)
-        let digitsPrintCountNoTrailing = address.countDigitsRequiredToPrintExcludingTrailingDigits()
-
-        let bracketsCount = encloseInSquareBrackets ? 2 : 0
-        /// If no brackets, we need 2 extra byte for the possible colon that we speculatively write
-        /// Also _writeSegmentAsLowercasedHexASCII needs 4 bytes of room, 1 of which is guaranteed to be
-        /// present in the byte-count since the segments are non-zero. So 3.
-        let speculativeBytes = 3
-        /// `encloseInSquareBrackets` if true, gives 1 byte worth of trailing room
-        let conservativeSpeculativeBytes =
-            encloseInSquareBrackets ? speculativeBytes &- 1 : speculativeBytes
+        let lastSegmentBits = self.address._low & 0xFFFF
+        let lastSegmentIsSingleDigit = lastSegmentBits <= 0xF
+        let noMixedNotation = !mustUseMixedNotation
+        /// We do speculative writes, but if the last segment is a single hex digit, then we only
+        /// write 1 byte while we still need to reserve 4 bytes of headroom so the speculative write
+        /// can fit. So we need to reserve 1 extra byte for that to have the full room needed.
+        /// This only needs to happen if this is not a mixed-notation writing.
+        /// Also if `writeCsAtEnd` is true, then we already have the needed speculative bytes room.
+        let lastSegmentIsSingleDigitHex = lastSegmentIsSingleDigit && noMixedNotation
+        let lastSegmentReserveInitial = lastSegmentIsSingleDigitHex ? 1 : 0
+        let lastSegmentReserve = entry.writeCsAtEnd ? 0 : lastSegmentReserveInitial
+        /// `minReserveBytes` already contains the 2 speculative bytes needed without square
+        /// brackets. One of the brackets is written at the end so it can consume one of those
+        /// speculative bytes of room, so we only need to reserve 1 extra.
+        let bracketsReserve = encloseInSquareBracketsOption ? 1 : 0
         /// Exact required bytes to print, including headroom bytes for speculative writes.
         let toReserve =
-            entry.minRawLayoutBytes
+            entry.minReserveBytes
             &+ digitsPrintCountNoTrailing
-            &+ bracketsCount
-            &+ conservativeSpeculativeBytes
-            &+ additionalCapacity
+            &+ bracketsReserve
+            &+ lastSegmentReserve
+            &+ mixedNotationReserve
 
         return try unsafe writingToUnsafeMutableBufferPointerOfUInt8(toReserve) { buffer in
             var writeIdx = 0
 
             unsafe buffer[0] = .asciiLeftSquareBracket
-            writeIdx &+= encloseInSquareBrackets ? 1 : 0
+            writeIdx &+= encloseInSquareBracketsOption ? 1 : 0
 
-            unsafe buffer[writeIdx] = .asciiColon
-            writeIdx &+= entry.writeCsAtBeginning ? 1 : 0
-
-            let writeCsAtIdx = entry.writeCsAtIdx
+            let packedSegmentInfos = entry.packedSegmentInfos
             let range = unsafe Range(uncheckedBounds: (0, entry.segmentsCount))
             for offset in range {
-                let idx = Int(entry.packedIndices &>> (offset &* 3) & 0x7)
+                let segmentInfo = packedSegmentInfos &>> (offset &* 5)
+                let segmentIdx = Int(truncatingIfNeeded: segmentInfo & 0x7)
+                let colonsCount = Int(truncatingIfNeeded: (segmentInfo &>> 3) & 0x3)
 
                 unsafe buffer[writeIdx] = .asciiColon
                 unsafe buffer[writeIdx &+ 1] = .asciiColon
                 /// We've reserved 2 speculative bytes worth of room so this is safe:
-                writeIdx &+= idx == writeCsAtIdx ? 1 : 0
-                writeIdx &+= offset == 0 ? 0 : 1
+                writeIdx &+= colonsCount
 
-                unsafe address._writeSegmentAsLowercasedHexASCII_RequiringMinimumCapacityOf4(
+                unsafe addressToPrint._writeSegmentAsLowercasedHexASCII_RequiringMinimumCapacityOf4(
                     into: buffer,
                     advancingIdx: &writeIdx,
-                    segmentIdx: idx
+                    segmentIdx: segmentIdx
                 )
             }
 
@@ -223,21 +199,30 @@ extension IPv6Address {
             unsafe buffer[writeIdx &+ 1] = .asciiColon
             writeIdx &+= entry.writeCsAtEnd ? 2 : 0
 
-            if useMixedNotation {
-                let ipv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
+            if mustUseMixedNotation {
+                assert(!entry.writeCsAtEnd)
+
                 let lowerBound = writeIdx &- ipv4EmbeddedWalkBackBytes
-                let start = unsafe buffer.baseAddress.unsafelyUnwrapped.advanced(by: lowerBound)
-                let ipv4Buffer = unsafe UnsafeMutableRawBufferPointer(start: start, count: 15)
-                let written = unsafe ipv4.writeTextualRepresentation_RequiringMinimumCapacityOf15(
-                    into: ipv4Buffer
+                let ipv4Buffer = unsafe UnsafeMutableRawBufferPointer(
+                    rebasing: buffer[lowerBound...]
                 )
+                let written =
+                    unsafe embeddedIPv4.writeTextualRepresentation_Requiring2HeadroomBytes(
+                        into: ipv4Buffer
+                    )
                 writeIdx = lowerBound &+ written
             }
 
             unsafe buffer[writeIdx] = .asciiRightSquareBracket
-            writeIdx &+= encloseInSquareBrackets ? 1 : 0
+            writeIdx &+= encloseInSquareBracketsOption ? 1 : 0
 
-            assert(writeIdx <= toReserve - 2)
+            assert(
+                writeIdx
+                    == toReserve
+                    &- (encloseInSquareBracketsOption ? 1 : 2)
+                    &+ (entry.writeCsAtEnd ? 1 : 0)
+                    &- lastSegmentReserve
+            )
 
             return writeIdx
         }
@@ -269,26 +254,21 @@ extension IPv6Address {
         let topBitsSetIfLaneNonZero = partial_topBitsSetIfLaneNonZero | word
         /// Make sure all bits are set to 0, other than the top bits, which are set to 1 if it was a non-zero segment.
         let topBitsZeroIfLaneZero = ~topBitsSetIfLaneNonZero
-
-        let _0IsZero = (topBitsZeroIfLaneZero &>> 63) & 1
-        let _1IsZero = (topBitsZeroIfLaneZero &>> 47) & 1
-        let _2IsZero = (topBitsZeroIfLaneZero &>> 31) & 1
-        let _3IsZero = (topBitsZeroIfLaneZero &>> 15) & 1
-
-        return UInt8(
-            truncatingIfNeeded:
-                _0IsZero
-                | (_1IsZero &<< 1)
-                | (_2IsZero &<< 2)
-                | (_3IsZero &<< 3)
-        )
+        let m1111: UInt64 = 0b1000000000000000_1000000000000000_1000000000000000_1000000000000000
+        let lowBitsZeroIfLaneZero = ((topBitsZeroIfLaneZero & m1111) &>> 15)
+        let m1000100101: UInt64 =
+            0b0000000000001000_0000000000000100_0000000000000010_0000000000000001
+        /// Puts each low bit of a lane, into bits 49th-52nd.
+        /// Then we bit shift by 48 to get each lane's bits into bits 1st-4th.
+        let mask = ((lowBitsZeroIfLaneZero &* m1000100101) &>> 48)
+        return UInt8(truncatingIfNeeded: mask)
     }
 
     /// Counts the number of digits that will need to be written excluding the trailing
     /// digit that is always written even if it's 0.
     @inlinable
     @inline(always)
-    func countDigitsRequiredToPrintExcludingTrailingDigits() -> Int {
+    func countAllDigitsRequiredToPrintExcludingTrailingDigits() -> Int {
         let high = IPv6Address.countDigitsRequiredToPrintExcludingTrailingDigits(
             of: self.address._high
         )
@@ -639,44 +619,46 @@ extension IPv6Address {
 
         @usableFromInline
         package struct Unpacked: Sendable, Equatable {
-            /// The packed indices of the writable segments in the address.
-            @usableFromInline package let packedIndices: UInt
+            /// The packed segment-info of the writable segments in the address.
+            /// Bits 0-2 of each segment-info are the segment index, bits 3-4 are how many colons
+            /// precede that segment.
+            @usableFromInline package let packedSegmentInfos: UInt64
             /// The number of writable segments in the address.
             @usableFromInline package let segmentsCount: Int
-            /// The minimum number of bytes required to print the address in its raw layout, assuming
-            /// the each segment is only 1 hex digit long.
-            @usableFromInline package let minRawLayoutBytes: Int
-            /// Write the compression sign at the index of this segment.
-            @usableFromInline package let writeCsAtIdx: Int
-            /// Write the compression sign at the beginning of the address.
-            @usableFromInline package let writeCsAtBeginning: Bool
+            /// The minimum number of bytes to reserve to print the address in its raw layout,
+            /// assuming each segment is only 1 hex digit long.
+            /// Includes the 2 speculative bytes the writer always needs beyond the exact output,
+            /// 1 less when a trailing compression sign already occupies one of them.
+            @usableFromInline package let minReserveBytes: Int
             /// Write the compression sign at the end of the address.
             @usableFromInline package let writeCsAtEnd: Bool
 
             @inlinable
             package init(
-                packedIndices: UInt,
+                packedSegmentInfos: UInt64,
                 segmentsCount: Int,
-                minRawLayoutBytes: Int,
-                writeCsAtIdx: Int,
-                writeCsAtBeginning: Bool,
+                minReserveBytes: Int,
                 writeCsAtEnd: Bool
             ) {
-                self.packedIndices = packedIndices
+                self.packedSegmentInfos = packedSegmentInfos
                 self.segmentsCount = segmentsCount
-                self.minRawLayoutBytes = minRawLayoutBytes
-                self.writeCsAtIdx = writeCsAtIdx
-                self.writeCsAtBeginning = writeCsAtBeginning
+                self.minReserveBytes = minReserveBytes
                 self.writeCsAtEnd = writeCsAtEnd
+            }
+
+            /// The entry for the given all-zero-segments mask.
+            @inlinable
+            @inline(always)
+            package init(forMask mask: UInt8) {
+                self = SegmentWriteTableEntry(forMask: mask).unpack()
             }
         }
 
-        /// - Bits 0-23: 8 segment indices, 3 bits each.
-        /// - Bits 24-31: segments count.
-        /// - Bits 32-39: min raw layout bytes.
-        /// - Bits 40-47: index at which to write the compression sign.
-        /// - Bit 48: whether to write the compression sign at the beginning.
-        /// - Bit 49: whether to write the compression sign at the end.
+        /// - Bits 0-39: 8 segment-infos, 5 bits each. Bits 0-2 of each segment-info are the segment index,
+        ///   bits 3-4 are how many colons precede that segment.
+        /// - Bits 40-43: segments count.
+        /// - Bits 44-49: min reserve bytes.
+        /// - Bit 50: whether to write the compression sign at the end.
         @usableFromInline let rawValue: UInt64
 
         @inlinable
@@ -684,32 +666,21 @@ extension IPv6Address {
             self.rawValue = rawValue
         }
 
+        /// The entry for the given all-zero-segments mask.
+        @inlinable
+        @inline(always)
+        package init(forMask mask: UInt8) {
+            self.init(cswift_endpoint_ipv6_segment_write_entry(mask))
+        }
+
         @inlinable
         package func unpack() -> Unpacked {
             Unpacked(
-                packedIndices: UInt(truncatingIfNeeded: self.rawValue & 0xFF_FFFF),
-                segmentsCount: Int((self.rawValue &>> 24) & 0xFF),
-                minRawLayoutBytes: Int((self.rawValue &>> 32) & 0xFF),
-                writeCsAtIdx: Int((self.rawValue &>> 40) & 0xFF),
-                writeCsAtBeginning: (self.rawValue &>> 48) & 1 == 1,
-                writeCsAtEnd: (self.rawValue &>> 49) & 1 == 1
+                packedSegmentInfos: self.rawValue & 0xFF_FFFF_FFFF,
+                segmentsCount: Int(truncatingIfNeeded: (self.rawValue &>> 40) & 0xF),
+                minReserveBytes: Int(truncatingIfNeeded: (self.rawValue &>> 44) & 0x3F),
+                writeCsAtEnd: (self.rawValue &>> 50) & 1 == 1
             )
         }
-    }
-
-    @inlinable
-    @inline(always)
-    package static func _entry(
-        forMask mask: UInt8
-    ) -> SegmentWriteTableEntry {
-        SegmentWriteTableEntry(cswift_endpoint_ipv6_segment_write_entry(mask))
-    }
-
-    @inlinable
-    @inline(always)
-    package static func entry(
-        forMask mask: UInt8
-    ) -> SegmentWriteTableEntry.Unpacked {
-        IPv6Address._entry(forMask: mask).unpack()
     }
 }

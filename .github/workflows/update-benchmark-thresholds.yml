@@ -169,6 +169,12 @@ jobs:
             printf '%s\n' "changes-count=0" >> "${GITHUB_OUTPUT}"
           fi
 
+      - name: Log threshold changes against main as backup
+        if: always()
+        env:
+          BASE_BRANCH: main
+        run: .github/scripts/log-threshold-changes.sh
+
       - name: Regenerate swift-dns-helper token
         if: always()
         id: app-token

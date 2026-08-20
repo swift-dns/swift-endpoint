@@ -112,7 +112,7 @@ extension IPv6Address {
             _ callbackReturningBytesWritten: (UnsafeMutableRawBufferPointer) -> Int
         ) throws(E) -> Buffer
     ) throws(E) -> Buffer {
-        let encloseInSquareBracketsOption = options.contains(.encloseInSquareBrackets)
+        let encloseInSquareBrackets = options.contains(.encloseInSquareBrackets)
         let forceMixedNotationOption = options.contains(.forceMixedNotation)
         let useMixedNotationOption = options.contains(.useMixedNotation)
 
@@ -124,14 +124,14 @@ extension IPv6Address {
         /// `mustUseMixedNotation` is often `false` so it will be a well-predicted branch.
         if mustUseMixedNotation {
             return try unsafe self.makeDescription(
-                encloseInSquareBrackets: encloseInSquareBracketsOption,
+                encloseInSquareBrackets: encloseInSquareBrackets,
                 mustUseMixedNotation: true,
                 writingToUnsafeMutableBufferPointerOfUInt8:
                     writingToUnsafeMutableBufferPointerOfUInt8
             )
         } else {
             return try unsafe self.makeDescription(
-                encloseInSquareBrackets: encloseInSquareBracketsOption,
+                encloseInSquareBrackets: encloseInSquareBrackets,
                 mustUseMixedNotation: false,
                 writingToUnsafeMutableBufferPointerOfUInt8:
                     writingToUnsafeMutableBufferPointerOfUInt8
@@ -199,7 +199,7 @@ extension IPv6Address {
         /// `minReserveBytes` already contains the 2 speculative bytes needed without square
         /// brackets. One of the brackets is written at the end so it can consume one of those
         /// speculative bytes of room, so we only need to reserve 1 extra.
-        let bracketsReserve = encloseInSquareBracketsOption ? 1 : 0
+        let bracketsReserve = encloseInSquareBrackets ? 1 : 0
         /// Exact required bytes to print, including headroom bytes for speculative writes.
         let toReserve =
             entry.minReserveBytes
@@ -212,7 +212,7 @@ extension IPv6Address {
             var writeIdx = 0
 
             unsafe buffer[0] = .asciiLeftSquareBracket
-            writeIdx &+= encloseInSquareBracketsOption ? 1 : 0
+            writeIdx &+= encloseInSquareBrackets ? 1 : 0
 
             let packedSegmentInfos = entry.packedSegmentInfos
             let range = unsafe Range(uncheckedBounds: (0, entry.segmentsCount))
@@ -254,12 +254,12 @@ extension IPv6Address {
             }
 
             unsafe buffer[writeIdx] = .asciiRightSquareBracket
-            writeIdx &+= encloseInSquareBracketsOption ? 1 : 0
+            writeIdx &+= encloseInSquareBrackets ? 1 : 0
 
             assert(
                 writeIdx
                     == toReserve
-                    &- (encloseInSquareBracketsOption ? 1 : 2)
+                    &- (encloseInSquareBrackets ? 1 : 2)
                     &+ (entry.writeCsAtEnd ? 1 : 0)
                     &- lastSegmentReserve
             )

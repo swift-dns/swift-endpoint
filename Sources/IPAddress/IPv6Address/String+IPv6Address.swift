@@ -632,19 +632,14 @@ extension IPv6Address: LosslessStringConvertible {
 
         segmentsCount &+= wasParsingSegments ? 1 : 0
 
-        guard !isBeforeCs else {
-            address = beforeCs
-            return segmentsCount == 8
-        }
+        let _segmentsCountBeforeCs = max(segmentsCountBeforeCs, 0)
+        address = (beforeCs &<< (16 &* (8 &- _segmentsCountBeforeCs))) | afterCs
 
-        /// The compression sign has to stand for at least one segment.
-        guard segmentsCount <= 7 else {
-            return false
-        }
+        let segmentCountIs8 = segmentsCount == 8
+        var success = segmentsCount < 8
+        success = isBeforeCs ? segmentCountIs8 : success
 
-        address = (beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs))) | afterCs
-
-        return true
+        return success
     }
 }
 

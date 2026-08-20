@@ -505,7 +505,6 @@ extension IPv6Address: LosslessStringConvertible {
         }
 
         /// Trim the left and right square brackets if they both exist
-
         let startsWithBracket = span[0] == .asciiLeftSquareBracket
         let endsWithBracket = span[span.count &- 1] == .asciiRightSquareBracket
         switch (startsWithBracket, endsWithBracket) {
@@ -544,10 +543,6 @@ extension IPv6Address: LosslessStringConvertible {
             let byte = unsafe span[unchecked: idx]
 
             if let digit = UInt8.mapHexadecimalByteToUInt8(byte) {
-                if segmentDigitIdx == 4 {
-                    return false
-                }
-
                 currentSegmentValue = (currentSegmentValue &<< 4) | UInt16(digit)
                 segmentDigitIdx &+= 1
                 idx &+= 1
@@ -586,7 +581,7 @@ extension IPv6Address: LosslessStringConvertible {
                 break
             }
 
-            guard byte == .asciiColon, segmentDigitIdx > 0 else {
+            if (segmentDigitIdx > 4) || (segmentDigitIdx == 0) || (byte == .asciiColon) {
                 return false
             }
 

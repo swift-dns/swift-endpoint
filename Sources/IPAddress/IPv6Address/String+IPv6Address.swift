@@ -112,6 +112,7 @@ extension IPv6Address {
             _ callbackReturningBytesWritten: (UnsafeMutableRawBufferPointer) -> Int
         ) throws(E) -> Buffer
     ) throws(E) -> Buffer {
+        let encloseInSquareBracketsOption = options.contains(.encloseInSquareBrackets)
         let forceMixedNotationOption = options.contains(.forceMixedNotation)
         let useMixedNotationOption = options.contains(.useMixedNotation)
 
@@ -123,14 +124,14 @@ extension IPv6Address {
         /// `mustUseMixedNotation` is often `false` so it will be a well-predicted branch.
         if mustUseMixedNotation {
             return try unsafe self.makeDescription(
-                options: options,
+                encloseInSquareBrackets: encloseInSquareBracketsOption,
                 mustUseMixedNotation: true,
                 writingToUnsafeMutableBufferPointerOfUInt8:
                     writingToUnsafeMutableBufferPointerOfUInt8
             )
         } else {
             return try unsafe self.makeDescription(
-                options: options,
+                encloseInSquareBrackets: encloseInSquareBracketsOption,
                 mustUseMixedNotation: false,
                 writingToUnsafeMutableBufferPointerOfUInt8:
                     writingToUnsafeMutableBufferPointerOfUInt8
@@ -141,15 +142,13 @@ extension IPv6Address {
     @inlinable
     @inline(always)
     func makeDescription<Buffer, E: Error>(
-        options: DescriptionOptions,
+        encloseInSquareBrackets: Bool,
         mustUseMixedNotation: Bool,
         writingToUnsafeMutableBufferPointerOfUInt8: (
             _ maxWriteableBytes: Int,
             _ callbackReturningBytesWritten: (UnsafeMutableRawBufferPointer) -> Int
         ) throws(E) -> Buffer
     ) throws(E) -> Buffer {
-        let encloseInSquareBracketsOption = options.contains(.encloseInSquareBrackets)
-
         var addressToPrint: IPv6Address = self
         /// This function in always inlined with static `mustUseMixedNotation` values.
         /// So all these branches around `mustUseMixedNotation` will be eliminated at compile time.

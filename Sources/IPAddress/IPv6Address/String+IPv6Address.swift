@@ -642,11 +642,6 @@ extension IPv6Address: LosslessStringConvertible {
             return false
         }
 
-        guard segmentsCountBeforeCs > 0 else {
-            address = afterCs
-            return true
-        }
-
         address = (beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs))) | afterCs
 
         return true

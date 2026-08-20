@@ -527,7 +527,7 @@ extension IPv6Address: LosslessStringConvertible {
         var beforeCs = _CompatibilityUInt128Typealias.zero
         var afterCs = _CompatibilityUInt128Typealias.zero
         var segmentsCount = 0
-        var segmentsCountBeforeCs = -1
+        var segmentsCountBeforeCs = 0
         var currentSegmentValue: UInt16 = 0
         var segmentDigitIdx = 0
         var idx = 0
@@ -537,7 +537,7 @@ extension IPv6Address: LosslessStringConvertible {
         if startsWithColon && !(unsafe span[unchecked: 1] == .asciiColon) {
             return false
         }
-        segmentsCountBeforeCs = startsWithColon ? 0 : segmentsCountBeforeCs
+        segmentsCountBeforeCs = startsWithColon ? 1 : segmentsCountBeforeCs
         idx = startsWithColon ? 2 : idx
 
         while idx < count {
@@ -572,7 +572,7 @@ extension IPv6Address: LosslessStringConvertible {
                     return false
                 }
 
-                let isBeforeCs = segmentsCountBeforeCs == -1
+                let isBeforeCs = segmentsCountBeforeCs == 0
                 let forBeforeCs =
                     (beforeCs &<< 32) | _CompatibilityUInt128Typealias(ipv4Address)
                 let forAfterCs =
@@ -590,7 +590,7 @@ extension IPv6Address: LosslessStringConvertible {
                 return false
             }
 
-            let isBeforeCs = segmentsCountBeforeCs == -1
+            let isBeforeCs = segmentsCountBeforeCs == 0
             let forBeforeCs =
                 (beforeCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
             let forAfterCs =
@@ -617,7 +617,7 @@ extension IPv6Address: LosslessStringConvertible {
             idx &+= isColon ? 1 : 0
         }
 
-        let isBeforeCs = segmentsCountBeforeCs == -1
+        let isBeforeCs = segmentsCountBeforeCs == 0
         let wasParsingSegments = segmentDigitIdx > 0
 
         let _forBeforeCs =

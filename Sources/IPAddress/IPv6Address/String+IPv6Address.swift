@@ -618,17 +618,18 @@ extension IPv6Address: LosslessStringConvertible {
         }
 
         let isBeforeCs = segmentsCountBeforeCs == 0
-        let wasParsingASegment = segmentDigitIdx > 0
-        let segmentValue = _CompatibilityUInt128Typealias(currentSegmentValue)
+        let wasParsingSegments = segmentDigitIdx > 0
 
-        let writeToBeforeCs = wasParsingASegment && isBeforeCs
-        let writeToAfterCs = wasParsingASegment && !isBeforeCs
-        let forBeforeCs = (beforeCs &<< 16) | segmentValue
-        let forAfterCs = (afterCs &<< 16) | segmentValue
-        beforeCs = writeToBeforeCs ? forBeforeCs : beforeCs
-        afterCs = writeToAfterCs ? forAfterCs : afterCs
+        let _forBeforeCs =
+            (beforeCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
+        let forBeforeCs = wasParsingSegments ? _forBeforeCs : beforeCs
+        let _forAfterCs =
+            (afterCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
+        let forAfterCs = wasParsingSegments ? _forAfterCs : afterCs
+        beforeCs = isBeforeCs ? forBeforeCs : beforeCs
+        afterCs = isBeforeCs ? afterCs : forAfterCs
 
-        segmentsCount &+= wasParsingASegment ? 1 : 0
+        segmentsCount &+= wasParsingSegments ? 1 : 0
 
         guard !isBeforeCs else {
             address = beforeCs

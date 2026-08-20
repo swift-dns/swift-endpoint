@@ -533,13 +533,12 @@ extension IPv6Address: LosslessStringConvertible {
         var idx = 0
 
         /// Special-case handling for when there is a compression sign at the beginning
-        if span[0] == .asciiColon {
-            guard unsafe span[unchecked: 1] == .asciiColon else {
-                return false
-            }
-            segmentsCountBeforeCs = 0
-            idx = 2
+        let startsWithColon = span[0] == .asciiColon
+        if startsWithColon && !(unsafe span[unchecked: 1] == .asciiColon) {
+            return false
         }
+        segmentsCountBeforeCs = startsWithColon ? 0 : segmentsCountBeforeCs
+        idx = startsWithColon ? 2 : idx
 
         while idx < count {
             let byte = unsafe span[unchecked: idx]

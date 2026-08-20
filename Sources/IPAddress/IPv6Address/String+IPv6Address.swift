@@ -112,51 +112,91 @@ extension IPv6Address {
             _ callbackReturningBytesWritten: (UnsafeMutableRawBufferPointer) -> Int
         ) throws(E) -> Buffer
     ) throws(E) -> Buffer {
-        let encloseInSquareBracketsOption = options.contains(.encloseInSquareBrackets)
         let forceMixedNotationOption = options.contains(.forceMixedNotation)
         let useMixedNotationOption = options.contains(.useMixedNotation)
 
         let isIPv4Mapped = self.isIPv4Mapped
         let useMixedNotationApplies = useMixedNotationOption && isIPv4Mapped
         let mustUseMixedNotation = forceMixedNotationOption || useMixedNotationApplies
-        let embeddedIPv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
-        let embeddedIPv4TextualRepresentationLength = embeddedIPv4.textualRepresentationLength
-        /// The last 2 segments are always written as "0:0", which is 3 bytes.
-        /// Never as a trailing compression sign "::" because `writeCsAtEnd` is only set when
-        /// `upperBound == 7`, and since we mask off 2 segments, upperBound <= 5.
-        let ipv4EmbeddedWalkBackBytes = 3
-        let lowMask: UInt64 = mustUseMixedNotation ? 0xFFFF_FFFF_0000_0000 : .max
-        let addressToPrint = IPv6Address(
-            UnsignedInteger128(
-                _low: self.address._low & lowMask,
-                _high: self.address._high
-            )
-        )
 
-        let trailingSegmentsMask: UInt8 = mustUseMixedNotation ? 0b0011_1111 : 0b1111_1111
-        let mask = self.makeSegmentsMask() & trailingSegmentsMask
+        /// Intentional branchy code around all `mustUseMixedNotation`s.
+        /// `mustUseMixedNotation` is often `false` so it will be a well-predicted branch.
+        if mustUseMixedNotation {
+            return try unsafe self.makeDescription(
+                options: options,
+                mustUseMixedNotation: true,
+                writingToUnsafeMutableBufferPointerOfUInt8:
+                    writingToUnsafeMutableBufferPointerOfUInt8
+            )
+        } else {
+            return try unsafe self.makeDescription(
+                options: options,
+                mustUseMixedNotation: false,
+                writingToUnsafeMutableBufferPointerOfUInt8:
+                    writingToUnsafeMutableBufferPointerOfUInt8
+            )
+        }
+    }
+
+    @inlinable
+    @inline(always)
+    func makeDescription<Buffer, E: Error>(
+        options: DescriptionOptions,
+        mustUseMixedNotation: Bool,
+        writingToUnsafeMutableBufferPointerOfUInt8: (
+            _ maxWriteableBytes: Int,
+            _ callbackReturningBytesWritten: (UnsafeMutableRawBufferPointer) -> Int
+        ) throws(E) -> Buffer
+    ) throws(E) -> Buffer {
+        let encloseInSquareBracketsOption = options.contains(.encloseInSquareBrackets)
+
+        var addressToPrint: IPv6Address = self
+        /// This function in always inlined with static `mustUseMixedNotation` values.
+        /// So all these branches around `mustUseMixedNotation` will be eliminated at compile time.
+        if mustUseMixedNotation {
+            /// The last 2 segments are always written as "0:0", which is 3 bytes.
+            /// Never as a trailing compression sign "::" because `writeCsAtEnd` is only set when
+            /// `upperBound == 7`, and since we mask off 2 segments, upperBound <= 5.
+            addressToPrint = IPv6Address(
+                UnsignedInteger128(
+                    _low: self.address._low & 0xFFFF_FFFF_0000_0000,
+                    _high: self.address._high
+                )
+            )
+        }
+
+        var mask = self.makeSegmentsMask()
+        if mustUseMixedNotation {
+            mask &= 0b0011_1111
+        }
         let entry = SegmentWriteTableEntry.Unpacked(forMask: mask)
         let digitsPrintCountNoTrailing =
             addressToPrint.countAllDigitsRequiredToPrintExcludingTrailingDigits()
 
-        /// The embedded IPv4 replaces the masked-off last two segments, which the walk-back bytes
-        /// account for.
-        /// The 2 headroom bytes the IPv4 write needs are already part of `minReserveBytes`.
-        let mixedNotationReserveMaybe =
-            embeddedIPv4TextualRepresentationLength &- ipv4EmbeddedWalkBackBytes
-        let mixedNotationReserve = mustUseMixedNotation ? mixedNotationReserveMaybe : 0
+        let ipv4EmbeddedWalkBackBytes = 3
+        var mixedNotationReserve: Int = 0
+        if mustUseMixedNotation {
+            let embeddedIPv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
+            let ipv4Length = embeddedIPv4.textualRepresentationLength
+            /// The embedded IPv4 replaces the masked-off last two segments, which the walk-back bytes
+            /// account for.
+            /// The 2 headroom bytes the IPv4 write needs are already part of `minReserveBytes`.
+            mixedNotationReserve = ipv4Length &- ipv4EmbeddedWalkBackBytes
+        }
 
-        let lastSegmentBits = self.address._low & 0xFFFF
-        let lastSegmentIsSingleDigit = lastSegmentBits <= 0xF
-        let noMixedNotation = !mustUseMixedNotation
-        /// We do speculative writes, but if the last segment is a single hex digit, then we only
-        /// write 1 byte while we still need to reserve 4 bytes of headroom so the speculative write
-        /// can fit. So we need to reserve 1 extra byte for that to have the full room needed.
-        /// This only needs to happen if this is not a mixed-notation writing.
-        /// Also if `writeCsAtEnd` is true, then we already have the needed speculative bytes room.
-        let lastSegmentIsSingleDigitHex = lastSegmentIsSingleDigit && noMixedNotation
-        let lastSegmentReserveInitial = lastSegmentIsSingleDigitHex ? 1 : 0
-        let lastSegmentReserve = entry.writeCsAtEnd ? 0 : lastSegmentReserveInitial
+        var lastSegmentReserve: Int = 0
+        if !mustUseMixedNotation {
+            let lastSegmentBits = self.address._low & 0xFFFF
+            let lastSegmentIsSingleDigit = lastSegmentBits <= 0xF
+            /// We do speculative writes, but if the last segment is a single hex digit, then we only
+            /// write 1 byte while we still need to reserve 4 bytes of headroom so the speculative write
+            /// can fit. So we need to reserve 1 extra byte for that to have the full room needed.
+            /// This only needs to happen if this is not a mixed-notation writing.
+            /// Also if `writeCsAtEnd` is true, then we already have the needed speculative bytes room.
+            let lastSegmentReserveInitial = lastSegmentIsSingleDigit ? 1 : 0
+            lastSegmentReserve = entry.writeCsAtEnd ? 0 : lastSegmentReserveInitial
+        }
+
         /// `minReserveBytes` already contains the 2 speculative bytes needed without square
         /// brackets. One of the brackets is written at the end so it can consume one of those
         /// speculative bytes of room, so we only need to reserve 1 extra.
@@ -202,6 +242,7 @@ extension IPv6Address {
             if mustUseMixedNotation {
                 assert(!entry.writeCsAtEnd)
 
+                let embeddedIPv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
                 let lowerBound = writeIdx &- ipv4EmbeddedWalkBackBytes
                 let ipv4Buffer = unsafe UnsafeMutableRawBufferPointer(
                     rebasing: buffer[lowerBound...]

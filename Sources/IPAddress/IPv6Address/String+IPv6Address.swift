@@ -497,8 +497,6 @@ extension IPv6Address: LosslessStringConvertible {
         span: Span<UInt8>,
         address: inout _CompatibilityUInt128Typealias
     ) -> Bool {
-        var span = span
-
         /// 2 == "::".count
         guard span.count >= 2 else {
             return false
@@ -507,14 +505,12 @@ extension IPv6Address: LosslessStringConvertible {
         /// Trim the left and right square brackets if they both exist
         let startsWithBracket = span[0] == .asciiLeftSquareBracket
         let endsWithBracket = span[span.count &- 1] == .asciiRightSquareBracket
-        switch (startsWithBracket, endsWithBracket) {
-        case (false, false):
-            break
-        case (true, true):
-            span = span.extracting(1..<(span.count &- 1))
-        case (true, false), (false, true):
+        guard startsWithBracket == endsWithBracket else {
             return false
         }
+        let trimCount = startsWithBracket ? 1 : 0
+        let range = unsafe Range<Int>(uncheckedBounds: (trimCount, span.count &- trimCount))
+        let span = unsafe span.extracting(unchecked: range)
 
         /// 2 == "::".count
         guard span.count >= 2 else {
@@ -531,16 +527,15 @@ extension IPv6Address: LosslessStringConvertible {
         var segmentDigitIdx = 0
         var idx = 0
 
-        /// Special-case handling for when there is a compression sign at the beginning
         let startsWithColon = span[0] == .asciiColon
-        let afterStartIsNotColon = unsafe span[unchecked: 1] != .asciiColon
-        if startsWithColon && afterStartIsNotColon {
+        if Self.isLoneColon(span[0], adjacent: unsafe span[unchecked: 1]) {
             return false
         }
         /// And for when there is a compression sign at the end
-        let endsWithColon = unsafe span[unchecked: count &- 1] == .asciiColon
-        let beforeEndIsNotColon = unsafe span[unchecked: count &- 2] != .asciiColon
-        if endsWithColon && beforeEndIsNotColon {
+        if Self.isLoneColon(
+            unsafe span[unchecked: count &- 1],
+            adjacent: unsafe span[unchecked: count &- 2]
+        ) {
             return false
         }
 
@@ -640,13 +635,21 @@ extension IPv6Address: LosslessStringConvertible {
         }
 
         /// There must be exactly 1 compression sign that stands for at least 1 segment.
-        guard segmentsCount <= 7, csCount == 1 else {
+        guard csCount == 1, segmentsCount <= 7 else {
             return false
         }
 
         address |= (beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs)))
 
         return true
+    }
+
+    /// If first input is a colon then the second input must also be a colon.
+    @inlinable
+    @inline(always)
+    static func isLoneColon(_ byte: UInt8, adjacent adjacentByte: UInt8) -> Bool {
+        let pair = (UInt16(byte ^ .asciiColon) &<< 8) | UInt16(adjacentByte ^ .asciiColon)
+        return pair &- 1 < 0xFF
     }
 }
 

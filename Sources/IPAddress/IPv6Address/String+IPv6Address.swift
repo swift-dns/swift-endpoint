@@ -533,11 +533,22 @@ extension IPv6Address: LosslessStringConvertible {
 
         /// Special-case handling for when there is a compression sign at the beginning
         let startsWithColon = span[0] == .asciiColon
-        if startsWithColon && !(unsafe span[unchecked: 1] == .asciiColon) {
+        let afterStartIsNotColon = unsafe span[unchecked: 1] != .asciiColon
+        if startsWithColon && afterStartIsNotColon {
             return false
         }
+        /// And for when there is a compression sign at the end
+        let endsWithColon = unsafe span[unchecked: count &- 1] == .asciiColon
+        let beforeEndIsNotColon = unsafe span[unchecked: count &- 2] != .asciiColon
+        if endsWithColon && beforeEndIsNotColon {
+            return false
+        }
+
+        /// This `1` is technically not correct.
+        /// We use 1 because we use 0 to indicate no before-cs segments.
         segmentsCountBeforeCs = startsWithColon ? 1 : segmentsCountBeforeCs
         idx = startsWithColon ? 2 : idx
+        var csCount = startsWithColon ? 1 : 0
 
         while idx < count {
             let byte = unsafe span[unchecked: idx]
@@ -581,7 +592,7 @@ extension IPv6Address: LosslessStringConvertible {
                 break
             }
 
-            if (segmentDigitIdx > 4) || (segmentDigitIdx == 0) || (byte == .asciiColon) {
+            if (segmentDigitIdx > 4) || (segmentDigitIdx == 0) || (byte != .asciiColon) {
                 return false
             }
 
@@ -598,17 +609,10 @@ extension IPv6Address: LosslessStringConvertible {
             segmentDigitIdx = 0
             idx &+= 1
 
-            /// A trailing colon is only valid as part of a compression sign.
-            guard idx < count else {
-                return false
-            }
-
+            /// The pre-loop trailing-colon check guarantees `idx < count` here.
             let isColon = unsafe span[unchecked: idx] == .asciiColon
-            if isColon, !isBeforeCs {
-                return false
-            }
-
             segmentsCountBeforeCs = isColon ? segmentsCount : segmentsCountBeforeCs
+            csCount &+= isColon ? 1 : 0
             idx &+= isColon ? 1 : 0
         }
 
@@ -626,17 +630,21 @@ extension IPv6Address: LosslessStringConvertible {
 
         segmentsCount &+= wasParsingSegments ? 1 : 0
 
-        guard !isBeforeCs else {
-            address = beforeCs
-            return segmentsCount == 8
-        }
-
-        /// The compression sign has to stand for at least one segment.
-        guard segmentsCount <= 7 else {
+        guard segmentDigitIdx < 5 else {
             return false
         }
 
-        address = (beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs))) | afterCs
+        address = isBeforeCs ? beforeCs : afterCs
+        if isBeforeCs {
+            return segmentsCount == 8
+        }
+
+        /// There must be exactly 1 compression sign that stands for at least 1 segment.
+        guard segmentsCount <= 7, csCount == 1 else {
+            return false
+        }
+
+        address |= (beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs)))
 
         return true
     }

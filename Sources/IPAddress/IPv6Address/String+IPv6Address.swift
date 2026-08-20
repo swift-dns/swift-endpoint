@@ -609,13 +609,13 @@ extension IPv6Address: LosslessStringConvertible {
                 return false
             }
 
-            if unsafe span[unchecked: idx] == .asciiColon {
-                guard isBeforeCs else {
-                    return false
-                }
-                segmentsCountBeforeCs = segmentsCount
-                idx &+= 1
+            let isColon = unsafe span[unchecked: idx] == .asciiColon
+            if isColon, !isBeforeCs {
+                return false
             }
+
+            segmentsCountBeforeCs = isColon ? segmentsCount : segmentsCountBeforeCs
+            idx &+= isColon ? 1 : 0
         }
 
         let isBeforeCs = segmentsCountBeforeCs == -1

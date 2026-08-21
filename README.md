@@ -8,7 +8,7 @@
     <a href="https://github.com/swift-dns/swift-endpoint/actions/workflows/benchmarks.yml">
         <img
             src="https://img.shields.io/github/actions/workflow/status/swift-dns/swift-endpoint/benchmarks.yml?event=push&style=plastic&logo=github&label=benchmarks&logoColor=%23ccc"
-            alt="Benchamrks CI"
+            alt="Benchmarks CI"
         >
     </a>
     <a href="https://codecov.io/gh/swift-dns/swift-endpoint">
@@ -96,7 +96,7 @@ print(ipv4InIPv6Address1) /// prints "::ffff:192.168.1.1"
 print(ipv4InIPv6Address2) /// prints "64:ff9b::192.0.2.33"
 print(ipv4InIPv6Address3) /// prints "2001:db8:122:344::c000:221", Not well-known so no mixed notation
 
-/// Define an any-ip-address. The type will automatically parse the ip address into the corrext type.
+/// Define an any-ip-address. The type will automatically parse the ip address into the correct type.
 let anyIPv4Address = AnyIPAddress("192.168.1.1")
 let anyIPv6Address = AnyIPAddress("[2001:DB8:85A3::100]")
 print(anyIPv4Address) /// prints "192.168.1.1"
@@ -172,10 +172,10 @@ These were performed on my M1 Pro MacBook, on macOS 27.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 6.0           | 178.0        | 29.92x  |
-| IPv4    | Parsing     | 15.3          | 46.8         | 3.06x   |
-| IPv6    | Serializing | 27.0          | 221.0        | 8.19x   |
-| IPv6    | Parsing     | 25.0          | 99.7         | 3.99x   |
+| IPv4    | Serializing | 6.1           | 180.0        | 29.75x  |
+| IPv4    | Parsing     | 15.2          | 47.0         | 3.09x   |
+| IPv6    | Serializing | 29.5          | 222.0        | 7.53x   |
+| IPv6    | Parsing     | 25.3          | 100.7        | 3.99x   |
 
 #### Against glibc
 
@@ -183,10 +183,10 @@ These were performed on a dedicated-cpu-core machine from Hetzner, on Ubuntu 24.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 6.5           | 115.0        | 17.69x  |
-| IPv4    | Parsing     | 16.3          | 25.8         | 1.58x   |
-| IPv6    | Serializing | 34.0          | 173.9        | 5.11x   |
-| IPv6    | Parsing     | 30.0          | 46.4         | 1.55x   |
+| IPv4    | Serializing | 7.3           | 116.0        | 16.00x  |
+| IPv4    | Parsing     | 16.9          | 27.3         | 1.62x   |
+| IPv6    | Serializing | 36.5          | 171.0        | 4.68x   |
+| IPv6    | Parsing     | 33.3          | 48.3         | 1.45x   |
 
 #### Additional Notes
 

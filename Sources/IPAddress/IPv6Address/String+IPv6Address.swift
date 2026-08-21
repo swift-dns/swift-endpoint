@@ -510,11 +510,16 @@ extension IPv6Address: LosslessStringConvertible {
         }
         let trimCount = startsWithBracket ? 1 : 0
         /// `span.extracting` is more expensive than it should be so let's make it a branch.
-        let span: Span = unsafe span.extracting(
-            unchecked: unsafe Range<Int>(
-                uncheckedBounds: (trimCount, span.count &- trimCount)
-            )
-        )
+        let span: Span =
+            if trimCount == 0 {
+                span
+            } else {
+                unsafe span.extracting(
+                    unchecked: unsafe Range<Int>(
+                        uncheckedBounds: (trimCount, span.count &- trimCount)
+                    )
+                )
+            }
 
         /// 2 == "::".count
         guard span.count >= 2 else {

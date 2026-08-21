@@ -562,19 +562,14 @@ extension IPv6Address: LosslessStringConvertible {
             let byte = unsafe span[unchecked: idx]
             idx &+= 1
 
-            let digit = UInt8.mapHexadecimalByteToUInt8(byte) ?? 0xF0
-            let isValidDigit = digit != 0xF0
-            let nextSegmentValue = (currentSegmentValue &<< 4) | UInt16(digit)
-            currentSegmentValue = isValidDigit ? nextSegmentValue : currentSegmentValue
-            let alreadyHas4Digits = segmentDigitIdx == 4
-            let tooManyDigits = alreadyHas4Digits && isValidDigit
-            segmentDigitIdx &+= isValidDigit ? 1 : 0
+            if let digit = UInt8.mapHexadecimalByteToUInt8(byte) {
+                if segmentDigitIdx == 4 {
+                    return false
+                }
 
-            if tooManyDigits {
-                return false
-            }
+                currentSegmentValue = (currentSegmentValue &<< 4) | UInt16(digit)
+                segmentDigitIdx &+= 1
 
-            if isValidDigit {
                 continue
             }
 

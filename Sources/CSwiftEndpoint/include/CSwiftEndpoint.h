@@ -28,11 +28,11 @@ static inline uint64_t cswift_endpoint_ipv6_segment_write_entry(uint8_t mask) {
 }
 
 // The hexadecimal-digit table is indexed by an ASCII byte and maps `0-9`, `a-f` and `A-F` to
-// their 0-15 numeric value. Every other byte maps to 0xF0.
+// their 0-15 numeric value. Every other byte maps to 0xFF.
 
 extern const uint8_t cswift_endpoint_hexadecimal_digit_table[256];
 
-// Returns the 0-15 value of the given hexadecimal ASCII digit, or 0xF0 if it isn't one.
+// Returns the 0-15 value of the given hexadecimal ASCII digit, or 0xFF if it isn't one.
 static inline uint8_t cswift_endpoint_hexadecimal_digit(uint8_t ascii_byte) {
     return cswift_endpoint_hexadecimal_digit_table[ascii_byte];
 }

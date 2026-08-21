@@ -94,7 +94,7 @@ extension UInt8 {
     @inline(always)
     package static func mapHexadecimalByteToUInt8(_ asciiByte: UInt8) -> UInt8? {
         let digit = cswift_endpoint_hexadecimal_digit(asciiByte)
-        let isInvalid = digit == 0xF0
+        let isInvalid = digit == 0xFF
         return isInvalid ? nil : digit
     }
 }

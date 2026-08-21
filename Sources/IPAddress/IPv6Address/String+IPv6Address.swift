@@ -538,7 +538,10 @@ extension IPv6Address: LosslessStringConvertible {
 
         let startsWithColon = unsafe span[unchecked: 0] == .asciiColon
         /// For when there is a lone colon at the start
-        if Self.isLoneColon(unsafe span[unchecked: 0], adjacent: unsafe span[unchecked: 1]) {
+        if Self.isLoneColon(
+            unsafe span[unchecked: 0],
+            adjacent: unsafe span[unchecked: 1]
+        ) {
             return false
         }
         /// And for when there is a compression sign at the end
@@ -557,6 +560,7 @@ extension IPv6Address: LosslessStringConvertible {
 
         while idx < count {
             let byte = unsafe span[unchecked: idx]
+            idx &+= 1
 
             if let digit = UInt8.mapHexadecimalByteToUInt8(byte) {
                 if segmentDigitIdx == 4 {
@@ -565,7 +569,6 @@ extension IPv6Address: LosslessStringConvertible {
 
                 currentSegmentValue = (currentSegmentValue &<< 4) | UInt16(digit)
                 segmentDigitIdx &+= 1
-                idx &+= 1
 
                 continue
             }
@@ -573,12 +576,14 @@ extension IPv6Address: LosslessStringConvertible {
             if byte == .asciiDot {
                 /// The embedded IPv4 address starts where the digits of this segment started.
                 var ipv4Address: UInt32 = 0
+                /// Revert the increment we did at the beginning of the loop.
+                let idxNoIncrement = idx &- 1
                 guard
                     segmentDigitIdx > 0,
                     IPv4Address.parseIPv4(
                         span: unsafe span.extracting(
                             unchecked: Range(
-                                uncheckedBounds: (idx &- segmentDigitIdx, count)
+                                uncheckedBounds: (idxNoIncrement &- segmentDigitIdx, count)
                             )
                         ),
                         address: &ipv4Address
@@ -615,7 +620,6 @@ extension IPv6Address: LosslessStringConvertible {
             segmentsCount &+= 1
             currentSegmentValue = 0
             segmentDigitIdx = 0
-            idx &+= 1
 
             /// The pre-loop trailing-colon check guarantees `idx < count`.
             let isColon = unsafe span[unchecked: idx] == .asciiColon

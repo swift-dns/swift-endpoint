@@ -528,8 +528,8 @@ extension IPv6Address: LosslessStringConvertible {
 
         let count = span.count
         /// cs == compression sign
+        /// We use `address` instead of introducing `afterCs`
         var beforeCs = _CompatibilityUInt128Typealias.zero
-        var afterCs = _CompatibilityUInt128Typealias.zero
         var segmentsCount = 0
         var segmentsCountBeforeCs = 0
         var currentSegmentValue: UInt16 = 0
@@ -596,9 +596,9 @@ extension IPv6Address: LosslessStringConvertible {
                 let forBeforeCs =
                     (beforeCs &<< 32) | _CompatibilityUInt128Typealias(ipv4Address)
                 let forAfterCs =
-                    (afterCs &<< 32) | _CompatibilityUInt128Typealias(ipv4Address)
+                    (address &<< 32) | _CompatibilityUInt128Typealias(ipv4Address)
                 beforeCs = isBeforeCs ? forBeforeCs : beforeCs
-                afterCs = isBeforeCs ? afterCs : forAfterCs
+                address = isBeforeCs ? address : forAfterCs
 
                 segmentsCount &+= 2
                 segmentDigitIdx = 0
@@ -613,9 +613,9 @@ extension IPv6Address: LosslessStringConvertible {
             let forBeforeCs =
                 (beforeCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
             let forAfterCs =
-                (afterCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
+                (address &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
             beforeCs = isBeforeCs ? forBeforeCs : beforeCs
-            afterCs = isBeforeCs ? afterCs : forAfterCs
+            address = isBeforeCs ? address : forAfterCs
 
             segmentsCount &+= 1
             currentSegmentValue = 0
@@ -635,10 +635,10 @@ extension IPv6Address: LosslessStringConvertible {
             (beforeCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
         let forBeforeCs = wasParsingSegments ? _forBeforeCs : beforeCs
         let _forAfterCs =
-            (afterCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
-        let forAfterCs = wasParsingSegments ? _forAfterCs : afterCs
+            (address &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
+        let forAfterCs = wasParsingSegments ? _forAfterCs : address
         beforeCs = isBeforeCs ? forBeforeCs : beforeCs
-        afterCs = isBeforeCs ? afterCs : forAfterCs
+        address = isBeforeCs ? address : forAfterCs
 
         segmentsCount &+= wasParsingSegments ? 1 : 0
 
@@ -656,7 +656,7 @@ extension IPv6Address: LosslessStringConvertible {
             return false
         }
 
-        address = afterCs | (beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs)))
+        address |= beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs))
 
         return true
     }

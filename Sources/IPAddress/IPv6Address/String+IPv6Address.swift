@@ -528,6 +528,7 @@ extension IPv6Address: LosslessStringConvertible {
         var idx = 0
 
         let startsWithColon = unsafe span[unchecked: 0] == .asciiColon
+        /// For when there is a lone colon at the start
         if Self.isLoneColon(unsafe span[unchecked: 0], adjacent: unsafe span[unchecked: 1]) {
             return false
         }
@@ -549,6 +550,10 @@ extension IPv6Address: LosslessStringConvertible {
             let byte = unsafe span[unchecked: idx]
 
             if let digit = UInt8.mapHexadecimalByteToUInt8(byte) {
+                if segmentDigitIdx == 4 {
+                    return false
+                }
+
                 currentSegmentValue = (currentSegmentValue &<< 4) | UInt16(digit)
                 segmentDigitIdx &+= 1
                 idx &+= 1
@@ -587,10 +592,9 @@ extension IPv6Address: LosslessStringConvertible {
                 break
             }
 
-            let sAbove4 = segmentDigitIdx > 4 ? 1 : 0
             let sZero = segmentDigitIdx == 0 ? 1 : 0
             let byteNotColon = byte == .asciiColon ? 0 : 1
-            if (sAbove4 | sZero | byteNotColon) != 0 {
+            guard (sZero | byteNotColon) == 0 else {
                 return false
             }
 

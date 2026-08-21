@@ -167,22 +167,31 @@ extension IPv4Address: LosslessStringConvertible {
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
-        if let address = IPv4Address.parseIPv4(span: span) {
-            self.init(address)
-        } else {
+        var address: UInt32 = 0
+        let success = IPv4Address.parseIPv4(
+            span: span,
+            address: &address
+        )
+
+        guard success else {
             return nil
         }
+
+        self.init(address)
     }
 
     @inlinable
     @inline(always)
-    static func parseIPv4(span: Span<UInt8>) -> UInt32? {
+    static func parseIPv4(
+        span: Span<UInt8>,
+        address: inout UInt32
+    ) -> Bool {
         let count = span.count
 
         /// The shortest possible IPv4 address is "0.0.0.0" with 7 bytes, and the longest possible
         /// one is "255.255.255.255" with 15 bytes.
         guard count >= 7, count <= 15 else {
-            return nil
+            return false
         }
 
         var idx = 0
@@ -192,7 +201,7 @@ extension IPv4Address: LosslessStringConvertible {
             let segment1 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
             unsafe span[unchecked: idx] == .asciiDot
         else {
-            return nil
+            return false
         }
         idx &+= 1
 
@@ -203,7 +212,7 @@ extension IPv4Address: LosslessStringConvertible {
             idx < count,
             unsafe span[unchecked: idx] == .asciiDot
         else {
-            return nil
+            return false
         }
         idx &+= 1
 
@@ -213,7 +222,7 @@ extension IPv4Address: LosslessStringConvertible {
             idx < count,
             unsafe span[unchecked: idx] == .asciiDot
         else {
-            return nil
+            return false
         }
         idx &+= 1
 
@@ -222,12 +231,12 @@ extension IPv4Address: LosslessStringConvertible {
             let segment4 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
             idx == count
         else {
-            return nil
+            return false
         }
 
-        let address = (segment1 &<< 24) | (segment2 &<< 16) | (segment3 &<< 8) | segment4
+        address = (segment1 &<< 24) | (segment2 &<< 16) | (segment3 &<< 8) | segment4
 
-        return address
+        return true
     }
 
     @inlinable

@@ -527,8 +527,8 @@ extension IPv6Address: LosslessStringConvertible {
         var segmentDigitIdx = 0
         var idx = 0
 
-        let startsWithColon = span[0] == .asciiColon
-        if Self.isLoneColon(span[0], adjacent: unsafe span[unchecked: 1]) {
+        let startsWithColon = unsafe span[unchecked: 0] == .asciiColon
+        if Self.isLoneColon(unsafe span[unchecked: 0], adjacent: unsafe span[unchecked: 1]) {
             return false
         }
         /// And for when there is a compression sign at the end

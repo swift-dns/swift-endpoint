@@ -172,21 +172,21 @@ These were performed on my M1 Pro MacBook, on macOS 27.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 6.1           | 180.0        | 29.75x  |
-| IPv4    | Parsing     | 15.2          | 47.0         | 3.09x   |
-| IPv6    | Serializing | 29.5          | 222.0        | 7.53x   |
-| IPv6    | Parsing     | 25.3          | 100.7        | 3.99x   |
+| IPv4    | Serializing | 6.0           | 179.0        | 29.83x  |
+| IPv4    | Parsing     | 15.1          | 46.8         | 3.10x   |
+| IPv6    | Serializing | 29.3          | 221.0        | 7.56x   |
+| IPv6    | Parsing     | 25.0          | 99.7         | 3.99x   |
 
 #### Against glibc
 
-These were performed on a dedicated-cpu-core machine from Hetzner, on Ubuntu 24.04.
+These were performed on a dedicated-cpu-core AMD EPYC-Milan machine from Hetzner, on Ubuntu 24.04.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 7.3           | 116.0        | 16.00x  |
-| IPv4    | Parsing     | 16.9          | 27.3         | 1.62x   |
-| IPv6    | Serializing | 36.5          | 171.0        | 4.68x   |
-| IPv6    | Parsing     | 33.3          | 48.3         | 1.45x   |
+| IPv4    | Serializing | 7.0           | 116.0        | 16.57x  |
+| IPv4    | Parsing     | 16.7          | 27.2         | 1.63x   |
+| IPv6    | Serializing | 36.3          | 166.0        | 4.58x   |
+| IPv6    | Parsing     | 33.2          | 48.0         | 1.45x   |
 
 #### Additional Notes
 

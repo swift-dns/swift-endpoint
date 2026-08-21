@@ -8,7 +8,7 @@
     <a href="https://github.com/swift-dns/swift-endpoint/actions/workflows/benchmarks.yml">
         <img
             src="https://img.shields.io/github/actions/workflow/status/swift-dns/swift-endpoint/benchmarks.yml?event=push&style=plastic&logo=github&label=benchmarks&logoColor=%23ccc"
-            alt="Benchamrks CI"
+            alt="Benchmarks CI"
         >
     </a>
     <a href="https://codecov.io/gh/swift-dns/swift-endpoint">
@@ -96,7 +96,7 @@ print(ipv4InIPv6Address1) /// prints "::ffff:192.168.1.1"
 print(ipv4InIPv6Address2) /// prints "64:ff9b::192.0.2.33"
 print(ipv4InIPv6Address3) /// prints "2001:db8:122:344::c000:221", Not well-known so no mixed notation
 
-/// Define an any-ip-address. The type will automatically parse the ip address into the corrext type.
+/// Define an any-ip-address. The type will automatically parse the ip address into the correct type.
 let anyIPv4Address = AnyIPAddress("192.168.1.1")
 let anyIPv6Address = AnyIPAddress("[2001:DB8:85A3::100]")
 print(anyIPv4Address) /// prints "192.168.1.1"
@@ -152,16 +152,18 @@ For `IPv6Address`, the Arpa domain name format is supported. For example the fol
 
 * Below are benchmarks of this library against inet C-library APIs of macOS's Darwin and Linux's glibc.
 * **In all cases, swift-endpoint wins against the inet C APIs.**
-* These benchmarks are meant to represent a slow-case scenario of real-world workloads.
+* These benchmarks are meant to represent real-world workloads.
 * The C API benchmarks represent a C language user's experience.
   * Meaning They don't contain any possible overhead coming from interfacing with other Swift APIs.
 * The benchmarks write into stack-allocated space if/where needed, to avoid malloc and show their full potential.
   * swift-endpoint would win by good margins anyway even if it used malloc and C APIs continued to use alloca.
-* Each benchmark runs against 16 different IPs one by one in a random manner.
+* Each benchmark runs against 32 different IPs, one by one and in a random manner.
   * There is a constant seed to keep the benchmarks consistent across benchmark runs.
   * This means CPUs won't find a clear pattern to over-optimize for in any of the operations, which would make the benchmarks less realistic.
   * The randomization itself only adds minimal runtime (~0.3ns = 1 cycle) to the benchmarks and is not subtracted.
-  * 1 of the IPv6 IPs is an IPv4-mapped IPv6 address, to benchmark that case as well.
+  * All addresses are operational real-world addresses, not documentation examples or such.
+  * Different addresses test different branches of a possibly branchy parsing/serialization implementation.
+  * 2 of the IPv6 IPs are IPv4-embedded, 1 of which is an IPv4-mapped IPv6 address.
     * IPv4-mapped addresses have a mixed-notation representation, per RFC 5952.
 
 #### Against Darwin
@@ -170,21 +172,21 @@ These were performed on my M1 Pro MacBook, on macOS 27.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 5.2           | 222.6        | 42.81x  |
-| IPv4    | Parsing     | 14.6          | 48.0         | 3.29x   |
-| IPv6    | Serializing | 26.3          | 274.0        | 10.42x  |
-| IPv6    | Parsing     | 21.8          | 103.8        | 4.76x   |
+| IPv4    | Serializing | 6.0           | 179.0        | 29.83x  |
+| IPv4    | Parsing     | 15.1          | 46.8         | 3.10x   |
+| IPv6    | Serializing | 29.3          | 221.0        | 7.56x   |
+| IPv6    | Parsing     | 25.0          | 99.7         | 3.99x   |
 
 #### Against glibc
 
-These were performed on a dedicated-cpu-core machine from Hetzner, on Ubuntu 24.04.
+These were performed on a dedicated-cpu-core AMD EPYC-Milan machine from Hetzner, on Ubuntu 24.04.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 6.5           | 115.0        | 17.69x  |
-| IPv4    | Parsing     | 16.3          | 25.8         | 1.58x   |
-| IPv6    | Serializing | 34.0          | 173.9        | 5.11x   |
-| IPv6    | Parsing     | 30.0          | 46.4         | 1.55x   |
+| IPv4    | Serializing | 7.0           | 116.0        | 16.57x  |
+| IPv4    | Parsing     | 16.7          | 27.2         | 1.63x   |
+| IPv6    | Serializing | 36.3          | 166.0        | 4.58x   |
+| IPv6    | Parsing     | 33.2          | 48.0         | 1.45x   |
 
 #### Additional Notes
 

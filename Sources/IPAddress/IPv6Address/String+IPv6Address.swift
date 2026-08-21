@@ -477,36 +477,26 @@ extension IPv6Address: LosslessStringConvertible {
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
-        /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics here
-        /// and write backwards.
-        var address = _CompatibilityUInt128Typealias.zero
-        let success = IPv6Address.parseIPv6(
-            span: span,
-            address: &address
-        )
-        self.init(address)
-
-        guard success else {
+        if let address = IPv6Address.parseIPv6(span: span) {
+            self.init(address)
+        } else {
             return nil
         }
     }
 
     @inlinable
     @inline(always)
-    static func parseIPv6(
-        span: Span<UInt8>,
-        address: inout _CompatibilityUInt128Typealias
-    ) -> Bool {
+    static func parseIPv6(span: Span<UInt8>) -> _CompatibilityUInt128Typealias? {
         /// 2 == "::".count
         guard span.count >= 2 else {
-            return false
+            return nil
         }
 
         /// Trim the left and right square brackets if they both exist
         let startsWithBracket = span[0] == .asciiLeftSquareBracket
         let endsWithBracket = span[span.count &- 1] == .asciiRightSquareBracket
         guard startsWithBracket == endsWithBracket else {
-            return false
+            return nil
         }
         let trimCount = startsWithBracket ? 1 : 0
         /// `span.extracting` is more expensive than it should be so let's make it a branch.
@@ -523,7 +513,7 @@ extension IPv6Address: LosslessStringConvertible {
 
         /// 2 == "::".count
         guard span.count >= 2 else {
-            return false
+            return nil
         }
 
         let count = span.count
@@ -542,14 +532,14 @@ extension IPv6Address: LosslessStringConvertible {
             unsafe span[unchecked: 0],
             adjacent: unsafe span[unchecked: 1]
         ) {
-            return false
+            return nil
         }
         /// And for when there is a compression sign at the end
         if Self.isLoneColon(
             unsafe span[unchecked: count &- 1],
             adjacent: unsafe span[unchecked: count &- 2]
         ) {
-            return false
+            return nil
         }
 
         /// This `1` is technically not correct.
@@ -564,7 +554,7 @@ extension IPv6Address: LosslessStringConvertible {
 
             if let digit = UInt8.mapHexadecimalByteToUInt8(byte) {
                 if segmentDigitIdx == 4 {
-                    return false
+                    return nil
                 }
 
                 currentSegmentValue = (currentSegmentValue &<< 4) | UInt16(digit)
@@ -575,21 +565,19 @@ extension IPv6Address: LosslessStringConvertible {
 
             if byte == .asciiDot {
                 /// The embedded IPv4 address starts where the digits of this segment started.
-                var ipv4Address: UInt32 = 0
                 /// Revert the increment we did at the beginning of the loop.
                 let idxNoIncrement = idx &- 1
                 guard
                     segmentDigitIdx > 0,
-                    IPv4Address.parseIPv4(
+                    let ipv4Address = IPv4Address.parseIPv4(
                         span: unsafe span.extracting(
                             unchecked: Range(
                                 uncheckedBounds: (idxNoIncrement &- segmentDigitIdx, count)
                             )
-                        ),
-                        address: &ipv4Address
+                        )
                     )
                 else {
-                    return false
+                    return nil
                 }
 
                 let isBeforeCs = segmentsCountBeforeCs == 0
@@ -606,8 +594,8 @@ extension IPv6Address: LosslessStringConvertible {
                 break
             }
 
-            if segmentDigitIdx == 0 { return false }
-            if byte != .asciiColon { return false }
+            if segmentDigitIdx == 0 { return nil }
+            if byte != .asciiColon { return nil }
 
             let isBeforeCs = segmentsCountBeforeCs == 0
             let forBeforeCs =
@@ -643,22 +631,22 @@ extension IPv6Address: LosslessStringConvertible {
         segmentsCount &+= wasParsingSegments ? 1 : 0
 
         guard segmentDigitIdx < 5 else {
-            return false
+            return nil
         }
 
         if isBeforeCs {
-            address = beforeCs
-            return segmentsCount == 8
+            if segmentsCount != 8 { return nil }
+            return beforeCs
         }
 
         /// There must be exactly 1 compression sign that stands for at least 1 segment.
         guard csCount == 1, segmentsCount <= 7 else {
-            return false
+            return nil
         }
 
-        address = afterCs | (beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs)))
+        let address = afterCs | (beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs)))
 
-        return true
+        return address
     }
 
     /// | byte == ':' | adjacent == ':' | returns |                meaning               |

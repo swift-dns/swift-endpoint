@@ -592,11 +592,8 @@ extension IPv6Address: LosslessStringConvertible {
                 break
             }
 
-            let sZero = segmentDigitIdx == 0 ? 1 : 0
-            let byteNotColon = byte == .asciiColon ? 0 : 1
-            guard (sZero | byteNotColon) == 0 else {
-                return false
-            }
+            if segmentDigitIdx == 0 { return false }
+            if byte != .asciiColon { return false }
 
             let isBeforeCs = segmentsCountBeforeCs == 0
             let forBeforeCs =

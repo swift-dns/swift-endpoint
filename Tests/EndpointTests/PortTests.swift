@@ -8,27 +8,27 @@ struct PortTests {
         /// instead of `init(integerLiteral:)`.
         let low = 0
         let high = 65535
-        #expect(Port(low) == Port(canonicalValue: 0))
-        #expect(Port(high) == Port(canonicalValue: 65535))
+        #expect(Port(low) == Port(rawValue: 0))
+        #expect(Port(high) == Port(rawValue: 65535))
         #expect(Port(low).value == 0)
         #expect(Port(high).value == 65535)
-        #expect(Port(canonicalValue: 443).value == 443)
+        #expect(Port(rawValue: 443).value == 443)
     }
 
     @Test(
         arguments: [(port: Port, expected: [UInt8])]([
-            (port: Port(canonicalValue: 0), expected: [0x00, 0x00]),
-            (port: Port(canonicalValue: 1), expected: [0x00, 0x01]),
-            (port: Port(canonicalValue: 2), expected: [0x00, 0x02]),
-            (port: Port(canonicalValue: 7936), expected: [0x1F, 0x00]),
-            (port: Port(canonicalValue: 8080), expected: [0x1F, 0x90]),
-            (port: Port(canonicalValue: 8081), expected: [0x1F, 0x91]),
-            (port: Port(canonicalValue: 8082), expected: [0x1F, 0x92]),
-            (port: Port(canonicalValue: 8083), expected: [0x1F, 0x93]),
-            (port: Port(canonicalValue: 8084), expected: [0x1F, 0x94]),
-            (port: Port(canonicalValue: 8085), expected: [0x1F, 0x95]),
-            (port: Port(canonicalValue: 65534), expected: [0xFF, 0xFE]),
-            (port: Port(canonicalValue: 65535), expected: [0xFF, 0xFF]),
+            (port: Port(rawValue: 0), expected: [0x00, 0x00]),
+            (port: Port(rawValue: 1), expected: [0x00, 0x01]),
+            (port: Port(rawValue: 2), expected: [0x00, 0x02]),
+            (port: Port(rawValue: 7936), expected: [0x1F, 0x00]),
+            (port: Port(rawValue: 8080), expected: [0x1F, 0x90]),
+            (port: Port(rawValue: 8081), expected: [0x1F, 0x91]),
+            (port: Port(rawValue: 8082), expected: [0x1F, 0x92]),
+            (port: Port(rawValue: 8083), expected: [0x1F, 0x93]),
+            (port: Port(rawValue: 8084), expected: [0x1F, 0x94]),
+            (port: Port(rawValue: 8085), expected: [0x1F, 0x95]),
+            (port: Port(rawValue: 65534), expected: [0xFF, 0xFE]),
+            (port: Port(rawValue: 65535), expected: [0xFF, 0xFF]),
         ])
     )
     func `Port serialize parse happy-path with span works correctly`(
@@ -63,14 +63,14 @@ struct PortTests {
         let bufferPointer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: 1)
         defer { unsafe bufferPointer.deallocate() }
         var outputSpan = unsafe OutputSpan(buffer: bufferPointer, initializedCount: 0)
-        let didSerialize = Port(canonicalValue: 8080).serialize(into: &outputSpan)
+        let didSerialize = Port(rawValue: 8080).serialize(into: &outputSpan)
         #expect(!didSerialize)
     }
 
     @available(SwiftStdlib 6.2, *)
     @Test func `Port description and parsing work as expected`() {
         for number in UInt16.min...UInt16.max {
-            let port = Port(canonicalValue: number)
+            let port = Port(rawValue: number)
             let description = port.description
             #expect(port.description == description)
             #expect(Port(description) == port)
@@ -184,11 +184,11 @@ struct PortTests {
         let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: 2)
         defer { unsafe buffer.deallocate() }
 
-        for canonicalValue in UInt16.min...UInt16.max {
-            let port = Port(canonicalValue: canonicalValue)
+        for rawValue in UInt16.min...UInt16.max {
+            let port = Port(rawValue: rawValue)
 
             let description = port.description
-            #expect(description == String(canonicalValue))
+            #expect(description == String(rawValue))
             #expect(Port(description) == port)
 
             let viaCString = port.withCString { span in

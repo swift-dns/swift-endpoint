@@ -646,16 +646,19 @@ extension IPv6Address: LosslessStringConvertible {
             return false
         }
 
+        if isBeforeCs {
+            address = beforeCs
+            return segmentsCount == 8
+        }
+
+        /// There must be exactly 1 compression sign that stands for at least 1 segment.
+        guard csCount == 1, segmentsCount <= 7 else {
+            return false
+        }
+
         address = afterCs | (beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs)))
 
-        let segmentsCountLessThan8 = segmentsCount < 8
-        let segmentsCount8 = segmentsCount == 8
-        let oneCs = csCount == 1
-
-        var success = segmentsCount8 && isBeforeCs
-        success = success || (segmentsCountLessThan8 && oneCs)
-
-        return success
+        return true
     }
 
     /// | byte == ':' | adjacent == ':' | returns |                meaning               |

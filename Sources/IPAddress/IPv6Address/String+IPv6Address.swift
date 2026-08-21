@@ -646,23 +646,19 @@ extension IPv6Address: LosslessStringConvertible {
             return false
         }
 
-        if csCount > 1 { return false }
-        if segmentsCount > 8 { return false }
-        /// (csCount == 1 or 0) => !isBeforeCs == (csCount == 1)
-        /// (segmentCount <= 8) => (segmentCount != 8) == (segmentCount < 8)
-        /// | segmentCount == 8 | isBeforeCs | success |             meaning              |
-        /// +-------------------+------------+---------+----------------------------------+
-        /// |        false      |    false   |  true   | valid; e.g. "2001:db8::1"        |
-        /// |        false      |    true    |  false  | invalid; e.g. "1:2:3"            |
-        /// |        true       |    false   |  false  | invalid; e.g. "1::2:3:4:5:6:7:8" |
-        /// |        true       |    true    |  true   | valid; e.g. "1:2:3:4:5:6:7:8"    |
-        /// +-------------------+------------+---------+----------------------------------+
-        let segmentsCountIs8 = segmentsCount == 8
-        let success = segmentsCountIs8 == isBeforeCs
+        if isBeforeCs {
+            address = beforeCs
+            return segmentsCount == 8
+        }
+
+        /// There must be exactly 1 compression sign that stands for at least 1 segment.
+        guard csCount == 1, segmentsCount <= 7 else {
+            return false
+        }
 
         address = afterCs | (beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs)))
 
-        return success
+        return true
     }
 
     /// | byte == ':' | adjacent == ':' | returns |                meaning               |

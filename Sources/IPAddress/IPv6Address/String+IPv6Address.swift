@@ -112,55 +112,94 @@ extension IPv6Address {
             _ callbackReturningBytesWritten: (UnsafeMutableRawBufferPointer) -> Int
         ) throws(E) -> Buffer
     ) throws(E) -> Buffer {
-        let encloseInSquareBracketsOption = options.contains(.encloseInSquareBrackets)
+        let encloseInSquareBrackets = options.contains(.encloseInSquareBrackets)
         let forceMixedNotationOption = options.contains(.forceMixedNotation)
         let useMixedNotationOption = options.contains(.useMixedNotation)
 
         let isIPv4Mapped = self.isIPv4Mapped
         let useMixedNotationApplies = useMixedNotationOption && isIPv4Mapped
         let mustUseMixedNotation = forceMixedNotationOption || useMixedNotationApplies
-        let embeddedIPv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
-        let embeddedIPv4TextualRepresentationLength = embeddedIPv4.textualRepresentationLength
-        /// The last 2 segments are always written as "0:0", which is 3 bytes.
-        /// Never as a trailing compression sign "::" because `writeCsAtEnd` is only set when
-        /// `upperBound == 7`, and since we mask off 2 segments, upperBound <= 5.
-        let ipv4EmbeddedWalkBackBytes = 3
-        let lowMask: UInt64 = mustUseMixedNotation ? 0xFFFF_FFFF_0000_0000 : .max
-        let addressToPrint = IPv6Address(
-            UnsignedInteger128(
-                _low: self.address._low & lowMask,
-                _high: self.address._high
-            )
-        )
 
-        let trailingSegmentsMask: UInt8 = mustUseMixedNotation ? 0b0011_1111 : 0b1111_1111
-        let mask = self.makeSegmentsMask() & trailingSegmentsMask
+        /// Intentional branchy code around all `mustUseMixedNotation`s.
+        /// `mustUseMixedNotation` is often `false` so it will be a well-predicted branch.
+        if mustUseMixedNotation {
+            return try unsafe self.makeDescription(
+                encloseInSquareBrackets: encloseInSquareBrackets,
+                mustUseMixedNotation: true,
+                writingToUnsafeMutableBufferPointerOfUInt8:
+                    writingToUnsafeMutableBufferPointerOfUInt8
+            )
+        } else {
+            return try unsafe self.makeDescription(
+                encloseInSquareBrackets: encloseInSquareBrackets,
+                mustUseMixedNotation: false,
+                writingToUnsafeMutableBufferPointerOfUInt8:
+                    writingToUnsafeMutableBufferPointerOfUInt8
+            )
+        }
+    }
+
+    @inlinable
+    @inline(always)
+    func makeDescription<Buffer, E: Error>(
+        encloseInSquareBrackets: Bool,
+        mustUseMixedNotation: Bool,
+        writingToUnsafeMutableBufferPointerOfUInt8: (
+            _ maxWriteableBytes: Int,
+            _ callbackReturningBytesWritten: (UnsafeMutableRawBufferPointer) -> Int
+        ) throws(E) -> Buffer
+    ) throws(E) -> Buffer {
+        var addressToPrint: IPv6Address = self
+        /// This function in always inlined with static `mustUseMixedNotation` values.
+        /// So all these branches around `mustUseMixedNotation` will be eliminated at compile time.
+        if mustUseMixedNotation {
+            /// The last 2 segments are always written as "0:0", which is 3 bytes.
+            /// Never as a trailing compression sign "::" because `writeCsAtEnd` is only set when
+            /// `upperBound == 7`, and since we mask off 2 segments, upperBound <= 5.
+            addressToPrint = IPv6Address(
+                UnsignedInteger128(
+                    _low: self.address._low & 0xFFFF_FFFF_0000_0000,
+                    _high: self.address._high
+                )
+            )
+        }
+
+        var mask = self.makeSegmentsMask()
+        if mustUseMixedNotation {
+            mask &= 0b0011_1111
+        }
         let entry = SegmentWriteTableEntry.Unpacked(forMask: mask)
         let digitsPrintCountNoTrailing =
             addressToPrint.countAllDigitsRequiredToPrintExcludingTrailingDigits()
 
-        /// The embedded IPv4 replaces the masked-off last two segments, which the walk-back bytes
-        /// account for.
-        /// The 2 headroom bytes the IPv4 write needs are already part of `minReserveBytes`.
-        let mixedNotationReserveMaybe =
-            embeddedIPv4TextualRepresentationLength &- ipv4EmbeddedWalkBackBytes
-        let mixedNotationReserve = mustUseMixedNotation ? mixedNotationReserveMaybe : 0
+        let ipv4EmbeddedWalkBackBytes = 3
+        var mixedNotationReserve: Int = 0
+        if mustUseMixedNotation {
+            let embeddedIPv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
+            let ipv4Length = embeddedIPv4.textualRepresentationLength
+            /// The embedded IPv4 replaces the masked-off last two segments, which the walk-back bytes
+            /// account for.
+            /// The 2 headroom bytes the IPv4 write needs are already part of `minReserveBytes`.
+            mixedNotationReserve = ipv4Length &- ipv4EmbeddedWalkBackBytes
+        }
 
-        let lastSegmentBits = self.address._low & 0xFFFF
-        let lastSegmentIsSingleDigit = lastSegmentBits <= 0xF
-        let noMixedNotation = !mustUseMixedNotation
-        /// We do speculative writes, but if the last segment is a single hex digit, then we only
-        /// write 1 byte while we still need to reserve 4 bytes of headroom so the speculative write
-        /// can fit. So we need to reserve 1 extra byte for that to have the full room needed.
-        /// This only needs to happen if this is not a mixed-notation writing.
-        /// Also if `writeCsAtEnd` is true, then we already have the needed speculative bytes room.
-        let lastSegmentIsSingleDigitHex = lastSegmentIsSingleDigit && noMixedNotation
-        let lastSegmentReserveInitial = lastSegmentIsSingleDigitHex ? 1 : 0
-        let lastSegmentReserve = entry.writeCsAtEnd ? 0 : lastSegmentReserveInitial
+        var lastSegmentReserve: Int = 0
+        if !mustUseMixedNotation {
+            let lastSegmentBits = self.address._low & 0xFFFF
+            let lastSegmentIsSingleDigit = lastSegmentBits <= 0xF
+            /// We do speculative writes, but if the last segment is a single hex digit, then we only
+            /// write 1 byte while we still need to reserve 4 bytes of headroom so the speculative write
+            /// can fit. So we need to reserve 1 extra byte for that to have the full room needed.
+            /// This only needs to happen if this is not a mixed-notation writing.
+            /// Also if `writeCsAtEnd` is true, then we already have the needed speculative bytes room.
+            let lastSegmentReserveInitial = lastSegmentIsSingleDigit ? 1 : 0
+            lastSegmentReserve = entry.writeCsAtEnd ? 0 : lastSegmentReserveInitial
+        }
+
         /// `minReserveBytes` already contains the 2 speculative bytes needed without square
         /// brackets. One of the brackets is written at the end so it can consume one of those
         /// speculative bytes of room, so we only need to reserve 1 extra.
-        let bracketsReserve = encloseInSquareBracketsOption ? 1 : 0
+        let bracketsReserve = encloseInSquareBrackets ? 1 : 0
         /// Exact required bytes to print, including headroom bytes for speculative writes.
         let toReserve =
             entry.minReserveBytes
@@ -173,7 +212,7 @@ extension IPv6Address {
             var writeIdx = 0
 
             unsafe buffer[0] = .asciiLeftSquareBracket
-            writeIdx &+= encloseInSquareBracketsOption ? 1 : 0
+            writeIdx &+= encloseInSquareBrackets ? 1 : 0
 
             let packedSegmentInfos = entry.packedSegmentInfos
             let range = unsafe Range(uncheckedBounds: (0, entry.segmentsCount))
@@ -202,6 +241,7 @@ extension IPv6Address {
             if mustUseMixedNotation {
                 assert(!entry.writeCsAtEnd)
 
+                let embeddedIPv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
                 let lowerBound = writeIdx &- ipv4EmbeddedWalkBackBytes
                 let ipv4Buffer = unsafe UnsafeMutableRawBufferPointer(
                     rebasing: buffer[lowerBound...]
@@ -214,12 +254,12 @@ extension IPv6Address {
             }
 
             unsafe buffer[writeIdx] = .asciiRightSquareBracket
-            writeIdx &+= encloseInSquareBracketsOption ? 1 : 0
+            writeIdx &+= encloseInSquareBrackets ? 1 : 0
 
             assert(
                 writeIdx
                     == toReserve
-                    &- (encloseInSquareBracketsOption ? 1 : 2)
+                    &- (encloseInSquareBrackets ? 1 : 2)
                     &+ (entry.writeCsAtEnd ? 1 : 0)
                     &- lastSegmentReserve
             )
@@ -457,25 +497,29 @@ extension IPv6Address: LosslessStringConvertible {
         span: Span<UInt8>,
         address: inout _CompatibilityUInt128Typealias
     ) -> Bool {
-        var span = span
-
         /// 2 == "::".count
         guard span.count >= 2 else {
             return false
         }
 
         /// Trim the left and right square brackets if they both exist
-
         let startsWithBracket = span[0] == .asciiLeftSquareBracket
         let endsWithBracket = span[span.count &- 1] == .asciiRightSquareBracket
-        switch (startsWithBracket, endsWithBracket) {
-        case (false, false):
-            break
-        case (true, true):
-            span = span.extracting(1..<(span.count &- 1))
-        case (true, false), (false, true):
+        guard startsWithBracket == endsWithBracket else {
             return false
         }
+        let trimCount = startsWithBracket ? 1 : 0
+        /// `span.extracting` is more expensive than it should be so let's make it a branch.
+        let span: Span =
+            if trimCount == 0 {
+                span
+            } else {
+                unsafe span.extracting(
+                    unchecked: unsafe Range<Int>(
+                        uncheckedBounds: (trimCount, span.count &- trimCount)
+                    )
+                )
+            }
 
         /// 2 == "::".count
         guard span.count >= 2 else {
@@ -487,22 +531,36 @@ extension IPv6Address: LosslessStringConvertible {
         var beforeCs = _CompatibilityUInt128Typealias.zero
         var afterCs = _CompatibilityUInt128Typealias.zero
         var segmentsCount = 0
-        var segmentsCountBeforeCs = -1
+        var segmentsCountBeforeCs = 0
         var currentSegmentValue: UInt16 = 0
         var segmentDigitIdx = 0
         var idx = 0
 
-        /// Special-case handling for when there is a compression sign at the beginning
-        if span[0] == .asciiColon {
-            guard unsafe span[unchecked: 1] == .asciiColon else {
-                return false
-            }
-            segmentsCountBeforeCs = 0
-            idx = 2
+        let startsWithColon = unsafe span[unchecked: 0] == .asciiColon
+        /// For when there is a lone colon at the start
+        if Self.isLoneColon(
+            unsafe span[unchecked: 0],
+            adjacent: unsafe span[unchecked: 1]
+        ) {
+            return false
         }
+        /// And for when there is a compression sign at the end
+        if Self.isLoneColon(
+            unsafe span[unchecked: count &- 1],
+            adjacent: unsafe span[unchecked: count &- 2]
+        ) {
+            return false
+        }
+
+        /// This `1` is technically not correct.
+        /// We use 1 because we use 0 to indicate no before-cs segments.
+        segmentsCountBeforeCs = startsWithColon ? 1 : segmentsCountBeforeCs
+        idx = startsWithColon ? 2 : idx
+        var csCount = startsWithColon ? 1 : 0
 
         while idx < count {
             let byte = unsafe span[unchecked: idx]
+            idx &+= 1
 
             if let digit = UInt8.mapHexadecimalByteToUInt8(byte) {
                 if segmentDigitIdx == 4 {
@@ -511,7 +569,6 @@ extension IPv6Address: LosslessStringConvertible {
 
                 currentSegmentValue = (currentSegmentValue &<< 4) | UInt16(digit)
                 segmentDigitIdx &+= 1
-                idx &+= 1
 
                 continue
             }
@@ -519,12 +576,14 @@ extension IPv6Address: LosslessStringConvertible {
             if byte == .asciiDot {
                 /// The embedded IPv4 address starts where the digits of this segment started.
                 var ipv4Address: UInt32 = 0
+                /// Revert the increment we did at the beginning of the loop.
+                let idxNoIncrement = idx &- 1
                 guard
                     segmentDigitIdx > 0,
                     IPv4Address.parseIPv4(
                         span: unsafe span.extracting(
                             unchecked: Range(
-                                uncheckedBounds: (idx &- segmentDigitIdx, count)
+                                uncheckedBounds: (idxNoIncrement &- segmentDigitIdx, count)
                             )
                         ),
                         address: &ipv4Address
@@ -533,7 +592,7 @@ extension IPv6Address: LosslessStringConvertible {
                     return false
                 }
 
-                let isBeforeCs = segmentsCountBeforeCs == -1
+                let isBeforeCs = segmentsCountBeforeCs == 0
                 let forBeforeCs =
                     (beforeCs &<< 32) | _CompatibilityUInt128Typealias(ipv4Address)
                 let forAfterCs =
@@ -547,11 +606,10 @@ extension IPv6Address: LosslessStringConvertible {
                 break
             }
 
-            guard byte == .asciiColon, segmentDigitIdx > 0 else {
-                return false
-            }
+            if segmentDigitIdx == 0 { return false }
+            if byte != .asciiColon { return false }
 
-            let isBeforeCs = segmentsCountBeforeCs == -1
+            let isBeforeCs = segmentsCountBeforeCs == 0
             let forBeforeCs =
                 (beforeCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
             let forAfterCs =
@@ -562,53 +620,60 @@ extension IPv6Address: LosslessStringConvertible {
             segmentsCount &+= 1
             currentSegmentValue = 0
             segmentDigitIdx = 0
-            idx &+= 1
 
-            /// A trailing colon is only valid as part of a compression sign.
-            guard idx < count else {
-                return false
-            }
-
-            if unsafe span[unchecked: idx] == .asciiColon {
-                guard isBeforeCs else {
-                    return false
-                }
-                segmentsCountBeforeCs = segmentsCount
-                idx &+= 1
-            }
+            /// The pre-loop trailing-colon check guarantees `idx < count`.
+            let isColon = unsafe span[unchecked: idx] == .asciiColon
+            segmentsCountBeforeCs = isColon ? segmentsCount : segmentsCountBeforeCs
+            csCount &+= isColon ? 1 : 0
+            idx &+= isColon ? 1 : 0
         }
 
-        let isBeforeCs = segmentsCountBeforeCs == -1
+        let isBeforeCs = segmentsCountBeforeCs == 0
+        let wasParsingSegments = segmentDigitIdx > 0
 
-        if segmentDigitIdx > 0 {
-            let forBeforeCs =
-                (beforeCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
-            let forAfterCs =
-                (afterCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
-            beforeCs = isBeforeCs ? forBeforeCs : beforeCs
-            afterCs = isBeforeCs ? afterCs : forAfterCs
+        let _forBeforeCs =
+            (beforeCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
+        let forBeforeCs = wasParsingSegments ? _forBeforeCs : beforeCs
+        let _forAfterCs =
+            (afterCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
+        let forAfterCs = wasParsingSegments ? _forAfterCs : afterCs
+        beforeCs = isBeforeCs ? forBeforeCs : beforeCs
+        afterCs = isBeforeCs ? afterCs : forAfterCs
 
-            segmentsCount &+= 1
+        segmentsCount &+= wasParsingSegments ? 1 : 0
+
+        guard segmentDigitIdx < 5 else {
+            return false
         }
 
-        guard !isBeforeCs else {
+        if isBeforeCs {
             address = beforeCs
             return segmentsCount == 8
         }
 
-        /// The compression sign has to stand for at least one segment.
-        guard segmentsCount <= 7 else {
+        /// There must be exactly 1 compression sign that stands for at least 1 segment.
+        guard csCount == 1, segmentsCount <= 7 else {
             return false
         }
 
-        guard segmentsCountBeforeCs > 0 else {
-            address = afterCs
-            return true
-        }
-
-        address = (beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs))) | afterCs
+        address = afterCs | (beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs)))
 
         return true
+    }
+
+    /// | byte == ':' | adjacent == ':' | returns |                meaning               |
+    /// +-------------+-----------------+---------+--------------------------------------+
+    /// |    false    |      false      |  false  | not a colon; e.g. "2001:db8::1"      |
+    /// |    false    |      true       |  false  | not a colon; e.g. "a::b"             |
+    /// |    true     |      false      |  true   | lone colon; e.g. ":a::b", or "a::b:" |
+    /// |    true     |      true       |  false  | a "::" compression sign; e.g. "::1"  |
+    /// +-------------+-----------------+---------+--------------------------------------+
+    @inlinable
+    @inline(always)
+    static func isLoneColon(_ byte: UInt8, adjacent adjacentByte: UInt8) -> Bool {
+        let firstIsColon = byte == .asciiColon
+        let secondIsNotColon = adjacentByte != .asciiColon
+        return firstIsColon && secondIsNotColon
     }
 }
 

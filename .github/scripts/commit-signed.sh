@@ -30,9 +30,12 @@ if [[ -z "${commit_message//[[:space:]]/}" ]]; then
 fi
 [[ -d "${work_dir}" ]] || fatal "WORK_DIR directory does not exist: '${work_dir}'"
 
+readonly staging_branch="${branch}-staging"
+
 workspace="$(mktemp -d)" || fatal "Failed to create a temporary workspace directory"
 readonly workspace
-trap 'rm -rf "${workspace}"' EXIT
+staging_branch_touched=0
+trap cleanup EXIT
 
 readonly changes_file="${workspace}/changes.jsonl"
 readonly additions_file="${workspace}/additions.json"
@@ -178,37 +181,63 @@ fetch_remote_branch_head() {
   return 0
 }
 
-force_branch_to_base() {
+point_branch_at_commit() {
+  local target_branch="${1:?point_branch_at_commit requires a branch name}"
+  local target_sha="${2:?point_branch_at_commit requires a 40-char commit SHA}"
   local create_url="${api_url}/repos/${repository}/git/refs"
-  local update_url="${api_url}/repos/${repository}/git/refs/heads/${branch}"
+  local update_url="${api_url}/repos/${repository}/git/refs/heads/${target_branch}"
   local status
 
-  jq --null-input --arg ref "refs/heads/${branch}" --arg sha "${base_sha}" \
+  jq --null-input --arg ref "refs/heads/${target_branch}" --arg sha "${target_sha}" \
     '{ref: $ref, sha: $sha}' > "${payload_file}"
   status="$(github_api POST "${create_url}" "${payload_file}" "${response_file}")"
 
   if [[ "${status}" == "201" ]]; then
-    log "Created branch '${branch}' at ${base_sha:0:7}."
+    log "Created branch '${target_branch}' at ${target_sha:0:7}."
     return 0
   fi
   if [[ "${status}" != "422" ]]; then
-    fatal "Failed to create branch '${branch}' of '${repository}':" \
+    fatal "Failed to create branch '${target_branch}' of '${repository}':" \
       "$(api_failure_details "${status}" "${response_file}")"
   fi
 
-  jq --null-input --arg sha "${base_sha}" '{sha: $sha, force: true}' > "${payload_file}"
+  jq --null-input --arg sha "${target_sha}" '{sha: $sha, force: true}' > "${payload_file}"
   status="$(github_api PATCH "${update_url}" "${payload_file}" "${response_file}")"
   if [[ "${status}" != "200" ]]; then
-    fatal "Failed to force-update '${branch}' of '${repository}' to ${base_sha}:" \
+    fatal "Failed to force-update '${target_branch}' of '${repository}' to ${target_sha}:" \
       "$(api_failure_details "${status}" "${response_file}")"
   fi
 
-  log "Force-updated branch '${branch}' to ${base_sha:0:7}."
+  log "Force-updated branch '${target_branch}' to ${target_sha:0:7}."
+  return 0
+}
+
+# Deletes the branch without failing the run, so cleanup never masks the real error.
+delete_branch() {
+  local target_branch="${1:?delete_branch requires a branch name}"
+  local url="${api_url}/repos/${repository}/git/refs/heads/${target_branch}"
+  local status
+  status="$(github_api DELETE "${url}" "" "${response_file}")"
+
+  if [[ "${status}" != "204" && "${status}" != "404" && "${status}" != "422" ]]; then
+    error "Failed to delete branch '${target_branch}' of '${repository}':" \
+      "$(api_failure_details "${status}" "${response_file}")"
+  fi
+  return 0
+}
+
+cleanup() {
+  if [[ "${staging_branch_touched}" == "1" ]]; then
+    delete_branch "${staging_branch}"
+  fi
+
+  rm -rf "${workspace}"
   return 0
 }
 
 # Creates the commit through the GraphQL API so GitHub signs it, and prints its OID.
 create_signed_commit() {
+  local target_branch="${1:?create_signed_commit requires a branch name}"
   local headline body status commit_oid
   headline="${commit_message%%$'\n'*}"
   body="${commit_message#"${headline}"}"
@@ -217,7 +246,7 @@ create_signed_commit() {
 
   jq --null-input \
     --arg repository "${repository}" \
-    --arg branch "${branch}" \
+    --arg branch "${target_branch}" \
     --arg headline "${headline}" \
     --arg body "${body}" \
     --arg expected_head_oid "${base_sha}" \
@@ -281,9 +310,13 @@ if fetch_remote_branch_head; then
   fi
 fi
 
-force_branch_to_base
-commit_sha="$(create_signed_commit)"
+staging_branch_touched=1
+point_branch_at_commit "${staging_branch}" "${base_sha}"
+
+commit_sha="$(create_signed_commit "${staging_branch}")"
 readonly commit_sha
+
+point_branch_at_commit "${branch}" "${commit_sha}"
 
 {
   printf -- 'has-changes=true\n'

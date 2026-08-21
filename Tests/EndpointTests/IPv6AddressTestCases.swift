@@ -180,6 +180,26 @@ extension IPv6AddressTestCase {
             ip: IP(0x0000_0000_0001_0000_0000_0001_0000_0000, "::1:0:0:1:0:0", "::1:0:0:1:0.0.0.0")
         ),
         IPv6AddressTestCase(
+            "[::1:0:0:1:0:0:1]",
+            ip: IP(
+                0x0000_0001_0000_0000_0001_0000_0000_0001,
+                "0:1::1:0:0:1",
+                "0:1::1:0:0.0.0.1"
+            )
+        ),
+        IPv6AddressTestCase(
+            "[::1:2:0:1:3:0:1]",
+            ip: IP(
+                0x0000_0001_0002_0000_0001_0003_0000_0001,
+                "0:1:2:0:1:3:0:1",
+                "0:1:2:0:1:3:0.0.0.1"
+            )
+        ),
+        IPv6AddressTestCase(
+            "[::1:0:0:1:0:0:1:0]",
+            ip: nil
+        ),
+        IPv6AddressTestCase(
             "[1:0:1::1:0]",
             ip: IP(0x0001_0000_0001_0000_0000_0000_0001_0000, "1:0:1::1:0", "1:0:1::0.1.0.0")
         ),
@@ -634,10 +654,14 @@ extension IPv6AddressTestCase {
         IPv6AddressTestCase("00001::", ip: nil),
         IPv6AddressTestCase("0:0:0:0:0:0:0:00000", ip: nil),
         IPv6AddressTestCase("1:2:3:4:5:6:7:00008", ip: nil),
+        IPv6AddressTestCase("[0000:0:0:AAAAA:0:0:0:0]", ip: nil),
+        IPv6AddressTestCase("[0:0:0:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA:0:0:0:0]", ip: nil),
         IPv6AddressTestCase("[00000:0:0:0:0:0:0:0]", ip: nil),
         IPv6AddressTestCase("::ffff:0000.0.0.1", ip: nil),
         IPv6AddressTestCase("::ffff:1.2.3.0000", ip: nil),
         IPv6AddressTestCase("::0000.1.2.3", ip: nil),
+        IPv6AddressTestCase("::00000.1.2.3", ip: nil),
+        IPv6AddressTestCase("::12345.1.2.3", ip: nil),
         IPv6AddressTestCase("2001:db8::1.2.3.0000", ip: nil),
         IPv6AddressTestCase("[0000:0000:0000:0000:0000:FFFF:0255.255.255.255]", ip: nil),
         IPv6AddressTestCase("192.168.1.255", ip: nil, isValidAsOtherIPVersion: true),
@@ -695,6 +719,8 @@ extension IPv6AddressTestCase {
         IPv6AddressTestCase("[2001:0:0:1::2", ip: nil),
         IPv6AddressTestCase("2001:0:0:1::2]", ip: nil),
         IPv6AddressTestCase("[1::2::]", ip: nil),
+        IPv6AddressTestCase("::1::", ip: nil),
+        IPv6AddressTestCase("1:2:3:4:5:6:7:8:", ip: nil),
         IPv6AddressTestCase("[1::2::3]", ip: nil),
         IPv6AddressTestCase("[:0:1:2:3:4:0:5:6]", ip: nil),
         IPv6AddressTestCase("[0:1:2:3:4:0:5:6:]", ip: nil),

@@ -523,6 +523,7 @@ extension IPv6Address: LosslessStringConvertible {
         var afterCs = _CompatibilityUInt128Typealias.zero
         var segmentsCount = 0
         var segmentsCountBeforeCs = 0
+        var isBeforeCs = true
         var currentSegmentValue: UInt16 = 0
         var segmentDigitIdx = 0
         var idx = 0
@@ -539,9 +540,7 @@ extension IPv6Address: LosslessStringConvertible {
             return false
         }
 
-        /// This `1` is technically not correct.
-        /// We use 1 because we use 0 to indicate no before-cs segments.
-        segmentsCountBeforeCs = startsWithColon ? 1 : segmentsCountBeforeCs
+        isBeforeCs = !startsWithColon
         idx = startsWithColon ? 2 : idx
         var csCount = startsWithColon ? 1 : 0
 
@@ -573,7 +572,6 @@ extension IPv6Address: LosslessStringConvertible {
                     return false
                 }
 
-                let isBeforeCs = segmentsCountBeforeCs == 0
                 let forBeforeCs =
                     (beforeCs &<< 32) | _CompatibilityUInt128Typealias(ipv4Address)
                 let forAfterCs =
@@ -594,7 +592,6 @@ extension IPv6Address: LosslessStringConvertible {
                 return false
             }
 
-            let isBeforeCs = segmentsCountBeforeCs == 0
             let forBeforeCs =
                 (beforeCs &<< 16) | _CompatibilityUInt128Typealias(currentSegmentValue)
             let forAfterCs =
@@ -610,11 +607,11 @@ extension IPv6Address: LosslessStringConvertible {
             /// The pre-loop trailing-colon check guarantees `idx < count` here.
             let isColon = unsafe span[unchecked: idx] == .asciiColon
             segmentsCountBeforeCs = isColon ? segmentsCount : segmentsCountBeforeCs
+            isBeforeCs = isColon ? false : isBeforeCs
             csCount &+= isColon ? 1 : 0
             idx &+= isColon ? 1 : 0
         }
 
-        let isBeforeCs = segmentsCountBeforeCs == 0
         let wasParsingSegments = segmentDigitIdx > 0
 
         let _forBeforeCs =

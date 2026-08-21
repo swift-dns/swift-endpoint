@@ -656,20 +656,7 @@ extension IPv6Address: LosslessStringConvertible {
             return false
         }
 
-        let beforeCsByteOffset = 16 &- (segmentsCountBeforeCs &<< 1)
-        let beforeCsByteCount = segmentsCountBeforeCs &<< 1
-
-        address = afterCs
-        withUnsafeMutableBytes(of: &address) { addressPtr in
-            withUnsafeBytes(of: beforeCs) { beforeCsPtr in
-                unsafe addressPtr.baseAddress.unsafelyUnwrapped
-                    .advanced(by: beforeCsByteOffset)
-                    .copyMemory(
-                        from: beforeCsPtr.baseAddress.unsafelyUnwrapped,
-                        byteCount: beforeCsByteCount
-                    )
-            }
-        }
+        address = afterCs | (beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs)))
 
         return true
     }

@@ -152,16 +152,18 @@ For `IPv6Address`, the Arpa domain name format is supported. For example the fol
 
 * Below are benchmarks of this library against inet C-library APIs of macOS's Darwin and Linux's glibc.
 * **In all cases, swift-endpoint wins against the inet C APIs.**
-* These benchmarks are meant to represent a slow-case scenario of real-world workloads.
+* These benchmarks are meant to represent real-world workloads.
 * The C API benchmarks represent a C language user's experience.
   * Meaning They don't contain any possible overhead coming from interfacing with other Swift APIs.
 * The benchmarks write into stack-allocated space if/where needed, to avoid malloc and show their full potential.
   * swift-endpoint would win by good margins anyway even if it used malloc and C APIs continued to use alloca.
-* Each benchmark runs against 16 different IPs one by one in a random manner.
+* Each benchmark runs against 32 different IPs, one by one and in a random manner.
   * There is a constant seed to keep the benchmarks consistent across benchmark runs.
   * This means CPUs won't find a clear pattern to over-optimize for in any of the operations, which would make the benchmarks less realistic.
   * The randomization itself only adds minimal runtime (~0.3ns = 1 cycle) to the benchmarks and is not subtracted.
-  * 1 of the IPv6 IPs is an IPv4-mapped IPv6 address, to benchmark that case as well.
+  * All addresses are operational real-world addresses, not documentation examples or such.
+  * Different addresses test different branches of a possibly branchy parsing/serialization implementation.
+  * 2 of the IPv6 IPs are IPv4-embedded, 1 of which is an IPv4-mapped IPv6 address.
     * IPv4-mapped addresses have a mixed-notation representation, per RFC 5952.
 
 #### Against Darwin
@@ -170,10 +172,10 @@ These were performed on my M1 Pro MacBook, on macOS 27.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 5.2           | 222.6        | 42.81x  |
-| IPv4    | Parsing     | 14.6          | 48.0         | 3.29x   |
-| IPv6    | Serializing | 26.3          | 274.0        | 10.42x  |
-| IPv6    | Parsing     | 21.8          | 103.8        | 4.76x   |
+| IPv4    | Serializing | 6.0           | 178.0        | 29.92x  |
+| IPv4    | Parsing     | 15.3          | 46.8         | 3.06x   |
+| IPv6    | Serializing | 27.0          | 221.0        | 8.19x   |
+| IPv6    | Parsing     | 25.0          | 99.7         | 3.99x   |
 
 #### Against glibc
 

@@ -608,7 +608,7 @@ extension IPv6Address: LosslessStringConvertible {
             segmentDigitIdx = 0
             idx &+= 1
 
-            /// The pre-loop trailing-colon check guarantees `idx < count` here.
+            /// The pre-loop trailing-colon check guarantees `idx < count`.
             let isColon = unsafe span[unchecked: idx] == .asciiColon
             segmentsCountBeforeCs = isColon ? segmentsCount : segmentsCountBeforeCs
             csCount &+= isColon ? 1 : 0
@@ -633,8 +633,8 @@ extension IPv6Address: LosslessStringConvertible {
             return false
         }
 
-        address = isBeforeCs ? beforeCs : afterCs
         if isBeforeCs {
+            address = beforeCs
             return segmentsCount == 8
         }
 
@@ -643,7 +643,7 @@ extension IPv6Address: LosslessStringConvertible {
             return false
         }
 
-        address |= (beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs)))
+        address = afterCs | (beforeCs &<< (16 &* (8 &- segmentsCountBeforeCs)))
 
         return true
     }

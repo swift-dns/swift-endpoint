@@ -644,12 +644,19 @@ extension IPv6Address: LosslessStringConvertible {
         return true
     }
 
-    /// If first input is a colon then the second input must also be a colon.
+    /// | byte == ':' | adjacent == ':' | returns |                meaning               |
+    /// +-------------+-----------------+---------+--------------------------------------+
+    /// |    false    |      false      |  false  | not a colon; e.g. "2001:db8::1"      |
+    /// |    false    |      true       |  false  | not a colon; e.g. "a::b"             |
+    /// |    true     |      false      |  true   | lone colon; e.g. ":a::b", or "a::b:" |
+    /// |    true     |      true       |  false  | a "::" compression sign; e.g. "::1"  |
+    /// +-------------+-----------------+---------+--------------------------------------+
     @inlinable
     @inline(always)
     static func isLoneColon(_ byte: UInt8, adjacent adjacentByte: UInt8) -> Bool {
-        let pair = (UInt16(byte ^ .asciiColon) &<< 8) | UInt16(adjacentByte ^ .asciiColon)
-        return pair &- 1 < 0xFF
+        let firstIsColon = byte == .asciiColon
+        let secondIsNotColon = adjacentByte != .asciiColon
+        return firstIsColon && secondIsNotColon
     }
 }
 

@@ -151,6 +151,10 @@ jobs:
           path: Benchmarks/.build
           key: "swiftpm-benchmark-build-${{ runner.os }}-${{ steps.swift-toolchain.outputs.version }}-${{ github.sha }}"
 
+      - name: Wait for swift processes to exit
+        if: always()
+        run: .github/scripts/wait-for-swift-exit.sh
+
       - name: Floor static thresholds and baselines
         if: always()
         run: |

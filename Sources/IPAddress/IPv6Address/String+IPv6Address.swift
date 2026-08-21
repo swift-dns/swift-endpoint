@@ -589,8 +589,8 @@ extension IPv6Address: LosslessStringConvertible {
 
             let sAbove4 = segmentDigitIdx > 4 ? 1 : 0
             let sZero = segmentDigitIdx == 0 ? 1 : 0
-            let byteNotColon = byte != .asciiColon ? 1 : 0
-            if (sAbove4 + sZero + byteNotColon) != 0 {
+            let byteNotColon = byte == .asciiColon ? 0 : 1
+            if (sAbove4 | sZero | byteNotColon) != 0 {
                 return false
             }
 

@@ -88,23 +88,17 @@ print(ipv6Address2) /// prints "2001:db8:85a3::100"
 /// Define IPv4-embedded IPv6 addresses via the mixed IPv4-embedded notation.
 /// An IPv4-mapped IPv6 address (RFC 4291).
 let ipv4InIPv6Address1 = IPv6Address("::FFFF:192.168.1.1")!
-/// NAT64 well-known IPv4-Embedded addresses (RFC 6052).
-let ipv4InIPv6Address2 = IPv6Address("[64:ff9b:0:0:0:0:c000:221]")!
-/// Any other non-well-known IPv4-embedded IPv6 address containing an IPv4 in the trailing 32 bits.
-let ipv4InIPv6Address3 = IPv6Address("[2001:db8:122:344::192.0.2.33]")!
+/// Any IPv4-**embedded** IPv6 address containing an IPv4 in the trailing 32 bits.
+let ipv4InIPv6Address2 = IPv6Address("[2001:db8:122:344::192.0.2.33]")!
 print(ipv4InIPv6Address1) /// prints "::ffff:192.168.1.1"
-print(ipv4InIPv6Address2) /// prints "64:ff9b::192.0.2.33"
-print(ipv4InIPv6Address3) /// prints "2001:db8:122:344::c000:221", Not well-known so no mixed notation
+// By default, only IPv4-**mapped** addresses use the mixed notation
+print(ipv4InIPv6Address2) /// prints "2001:db8:122:344::c000:221"
 
-/// Define an any-ip-address. The type will automatically parse the ip address into the correct type.
-let anyIPv4Address = AnyIPAddress("192.168.1.1")
-let anyIPv6Address = AnyIPAddress("[2001:DB8:85A3::100]")
+/// Define a version-independent ip address. The type will automatically parse the ip address into the correct type.
+let anyIPv4Address = AnyIPAddress("192.168.1.1")!
+let anyIPv6Address = AnyIPAddress("[2001:DB8:85A3::100]")!
 print(anyIPv4Address) /// prints "192.168.1.1"
 print(anyIPv6Address) /// prints "2001:db8:85a3::100"
-
-/// Define a domain name containing an ip v4 address.
-let domainName3 = try DomainName(ipv4: ipv4Address2)
-print(domainName3) /// prints "192.168.1.1"
 
 /// Define a CIDR. The type will store a `prefix` and a `mask`, representing this block of ips.
 let cidr1 = CIDR(prefix: ipv4Address1, prefixLength: 8) /// ipv4Address1 == "127.0.0.1"
@@ -132,21 +126,22 @@ let slowIPv4 = IPv4Address(simpleIpv4InDomainName.description)! /// ❌ This doe
 let fastIPv4Conversion = DomainName(ipv4: fastIPv4) /// ✅ Converts the ipv4 into the equivalent domain name
 let slowIPv4Conversion = try DomainName(fastIPv4.description) /// ❌ This does work, but has worse performance
 
-print(fastIPv4Conversion) /// prints "4.3.2.1.in-addr.arpa."
+print(fastIPv4Conversion) /// prints "4.3.2.1.in-addr.arpa"
+print(slowIPv4Conversion) /// prints "1.2.3.4"
 
-let anyIPAddress = AnyIPAddress(domainName: simpleIpv4InDomainName)
-print(anyIPAddress)/// prints "1.2.3.4"
+let anyIPAddress = AnyIPAddress(domainName: simpleIpv4InDomainName)!
+print(anyIPAddress) /// prints "1.2.3.4"
 ```
 
 For `IPv4Address`, the `DomainName` conversions are possible to/from:
 
 - Dotted-quad notation, for example: "1.2.3.4"
-- Arpa domain name format, for example: "4.3.2.1.in-addr.arpa."
+- Arpa domain name format, for example: "4.3.2.1.in-addr.arpa"
 
-For `IPv6Address`, the Arpa domain name format is supported. For example the followings are equivalent:
+For `IPv6Address`, only the Arpa domain name format can be supported. For example the followings are equivalent:
 
-- `IPv6Address`: 4321::1:2:3:4:567:89ab
-- `DomainName`: "b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6.arpa."
+- `IPv6Address`: "4321:0:1:2:3:4:567:89ab"
+- `DomainName`: "b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6.arpa"
 
 ## Performance
 

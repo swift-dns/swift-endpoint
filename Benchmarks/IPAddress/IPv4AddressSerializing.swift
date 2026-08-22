@@ -146,7 +146,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         "IPv4_Serializing_Mixed_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10
         )
     ) { benchmark in
@@ -210,7 +210,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         "IPv4_Serializing_Mixed_inet_ntop_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10
         )
     ) { benchmark in
@@ -338,7 +338,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         "IPv4_Serializing_Multiple_IPs_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10
         )
     ) { benchmark in
@@ -438,7 +438,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
         "IPv4_Serializing_Multiple_IPs_inet_ntop_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10
         )
     ) { benchmark in

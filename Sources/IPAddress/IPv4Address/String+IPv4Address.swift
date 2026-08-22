@@ -59,6 +59,7 @@ extension IPv4Address: CustomStringConvertible {
 
     /// 4x 8-bit lanes, one for each byte, each holding how many decimal digits that byte needs
     /// beyond its first one which is always written even if 0 (Example: "0.0.0.0").
+    /// For example for 192.168.1.98, this will be `0x02_02_00_01`, each lane representing a segment's `digitCount - 1`.
     @inlinable
     @inline(always)
     var _extraDecimalDigitsToPrintPerByte: UInt32 {
@@ -102,7 +103,7 @@ extension IPv4Address: CustomStringConvertible {
         /// Puts sum of all 4 lanes into bits 25th-28th.
         /// Then we bit shift by 24 to get the sum into bits 1st-3rd.
         let extraDigitsCount = (extraDigits &* 0x0101_0101) &>> 24
-        /// 3 dots + the first digit of each of the 4 bytes + 2 headroom bytes.
+        /// 9 == 3 dots + the first digit of each of the 4 bytes + 2 headroom bytes.
         return 9 &+ Int(extraDigitsCount)
     }
 
@@ -114,7 +115,7 @@ extension IPv4Address: CustomStringConvertible {
         /// Puts sum of all 4 lanes into bits 25th-28th.
         /// Then we bit shift by 24 to get the sum into bits 1st-3rd.
         let extraDigitsCount = (allDigits &* 0x0101_0101) &>> 24
-        /// 3 dots + the first digit of each of the 4 bytes.
+        /// 7 == 3 dots + the first digit of each of the 4 bytes.
         return 7 &+ Int(extraDigitsCount)
     }
 }

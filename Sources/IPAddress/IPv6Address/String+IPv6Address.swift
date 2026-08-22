@@ -399,7 +399,7 @@ extension IPv6Address {
         /// 0x00_01_00_01 x 0x27 = 0x00_27_00_27
         let above9Base = above9Mask &* adjustment
         /// Now we add 0x30 (ascii code of 0) to each lane. If the lane contained 0...9, we'll be all-good.
-        /// Otherwise we add the 0x27s to the lanes, which adds to he 0x30s and to the 0-15 values and
+        /// Otherwise we add the 0x27s to the lanes, which adds to the 0x30s and to the 0-15 values and
         /// will be in range (0x30 + 0x27 + 10)...(0x30 + 0x27 + 15), which is 0x61...0x6f,
         /// which is the range for ascii codes of a to f.
         let hexASCII = nibbles &+ 0x3030_3030 &+ above9Base

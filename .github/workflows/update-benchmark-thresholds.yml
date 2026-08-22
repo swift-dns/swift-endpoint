@@ -62,7 +62,7 @@ jobs:
           private-key: ${{ secrets.SWIFT_DNS_HELPER_PRIVATE_KEY }}
 
       - name: Enable full performance
-        run: /usr/bin/ordo-performance
+        run: set-perf-mode performance
 
       - name: Construct in-progress comment
         if: ${{ inputs.pr_number != '' }}
@@ -119,6 +119,7 @@ jobs:
           RUN_COUNT: ${{ inputs.run_count }}
         run: |
           COMMAND=(
+            run-with-priority
             swiftly run swift ${TOOLCHAIN_MODIFIER}
             package
             -c release
@@ -257,4 +258,4 @@ jobs:
 
       - name: Enable powersave mode
         if: always()
-        run: /usr/bin/ordo-performance powersave
+        run: set-perf-mode powersave

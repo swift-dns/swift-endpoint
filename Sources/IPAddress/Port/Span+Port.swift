@@ -7,7 +7,7 @@ extension Port {
         }
 
         self.init(
-            canonicalValue: UInt16(span[0]) &<< 8
+            rawValue: UInt16(span[0]) &<< 8
                 | UInt16(span[1])
         )
     }
@@ -19,8 +19,8 @@ extension Port {
             return false
         }
 
-        span.append(UInt8(truncatingIfNeeded: self.canonicalValue &>> 8))
-        span.append(UInt8(truncatingIfNeeded: self.canonicalValue))
+        span.append(UInt8(truncatingIfNeeded: self.rawValue &>> 8))
+        span.append(UInt8(truncatingIfNeeded: self.rawValue))
 
         return true
     }

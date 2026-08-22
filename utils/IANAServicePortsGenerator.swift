@@ -351,7 +351,7 @@ func entryCode(_ entry: Entry) -> String {
         + """
             @inlinable
             public static var \(entry.identifier): Self {
-                Port(canonicalValue: \(entry.servicePort.port))
+                Port(rawValue: \(entry.servicePort.port))
             }
 
         """

@@ -204,13 +204,15 @@ jobs:
           BASE_SHA="$(git rev-parse "origin/${CURRENT_BRANCH}")"
           git checkout -B "${NEW_BRANCH}" "origin/${CURRENT_BRANCH}"
 
+          BENCHMARKED_COMMIT="$(START_REF="${BASE_SHA}" .github/scripts/latest-non-bot-commit.sh)"
           COMMIT_MESSAGE="$(
-            printf -- '%s\n\n%s\n%s\n%s\n%s\n\n%s\n' \
+            printf -- '%s\n\n%s\n%s\n%s\n%s\n\n%s\n%s\n' \
               "Update of benchmark thresholds with the new baselines" \
               "Max run count: '${{ inputs.run_count }}'" \
               "Target: '${{ inputs.target }}'" \
               "Filter: '${{ inputs.filter }}'" \
               "Skip: '${{ inputs.skip }}'" \
+              "Benchmarked commit: ${BENCHMARKED_COMMIT}" \
               "Committed to ${NEW_BRANCH} by ${RUN_LINK}"
           )"
           BRANCH="${NEW_BRANCH}"

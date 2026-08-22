@@ -19,7 +19,7 @@ extension Port {
     /// [IETF RFC 9260](https://datatracker.ietf.org/doc/html/rfc9260).
     @inlinable
     public static var discard: Self {
-        Port(canonicalValue: 9)
+        Port(rawValue: 9)
     }
 
     /// The IANA `daytime` service port, 13.
@@ -31,7 +31,7 @@ extension Port {
     /// Defined in [IETF RFC 867](https://datatracker.ietf.org/doc/html/rfc867).
     @inlinable
     public static var daytime: Self {
-        Port(canonicalValue: 13)
+        Port(rawValue: 13)
     }
 
     /// The IANA `ftp-data` service port, 20.
@@ -43,7 +43,7 @@ extension Port {
     /// Defined in [IETF RFC 9260](https://datatracker.ietf.org/doc/html/rfc9260).
     @inlinable
     public static var `ftp-data`: Self {
-        Port(canonicalValue: 20)
+        Port(rawValue: 20)
     }
 
     /// The IANA `ftp` service port, 21.
@@ -56,7 +56,7 @@ extension Port {
     /// [IETF RFC 959](https://datatracker.ietf.org/doc/html/rfc959).
     @inlinable
     public static var ftp: Self {
-        Port(canonicalValue: 21)
+        Port(rawValue: 21)
     }
 
     /// The IANA `ssh` service port, 22.
@@ -69,7 +69,7 @@ extension Port {
     /// [IETF RFC 9260](https://datatracker.ietf.org/doc/html/rfc9260).
     @inlinable
     public static var ssh: Self {
-        Port(canonicalValue: 22)
+        Port(rawValue: 22)
     }
 
     /// The IANA `telnet` service port, 23.
@@ -81,7 +81,7 @@ extension Port {
     /// Defined in [IETF RFC 854](https://datatracker.ietf.org/doc/html/rfc854).
     @inlinable
     public static var telnet: Self {
-        Port(canonicalValue: 23)
+        Port(rawValue: 23)
     }
 
     /// The IANA `bootps` service port, 67.
@@ -93,7 +93,7 @@ extension Port {
     /// Defined in [IETF RFC 951](https://datatracker.ietf.org/doc/html/rfc951).
     @inlinable
     public static var bootps: Self {
-        Port(canonicalValue: 67)
+        Port(rawValue: 67)
     }
 
     /// The IANA `http` service port, 80.
@@ -106,7 +106,7 @@ extension Port {
     /// [IETF RFC 9260](https://datatracker.ietf.org/doc/html/rfc9260).
     @inlinable
     public static var http: Self {
-        Port(canonicalValue: 80)
+        Port(rawValue: 80)
     }
 
     /// The IANA `www` service port, 80.
@@ -118,7 +118,7 @@ extension Port {
     /// Defined in [IETF RFC 9110](https://datatracker.ietf.org/doc/html/rfc9110).
     @inlinable
     public static var www: Self {
-        Port(canonicalValue: 80)
+        Port(rawValue: 80)
     }
 
     /// The IANA `kerberos` service port, 88.
@@ -130,7 +130,7 @@ extension Port {
     /// Defined in [IETF RFC 4120](https://datatracker.ietf.org/doc/html/rfc4120).
     @inlinable
     public static var kerberos: Self {
-        Port(canonicalValue: 88)
+        Port(rawValue: 88)
     }
 
     /// The IANA `nntp` service port, 119.
@@ -142,7 +142,7 @@ extension Port {
     /// Defined in [IETF RFC 3977](https://datatracker.ietf.org/doc/html/rfc3977).
     @inlinable
     public static var nntp: Self {
-        Port(canonicalValue: 119)
+        Port(rawValue: 119)
     }
 
     /// The IANA `ntp` service port, 123.
@@ -154,7 +154,7 @@ extension Port {
     /// Defined in [IETF RFC 5905](https://datatracker.ietf.org/doc/html/rfc5905).
     @inlinable
     public static var ntp: Self {
-        Port(canonicalValue: 123)
+        Port(rawValue: 123)
     }
 
     /// The IANA `imap` service port, 143.
@@ -167,7 +167,7 @@ extension Port {
     /// [IETF RFC 9051](https://datatracker.ietf.org/doc/html/rfc9051).
     @inlinable
     public static var imap: Self {
-        Port(canonicalValue: 143)
+        Port(rawValue: 143)
     }
 
     /// The IANA `bgp` service port, 179.
@@ -179,7 +179,7 @@ extension Port {
     /// Defined in [IETF RFC 9260](https://datatracker.ietf.org/doc/html/rfc9260).
     @inlinable
     public static var bgp: Self {
-        Port(canonicalValue: 179)
+        Port(rawValue: 179)
     }
 
     /// The IANA `manet` service port, 269.
@@ -191,7 +191,7 @@ extension Port {
     /// Defined in [IETF RFC 5498](https://datatracker.ietf.org/doc/html/rfc5498).
     @inlinable
     public static var manet: Self {
-        Port(canonicalValue: 269)
+        Port(rawValue: 269)
     }
 
     /// The IANA `gist` service port, 270.
@@ -203,7 +203,7 @@ extension Port {
     /// Defined in [IETF RFC 5971](https://datatracker.ietf.org/doc/html/rfc5971).
     @inlinable
     public static var gist: Self {
-        Port(canonicalValue: 270)
+        Port(rawValue: 270)
     }
 
     /// The IANA `pt-tls` service port, 271.
@@ -215,7 +215,7 @@ extension Port {
     /// Defined in [IETF RFC 6876](https://datatracker.ietf.org/doc/html/rfc6876).
     @inlinable
     public static var `pt-tls`: Self {
-        Port(canonicalValue: 271)
+        Port(rawValue: 271)
     }
 
     /// The IANA `tacacss` service port, 300.
@@ -227,7 +227,7 @@ extension Port {
     /// Defined in [IETF RFC 9887](https://datatracker.ietf.org/doc/html/rfc9887).
     @inlinable
     public static var tacacss: Self {
-        Port(canonicalValue: 300)
+        Port(rawValue: 300)
     }
 
     /// The IANA `rpki-rtr` service port, 323.
@@ -239,7 +239,7 @@ extension Port {
     /// Defined in [IETF RFC 6810](https://datatracker.ietf.org/doc/html/rfc6810).
     @inlinable
     public static var `rpki-rtr`: Self {
-        Port(canonicalValue: 323)
+        Port(rawValue: 323)
     }
 
     /// The IANA `rpki-rtr-tls` service port, 324.
@@ -251,7 +251,7 @@ extension Port {
     /// Defined in [IETF RFC 6810](https://datatracker.ietf.org/doc/html/rfc6810).
     @inlinable
     public static var `rpki-rtr-tls`: Self {
-        Port(canonicalValue: 324)
+        Port(rawValue: 324)
     }
 
     /// The IANA `matip-type-a` service port, 350.
@@ -263,7 +263,7 @@ extension Port {
     /// Defined in [IETF RFC 2351](https://datatracker.ietf.org/doc/html/rfc2351).
     @inlinable
     public static var `matip-type-a`: Self {
-        Port(canonicalValue: 350)
+        Port(rawValue: 350)
     }
 
     /// The IANA `matip-type-b` service port, 351.
@@ -275,7 +275,7 @@ extension Port {
     /// Defined in [IETF RFC 2351](https://datatracker.ietf.org/doc/html/rfc2351).
     @inlinable
     public static var `matip-type-b`: Self {
-        Port(canonicalValue: 351)
+        Port(rawValue: 351)
     }
 
     /// The IANA `nnsp` service port, 433.
@@ -287,7 +287,7 @@ extension Port {
     /// Defined in [IETF RFC 3977](https://datatracker.ietf.org/doc/html/rfc3977).
     @inlinable
     public static var nnsp: Self {
-        Port(canonicalValue: 433)
+        Port(rawValue: 433)
     }
 
     /// The IANA `https` service port, 443.
@@ -300,7 +300,7 @@ extension Port {
     /// [IETF RFC 9260](https://datatracker.ietf.org/doc/html/rfc9260).
     @inlinable
     public static var https: Self {
-        Port(canonicalValue: 443)
+        Port(rawValue: 443)
     }
 
     /// The IANA `snpp` service port, 444.
@@ -312,7 +312,7 @@ extension Port {
     /// Defined in [IETF RFC 1568](https://datatracker.ietf.org/doc/html/rfc1568).
     @inlinable
     public static var snpp: Self {
-        Port(canonicalValue: 444)
+        Port(rawValue: 444)
     }
 
     /// The IANA `submissions` service port, 465.
@@ -324,7 +324,7 @@ extension Port {
     /// Defined in [IETF RFC 8314](https://datatracker.ietf.org/doc/html/rfc8314).
     @inlinable
     public static var submissions: Self {
-        Port(canonicalValue: 465)
+        Port(rawValue: 465)
     }
 
     /// The IANA `syslog` service port, 514.
@@ -334,7 +334,7 @@ extension Port {
     /// Defined in [IETF RFC 5426](https://datatracker.ietf.org/doc/html/rfc5426).
     @inlinable
     public static var syslog: Self {
-        Port(canonicalValue: 514)
+        Port(rawValue: 514)
     }
 
     /// The IANA `dhcpv6-client` service port, 546.
@@ -346,7 +346,7 @@ extension Port {
     /// Defined in [IETF RFC 9915](https://datatracker.ietf.org/doc/html/rfc9915).
     @inlinable
     public static var `dhcpv6-client`: Self {
-        Port(canonicalValue: 546)
+        Port(rawValue: 546)
     }
 
     /// The IANA `dhcpv6-server` service port, 547.
@@ -359,7 +359,7 @@ extension Port {
     /// [IETF RFC 9915](https://datatracker.ietf.org/doc/html/rfc9915).
     @inlinable
     public static var `dhcpv6-server`: Self {
-        Port(canonicalValue: 547)
+        Port(rawValue: 547)
     }
 
     /// The IANA `cybercash` service port, 551.
@@ -371,7 +371,7 @@ extension Port {
     /// Defined in [IETF RFC 1898](https://datatracker.ietf.org/doc/html/rfc1898).
     @inlinable
     public static var cybercash: Self {
-        Port(canonicalValue: 551)
+        Port(rawValue: 551)
     }
 
     /// The IANA `nntps` service port, 563.
@@ -383,7 +383,7 @@ extension Port {
     /// Defined in [IETF RFC 4642](https://datatracker.ietf.org/doc/html/rfc4642).
     @inlinable
     public static var nntps: Self {
-        Port(canonicalValue: 563)
+        Port(rawValue: 563)
     }
 
     /// The IANA `submission` service port, 587.
@@ -395,7 +395,7 @@ extension Port {
     /// Defined in [IETF RFC 6409](https://datatracker.ietf.org/doc/html/rfc6409).
     @inlinable
     public static var submission: Self {
-        Port(canonicalValue: 587)
+        Port(rawValue: 587)
     }
 
     /// The IANA `syslog-conn` service port, 601.
@@ -407,7 +407,7 @@ extension Port {
     /// Defined in [IETF RFC 3195](https://datatracker.ietf.org/doc/html/rfc3195).
     @inlinable
     public static var `syslog-conn`: Self {
-        Port(canonicalValue: 601)
+        Port(rawValue: 601)
     }
 
     /// The IANA `xmlrpc-beep` service port, 602.
@@ -419,7 +419,7 @@ extension Port {
     /// Defined in [IETF RFC 3529](https://datatracker.ietf.org/doc/html/rfc3529).
     @inlinable
     public static var `xmlrpc-beep`: Self {
-        Port(canonicalValue: 602)
+        Port(rawValue: 602)
     }
 
     /// The IANA `idxp` service port, 603.
@@ -431,7 +431,7 @@ extension Port {
     /// Defined in [IETF RFC 4767](https://datatracker.ietf.org/doc/html/rfc4767).
     @inlinable
     public static var idxp: Self {
-        Port(canonicalValue: 603)
+        Port(rawValue: 603)
     }
 
     /// The IANA `tunnel` service port, 604.
@@ -443,7 +443,7 @@ extension Port {
     /// Defined in [IETF RFC 3620](https://datatracker.ietf.org/doc/html/rfc3620).
     @inlinable
     public static var tunnel: Self {
-        Port(canonicalValue: 604)
+        Port(rawValue: 604)
     }
 
     /// The IANA `soap-beep` service port, 605.
@@ -455,7 +455,7 @@ extension Port {
     /// Defined in [IETF RFC 4227](https://datatracker.ietf.org/doc/html/rfc4227).
     @inlinable
     public static var `soap-beep`: Self {
-        Port(canonicalValue: 605)
+        Port(rawValue: 605)
     }
 
     /// The IANA `ipp` service port, 631.
@@ -467,7 +467,7 @@ extension Port {
     /// Defined in [IETF RFC 8011](https://datatracker.ietf.org/doc/html/rfc8011).
     @inlinable
     public static var ipp: Self {
-        Port(canonicalValue: 631)
+        Port(rawValue: 631)
     }
 
     /// The IANA `ipps` service port, 631.
@@ -479,7 +479,7 @@ extension Port {
     /// Defined in [IETF RFC 8011](https://datatracker.ietf.org/doc/html/rfc8011).
     @inlinable
     public static var ipps: Self {
-        Port(canonicalValue: 631)
+        Port(rawValue: 631)
     }
 
     /// The IANA `dhcp-failover` service port, 647.
@@ -491,7 +491,7 @@ extension Port {
     /// Defined in [IETF RFC 8156](https://datatracker.ietf.org/doc/html/rfc8156).
     @inlinable
     public static var `dhcp-failover`: Self {
-        Port(canonicalValue: 647)
+        Port(rawValue: 647)
     }
 
     /// The IANA `epp` service port, 700.
@@ -504,7 +504,7 @@ extension Port {
     /// [IETF RFC 5734](https://datatracker.ietf.org/doc/html/rfc5734).
     @inlinable
     public static var epp: Self {
-        Port(canonicalValue: 700)
+        Port(rawValue: 700)
     }
 
     /// The IANA `lmp` service port, 701.
@@ -516,7 +516,7 @@ extension Port {
     /// Defined in [IETF RFC 4204](https://datatracker.ietf.org/doc/html/rfc4204).
     @inlinable
     public static var lmp: Self {
-        Port(canonicalValue: 701)
+        Port(rawValue: 701)
     }
 
     /// The IANA `iris-beep` service port, 702.
@@ -528,7 +528,7 @@ extension Port {
     /// Defined in [IETF RFC 3983](https://datatracker.ietf.org/doc/html/rfc3983).
     @inlinable
     public static var `iris-beep`: Self {
-        Port(canonicalValue: 702)
+        Port(rawValue: 702)
     }
 
     /// The IANA `tbrpf` service port, 712.
@@ -540,7 +540,7 @@ extension Port {
     /// Defined in [IETF RFC 3684](https://datatracker.ietf.org/doc/html/rfc3684).
     @inlinable
     public static var tbrpf: Self {
-        Port(canonicalValue: 712)
+        Port(rawValue: 712)
     }
 
     /// The IANA `iris-xpcs` service port, 714.
@@ -552,7 +552,7 @@ extension Port {
     /// Defined in [IETF RFC 4992](https://datatracker.ietf.org/doc/html/rfc4992).
     @inlinable
     public static var `iris-xpcs`: Self {
-        Port(canonicalValue: 714)
+        Port(rawValue: 714)
     }
 
     /// The IANA `iris-lwz` service port, 715.
@@ -564,7 +564,7 @@ extension Port {
     /// Defined in [IETF RFC 4993](https://datatracker.ietf.org/doc/html/rfc4993).
     @inlinable
     public static var `iris-lwz`: Self {
-        Port(canonicalValue: 715)
+        Port(rawValue: 715)
     }
 
     /// The IANA `pana` service port, 716.
@@ -576,7 +576,7 @@ extension Port {
     /// Defined in [IETF RFC 5191](https://datatracker.ietf.org/doc/html/rfc5191).
     @inlinable
     public static var pana: Self {
-        Port(canonicalValue: 716)
+        Port(rawValue: 716)
     }
 
     /// The IANA `netconf-ssh` service port, 830.
@@ -588,7 +588,7 @@ extension Port {
     /// Defined in [IETF RFC 6242](https://datatracker.ietf.org/doc/html/rfc6242).
     @inlinable
     public static var `netconf-ssh`: Self {
-        Port(canonicalValue: 830)
+        Port(rawValue: 830)
     }
 
     /// The IANA `gdoi` service port, 848.
@@ -600,7 +600,7 @@ extension Port {
     /// Defined in [IETF RFC 3547](https://datatracker.ietf.org/doc/html/rfc3547).
     @inlinable
     public static var gdoi: Self {
-        Port(canonicalValue: 848)
+        Port(rawValue: 848)
     }
 
     /// The IANA `domain-s` service port, 853.
@@ -614,7 +614,7 @@ extension Port {
     /// [IETF RFC 9250](https://datatracker.ietf.org/doc/html/rfc9250).
     @inlinable
     public static var `domain-s`: Self {
-        Port(canonicalValue: 853)
+        Port(rawValue: 853)
     }
 
     /// The IANA `dlep` service port, 854.
@@ -626,7 +626,7 @@ extension Port {
     /// Defined in [IETF RFC 8175](https://datatracker.ietf.org/doc/html/rfc8175).
     @inlinable
     public static var dlep: Self {
-        Port(canonicalValue: 854)
+        Port(rawValue: 854)
     }
 
     /// The IANA `iscsi` service port, 860.
@@ -638,7 +638,7 @@ extension Port {
     /// Defined in [IETF RFC 7143](https://datatracker.ietf.org/doc/html/rfc7143).
     @inlinable
     public static var iscsi: Self {
-        Port(canonicalValue: 860)
+        Port(rawValue: 860)
     }
 
     /// The IANA `owamp-control` service port, 861.
@@ -650,7 +650,7 @@ extension Port {
     /// Defined in [IETF RFC 4656](https://datatracker.ietf.org/doc/html/rfc4656).
     @inlinable
     public static var `owamp-control`: Self {
-        Port(canonicalValue: 861)
+        Port(rawValue: 861)
     }
 
     /// The IANA `owamp-test` service port, 861.
@@ -662,7 +662,7 @@ extension Port {
     /// Defined in [IETF RFC 8545](https://datatracker.ietf.org/doc/html/rfc8545).
     @inlinable
     public static var `owamp-test`: Self {
-        Port(canonicalValue: 861)
+        Port(rawValue: 861)
     }
 
     /// The IANA `twamp-control` service port, 862.
@@ -674,7 +674,7 @@ extension Port {
     /// Defined in [IETF RFC 5357](https://datatracker.ietf.org/doc/html/rfc5357).
     @inlinable
     public static var `twamp-control`: Self {
-        Port(canonicalValue: 862)
+        Port(rawValue: 862)
     }
 
     /// The IANA `twamp-test` service port, 862.
@@ -686,7 +686,7 @@ extension Port {
     /// Defined in [IETF RFC 8545](https://datatracker.ietf.org/doc/html/rfc8545).
     @inlinable
     public static var `twamp-test`: Self {
-        Port(canonicalValue: 862)
+        Port(rawValue: 862)
     }
 
     /// The IANA `kink` service port, 910.
@@ -698,7 +698,7 @@ extension Port {
     /// Defined in [IETF RFC 4430](https://datatracker.ietf.org/doc/html/rfc4430).
     @inlinable
     public static var kink: Self {
-        Port(canonicalValue: 910)
+        Port(rawValue: 910)
     }
 
     /// The IANA `apex-edge` service port, 913.
@@ -710,7 +710,7 @@ extension Port {
     /// Defined in [IETF RFC 3340](https://datatracker.ietf.org/doc/html/rfc3340).
     @inlinable
     public static var `apex-edge`: Self {
-        Port(canonicalValue: 913)
+        Port(rawValue: 913)
     }
 
     /// The IANA `rift-lies` service port, 914.
@@ -722,7 +722,7 @@ extension Port {
     /// Defined in [IETF RFC 9692](https://datatracker.ietf.org/doc/html/rfc9692).
     @inlinable
     public static var `rift-lies`: Self {
-        Port(canonicalValue: 914)
+        Port(rawValue: 914)
     }
 
     /// The IANA `rift-ties` service port, 915.
@@ -734,7 +734,7 @@ extension Port {
     /// Defined in [IETF RFC 9692](https://datatracker.ietf.org/doc/html/rfc9692).
     @inlinable
     public static var `rift-ties`: Self {
-        Port(canonicalValue: 915)
+        Port(rawValue: 915)
     }
 
     /// The IANA `nas` service port, 991.
@@ -746,7 +746,7 @@ extension Port {
     /// Defined in [IETF RFC 4707](https://datatracker.ietf.org/doc/html/rfc4707).
     @inlinable
     public static var nas: Self {
-        Port(canonicalValue: 991)
+        Port(rawValue: 991)
     }
 
     /// The IANA `imaps` service port, 993.
@@ -760,7 +760,7 @@ extension Port {
     /// [IETF RFC 9051](https://datatracker.ietf.org/doc/html/rfc9051).
     @inlinable
     public static var imaps: Self {
-        Port(canonicalValue: 993)
+        Port(rawValue: 993)
     }
 
     /// The IANA `pop3s` service port, 995.
@@ -772,7 +772,7 @@ extension Port {
     /// Defined in [IETF RFC 8314](https://datatracker.ietf.org/doc/html/rfc8314).
     @inlinable
     public static var pop3s: Self {
-        Port(canonicalValue: 995)
+        Port(rawValue: 995)
     }
 
     /// The IANA `webpush` service port, 1001.
@@ -784,7 +784,7 @@ extension Port {
     /// Defined in [IETF RFC 8030](https://datatracker.ietf.org/doc/html/rfc8030).
     @inlinable
     public static var webpush: Self {
-        Port(canonicalValue: 1001)
+        Port(rawValue: 1001)
     }
 
     /// The IANA `exp1` service port, 1021.
@@ -797,7 +797,7 @@ extension Port {
     /// [IETF RFC 6335](https://datatracker.ietf.org/doc/html/rfc6335).
     @inlinable
     public static var exp1: Self {
-        Port(canonicalValue: 1021)
+        Port(rawValue: 1021)
     }
 
     /// The IANA `exp2` service port, 1022.
@@ -810,7 +810,7 @@ extension Port {
     /// [IETF RFC 6335](https://datatracker.ietf.org/doc/html/rfc6335).
     @inlinable
     public static var exp2: Self {
-        Port(canonicalValue: 1022)
+        Port(rawValue: 1022)
     }
 
     /// The IANA `6a44` service port, 1027.
@@ -822,7 +822,7 @@ extension Port {
     /// Defined in [IETF RFC 6751](https://datatracker.ietf.org/doc/html/rfc6751).
     @inlinable
     public static var `6a44`: Self {
-        Port(canonicalValue: 1027)
+        Port(rawValue: 1027)
     }
 
     /// The IANA `mtqp` service port, 1038.
@@ -834,7 +834,7 @@ extension Port {
     /// Defined in [IETF RFC 3887](https://datatracker.ietf.org/doc/html/rfc3887).
     @inlinable
     public static var mtqp: Self {
-        Port(canonicalValue: 1038)
+        Port(rawValue: 1038)
     }
 
     /// The IANA `ltp-deepspace` service port, 1113.
@@ -847,7 +847,7 @@ extension Port {
     /// [IETF RFC 7122](https://datatracker.ietf.org/doc/html/rfc7122).
     @inlinable
     public static var `ltp-deepspace`: Self {
-        Port(canonicalValue: 1113)
+        Port(rawValue: 1113)
     }
 
     /// The IANA `sacred` service port, 1118.
@@ -859,7 +859,7 @@ extension Port {
     /// Defined in [IETF RFC 3767](https://datatracker.ietf.org/doc/html/rfc3767).
     @inlinable
     public static var sacred: Self {
-        Port(canonicalValue: 1118)
+        Port(rawValue: 1118)
     }
 
     /// The IANA `c1222-acse` service port, 1153.
@@ -871,7 +871,7 @@ extension Port {
     /// Defined in [IETF RFC 6142](https://datatracker.ietf.org/doc/html/rfc6142).
     @inlinable
     public static var `c1222-acse`: Self {
-        Port(canonicalValue: 1153)
+        Port(rawValue: 1153)
     }
 
     /// The IANA `pptp` service port, 1723.
@@ -883,7 +883,7 @@ extension Port {
     /// Defined in [IETF RFC 2637](https://datatracker.ietf.org/doc/html/rfc2637).
     @inlinable
     public static var pptp: Self {
-        Port(canonicalValue: 1723)
+        Port(rawValue: 1723)
     }
 
     /// The IANA `radius` service port, 1812.
@@ -895,7 +895,7 @@ extension Port {
     /// Defined in [IETF RFC 2865](https://datatracker.ietf.org/doc/html/rfc2865).
     @inlinable
     public static var radius: Self {
-        Port(canonicalValue: 1812)
+        Port(rawValue: 1812)
     }
 
     /// The IANA `radius-acct` service port, 1813.
@@ -907,7 +907,7 @@ extension Port {
     /// Defined in [IETF RFC 2866](https://datatracker.ietf.org/doc/html/rfc2866).
     @inlinable
     public static var `radius-acct`: Self {
-        Port(canonicalValue: 1813)
+        Port(rawValue: 1813)
     }
 
     /// The IANA `slp-notify` service port, 1847.
@@ -919,7 +919,7 @@ extension Port {
     /// Defined in [IETF RFC 3082](https://datatracker.ietf.org/doc/html/rfc3082).
     @inlinable
     public static var `slp-notify`: Self {
-        Port(canonicalValue: 1847)
+        Port(rawValue: 1847)
     }
 
     /// The IANA `hsrp` service port, 1985.
@@ -931,7 +931,7 @@ extension Port {
     /// Defined in [IETF RFC 2281](https://datatracker.ietf.org/doc/html/rfc2281).
     @inlinable
     public static var hsrp: Self {
-        Port(canonicalValue: 1985)
+        Port(rawValue: 1985)
     }
 
     /// The IANA `nfs` service port, 2049.
@@ -943,7 +943,7 @@ extension Port {
     /// Defined in [IETF RFC 5665](https://datatracker.ietf.org/doc/html/rfc5665).
     @inlinable
     public static var nfs: Self {
-        Port(canonicalValue: 2049)
+        Port(rawValue: 2049)
     }
 
     /// The IANA `radsec` service port, 2083.
@@ -956,7 +956,7 @@ extension Port {
     /// [IETF RFC 7360](https://datatracker.ietf.org/doc/html/rfc7360).
     @inlinable
     public static var radsec: Self {
-        Port(canonicalValue: 2083)
+        Port(rawValue: 2083)
     }
 
     /// The IANA `tdmoip` service port, 2142.
@@ -968,7 +968,7 @@ extension Port {
     /// Defined in [IETF RFC 5087](https://datatracker.ietf.org/doc/html/rfc5087).
     @inlinable
     public static var tdmoip: Self {
-        Port(canonicalValue: 2142)
+        Port(rawValue: 2142)
     }
 
     /// The IANA `amt` service port, 2268.
@@ -980,7 +980,7 @@ extension Port {
     /// Defined in [IETF RFC 7450](https://datatracker.ietf.org/doc/html/rfc7450).
     @inlinable
     public static var amt: Self {
-        Port(canonicalValue: 2268)
+        Port(rawValue: 2268)
     }
 
     /// The IANA `msrp` service port, 2855.
@@ -992,7 +992,7 @@ extension Port {
     /// Defined in [IETF RFC 4976](https://datatracker.ietf.org/doc/html/rfc4976).
     @inlinable
     public static var msrp: Self {
-        Port(canonicalValue: 2855)
+        Port(rawValue: 2855)
     }
 
     /// The IANA `m3ua` service port, 2905.
@@ -1004,7 +1004,7 @@ extension Port {
     /// Defined in [IETF RFC 4666](https://datatracker.ietf.org/doc/html/rfc4666).
     @inlinable
     public static var m3ua: Self {
-        Port(canonicalValue: 2905)
+        Port(rawValue: 2905)
     }
 
     /// The IANA `isns` service port, 3205.
@@ -1016,7 +1016,7 @@ extension Port {
     /// Defined in [IETF RFC 4171](https://datatracker.ietf.org/doc/html/rfc4171).
     @inlinable
     public static var isns: Self {
-        Port(canonicalValue: 3205)
+        Port(rawValue: 3205)
     }
 
     /// The IANA `fcip-port` service port, 3225.
@@ -1028,7 +1028,7 @@ extension Port {
     /// Defined in [IETF RFC 3821](https://datatracker.ietf.org/doc/html/rfc3821).
     @inlinable
     public static var `fcip-port`: Self {
-        Port(canonicalValue: 3225)
+        Port(rawValue: 3225)
     }
 
     /// The IANA `mdtp` service port, 3232.
@@ -1040,7 +1040,7 @@ extension Port {
     /// Defined in [IETF RFC 6513](https://datatracker.ietf.org/doc/html/rfc6513).
     @inlinable
     public static var mdtp: Self {
-        Port(canonicalValue: 3232)
+        Port(rawValue: 3232)
     }
 
     /// The IANA `iscsi-target` service port, 3260.
@@ -1052,7 +1052,7 @@ extension Port {
     /// Defined in [IETF RFC 7143](https://datatracker.ietf.org/doc/html/rfc7143).
     @inlinable
     public static var `iscsi-target`: Self {
-        Port(canonicalValue: 3260)
+        Port(rawValue: 3260)
     }
 
     /// The IANA `odette-ftp` service port, 3305.
@@ -1064,7 +1064,7 @@ extension Port {
     /// Defined in [IETF RFC 5024](https://datatracker.ietf.org/doc/html/rfc5024).
     @inlinable
     public static var `odette-ftp`: Self {
-        Port(canonicalValue: 3305)
+        Port(rawValue: 3305)
     }
 
     /// The IANA `ifcp-port` service port, 3420.
@@ -1076,7 +1076,7 @@ extension Port {
     /// Defined in [IETF RFC 4172](https://datatracker.ietf.org/doc/html/rfc4172).
     @inlinable
     public static var `ifcp-port`: Self {
-        Port(canonicalValue: 3420)
+        Port(rawValue: 3420)
     }
 
     /// The IANA `stun` service port, 3478.
@@ -1088,7 +1088,7 @@ extension Port {
     /// Defined in [IETF RFC 8489](https://datatracker.ietf.org/doc/html/rfc8489).
     @inlinable
     public static var stun: Self {
-        Port(canonicalValue: 3478)
+        Port(rawValue: 3478)
     }
 
     /// The IANA `stun-behavior` service port, 3478.
@@ -1100,7 +1100,7 @@ extension Port {
     /// Defined in [IETF RFC 5780](https://datatracker.ietf.org/doc/html/rfc5780).
     @inlinable
     public static var `stun-behavior`: Self {
-        Port(canonicalValue: 3478)
+        Port(rawValue: 3478)
     }
 
     /// The IANA `turn` service port, 3478.
@@ -1112,7 +1112,7 @@ extension Port {
     /// Defined in [IETF RFC 8656](https://datatracker.ietf.org/doc/html/rfc8656).
     @inlinable
     public static var turn: Self {
-        Port(canonicalValue: 3478)
+        Port(rawValue: 3478)
     }
 
     /// The IANA `nut` service port, 3493.
@@ -1124,7 +1124,7 @@ extension Port {
     /// Defined in [IETF RFC 9271](https://datatracker.ietf.org/doc/html/rfc9271).
     @inlinable
     public static var nut: Self {
-        Port(canonicalValue: 3493)
+        Port(rawValue: 3493)
     }
 
     /// The IANA `lsp-ping` service port, 3503.
@@ -1136,7 +1136,7 @@ extension Port {
     /// Defined in [IETF RFC 8029](https://datatracker.ietf.org/doc/html/rfc8029).
     @inlinable
     public static var `lsp-ping`: Self {
-        Port(canonicalValue: 3503)
+        Port(rawValue: 3503)
     }
 
     /// The IANA `teredo` service port, 3544.
@@ -1148,7 +1148,7 @@ extension Port {
     /// Defined in [IETF RFC 4380](https://datatracker.ietf.org/doc/html/rfc4380).
     @inlinable
     public static var teredo: Self {
-        Port(canonicalValue: 3544)
+        Port(rawValue: 3544)
     }
 
     /// The IANA `m2pa` service port, 3565.
@@ -1160,7 +1160,7 @@ extension Port {
     /// Defined in [IETF RFC 4165](https://datatracker.ietf.org/doc/html/rfc4165).
     @inlinable
     public static var m2pa: Self {
-        Port(canonicalValue: 3565)
+        Port(rawValue: 3565)
     }
 
     /// The IANA `tsp` service port, 3653.
@@ -1172,7 +1172,7 @@ extension Port {
     /// Defined in [IETF RFC 5572](https://datatracker.ietf.org/doc/html/rfc5572).
     @inlinable
     public static var tsp: Self {
-        Port(canonicalValue: 3653)
+        Port(rawValue: 3653)
     }
 
     /// The IANA `gsakmp` service port, 3761.
@@ -1184,7 +1184,7 @@ extension Port {
     /// Defined in [IETF RFC 4535](https://datatracker.ietf.org/doc/html/rfc4535).
     @inlinable
     public static var gsakmp: Self {
-        Port(canonicalValue: 3761)
+        Port(rawValue: 3761)
     }
 
     /// The IANA `bfd-control` service port, 3784.
@@ -1196,7 +1196,7 @@ extension Port {
     /// Defined in [IETF RFC 5881](https://datatracker.ietf.org/doc/html/rfc5881).
     @inlinable
     public static var `bfd-control`: Self {
-        Port(canonicalValue: 3784)
+        Port(rawValue: 3784)
     }
 
     /// The IANA `bfd-echo` service port, 3785.
@@ -1208,7 +1208,7 @@ extension Port {
     /// Defined in [IETF RFC 5881](https://datatracker.ietf.org/doc/html/rfc5881).
     @inlinable
     public static var `bfd-echo`: Self {
-        Port(canonicalValue: 3785)
+        Port(rawValue: 3785)
     }
 
     /// The IANA `radius-dynauth` service port, 3799.
@@ -1220,7 +1220,7 @@ extension Port {
     /// Defined in [IETF RFC 3576](https://datatracker.ietf.org/doc/html/rfc3576).
     @inlinable
     public static var `radius-dynauth`: Self {
-        Port(canonicalValue: 3799)
+        Port(rawValue: 3799)
     }
 
     /// The IANA `asap-sctp` service port, 3863.
@@ -1232,7 +1232,7 @@ extension Port {
     /// Defined in [IETF RFC 5352](https://datatracker.ietf.org/doc/html/rfc5352).
     @inlinable
     public static var `asap-sctp`: Self {
-        Port(canonicalValue: 3863)
+        Port(rawValue: 3863)
     }
 
     /// The IANA `asap-udp` service port, 3863.
@@ -1244,7 +1244,7 @@ extension Port {
     /// Defined in [IETF RFC 5352](https://datatracker.ietf.org/doc/html/rfc5352).
     @inlinable
     public static var `asap-udp`: Self {
-        Port(canonicalValue: 3863)
+        Port(rawValue: 3863)
     }
 
     /// The IANA `asap-sctp-tls` service port, 3864.
@@ -1256,7 +1256,7 @@ extension Port {
     /// Defined in [IETF RFC 5352](https://datatracker.ietf.org/doc/html/rfc5352).
     @inlinable
     public static var `asap-sctp-tls`: Self {
-        Port(canonicalValue: 3864)
+        Port(rawValue: 3864)
     }
 
     /// The IANA `asap-tcp-tls` service port, 3864.
@@ -1268,7 +1268,7 @@ extension Port {
     /// Defined in [IETF RFC 5352](https://datatracker.ietf.org/doc/html/rfc5352).
     @inlinable
     public static var `asap-tcp-tls`: Self {
-        Port(canonicalValue: 3864)
+        Port(rawValue: 3864)
     }
 
     /// The IANA `diameter` service port, 3868.
@@ -1280,7 +1280,7 @@ extension Port {
     /// Defined in [IETF RFC 3588](https://datatracker.ietf.org/doc/html/rfc3588).
     @inlinable
     public static var diameter: Self {
-        Port(canonicalValue: 3868)
+        Port(rawValue: 3868)
     }
 
     /// The IANA `mupdate` service port, 3905.
@@ -1292,7 +1292,7 @@ extension Port {
     /// Defined in [IETF RFC 3656](https://datatracker.ietf.org/doc/html/rfc3656).
     @inlinable
     public static var mupdate: Self {
-        Port(canonicalValue: 3905)
+        Port(rawValue: 3905)
     }
 
     /// The IANA `dsmipv6` service port, 4191.
@@ -1304,7 +1304,7 @@ extension Port {
     /// Defined in [IETF RFC 5555](https://datatracker.ietf.org/doc/html/rfc5555).
     @inlinable
     public static var dsmipv6: Self {
-        Port(canonicalValue: 4191)
+        Port(rawValue: 4191)
     }
 
     /// The IANA `rwhois` service port, 4321.
@@ -1316,7 +1316,7 @@ extension Port {
     /// Defined in [IETF RFC 2167](https://datatracker.ietf.org/doc/html/rfc2167).
     @inlinable
     public static var rwhois: Self {
-        Port(canonicalValue: 4321)
+        Port(rawValue: 4321)
     }
 
     /// The IANA `netconf-ch-ssh` service port, 4334.
@@ -1328,7 +1328,7 @@ extension Port {
     /// Defined in [IETF RFC 8071](https://datatracker.ietf.org/doc/html/rfc8071).
     @inlinable
     public static var `netconf-ch-ssh`: Self {
-        Port(canonicalValue: 4334)
+        Port(rawValue: 4334)
     }
 
     /// The IANA `netconf-ch-tls` service port, 4335.
@@ -1340,7 +1340,7 @@ extension Port {
     /// Defined in [IETF RFC 8071](https://datatracker.ietf.org/doc/html/rfc8071).
     @inlinable
     public static var `netconf-ch-tls`: Self {
-        Port(canonicalValue: 4335)
+        Port(rawValue: 4335)
     }
 
     /// The IANA `restconf-ch-tls` service port, 4336.
@@ -1352,7 +1352,7 @@ extension Port {
     /// Defined in [IETF RFC 8071](https://datatracker.ietf.org/doc/html/rfc8071).
     @inlinable
     public static var `restconf-ch-tls`: Self {
-        Port(canonicalValue: 4336)
+        Port(rawValue: 4336)
     }
 
     /// The IANA `lisp-data` service port, 4341.
@@ -1364,7 +1364,7 @@ extension Port {
     /// Defined in [IETF RFC 9300](https://datatracker.ietf.org/doc/html/rfc9300).
     @inlinable
     public static var `lisp-data`: Self {
-        Port(canonicalValue: 4341)
+        Port(rawValue: 4341)
     }
 
     /// The IANA `lisp-control` service port, 4342.
@@ -1376,7 +1376,7 @@ extension Port {
     /// Defined in [IETF RFC 9301](https://datatracker.ietf.org/doc/html/rfc9301).
     @inlinable
     public static var `lisp-control`: Self {
-        Port(canonicalValue: 4342)
+        Port(rawValue: 4342)
     }
 
     /// The IANA `ntske` service port, 4460.
@@ -1388,7 +1388,7 @@ extension Port {
     /// Defined in [IETF RFC 8915](https://datatracker.ietf.org/doc/html/rfc8915).
     @inlinable
     public static var ntske: Self {
-        Port(canonicalValue: 4460)
+        Port(rawValue: 4460)
     }
 
     /// The IANA `ipsec-nat-t` service port, 4500.
@@ -1402,7 +1402,7 @@ extension Port {
     /// [IETF RFC 9329](https://datatracker.ietf.org/doc/html/rfc9329).
     @inlinable
     public static var `ipsec-nat-t`: Self {
-        Port(canonicalValue: 4500)
+        Port(rawValue: 4500)
     }
 
     /// The IANA `ieee-mih` service port, 4551.
@@ -1414,7 +1414,7 @@ extension Port {
     /// Defined in [IETF RFC 5677](https://datatracker.ietf.org/doc/html/rfc5677).
     @inlinable
     public static var `ieee-mih`: Self {
-        Port(canonicalValue: 4551)
+        Port(rawValue: 4551)
     }
 
     /// The IANA `rsip` service port, 4555.
@@ -1426,7 +1426,7 @@ extension Port {
     /// Defined in [IETF RFC 3103](https://datatracker.ietf.org/doc/html/rfc3103).
     @inlinable
     public static var rsip: Self {
-        Port(canonicalValue: 4555)
+        Port(rawValue: 4555)
     }
 
     /// The IANA `dtn-bundle` service port, 4556.
@@ -1439,7 +1439,7 @@ extension Port {
     /// [IETF RFC 9174](https://datatracker.ietf.org/doc/html/rfc9174).
     @inlinable
     public static var `dtn-bundle`: Self {
-        Port(canonicalValue: 4556)
+        Port(rawValue: 4556)
     }
 
     /// The IANA `iax` service port, 4569.
@@ -1451,7 +1451,7 @@ extension Port {
     /// Defined in [IETF RFC 5456](https://datatracker.ietf.org/doc/html/rfc5456).
     @inlinable
     public static var iax: Self {
-        Port(canonicalValue: 4569)
+        Port(rawValue: 4569)
     }
 
     /// The IANA `rid` service port, 4590.
@@ -1463,7 +1463,7 @@ extension Port {
     /// Defined in [IETF RFC 6546](https://datatracker.ietf.org/doc/html/rfc6546).
     @inlinable
     public static var rid: Self {
-        Port(canonicalValue: 4590)
+        Port(rawValue: 4590)
     }
 
     /// The IANA `dots-signal` service port, 4646.
@@ -1478,7 +1478,7 @@ extension Port {
     /// [IETF RFC 9132](https://datatracker.ietf.org/doc/html/rfc9132).
     @inlinable
     public static var `dots-signal`: Self {
-        Port(canonicalValue: 4646)
+        Port(rawValue: 4646)
     }
 
     /// The IANA `gre-in-udp` service port, 4754.
@@ -1490,7 +1490,7 @@ extension Port {
     /// Defined in [IETF RFC 8086](https://datatracker.ietf.org/doc/html/rfc8086).
     @inlinable
     public static var `gre-in-udp`: Self {
-        Port(canonicalValue: 4754)
+        Port(rawValue: 4754)
     }
 
     /// The IANA `gre-udp-dtls` service port, 4755.
@@ -1502,7 +1502,7 @@ extension Port {
     /// Defined in [IETF RFC 8086](https://datatracker.ietf.org/doc/html/rfc8086).
     @inlinable
     public static var `gre-udp-dtls`: Self {
-        Port(canonicalValue: 4755)
+        Port(rawValue: 4755)
     }
 
     /// The IANA `vxlan` service port, 4789.
@@ -1514,7 +1514,7 @@ extension Port {
     /// Defined in [IETF RFC 7348](https://datatracker.ietf.org/doc/html/rfc7348).
     @inlinable
     public static var vxlan: Self {
-        Port(canonicalValue: 4789)
+        Port(rawValue: 4789)
     }
 
     /// The IANA `avt-profile-1` service port, 5004.
@@ -1528,7 +1528,7 @@ extension Port {
     /// [IETF RFC 5762](https://datatracker.ietf.org/doc/html/rfc5762).
     @inlinable
     public static var `avt-profile-1`: Self {
-        Port(canonicalValue: 5004)
+        Port(rawValue: 5004)
     }
 
     /// The IANA `avt-profile-2` service port, 5005.
@@ -1542,7 +1542,7 @@ extension Port {
     /// [IETF RFC 5762](https://datatracker.ietf.org/doc/html/rfc5762).
     @inlinable
     public static var `avt-profile-2`: Self {
-        Port(canonicalValue: 5005)
+        Port(rawValue: 5005)
     }
 
     /// The IANA `sip` service port, 5060.
@@ -1555,7 +1555,7 @@ extension Port {
     /// [IETF RFC 4168](https://datatracker.ietf.org/doc/html/rfc4168).
     @inlinable
     public static var sip: Self {
-        Port(canonicalValue: 5060)
+        Port(rawValue: 5060)
     }
 
     /// The IANA `sips` service port, 5061.
@@ -1568,7 +1568,7 @@ extension Port {
     /// [IETF RFC 4168](https://datatracker.ietf.org/doc/html/rfc4168).
     @inlinable
     public static var sips: Self {
-        Port(canonicalValue: 5061)
+        Port(rawValue: 5061)
     }
 
     /// The IANA `cxtp` service port, 5091.
@@ -1580,7 +1580,7 @@ extension Port {
     /// Defined in [IETF RFC 4065](https://datatracker.ietf.org/doc/html/rfc4065).
     @inlinable
     public static var cxtp: Self {
-        Port(canonicalValue: 5091)
+        Port(rawValue: 5091)
     }
 
     /// The IANA `snmpssh` service port, 5161.
@@ -1592,7 +1592,7 @@ extension Port {
     /// Defined in [IETF RFC 5592](https://datatracker.ietf.org/doc/html/rfc5592).
     @inlinable
     public static var snmpssh: Self {
-        Port(canonicalValue: 5161)
+        Port(rawValue: 5161)
     }
 
     /// The IANA `snmpssh-trap` service port, 5162.
@@ -1604,7 +1604,7 @@ extension Port {
     /// Defined in [IETF RFC 5592](https://datatracker.ietf.org/doc/html/rfc5592).
     @inlinable
     public static var `snmpssh-trap`: Self {
-        Port(canonicalValue: 5162)
+        Port(rawValue: 5162)
     }
 
     /// The IANA `xmpp-client` service port, 5222.
@@ -1616,7 +1616,7 @@ extension Port {
     /// Defined in [IETF RFC 6120](https://datatracker.ietf.org/doc/html/rfc6120).
     @inlinable
     public static var `xmpp-client`: Self {
-        Port(canonicalValue: 5222)
+        Port(rawValue: 5222)
     }
 
     /// The IANA `capwap-control` service port, 5246.
@@ -1628,7 +1628,7 @@ extension Port {
     /// Defined in [IETF RFC 5415](https://datatracker.ietf.org/doc/html/rfc5415).
     @inlinable
     public static var `capwap-control`: Self {
-        Port(canonicalValue: 5246)
+        Port(rawValue: 5246)
     }
 
     /// The IANA `capwap-data` service port, 5247.
@@ -1640,7 +1640,7 @@ extension Port {
     /// Defined in [IETF RFC 5415](https://datatracker.ietf.org/doc/html/rfc5415).
     @inlinable
     public static var `capwap-data`: Self {
-        Port(canonicalValue: 5247)
+        Port(rawValue: 5247)
     }
 
     /// The IANA `xmpp-server` service port, 5269.
@@ -1652,7 +1652,7 @@ extension Port {
     /// Defined in [IETF RFC 6120](https://datatracker.ietf.org/doc/html/rfc6120).
     @inlinable
     public static var `xmpp-server`: Self {
-        Port(canonicalValue: 5269)
+        Port(rawValue: 5269)
     }
 
     /// The IANA `pkix-cmc` service port, 5318.
@@ -1664,7 +1664,7 @@ extension Port {
     /// Defined in [IETF RFC 10003](https://datatracker.ietf.org/doc/html/rfc10003).
     @inlinable
     public static var `pkix-cmc`: Self {
-        Port(canonicalValue: 5318)
+        Port(rawValue: 5318)
     }
 
     /// The IANA `stun-behaviors` service port, 5349.
@@ -1676,7 +1676,7 @@ extension Port {
     /// Defined in [IETF RFC 5780](https://datatracker.ietf.org/doc/html/rfc5780).
     @inlinable
     public static var `stun-behaviors`: Self {
-        Port(canonicalValue: 5349)
+        Port(rawValue: 5349)
     }
 
     /// The IANA `stuns` service port, 5349.
@@ -1689,7 +1689,7 @@ extension Port {
     /// [IETF RFC 8489](https://datatracker.ietf.org/doc/html/rfc8489).
     @inlinable
     public static var stuns: Self {
-        Port(canonicalValue: 5349)
+        Port(rawValue: 5349)
     }
 
     /// The IANA `turns` service port, 5349.
@@ -1702,7 +1702,7 @@ extension Port {
     /// [IETF RFC 8656](https://datatracker.ietf.org/doc/html/rfc8656).
     @inlinable
     public static var turns: Self {
-        Port(canonicalValue: 5349)
+        Port(rawValue: 5349)
     }
 
     /// The IANA `pcp-multicast` service port, 5350.
@@ -1714,7 +1714,7 @@ extension Port {
     /// Defined in [IETF RFC 6887](https://datatracker.ietf.org/doc/html/rfc6887).
     @inlinable
     public static var `pcp-multicast`: Self {
-        Port(canonicalValue: 5350)
+        Port(rawValue: 5350)
     }
 
     /// The IANA `pcp` service port, 5351.
@@ -1726,7 +1726,7 @@ extension Port {
     /// Defined in [IETF RFC 6887](https://datatracker.ietf.org/doc/html/rfc6887).
     @inlinable
     public static var pcp: Self {
-        Port(canonicalValue: 5351)
+        Port(rawValue: 5351)
     }
 
     /// The IANA `dns-llq` service port, 5352.
@@ -1738,7 +1738,7 @@ extension Port {
     /// Defined in [IETF RFC 8764](https://datatracker.ietf.org/doc/html/rfc8764).
     @inlinable
     public static var `dns-llq`: Self {
-        Port(canonicalValue: 5352)
+        Port(rawValue: 5352)
     }
 
     /// The IANA `mdns` service port, 5353.
@@ -1750,7 +1750,7 @@ extension Port {
     /// Defined in [IETF RFC 6762](https://datatracker.ietf.org/doc/html/rfc6762).
     @inlinable
     public static var mdns: Self {
-        Port(canonicalValue: 5353)
+        Port(rawValue: 5353)
     }
 
     /// The IANA `pmip6-cntl` service port, 5436.
@@ -1762,7 +1762,7 @@ extension Port {
     /// Defined in [IETF RFC 5844](https://datatracker.ietf.org/doc/html/rfc5844).
     @inlinable
     public static var `pmip6-cntl`: Self {
-        Port(canonicalValue: 5436)
+        Port(rawValue: 5436)
     }
 
     /// The IANA `pmip6-data` service port, 5437.
@@ -1774,7 +1774,7 @@ extension Port {
     /// Defined in [IETF RFC 5844](https://datatracker.ietf.org/doc/html/rfc5844).
     @inlinable
     public static var `pmip6-data`: Self {
-        Port(canonicalValue: 5437)
+        Port(rawValue: 5437)
     }
 
     /// The IANA `v5ua` service port, 5675.
@@ -1786,7 +1786,7 @@ extension Port {
     /// Defined in [IETF RFC 3807](https://datatracker.ietf.org/doc/html/rfc3807).
     @inlinable
     public static var v5ua: Self {
-        Port(canonicalValue: 5675)
+        Port(rawValue: 5675)
     }
 
     /// The IANA `coap` service port, 5683.
@@ -1799,7 +1799,7 @@ extension Port {
     /// [IETF RFC 8323](https://datatracker.ietf.org/doc/html/rfc8323).
     @inlinable
     public static var coap: Self {
-        Port(canonicalValue: 5683)
+        Port(rawValue: 5683)
     }
 
     /// The IANA `coaps` service port, 5684.
@@ -1813,7 +1813,7 @@ extension Port {
     /// [IETF RFC 8323](https://datatracker.ietf.org/doc/html/rfc8323).
     @inlinable
     public static var coaps: Self {
-        Port(canonicalValue: 5684)
+        Port(rawValue: 5684)
     }
 
     /// The IANA `diameters` service port, 5868.
@@ -1825,7 +1825,7 @@ extension Port {
     /// Defined in [IETF RFC 6733](https://datatracker.ietf.org/doc/html/rfc6733).
     @inlinable
     public static var diameters: Self {
-        Port(canonicalValue: 5868)
+        Port(rawValue: 5868)
     }
 
     /// The IANA `rfb` service port, 5900.
@@ -1837,7 +1837,7 @@ extension Port {
     /// Defined in [IETF RFC 6143](https://datatracker.ietf.org/doc/html/rfc6143).
     @inlinable
     public static var rfb: Self {
-        Port(canonicalValue: 5900)
+        Port(rawValue: 5900)
     }
 
     /// The IANA `gsmp-ancp` service port, 6068.
@@ -1849,7 +1849,7 @@ extension Port {
     /// Defined in [IETF RFC 6320](https://datatracker.ietf.org/doc/html/rfc6320).
     @inlinable
     public static var `gsmp-ancp`: Self {
-        Port(canonicalValue: 6068)
+        Port(rawValue: 6068)
     }
 
     /// The IANA `geneve` service port, 6081.
@@ -1861,7 +1861,7 @@ extension Port {
     /// Defined in [IETF RFC 8926](https://datatracker.ietf.org/doc/html/rfc8926).
     @inlinable
     public static var geneve: Self {
-        Port(canonicalValue: 6081)
+        Port(rawValue: 6081)
     }
 
     /// The IANA `reload-config` service port, 6084.
@@ -1873,7 +1873,7 @@ extension Port {
     /// Defined in [IETF RFC 6940](https://datatracker.ietf.org/doc/html/rfc6940).
     @inlinable
     public static var `reload-config`: Self {
-        Port(canonicalValue: 6084)
+        Port(rawValue: 6084)
     }
 
     /// The IANA `dccp-udp` service port, 6511.
@@ -1885,7 +1885,7 @@ extension Port {
     /// Defined in [IETF RFC 6773](https://datatracker.ietf.org/doc/html/rfc6773).
     @inlinable
     public static var `dccp-udp`: Self {
-        Port(canonicalValue: 6511)
+        Port(rawValue: 6511)
     }
 
     /// The IANA `netconf-tls` service port, 6513.
@@ -1898,7 +1898,7 @@ extension Port {
     /// [IETF RFC 9918](https://datatracker.ietf.org/doc/html/rfc9918).
     @inlinable
     public static var `netconf-tls`: Self {
-        Port(canonicalValue: 6513)
+        Port(rawValue: 6513)
     }
 
     /// The IANA `syslog-tls` service port, 6514.
@@ -1911,7 +1911,7 @@ extension Port {
     /// [IETF RFC 6012](https://datatracker.ietf.org/doc/html/rfc6012).
     @inlinable
     public static var `syslog-tls`: Self {
-        Port(canonicalValue: 6514)
+        Port(rawValue: 6514)
     }
 
     /// The IANA `odette-ftps` service port, 6619.
@@ -1923,7 +1923,7 @@ extension Port {
     /// Defined in [IETF RFC 5024](https://datatracker.ietf.org/doc/html/rfc5024).
     @inlinable
     public static var `odette-ftps`: Self {
-        Port(canonicalValue: 6619)
+        Port(rawValue: 6619)
     }
 
     /// The IANA `mpls-udp` service port, 6635.
@@ -1935,7 +1935,7 @@ extension Port {
     /// Defined in [IETF RFC 7510](https://datatracker.ietf.org/doc/html/rfc7510).
     @inlinable
     public static var `mpls-udp`: Self {
-        Port(canonicalValue: 6635)
+        Port(rawValue: 6635)
     }
 
     /// The IANA `mpls-udp-dtls` service port, 6636.
@@ -1947,7 +1947,7 @@ extension Port {
     /// Defined in [IETF RFC 7510](https://datatracker.ietf.org/doc/html/rfc7510).
     @inlinable
     public static var `mpls-udp-dtls`: Self {
-        Port(canonicalValue: 6636)
+        Port(rawValue: 6636)
     }
 
     /// The IANA `ovsdb` service port, 6640.
@@ -1959,7 +1959,7 @@ extension Port {
     /// Defined in [IETF RFC 7047](https://datatracker.ietf.org/doc/html/rfc7047).
     @inlinable
     public static var ovsdb: Self {
-        Port(canonicalValue: 6640)
+        Port(rawValue: 6640)
     }
 
     /// The IANA `babel` service port, 6696.
@@ -1971,7 +1971,7 @@ extension Port {
     /// Defined in [IETF RFC 8966](https://datatracker.ietf.org/doc/html/rfc8966).
     @inlinable
     public static var babel: Self {
-        Port(canonicalValue: 6696)
+        Port(rawValue: 6696)
     }
 
     /// The IANA `ircs-u` service port, 6697.
@@ -1983,7 +1983,7 @@ extension Port {
     /// Defined in [IETF RFC 7194](https://datatracker.ietf.org/doc/html/rfc7194).
     @inlinable
     public static var `ircs-u`: Self {
-        Port(canonicalValue: 6697)
+        Port(rawValue: 6697)
     }
 
     /// The IANA `babel-dtls` service port, 6699.
@@ -1995,7 +1995,7 @@ extension Port {
     /// Defined in [IETF RFC 8968](https://datatracker.ietf.org/doc/html/rfc8968).
     @inlinable
     public static var `babel-dtls`: Self {
-        Port(canonicalValue: 6699)
+        Port(rawValue: 6699)
     }
 
     /// The IANA `frc-hp` service port, 6704.
@@ -2007,7 +2007,7 @@ extension Port {
     /// Defined in [IETF RFC 5811](https://datatracker.ietf.org/doc/html/rfc5811).
     @inlinable
     public static var `frc-hp`: Self {
-        Port(canonicalValue: 6704)
+        Port(rawValue: 6704)
     }
 
     /// The IANA `frc-mp` service port, 6705.
@@ -2019,7 +2019,7 @@ extension Port {
     /// Defined in [IETF RFC 5811](https://datatracker.ietf.org/doc/html/rfc5811).
     @inlinable
     public static var `frc-mp`: Self {
-        Port(canonicalValue: 6705)
+        Port(rawValue: 6705)
     }
 
     /// The IANA `frc-lp` service port, 6706.
@@ -2031,7 +2031,7 @@ extension Port {
     /// Defined in [IETF RFC 5811](https://datatracker.ietf.org/doc/html/rfc5811).
     @inlinable
     public static var `frc-lp`: Self {
-        Port(canonicalValue: 6706)
+        Port(rawValue: 6706)
     }
 
     /// The IANA `bfd-lag` service port, 6784.
@@ -2043,7 +2043,7 @@ extension Port {
     /// Defined in [IETF RFC 7130](https://datatracker.ietf.org/doc/html/rfc7130).
     @inlinable
     public static var `bfd-lag`: Self {
-        Port(canonicalValue: 6784)
+        Port(rawValue: 6784)
     }
 
     /// The IANA `grasp` service port, 7017.
@@ -2055,7 +2055,7 @@ extension Port {
     /// Defined in [IETF RFC 8990](https://datatracker.ietf.org/doc/html/rfc8990).
     @inlinable
     public static var grasp: Self {
-        Port(canonicalValue: 7017)
+        Port(rawValue: 7017)
     }
 
     /// The IANA `cfw` service port, 7563.
@@ -2067,7 +2067,7 @@ extension Port {
     /// Defined in [IETF RFC 6230](https://datatracker.ietf.org/doc/html/rfc6230).
     @inlinable
     public static var cfw: Self {
-        Port(canonicalValue: 7563)
+        Port(rawValue: 7563)
     }
 
     /// The IANA `simco` service port, 7626.
@@ -2079,7 +2079,7 @@ extension Port {
     /// Defined in [IETF RFC 4540](https://datatracker.ietf.org/doc/html/rfc4540).
     @inlinable
     public static var simco: Self {
-        Port(canonicalValue: 7626)
+        Port(rawValue: 7626)
     }
 
     /// The IANA `raqmon-pdu` service port, 7744.
@@ -2091,7 +2091,7 @@ extension Port {
     /// Defined in [IETF RFC 4712](https://datatracker.ietf.org/doc/html/rfc4712).
     @inlinable
     public static var `raqmon-pdu`: Self {
-        Port(canonicalValue: 7744)
+        Port(rawValue: 7744)
     }
 
     /// The IANA `s-bfd` service port, 7784.
@@ -2103,7 +2103,7 @@ extension Port {
     /// Defined in [IETF RFC 7881](https://datatracker.ietf.org/doc/html/rfc7881).
     @inlinable
     public static var `s-bfd`: Self {
-        Port(canonicalValue: 7784)
+        Port(rawValue: 7784)
     }
 
     /// The IANA `mipv6tls` service port, 7872.
@@ -2115,7 +2115,7 @@ extension Port {
     /// Defined in [IETF RFC 6618](https://datatracker.ietf.org/doc/html/rfc6618).
     @inlinable
     public static var mipv6tls: Self {
-        Port(canonicalValue: 7872)
+        Port(rawValue: 7872)
     }
 
     /// The IANA `aero` service port, 8060.
@@ -2127,7 +2127,7 @@ extension Port {
     /// Defined in [IETF RFC 6706](https://datatracker.ietf.org/doc/html/rfc6706).
     @inlinable
     public static var aero: Self {
-        Port(canonicalValue: 8060)
+        Port(rawValue: 8060)
     }
 
     /// The IANA `hncp-udp-port` service port, 8231.
@@ -2139,7 +2139,7 @@ extension Port {
     /// Defined in [IETF RFC 7788](https://datatracker.ietf.org/doc/html/rfc7788).
     @inlinable
     public static var `hncp-udp-port`: Self {
-        Port(canonicalValue: 8231)
+        Port(rawValue: 8231)
     }
 
     /// The IANA `hncp-dtls-port` service port, 8232.
@@ -2151,7 +2151,7 @@ extension Port {
     /// Defined in [IETF RFC 7788](https://datatracker.ietf.org/doc/html/rfc7788).
     @inlinable
     public static var `hncp-dtls-port`: Self {
-        Port(canonicalValue: 8232)
+        Port(rawValue: 8232)
     }
 
     /// The IANA `pim-port` service port, 8471.
@@ -2163,7 +2163,7 @@ extension Port {
     /// Defined in [IETF RFC 6559](https://datatracker.ietf.org/doc/html/rfc6559).
     @inlinable
     public static var `pim-port`: Self {
-        Port(canonicalValue: 8471)
+        Port(rawValue: 8471)
     }
 
     /// The IANA `lsp-self-ping` service port, 8503.
@@ -2175,7 +2175,7 @@ extension Port {
     /// Defined in [IETF RFC 7746](https://datatracker.ietf.org/doc/html/rfc7746).
     @inlinable
     public static var `lsp-self-ping`: Self {
-        Port(canonicalValue: 8503)
+        Port(rawValue: 8503)
     }
 
     /// The IANA `sapv1` service port, 9875.
@@ -2187,7 +2187,7 @@ extension Port {
     /// Defined in [IETF RFC 2974](https://datatracker.ietf.org/doc/html/rfc2974).
     @inlinable
     public static var sapv1: Self {
-        Port(canonicalValue: 9875)
+        Port(rawValue: 9875)
     }
 
     /// The IANA `kca-service` service port, 9878.
@@ -2199,7 +2199,7 @@ extension Port {
     /// Defined in [IETF RFC 6717](https://datatracker.ietf.org/doc/html/rfc6717).
     @inlinable
     public static var `kca-service`: Self {
-        Port(canonicalValue: 9878)
+        Port(rawValue: 9878)
     }
 
     /// The IANA `sctp-tunneling` service port, 9899.
@@ -2211,7 +2211,7 @@ extension Port {
     /// Defined in [IETF RFC 6951](https://datatracker.ietf.org/doc/html/rfc6951).
     @inlinable
     public static var `sctp-tunneling`: Self {
-        Port(canonicalValue: 9899)
+        Port(rawValue: 9899)
     }
 
     /// The IANA `enrp-sctp` service port, 9901.
@@ -2223,7 +2223,7 @@ extension Port {
     /// Defined in [IETF RFC 5353](https://datatracker.ietf.org/doc/html/rfc5353).
     @inlinable
     public static var `enrp-sctp`: Self {
-        Port(canonicalValue: 9901)
+        Port(rawValue: 9901)
     }
 
     /// The IANA `enrp-sctp-tls` service port, 9902.
@@ -2235,7 +2235,7 @@ extension Port {
     /// Defined in [IETF RFC 5353](https://datatracker.ietf.org/doc/html/rfc5353).
     @inlinable
     public static var `enrp-sctp-tls`: Self {
-        Port(canonicalValue: 9902)
+        Port(rawValue: 9902)
     }
 
     /// The IANA `multicast-ping` service port, 9903.
@@ -2247,7 +2247,7 @@ extension Port {
     /// Defined in [IETF RFC 6450](https://datatracker.ietf.org/doc/html/rfc6450).
     @inlinable
     public static var `multicast-ping`: Self {
-        Port(canonicalValue: 9903)
+        Port(rawValue: 9903)
     }
 
     /// The IANA `snmpdtls` service port, 10161.
@@ -2259,7 +2259,7 @@ extension Port {
     /// Defined in [IETF RFC 6353](https://datatracker.ietf.org/doc/html/rfc6353).
     @inlinable
     public static var snmpdtls: Self {
-        Port(canonicalValue: 10161)
+        Port(rawValue: 10161)
     }
 
     /// The IANA `snmptls` service port, 10161.
@@ -2271,7 +2271,7 @@ extension Port {
     /// Defined in [IETF RFC 6353](https://datatracker.ietf.org/doc/html/rfc6353).
     @inlinable
     public static var snmptls: Self {
-        Port(canonicalValue: 10161)
+        Port(rawValue: 10161)
     }
 
     /// The IANA `snmpdtls-trap` service port, 10162.
@@ -2283,7 +2283,7 @@ extension Port {
     /// Defined in [IETF RFC 6353](https://datatracker.ietf.org/doc/html/rfc6353).
     @inlinable
     public static var `snmpdtls-trap`: Self {
-        Port(canonicalValue: 10162)
+        Port(rawValue: 10162)
     }
 
     /// The IANA `snmptls-trap` service port, 10162.
@@ -2295,7 +2295,7 @@ extension Port {
     /// Defined in [IETF RFC 6353](https://datatracker.ietf.org/doc/html/rfc6353).
     @inlinable
     public static var `snmptls-trap`: Self {
-        Port(canonicalValue: 10162)
+        Port(rawValue: 10162)
     }
 
     /// The IANA `hip-nat-t` service port, 10500.
@@ -2308,7 +2308,7 @@ extension Port {
     /// [IETF RFC 9028](https://datatracker.ietf.org/doc/html/rfc9028).
     @inlinable
     public static var `hip-nat-t`: Self {
-        Port(canonicalValue: 10500)
+        Port(rawValue: 10500)
     }
 
     /// The IANA `nfsrdma` service port, 20049.
@@ -2320,7 +2320,7 @@ extension Port {
     /// Defined in [IETF RFC 8267](https://datatracker.ietf.org/doc/html/rfc8267).
     @inlinable
     public static var nfsrdma: Self {
-        Port(canonicalValue: 20049)
+        Port(rawValue: 20049)
     }
 
     /// The IANA `udpstp` service port, 24601.
@@ -2332,7 +2332,7 @@ extension Port {
     /// Defined in [IETF RFC 9946](https://datatracker.ietf.org/doc/html/rfc9946).
     @inlinable
     public static var udpstp: Self {
-        Port(canonicalValue: 24601)
+        Port(rawValue: 24601)
     }
 
     /// The IANA `mtrace` service port, 33435.
@@ -2344,6 +2344,6 @@ extension Port {
     /// Defined in [IETF RFC 8487](https://datatracker.ietf.org/doc/html/rfc8487).
     @inlinable
     public static var mtrace: Self {
-        Port(canonicalValue: 33435)
+        Port(rawValue: 33435)
     }
 }

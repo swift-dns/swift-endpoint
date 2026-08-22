@@ -27,7 +27,7 @@ extension Port: CustomStringConvertible {
         var idx = 0
 
         /// The compiler is smart enough to not actually do division by 10.
-        let (q1, r1) = self.canonicalValue.quotientAndRemainder(dividingBy: 10)
+        let (q1, r1) = self.rawValue.quotientAndRemainder(dividingBy: 10)
         let (q2, r2) = q1.quotientAndRemainder(dividingBy: 10)
         let (q3, r3) = q2.quotientAndRemainder(dividingBy: 10)
         let (q4, r4) = q3.quotientAndRemainder(dividingBy: 10)
@@ -105,24 +105,24 @@ extension Port: LosslessStringConvertible {
     /// For example `"8080"` will parse into `Port(8080)`.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
-        var canonicalValue: UInt16 = 0
+        var rawValue: UInt16 = 0
         let success = Port.parsePort(
             span: span,
-            canonicalValue: &canonicalValue
+            rawValue: &rawValue
         )
 
         guard success else {
             return nil
         }
 
-        self.init(canonicalValue: canonicalValue)
+        self.init(rawValue: rawValue)
     }
 
     @inlinable
     @inline(always)
     static func parsePort(
         span: Span<UInt8>,
-        canonicalValue: inout UInt16
+        rawValue: inout UInt16
     ) -> Bool {
         let count = span.count
 
@@ -150,7 +150,7 @@ extension Port: LosslessStringConvertible {
             return false
         }
 
-        canonicalValue = UInt16(truncatingIfNeeded: value)
+        rawValue = UInt16(truncatingIfNeeded: value)
 
         return true
     }

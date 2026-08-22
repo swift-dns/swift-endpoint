@@ -163,7 +163,7 @@ jobs:
           TIMESTAMP_LINK="https://www.timeanddate.com/worldclock/fixedtime.html?iso=${ENCODED_TIMESTAMP}"
           printf '%s\n' "## Benchmark check running at [${TIMESTAMP}](${TIMESTAMP_LINK})" >> comparison.md
 
-          # Disabpackage -c releasele 'set -e' to prevent the script from exiting on non-zero exit codes
+          # Disable 'set -e' to prevent the script from exiting on non-zero exit codes
           set +e
           swiftly run swift ${TOOLCHAIN_MODIFIER} \
             package \
@@ -177,8 +177,24 @@ jobs:
             --no-progress \
             --format markdown \
             >> comparison.md
-          printf '%s\n' "exit-status=$?" >> "${GITHUB_OUTPUT}"
+          EXIT_STATUS=$?
           set -e
+
+          printf '%s\n' "exit-status=${EXIT_STATUS}" >> "${GITHUB_OUTPUT}"
+
+          # SwiftPM reduces a command plugin's result to success/failure, so the benchmark plugin's
+          # own exit codes never survive; the outcome has to come from what the plugin printed.
+          if [[ "${EXIT_STATUS}" -eq 0 ]]; then
+            OUTCOME='within-thresholds'
+          elif grep -qF 'Deviations worse than threshold' comparison.md; then
+            OUTCOME='regression'
+          elif grep -qF 'Deviations better than threshold' comparison.md; then
+            OUTCOME='improvement'
+          else
+            OUTCOME='failed'
+          fi
+
+          printf '%s\n' "outcome=${OUTCOME}" >> "${GITHUB_OUTPUT}"
 
       - name: Cache .build
         if: steps.restore-cache.outputs.cache-hit != 'true'
@@ -257,9 +273,11 @@ jobs:
           BASE_SHA="$(git rev-parse "origin/${SOURCE_BRANCH}")"
           git checkout -B "${TARGET_BRANCH}" "origin/${SOURCE_BRANCH}"
 
+          BENCHMARKED_COMMIT="$(START_REF="${BASE_SHA}" .github/scripts/latest-non-bot-commit.sh)"
           COMMIT_MESSAGE="$(
-            printf -- '%s\n\n%s\n' \
+            printf -- '%s\n\n%s\n%s\n' \
               "Update of benchmark thresholds with the deviated baseline" \
+              "Benchmarked commit: ${BENCHMARKED_COMMIT}" \
               "Committed to ${TARGET_BRANCH} by ${RUN_LINK}"
           )"
           BRANCH="${TARGET_BRANCH}"
@@ -276,17 +294,14 @@ jobs:
 
           EXIT_CODE='${{ steps.comparison.outputs.exit-status }}'
 
-          case "${EXIT_CODE}" in
-              0)
+          case '${{ steps.comparison.outputs.outcome }}' in
+              within-thresholds)
                   printf '%s\n' '**✅ Benchmark results are within the specified thresholds ✅**' >> comment.md
                   ;;
-              1)
-                  printf '%s\n' '**❌ Benchmark results are outside the specified thresholds 📊**' >> comment.md
-                  ;;
-              2)
+              regression)
                   printf '%s\n' '**❌ Benchmark results are worse than the specified thresholds 📉**' >> comment.md
                   ;;
-              4)
+              improvement)
                   printf '%s\n' '**❌ Benchmark results are better than the specified thresholds 📈**' >> comment.md
                   ;;
               *)

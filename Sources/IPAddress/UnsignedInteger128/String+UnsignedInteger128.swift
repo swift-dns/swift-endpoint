@@ -33,7 +33,6 @@ extension UnsignedInteger128: CustomStringConvertible {
     }
 
     public init?(_ description: String) {
-        var description = description
         guard
             let result =
                 description

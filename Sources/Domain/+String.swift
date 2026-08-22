@@ -2,7 +2,7 @@
 extension String {
     #if canImport(Darwin)
     @usableFromInline
-    mutating func withSpan_Compatibility<T, E: Error>(
+    func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
         do {
@@ -22,7 +22,8 @@ extension String {
         }
 
         do {
-            return try self.withUTF8 {
+            var copy = self
+            return try copy.withUTF8 {
                 try body(unsafe $0.span)
             }
         } catch let error as E {
@@ -34,7 +35,7 @@ extension String {
     #else
     @_transparent
     @inlinable
-    mutating func withSpan_Compatibility<T, E: Error>(
+    func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
         try body(self.utf8Span.span)
@@ -84,7 +85,7 @@ extension String {
 extension Substring {
     #if canImport(Darwin)
     @usableFromInline
-    mutating func withSpan_Compatibility<T, E: Error>(
+    func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
         do {
@@ -104,7 +105,8 @@ extension Substring {
         }
 
         do {
-            return try self.withUTF8 {
+            var copy = self
+            return try copy.withUTF8 {
                 try body(unsafe $0.span)
             }
         } catch let error as E {
@@ -116,7 +118,7 @@ extension Substring {
     #else
     @_transparent
     @inlinable
-    mutating func withSpan_Compatibility<T, E: Error>(
+    func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
         try body(self.utf8Span.span)

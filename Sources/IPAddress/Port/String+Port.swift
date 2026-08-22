@@ -74,7 +74,6 @@ extension Port: LosslessStringConvertible {
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
     /// For example `"8080"` will parse into `Port(8080)`.
     public init?(_ description: String) {
-        var description = description
         guard
             let result = description.withSpan_Compatibility({
                 Port(textualRepresentation: $0)
@@ -89,7 +88,6 @@ extension Port: LosslessStringConvertible {
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
     /// For example `"8080"` will parse into `Port(8080)`.
     public init?(_ description: Substring) {
-        var description = description
         guard
             let result = description.withSpan_Compatibility({
                 Port(textualRepresentation: $0)

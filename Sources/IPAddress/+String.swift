@@ -1,7 +1,8 @@
 @available(SwiftStdlib 5.1, *)
 extension String {
+    #if canImport(Darwin)
     @usableFromInline
-    mutating func withSpan_Compatibility<T, E: Error>(
+    func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
         do {
@@ -21,7 +22,8 @@ extension String {
         }
 
         do {
-            return try self.withUTF8 {
+            var copy = self
+            return try copy.withUTF8 {
                 try body(unsafe $0.span)
             }
         } catch let error as E {
@@ -30,6 +32,15 @@ extension String {
             fatalError("Unreachable code path")
         }
     }
+    #else
+    @_transparent
+    @inlinable
+    func withSpan_Compatibility<T, E: Error>(
+        _ body: (Span<UInt8>) throws(E) -> T
+    ) throws(E) -> T {
+        try body(self.utf8Span.span)
+    }
+    #endif
 
     #if canImport(Darwin)
     @usableFromInline
@@ -72,8 +83,9 @@ extension String {
 
 @available(SwiftStdlib 5.1, *)
 extension Substring {
+    #if canImport(Darwin)
     @usableFromInline
-    mutating func withSpan_Compatibility<T, E: Error>(
+    func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
         do {
@@ -93,7 +105,8 @@ extension Substring {
         }
 
         do {
-            return try self.withUTF8 {
+            var copy = self
+            return try copy.withUTF8 {
                 try body(unsafe $0.span)
             }
         } catch let error as E {
@@ -102,4 +115,13 @@ extension Substring {
             fatalError("Unreachable code path")
         }
     }
+    #else
+    @_transparent
+    @inlinable
+    func withSpan_Compatibility<T, E: Error>(
+        _ body: (Span<UInt8>) throws(E) -> T
+    ) throws(E) -> T {
+        try body(self.utf8Span.span)
+    }
+    #endif
 }

@@ -30,7 +30,6 @@ extension CIDR: LosslessStringConvertible {
     /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
     public init?(_ description: String) {
-        var description = description
         guard
             let result = description.withSpan_Compatibility({
                 CIDR(textualRepresentation: $0)
@@ -48,7 +47,6 @@ extension CIDR: LosslessStringConvertible {
     /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
     public init?(_ description: Substring) {
-        var description = description
         guard
             let result = description.withSpan_Compatibility({
                 CIDR(textualRepresentation: $0)

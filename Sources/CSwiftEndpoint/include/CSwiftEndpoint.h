@@ -20,11 +20,12 @@ extern "C" {
 //
 // The entries are unpacked by `IPv6Address.SegmentWriteTableEntry` in `String+IPv6Address.swift`.
 
-extern const uint64_t cswift_endpoint_ipv6_segment_write_table[256];
+extern const uint8_t cswift_endpoint_ipv6_segment_write_index[256];
+extern const uint64_t cswift_endpoint_ipv6_segment_write_values[29];
 
 // Returns the packed segment-write entry for the given all-zero-segments mask.
 static inline uint64_t cswift_endpoint_ipv6_segment_write_entry(uint8_t mask) {
-    return cswift_endpoint_ipv6_segment_write_table[mask];
+    return cswift_endpoint_ipv6_segment_write_values[cswift_endpoint_ipv6_segment_write_index[mask]];
 }
 
 // The hexadecimal-digit table is indexed by an ASCII byte and maps `0-9`, `a-f` and `A-F` to

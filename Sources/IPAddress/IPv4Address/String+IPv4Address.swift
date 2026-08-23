@@ -195,17 +195,15 @@ extension IPv4Address: LosslessStringConvertible {
 
         var idx = 0
 
-        /// No count checks, we already know it's at least 7, and we will check at most 4 here.
         guard
             let segment1 = IPv4Address._parseSegment(from: span, advancing: &idx),
-            unsafe span[unchecked: idx] == .asciiDot
+            idx < count,
+            span[idx] == .asciiDot
         else {
             return false
         }
         idx += 1
 
-        /// No pre-parse count check, we know we have at least 7 bytes and at this
-        /// point we have 3 remaining at least.
         guard
             let segment2 = IPv4Address._parseSegment(from: span, advancing: &idx),
             idx < count,
@@ -216,7 +214,6 @@ extension IPv4Address: LosslessStringConvertible {
         idx += 1
 
         guard
-            idx < count,
             let segment3 = IPv4Address._parseSegment(from: span, advancing: &idx),
             idx < count,
             span[idx] == .asciiDot
@@ -226,7 +223,6 @@ extension IPv4Address: LosslessStringConvertible {
         idx += 1
 
         guard
-            idx < count,
             let segment4 = IPv4Address._parseSegment(from: span, advancing: &idx),
             idx == count
         else {
@@ -245,7 +241,9 @@ extension IPv4Address: LosslessStringConvertible {
         advancing idx: inout Int
     ) -> UInt32? {
         let count = span.count
-        guard let digit1 = unsafe UInt8.mapUTF8ByteToUInt8(span[unchecked: idx]) else {
+        guard idx < count,
+            let digit1 = UInt8.mapUTF8ByteToUInt8(span[idx])
+        else {
             return nil
         }
         var segment = UInt32(digit1)

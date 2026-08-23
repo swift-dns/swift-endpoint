@@ -37,7 +37,7 @@ extension IPv4Address {
                         }
 
                         /// Unchecked because `idx` can't exceed `3` anyway
-                        let shift = 8 &* (3 &- idx)
+                        let shift = 8 * (3 - idx)
                         ipv4.address |= UInt32(byte) &<< shift
                     }
 
@@ -110,7 +110,7 @@ extension IPv4Address {
                         else {
                             return nil
                         }
-                        let shift = 8 &* idx
+                        let shift = 8 * idx
                         ipv4.address |= UInt32(byte) &<< shift
                     }
 

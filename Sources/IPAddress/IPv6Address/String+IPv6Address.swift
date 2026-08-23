@@ -212,7 +212,7 @@ extension IPv6Address {
             var writeIdx = 0
 
             unsafe buffer[0] = .asciiLeftSquareBracket
-            writeIdx &+= encloseInSquareBrackets ? 1 : 0
+            writeIdx += encloseInSquareBrackets ? 1 : 0
 
             let packedSegmentInfos = entry.packedSegmentInfos
             let range = unsafe Range(uncheckedBounds: (0, entry.segmentsCount))
@@ -369,7 +369,7 @@ extension IPv6Address {
     func _segment(atUncheckedIndex segmentIdx: Int) -> UInt16 {
         assert(segmentIdx >= 0 && segmentIdx <= 7)
         let word = segmentIdx < 4 ? self.address._high : self.address._low
-        let shift = (3 &- (segmentIdx & 3)) &* 16
+        let shift = (3 - (segmentIdx & 3)) * 16
         return UInt16(truncatingIfNeeded: word &>> shift)
     }
 
@@ -502,7 +502,7 @@ extension IPv6Address: LosslessStringConvertible {
 
         /// Trim the left and right square brackets if they both exist
         let startsWithBracket = span[0] == .asciiLeftSquareBracket
-        let endsWithBracket = span[span.count &- 1] == .asciiRightSquareBracket
+        let endsWithBracket = span[span.count - 1] == .asciiRightSquareBracket
         guard startsWithBracket == endsWithBracket else {
             return false
         }
@@ -512,11 +512,7 @@ extension IPv6Address: LosslessStringConvertible {
             if trimCount == 0 {
                 span
             } else {
-                unsafe span.extracting(
-                    unchecked: unsafe Range<Int>(
-                        uncheckedBounds: (trimCount, span.count &- trimCount)
-                    )
-                )
+                span.extracting(trimCount..<(span.count - trimCount))
             }
 
         /// 2 == "::".count
@@ -534,18 +530,18 @@ extension IPv6Address: LosslessStringConvertible {
         var segmentDigitIdx = 0
         var idx = 0
 
-        let startsWithColon = unsafe span[unchecked: 0] == .asciiColon
+        let startsWithColon = span[0] == .asciiColon
         /// For when there is a lone colon at the start
         if Self.isLoneColon(
-            unsafe span[unchecked: 0],
-            adjacent: unsafe span[unchecked: 1]
+            span[0],
+            adjacent: span[1]
         ) {
             return false
         }
         /// And for when there is a compression sign at the end
         if Self.isLoneColon(
-            unsafe span[unchecked: count &- 1],
-            adjacent: unsafe span[unchecked: count &- 2]
+            span[count - 1],
+            adjacent: span[count - 2]
         ) {
             return false
         }
@@ -558,7 +554,7 @@ extension IPv6Address: LosslessStringConvertible {
 
         while idx < count {
             let byte = unsafe span[unchecked: idx]
-            idx &+= 1
+            idx += 1
 
             if let digit = UInt8.mapHexadecimalByteToUInt8(byte) {
                 if segmentDigitIdx == 4 {
@@ -566,7 +562,7 @@ extension IPv6Address: LosslessStringConvertible {
                 }
 
                 currentSegmentValue = (currentSegmentValue &<< 4) | UInt16(digit)
-                segmentDigitIdx &+= 1
+                segmentDigitIdx += 1
 
                 continue
             }
@@ -575,7 +571,7 @@ extension IPv6Address: LosslessStringConvertible {
                 /// The embedded IPv4 address starts where the digits of this segment started.
                 var ipv4Address: UInt32 = 0
                 /// Revert the increment we did at the beginning of the loop.
-                let idxNoIncrement = idx &- 1
+                let idxNoIncrement = idx - 1
                 guard
                     segmentDigitIdx > 0,
                     IPv4Address.parseIPv4(

@@ -1,3 +1,5 @@
+public import CSwiftEndpoint
+
 @available(SwiftStdlib 5.1, *)
 extension IPv4Address: CustomStringConvertible {
     /// The textual representation of an IPv4 address.
@@ -193,6 +195,22 @@ extension IPv4Address: LosslessStringConvertible {
             return false
         }
 
+        #if arch(arm64)
+        /// NEON is mandatory in ARMv8-A, so `arch(arm64)` implies the SIMD kernel exists.
+        /// The closure only hands back the base pointer, which stays valid for as long as `span`
+        /// is borrowed.
+        let base = span.withUnsafeBufferPointer { unsafe $0.baseAddress.unsafelyUnwrapped }
+        let packed = unsafe cswift_endpoint_parse_ipv4_dotted_decimal(base, Int32(count))
+
+        /// `CSWIFT_ENDPOINT_IPV4_PARSE_FAILURE`. The macro itself does not survive the C importer.
+        guard packed != UInt64.max else {
+            return false
+        }
+
+        address = UInt32(truncatingIfNeeded: packed)
+
+        return true
+        #else
         var idx = 0
 
         /// No count checks, we already know it's at least 7, and we will check at most 4 here.
@@ -236,6 +254,7 @@ extension IPv4Address: LosslessStringConvertible {
         address = (segment1 &<< 24) | (segment2 &<< 16) | (segment3 &<< 8) | segment4
 
         return true
+        #endif
     }
 
     @inlinable

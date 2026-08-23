@@ -133,7 +133,6 @@ extension DomainName {
         _ description: String,
         idnaConfiguration: IDNA.Configuration = .default
     ) throws(ValidationError) {
-        var description = description
         self = try description.withSpan_Compatibility { span throws(ValidationError) in
             try DomainName(
                 _uncheckedAssumingValidUTF8: span,
@@ -149,7 +148,6 @@ extension DomainName {
         _ description: Substring,
         idnaConfiguration: IDNA.Configuration = .default
     ) throws(ValidationError) {
-        var description = description
         self = try description.withSpan_Compatibility { span throws(ValidationError) in
             try DomainName(
                 _uncheckedAssumingValidUTF8: span,

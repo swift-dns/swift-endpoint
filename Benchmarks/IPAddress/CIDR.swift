@@ -54,7 +54,7 @@ let cidrBenchmarks: @Sendable () -> Void = {
         "IPv4_CIDR_Create_Then_Check_Is_Multicast_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10
         )
     ) { benchmark in
@@ -114,7 +114,7 @@ let cidrBenchmarks: @Sendable () -> Void = {
         "IPv6_CIDR_Create_Then_Check_Is_Multicast_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10
         )
     ) { benchmark in

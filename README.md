@@ -167,10 +167,10 @@ These were performed on my M1 Pro MacBook, on macOS 27.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 6.0           | 180.0        | 30.00x  |
-| IPv4    | Parsing     | 15.2          | 47.3         | 3.11x   |
-| IPv6    | Serializing | 29.5          | 222.0        | 7.53x   |
-| IPv6    | Parsing     | 25.2          | 100.3        | 3.98x   |
+| IPv4    | Serializing | 6.0           | 179.5        | 29.92x  |
+| IPv4    | Parsing     | 15.1          | 47.0         | 3.11x   |
+| IPv6    | Serializing | 30.4          | 222.0        | 7.30x   |
+| IPv6    | Parsing     | 25.2          | 100.4        | 3.98x   |
 
 #### Against glibc
 
@@ -179,8 +179,8 @@ These were performed on a dedicated-cpu-core AMD EPYC-Milan machine from Hetzner
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
 | IPv4    | Serializing | 7.0           | 115.0        | 16.43x  |
-| IPv4    | Parsing     | 17.1          | 26.5         | 1.55x   |
-| IPv6    | Serializing | 36.5          | 165.0        | 4.52x   |
+| IPv4    | Parsing     | 17.1          | 27.0         | 1.58x   |
+| IPv6    | Serializing | 36.8          | 164.0        | 4.46x   |
 | IPv6    | Parsing     | 33.0          | 48.0         | 1.45x   |
 
 #### Additional Notes

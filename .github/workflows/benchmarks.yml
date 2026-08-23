@@ -45,7 +45,7 @@ jobs:
           private-key: ${{ secrets.SWIFT_DNS_HELPER_PRIVATE_KEY }}
 
       - name: Enable full performance
-        run: /usr/bin/ordo-performance
+        run: set-perf-mode performance
 
       - name: Find commit info
         id: commit-info
@@ -129,7 +129,8 @@ jobs:
 
       - name: Run benchmarks for '${{ steps.commit-info.outputs.title }}'
         run: |
-          swiftly run swift ${TOOLCHAIN_MODIFIER} \
+          run-with-priority \
+            swiftly run swift ${TOOLCHAIN_MODIFIER} \
             package \
             -c release \
             --package-path Benchmarks \
@@ -367,7 +368,7 @@ jobs:
 
       - name: Enable powersave mode
         if: always()
-        run: /usr/bin/ordo-performance powersave
+        run: set-perf-mode powersave
 
       - name: Exit with correct status
         run: exit ${{ steps.comparison.outputs.exit-status }}

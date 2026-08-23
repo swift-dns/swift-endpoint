@@ -86,7 +86,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         "IPv4_Parsing_Local_Broadcast_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10
         )
     ) { benchmark in
@@ -134,7 +134,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         "IPv4_Parsing_Local_Broadcast_inet_pton_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10
         )
     ) { benchmark in
@@ -254,7 +254,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         "IPv4_Parsing_Multiple_IPs_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10
         )
     ) { benchmark in
@@ -356,7 +356,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         "IPv4_Parsing_Multiple_IPs_inet_pton_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10
         )
     ) { benchmark in

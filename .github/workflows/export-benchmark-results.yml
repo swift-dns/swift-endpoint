@@ -39,7 +39,7 @@ jobs:
 
     steps:
       - name: Enable full performance
-        run: /usr/bin/ordo-performance
+        run: set-perf-mode performance
 
       - name: Check out code
         uses: actions/checkout@v7
@@ -78,6 +78,7 @@ jobs:
           SKIP: ${{ inputs.skip }}
         run: |
           COMMAND=(
+            run-with-priority
             swiftly run swift ${TOOLCHAIN_MODIFIER}
             package
             -c release
@@ -141,4 +142,4 @@ jobs:
 
       - name: Enable powersave mode
         if: always()
-        run: /usr/bin/ordo-performance powersave
+        run: set-perf-mode powersave

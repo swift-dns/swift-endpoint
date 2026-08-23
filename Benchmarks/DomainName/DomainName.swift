@@ -35,7 +35,7 @@ let benchmarks: @Sendable () -> Void = {
         "google_dot_com_String_Parsing_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10,
         )
     ) { benchmark in
@@ -74,7 +74,7 @@ let benchmarks: @Sendable () -> Void = {
         "app-analytics-services_dot_com_String_Parsing_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10,
         )
     ) { benchmark in
@@ -112,7 +112,7 @@ let benchmarks: @Sendable () -> Void = {
         "Equality_Check_Instructions",
         configuration: .init(
             metrics: [.instructions],
-            warmupIterations: 10,
+            warmupIterations: 100,
             maxIterations: 10,
         )
     ) { benchmark in

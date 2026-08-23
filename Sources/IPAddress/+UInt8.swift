@@ -101,6 +101,7 @@ extension UInt8 {
 
 extension UInt8 {
     @inlinable
+    @inline(always)
     package func asDecimal_RequiringMinimumCapacityOf3(
         buffer: UnsafeMutableRawBufferPointer,
         advancingIdx idx: inout Int

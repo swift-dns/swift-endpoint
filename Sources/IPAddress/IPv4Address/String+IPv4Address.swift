@@ -1,4 +1,4 @@
-public import CSwiftEndpoint
+import CSwiftEndpoint
 
 @available(SwiftStdlib 5.1, *)
 extension IPv4Address: CustomStringConvertible {

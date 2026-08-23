@@ -50,12 +50,12 @@ extension UnsignedInteger128: CustomStringConvertible {
 
         var idx = 0
         while idx < span.count {
-            let byte = unsafe span[unchecked: idx]
+            let byte = span[idx]
             guard let number = UInt8.mapUTF8ByteToUInt8(byte) else {
                 return nil
             }
             result = result &* _10 &+ UnsignedInteger128(number)
-            idx &+= 1
+            idx += 1
         }
 
         return result

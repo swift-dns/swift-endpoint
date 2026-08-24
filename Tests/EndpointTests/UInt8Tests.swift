@@ -6,8 +6,8 @@ struct UInt8Tests {
     @Test func `UInt8 asDecimal works correctly`() {
         for number in (UInt8(0)...UInt8(255)) {
             withUnsafeTemporaryAllocation(byteCount: 4, alignment: 1) { buffer in
-                let (asciiBytes, count) = number.asDecimal()
-                unsafe buffer.storeBytes(of: asciiBytes, toByteOffset: 0, as: UInt32.self)
+                let (paddedBytes, count) = number.asDecimal()
+                unsafe buffer.storeBytes(of: paddedBytes, toByteOffset: 0, as: UInt32.self)
                 let string = unsafe String(decoding: buffer[1...count], as: UTF8.self)
                 #expect(string == String(number))
             }

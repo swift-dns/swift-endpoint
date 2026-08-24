@@ -102,25 +102,25 @@ extension UInt8 {
 extension UInt8 {
     /// Calculates the ascii representation of this byte.
     ///
-    /// Returns `asciiBytes` as a `UInt32`. The least significant byte is always irrelevant.
+    /// Returns `paddedBytes` as a `UInt32`. The least significant byte is always irrelevant.
     /// The previous 3 bytes might or might not be 0.
     ///
     /// Returns `count` as an `Int`. The count is the number of digits in the ascii representation.
-    /// For example for 249, `asciiBytes` will be `0x3934_3200`, which is the bytes
+    /// For example for 249, `paddedBytes` will be `0x3934_3200`, which is the bytes
     /// `0`, `'2'`, `'4'`, `'9'`, and `count` will be `3`.
     ///
     /// Given enough buffer capacity, this function can be used like so:
     /// ```
-    /// let (asciiBytes, count) = uint8Value.asDecimal()
-    /// buffer.storeBytes(of: asciiBytes, toByteOffset: writerIndex, as: UInt32.self)
+    /// let (paddedBytes, count) = uint8Value.asDecimal()
+    /// buffer.storeBytes(of: paddedBytes &>> 8, toByteOffset: writerIndex, as: UInt32.self)
     /// writerIndex += count
     /// ```
     @inlinable
     @inline(always)
-    package func asDecimal() -> (asciiBytes: UInt32, count: Int) {
+    package func asDecimal() -> (paddedBytes: UInt32, count: Int) {
         let entry = cswift_endpoint_decimal_digits(self)
-        let asciiBytes = entry &<< 8
+        let paddedBytes = entry &<< 8
         let count = Int(entry &>> 24) &- 1
-        return (asciiBytes, count)
+        return (paddedBytes, count)
     }
 }

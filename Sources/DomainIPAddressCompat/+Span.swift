@@ -30,12 +30,12 @@ extension Span<UInt8> {
                             ^ rhs.loadUnaligned(fromByteOffset: idx, as: UInt64.self)
                         idx &+= 8
                     }
-                    let finalIdx = count &- 8
+                    let finalIdx = count - 8
                     differenceBits |=
                         unsafe lhs.loadUnaligned(fromByteOffset: finalIdx, as: UInt64.self)
                         ^ rhs.loadUnaligned(fromByteOffset: finalIdx, as: UInt64.self)
                 } else if count >= 4 {
-                    let finalIdx = count &- 4
+                    let finalIdx = count - 4
                     differenceBits |= UInt64(
                         unsafe lhs.loadUnaligned(fromByteOffset: 0, as: UInt32.self)
                             ^ rhs.loadUnaligned(fromByteOffset: 0, as: UInt32.self)
@@ -45,7 +45,7 @@ extension Span<UInt8> {
                             ^ rhs.loadUnaligned(fromByteOffset: finalIdx, as: UInt32.self)
                     )
                 } else if count >= 2 {
-                    let finalIdx = count &- 2
+                    let finalIdx = count - 2
                     differenceBits |= UInt64(
                         unsafe lhs.loadUnaligned(fromByteOffset: 0, as: UInt16.self)
                             ^ rhs.loadUnaligned(fromByteOffset: 0, as: UInt16.self)

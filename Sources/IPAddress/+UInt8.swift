@@ -59,7 +59,7 @@ extension UInt8 {
         /// essentially `count &>> 1` == `max(count - 2, 0)`
         let digit1 = unsafe span[unchecked: count &>> 1] &- UInt8.ascii0
         /// `count > 0` so `(0...2) ~ (count - 1)`
-        let digit2 = unsafe span[unchecked: count &- 1] &- UInt8.ascii0
+        let digit2 = span[count - 1] &- UInt8.ascii0
 
         let shift = (count &- 1) &* 8
         let multiplier0 = (0x0064_0A00 as UInt32) &>> shift & 0xFF
@@ -101,11 +101,12 @@ extension UInt8 {
 
 extension UInt8 {
     @inlinable
+    @inline(always)
     package func asDecimal_RequiringMinimumCapacityOf3(
         buffer: UnsafeMutableRawBufferPointer,
         advancingIdx idx: inout Int
     ) {
-        assert(buffer.count >= idx &+ 3)
+        assert(buffer.count >= idx + 3)
 
         let entry = cswift_endpoint_decimal_digits(self)
 
@@ -118,10 +119,10 @@ extension UInt8 {
         )
         unsafe buffer.storeBytes(
             of: UInt8(truncatingIfNeeded: entry &>> 16),
-            toByteOffset: idx &+ 2,
+            toByteOffset: idx + 2,
             as: UInt8.self
         )
 
-        idx &+= Int(entry &>> 24)
+        idx += Int(entry &>> 24)
     }
 }

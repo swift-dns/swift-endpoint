@@ -45,7 +45,7 @@ extension IPv6Address {
                         else {
                             return nil
                         }
-                        let shift = 4 &* idx
+                        let shift = 4 * idx
                         ipv6Address |= _CompatibilityUInt128Typealias(byte) &<< shift
                     }
 

@@ -92,8 +92,7 @@ extension AnyIPAddress: LosslessStringConvertible {
         /// Finds the first either "." or ":" and based on that decide what IP version this could be.
         /// This works even for ipv4-mapped ipv6 addresses like `"::FFFF:204.152.189.116"`.
         for idx in span.indices {
-            /// Unchecked because `idx` comes right from `span.indices`
-            switch unsafe span[unchecked: idx] {
+            switch span[idx] {
             case .asciiDot:
                 guard let ipv4 = IPv4Address(textualRepresentation: span) else {
                     return nil

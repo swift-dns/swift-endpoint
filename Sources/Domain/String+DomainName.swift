@@ -185,15 +185,14 @@ extension DomainName {
         idnaConfiguration: IDNA.Configuration = .default
     ) throws(ValidationError) {
         var span = span
-        var bytesCount = span.count
         var isFQDN = false
 
-        guard bytesCount != 0 else {
+        guard span.count != 0 else {
             throw ValidationError.emptyDomainName
         }
 
         // short-circuit root parse
-        switch bytesCount {
+        switch span.count {
         case 1:
             if span[0].isIDNALabelSeparator {
                 self = .root
@@ -225,7 +224,6 @@ extension DomainName {
         /// The IDNA spec doesn't like the root label separator.
         try DomainName.__removingRootLabelIndicator(
             from: &span,
-            bytesCount: &bytesCount,
             isFQDN: &isFQDN
         )
 
@@ -265,63 +263,56 @@ extension DomainName {
     @inlinable
     static func __removingRootLabelIndicator(
         from bytesSpan: inout Span<UInt8>,
-        bytesCount: inout Int,
         isFQDN: inout Bool
     ) throws(ValidationError) {
         /// In the initializer above, we already checked if the domain name is 1-2 bytes and those
         /// 2 bytes are the IDNA label separator. Here we don't need to check for that.
-        guard bytesCount > 1 else {
+        guard bytesSpan.count > 1 else {
             return
         }
 
         var newSpan = bytesSpan
 
-        var endIndex = bytesCount &- 1
-        switch bytesCount {
+        let endIndex = bytesSpan.count - 1
+        switch bytesSpan.count {
         case 2:
-            let rhs = unsafe bytesSpan[unchecked: endIndex]
+            let rhs = bytesSpan[endIndex]
             if rhs.isIDNALabelSeparator {
-                let range = unsafe Range(uncheckedBounds: (0, endIndex))
-                newSpan = unsafe bytesSpan.extracting(unchecked: range)
+                newSpan = bytesSpan.extracting(0..<endIndex)
                 isFQDN = true
-                bytesCount &-= 1
                 break
             }
         case 3...:
-            let first = unsafe bytesSpan[unchecked: endIndex &- 2]
-            let second = unsafe bytesSpan[unchecked: endIndex &- 1]
-            let third = unsafe bytesSpan[unchecked: endIndex]
+            let first = bytesSpan[endIndex - 2]
+            let second = bytesSpan[endIndex - 1]
+            let third = bytesSpan[endIndex]
             if third.isIDNALabelSeparator {
-                let range = unsafe Range(uncheckedBounds: (0, endIndex))
-                newSpan = unsafe bytesSpan.extracting(unchecked: range)
+                newSpan = bytesSpan.extracting(0..<endIndex)
                 isFQDN = true
-                bytesCount &-= 1
                 break
             }
             if DomainName.isIDNALabelSeparator(first, second, third) {
-                let range = unsafe Range(uncheckedBounds: (0, endIndex &- 2))
-                newSpan = unsafe bytesSpan.extracting(unchecked: range)
+                newSpan = bytesSpan.extracting(0..<(endIndex - 2))
                 isFQDN = true
-                bytesCount &-= 3
                 break
             }
         default:
             break
         }
 
-        endIndex = bytesCount &- 1
-        switch bytesCount {
+        switch newSpan.count {
         case 1:
-            let rhs = unsafe newSpan[unchecked: endIndex]
+            let rhs = newSpan[newSpan.count - 1]
             if rhs.isIDNALabelSeparator {
                 throw ValidationError.multipleRootLabelIndicatorsAreNotAllowed(
                     in: ByteBuffer(swift_endpoint_copying: bytesSpan)
                 )
             }
         case 3...:
-            let first = unsafe newSpan[unchecked: endIndex &- 2]
-            let second = unsafe newSpan[unchecked: endIndex &- 1]
-            let third = unsafe newSpan[unchecked: endIndex]
+            let newEndIndex = newSpan.count - 1
+            let first = newSpan[newEndIndex - 2]
+            let second = newSpan[newEndIndex - 1]
+            let third = newSpan[newEndIndex]
             if third.isIDNALabelSeparator {
                 throw ValidationError.multipleRootLabelIndicatorsAreNotAllowed(
                     in: ByteBuffer(swift_endpoint_copying: bytesSpan)
@@ -378,7 +369,7 @@ extension DomainName {
             var dataPtr = unsafe dataPtr.baseAddress.unsafelyUnwrapped
             var startIndex = 0
             for idx in span.indices {
-                let byte = unsafe span[unchecked: idx]
+                let byte = span[idx]
                 switch byte {
                 case .asciiDot:
                     unsafe try Self._writeLabel(
@@ -387,7 +378,7 @@ extension DomainName {
                         startIndex: startIndex,
                         idx: idx
                     )
-                    startIndex = idx &+ 1
+                    startIndex = idx + 1
                 default:
                     break
                 }
@@ -420,7 +411,7 @@ extension DomainName {
         /// We tolerate stars for domain names like "*.example.com" which are wildcards.
         /// We tolerate whitespaces for labels like "Mijia Cloud" which Xiaomi devices use.
         for idx in chunk.indices {
-            let byte = unsafe chunk[unchecked: idx]
+            let byte = chunk[idx]
             assert(!byte.isUppercasedASCIILetter)
 
             if !byte.isAcceptableDomainNameCharacter {
@@ -485,39 +476,42 @@ extension DomainName {
             )
         }
         for idx in span.indices {
-            /// Unchecked because `idx` comes right from `span.indices`
-            if unsafe span[unchecked: idx].isUppercasedASCIILetter {
+            if span[idx].isUppercasedASCIILetter {
                 fatalError(
-                    "DomainName initializer should not be used with uppercased ASCII characters: \(unsafe span[unchecked: idx])"
+                    "DomainName initializer should not be used with uppercased ASCII characters: \(span[idx])"
                 )
             }
         }
 
-        let endIndex = span.count &- 1
         switch span.count {
         case 0:
             /// Ignore, an error will be thrown in the initializer
             break
-        case 1, 2:
-            let lhs = unsafe span[unchecked: 0]
-            let rhs = unsafe span[unchecked: 1]
-            if lhs.isIDNALabelSeparator || rhs.isIDNALabelSeparator {
+        case 1:
+            if span[0].isIDNALabelSeparator {
                 fatalError(
-                    "DomainName initializer should not be used with root label indicator: \(unsafe span[unchecked: endIndex])"
+                    "DomainName initializer should not be used with root label indicator: \(span[0])"
+                )
+            }
+        case 2:
+            if span[0].isIDNALabelSeparator || span[1].isIDNALabelSeparator {
+                fatalError(
+                    "DomainName initializer should not be used with root label indicator: \(span[1])"
                 )
             }
         case 3...:
-            let first = span[endIndex &- 2]
-            let second = span[endIndex &- 1]
+            let endIndex = span.count - 1
+            let first = span[endIndex - 2]
+            let second = span[endIndex - 1]
             let third = span[endIndex]
             if third.isIDNALabelSeparator {
                 fatalError(
-                    "DomainName initializer should not be used with root label indicator: \(unsafe span[unchecked: endIndex])"
+                    "DomainName initializer should not be used with root label indicator: \(third)"
                 )
             }
             if DomainName.isIDNALabelSeparator(first, second, third) {
                 fatalError(
-                    "DomainName initializer should not be used with root label indicator: \(unsafe span[unchecked: endIndex])"
+                    "DomainName initializer should not be used with root label indicator: \(third)"
                 )
             }
         default:

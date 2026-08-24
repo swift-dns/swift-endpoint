@@ -52,38 +52,41 @@ extension DomainName {
         format: DescriptionFormat,
         options: DescriptionOptions = []
     ) -> String {
-        /// The needed capacity without the root label indicator
-        let neededCapacity = self.encodedLength - 1
+        let wireLength = self._data.readableBytes
+        let neededCapacity = wireLength > 0 ? wireLength &- 1 : 0
         var domainName = unsafe String(
             unsafeUninitializedCapacity_Compatibility: neededCapacity
         ) { stringBuffer in
-            var bufferIdx = 0
+            if neededCapacity == 0 {
+                return 0
+            }
+
+            assert(stringBuffer.count > 0)
+            assert(self._data.readableBytes > 0)
+            assert(neededCapacity > 0)
 
             unsafe self._data.withUnsafeReadableBytes { domainNamePtr in
-                var iterator = self.makePositionIterator()
-                if let range = iterator.next()?.range {
-                    /// These are all ASCII bytes so safe to map directly
-                    for idx in range {
-                        unsafe stringBuffer[bufferIdx] = unsafe domainNamePtr[idx]
-                        /// Can't possibly overflow since it can't be greater than the buffer size
-                        bufferIdx &+= 1
-                    }
-                }
+                /// These are safe based on above assertions
+                let stringBufferBase = unsafe stringBuffer.baseAddress.unsafelyUnwrapped
+                let domainNamePtrBase = unsafe domainNamePtr.baseAddress.unsafelyUnwrapped
 
-                while let range = iterator.next()?.range {
-                    unsafe stringBuffer[bufferIdx] = .asciiDot
-                    /// Can't possibly overflow since it can't be greater than the buffer size
-                    bufferIdx &+= 1
-                    /// These are all ASCII bytes so safe to map directly
-                    for idx in range {
-                        unsafe stringBuffer[bufferIdx] = unsafe domainNamePtr[idx]
-                        /// Can't possibly overflow since it can't be greater than the buffer size
-                        bufferIdx &+= 1
-                    }
+                let rawStringBuffer = UnsafeMutableRawPointer(stringBufferBase)
+                /// These are all ASCII bytes so safe to map directly
+                unsafe rawStringBuffer.copyMemory(
+                    from: domainNamePtrBase.advanced(by: 1),
+                    byteCount: neededCapacity
+                )
+
+                /// Skip the first label's length byte, which is not part of the description.
+                /// Replace all other length bytes with dots.
+                var wireIdx = 1 &+ Int(unsafe domainNamePtr[0])
+                while wireIdx < wireLength {
+                    unsafe stringBuffer[wireIdx &- 1] = .asciiDot
+                    wireIdx &+= 1 &+ Int(unsafe domainNamePtr[wireIdx])
                 }
             }
 
-            return bufferIdx
+            return neededCapacity
         }
 
         if format == .unicode {

@@ -4,56 +4,75 @@ extension Port: CustomStringConvertible {
     /// For example `Port(8080)` is represented as `"8080"`.
     @inlinable
     public var description: String {
-        /// 5 is enough for the biggest possible Port description.
-        /// For example for "65535".
-        /// Swift's `_SmallString` usually supports up to 15 bytes, which helps make
-        /// this implementation as efficient as possible without a heap allocation.
-        unsafe String(unsafeUninitializedCapacity_Compatibility: 5) { buffer in
-            unsafe self.writeTextualRepresentation_RequiringMinimumCapacityOf5(
+        /// 8 is enough for the biggest possible Port description (65535), plus 3 headroom bytes
+        /// for speculative writes.
+        /// Swift's `_SmallString` supports at least 8 bytes on every platform, so this
+        /// still never heap-allocates.
+        unsafe String(unsafeUninitializedCapacity_Compatibility: 8) { buffer in
+            unsafe self.writeTextualRepresentation_RequiringMinimumCapacityOf8(
                 into: UnsafeMutableRawBufferPointer(buffer)
             )
         }
     }
 
     /// Writes the textual representation of this port into `buffer` and returns the number of
-    /// bytes written. `buffer` must have a capacity of at least 5 bytes.
+    /// significant bytes written. `buffer` must have a capacity of at least 8 bytes.
     @inlinable
     @inline(always)
-    package func writeTextualRepresentation_RequiringMinimumCapacityOf5(
+    package func writeTextualRepresentation_RequiringMinimumCapacityOf8(
         into buffer: UnsafeMutableRawBufferPointer
     ) -> Int {
-        assert(buffer.count >= 5)
+        assert(buffer.count >= 8)
 
-        var idx = 0
+        let value = UInt32(self.rawValue)
 
-        /// The compiler is smart enough to not actually do division by 10.
-        let (q1, r1) = self.rawValue.quotientAndRemainder(dividingBy: 10)
-        let (q2, r2) = q1.quotientAndRemainder(dividingBy: 10)
-        let (q3, r3) = q2.quotientAndRemainder(dividingBy: 10)
-        let (q4, r4) = q3.quotientAndRemainder(dividingBy: 10)
-        let r5 = q4 % 10
+        let high = value / 100
+        /// value % 100
+        let low = value &- (high &* 100)
+        /// value / 10_000; 6 in `65432`
+        let tenThousands = high / 100
+        /// (value % 10_000) / 100; 54 in `65432`
+        let middle = high &- (tenThousands &* 100)
+        /// (value % 10_000) / 1_000; 5 in `65432`
+        let thousands = middle / 10
+        /// (value % 1_000) / 100; 4 in `65432`
+        let hundreds = middle &- (thousands &* 10)
+        /// (value % 100) / 10; 3 in `65432`
+        let tens = low / 10
+        /// value % 10; 2 in `65432`
+        let ones = low &- (tens &* 10)
 
-        /// Always write, but only advance past it when it should be kept.
-        var notAllZerosSoFar = r5 != 0
-        unsafe buffer[idx] = UInt8(truncatingIfNeeded: r5) &+ .ascii0
-        idx &+= notAllZerosSoFar ? 1 : 0
+        /// 5x 8-bit lanes, one digit each, most significant first.
+        /// We write backwards because we're later going to copy the exact memory, and
+        /// integer byte-order is almost always little-endian.
+        let digits =
+            UInt64(tenThousands)
+            | (UInt64(thousands) &<< 8)
+            | (UInt64(hundreds) &<< 16)
+            | (UInt64(tens) &<< 24)
+            | (UInt64(ones) &<< 32)
+        /// Add `0x30` == ASCII `0` to each to make ASCII codes out of the numbers.
+        let m30: UInt64 = 0x30_30_30_30_30
+        let asciiBytes = digits &+ m30
 
-        notAllZerosSoFar = notAllZerosSoFar || r4 != 0
-        unsafe buffer[idx] = UInt8(truncatingIfNeeded: r4) &+ .ascii0
-        idx &+= notAllZerosSoFar ? 1 : 0
+        /// Let's ensure we don't write leading 0s.
+        /// We count trailing zeros because the bytes are written backwards.
+        /// A leading zero is a trailing lane that is exactly `0x30`, so XORing out `m30` turns the
+        /// `0x30` lanes into trailing `0`s.
+        /// `& ~0b111` makes sure the number is a multiple of 8 (masks off 3 trailing bits).
+        /// Essentially a `num - (num % 8)`.
+        let zeroDigitsBits = (asciiBytes ^ m30).trailingZeroBitCount & ~0b111
+        /// If all 5 digits are 0 (zeroDigitsBits >= 40; 64 actually) we still need to write 1 zero.
+        let zeroDigitsBitsMax32 = min(zeroDigitsBits, 32)
+        let toStore = asciiBytes &>> zeroDigitsBitsMax32
 
-        notAllZerosSoFar = notAllZerosSoFar || r3 != 0
-        unsafe buffer[idx] = UInt8(truncatingIfNeeded: r3) &+ .ascii0
-        idx &+= notAllZerosSoFar ? 1 : 0
+        /// Always store all 8 bytes, but only advance past the significant digits.
+        unsafe buffer.storeBytes(of: toStore, toByteOffset: 0, as: UInt64.self)
 
-        notAllZerosSoFar = notAllZerosSoFar || r2 != 0
-        unsafe buffer[idx] = UInt8(truncatingIfNeeded: r2) &+ .ascii0
-        idx &+= notAllZerosSoFar ? 1 : 0
-
-        unsafe buffer[idx] = UInt8(truncatingIfNeeded: r1) &+ .ascii0
-        idx &+= 1
-
-        return idx
+        /// `zeroDigitsBitsMax32 &>> 3` == `zeroDigitsBitsMax32 / 8`
+        /// Compiler will optimize `/ 8` to a shift by 3 anyway so 🤷‍♂️.
+        let numPortTrailingZerosMax4 = zeroDigitsBitsMax32 &>> 3
+        return 5 &- numPortTrailingZerosMax4
     }
 }
 
@@ -75,7 +94,7 @@ extension Port: LosslessStringConvertible {
     /// For example `"8080"` will parse into `Port(8080)`.
     public init?(_ description: String) {
         guard
-            let result = description.withSpan_Compatibility({
+            let result = description.withSpan_CompatibilityAlwaysInlined({
                 Port(textualRepresentation: $0)
             })
         else {
@@ -89,7 +108,7 @@ extension Port: LosslessStringConvertible {
     /// For example `"8080"` will parse into `Port(8080)`.
     public init?(_ description: Substring) {
         guard
-            let result = description.withSpan_Compatibility({
+            let result = description.withSpan_CompatibilityAlwaysInlined({
                 Port(textualRepresentation: $0)
             })
         else {

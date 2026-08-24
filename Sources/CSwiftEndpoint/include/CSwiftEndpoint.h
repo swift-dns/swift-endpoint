@@ -43,11 +43,14 @@ static inline uint8_t cswift_endpoint_hexadecimal_digit(uint8_t ascii_byte) {
 //
 //   - Bytes 0, 1, 2: the ASCII digits, most significant first, zero-padded on
 //   the right.
-//   - Byte 3: how many of the above digits are significant, 1 to 3.
+//   - Byte 3: how many of the above digits are significant, plus one, so 2 to 4.
 //
-// So 7 is `{'7', 0, 0, 1}` and 255 is `{'2', '5', '5', 3}`.
+// So 7 is `{'7', 0, 0, 2}` and 255 is `{'2', '5', '5', 4}`.
 // This enables speculative writes, where you write all 3 bytes and only advance an index
 // by the number of significant bytes, to leave the insignificant bytes to be overwritten.
+// The stored count is one too high because a dotted-quad writer also writes a separator
+// per segment; it shifts the entry up by a byte to make room for one, and then byte 3 is
+// exactly how far to advance. Writers that don't add a separator subtract the one back.
 
 extern const uint32_t cswift_endpoint_decimal_digits_table[256];
 

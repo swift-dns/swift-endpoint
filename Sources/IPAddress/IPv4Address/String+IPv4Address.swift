@@ -35,23 +35,23 @@ extension IPv4Address: CustomStringConvertible {
     package func writeTextualRepresentation_Requiring2HeadroomBytes(
         into buffer: UnsafeMutableRawBufferPointer
     ) -> Int {
-        var resultIdx = 0
-
-        let byte = UInt8(truncatingIfNeeded: self.address &>> 24)
-        /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
-        unsafe byte.asDecimal_RequiringMinimumCapacityOf3(buffer: buffer, advancingIdx: &resultIdx)
+        /// These are safe; We've already reserved max capacity needed for the longest possible
+        /// IPv4 address, and only the last segment needs the 2 headroom bytes.
+        let (asciiBytes, count) = UInt8(truncatingIfNeeded: self.address &>> 24).asDecimal()
+        /// The first segment has no leading `.`, so it writes the digits a byte lower.
+        unsafe buffer.storeBytes(of: asciiBytes &>> 8, toByteOffset: 0, as: UInt32.self)
+        var resultIdx = count
 
         for idx in 1..<4 {
-            unsafe buffer[resultIdx] = .asciiDot
-            resultIdx += 1
-
             let shift = 24 - idx * 8
             let byte = UInt8(truncatingIfNeeded: self.address &>> shift)
-            /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
-            unsafe byte.asDecimal_RequiringMinimumCapacityOf3(
-                buffer: buffer,
-                advancingIdx: &resultIdx
+            let (asciiBytes, count) = byte.asDecimal()
+            unsafe buffer.storeBytes(
+                of: asciiBytes | UInt32(UInt8.asciiDot),
+                toByteOffset: resultIdx,
+                as: UInt32.self
             )
+            resultIdx += count + 1
         }
 
         return resultIdx

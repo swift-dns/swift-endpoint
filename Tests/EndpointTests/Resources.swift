@@ -21,23 +21,23 @@ enum Resources: String {
     }
 
     private func qualifiedPath() -> String {
-        var components = URL(fileURLWithPath: #filePath).pathComponents
+        var testsDirectory: [String]
 
         if let projectRootForTesting = ProcessInfo.processInfo
             .environment["PROJECT_ROOT_FOR_TESTING"],
             !projectRootForTesting.isEmpty
         {
-            components = URL(fileURLWithPath: projectRootForTesting).pathComponents
+            testsDirectory = URL(fileURLWithPath: projectRootForTesting).pathComponents
+            testsDirectory.append("Tests")
         } else {
-            components = URL(fileURLWithPath: #filePath).pathComponents
-
-            while components.last != "swift-endpoint" {
-                components.removeLast()
-            }
+            /// `#filePath` is `<Tests>/EndpointTests/Resources.swift`, so dropping the file name
+            /// and the test target's directory leaves the `Tests` directory itself.
+            let thisFile = URL(fileURLWithPath: #filePath).pathComponents
+            testsDirectory = Array(thisFile.dropLast(2))
         }
 
-        components.append(contentsOf: ["Tests", "Resources", self.rawValue])
+        testsDirectory.append(contentsOf: ["Resources", self.rawValue])
 
-        return components.joined(separator: "/")
+        return testsDirectory.joined(separator: "/")
     }
 }

@@ -29,4 +29,7 @@ let benchmarks: @Sendable () -> Void = {
 
     ipv6AddressFromStringBenchmarks()
     ipv6AddressToStringBenchmarks()
+
+    portFromStringBenchmarks()
+    portToStringBenchmarks()
 }

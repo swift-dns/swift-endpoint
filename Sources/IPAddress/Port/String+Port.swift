@@ -94,7 +94,7 @@ extension Port: LosslessStringConvertible {
     /// For example `"8080"` will parse into `Port(8080)`.
     public init?(_ description: String) {
         guard
-            let result = description.withSpan_CompatibilityAlwaysInlined({
+            let result = description.withSpan_Compatibility({
                 Port(textualRepresentation: $0)
             })
         else {
@@ -108,7 +108,7 @@ extension Port: LosslessStringConvertible {
     /// For example `"8080"` will parse into `Port(8080)`.
     public init?(_ description: Substring) {
         guard
-            let result = description.withSpan_CompatibilityAlwaysInlined({
+            let result = description.withSpan_Compatibility({
                 Port(textualRepresentation: $0)
             })
         else {

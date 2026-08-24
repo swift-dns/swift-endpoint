@@ -1,3 +1,6 @@
 {
-  "instructions": 665
+  "instructions": {
+    "max": 683,
+    "min": 665
+  }
 }

@@ -1,6 +1,7 @@
 @available(SwiftStdlib 5.1, *)
 extension IPv4Address {
     /// Initialize an `IPv4Address` by parsing the 4 bytes representing it.
+    @inlinable
     public init?(parsing span: Span<UInt8>) {
         guard span.count >= 4 else {
             return nil
@@ -16,6 +17,7 @@ extension IPv4Address {
 
     /// Serialize the address into the provided span.
     /// Returns true if the address was serialized successfully, false otherwise.
+    @inlinable
     public func serialize(into span: inout OutputSpan<UInt8>) -> Bool {
         guard span.freeCapacity >= 4 else {
             return false

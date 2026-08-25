@@ -3,6 +3,7 @@ extension IPv4Address {
     ///
     /// This does not handle ipv6-to-ipv4 mappings. Use `init?(ipv6:)` for that.
     @available(SwiftStdlib 5.1, *)
+    @inlinable
     public init?(exactly ipAddress: AnyIPAddress) {
         guard let ipv4 = ipAddress.ipv4Value else {
             return nil

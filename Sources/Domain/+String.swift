@@ -1,11 +1,14 @@
 @available(SwiftStdlib 5.1, *)
 extension String {
-    #if canImport(Darwin)
-    @usableFromInline
+    /// Calls `body` with a `Span` of this String's utf8 bytes.
+    @inlinable
+    @inline(always)
     func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
         do {
+            /// Fast path: Currently always the case for non-Darwin.
+            /// On Darwin, always the case unless for some objc-bridged strings.
             if let fastResult = try self.utf8.withContiguousStorageIfAvailable({
                 try body(unsafe $0.span)
             }) {
@@ -17,30 +20,31 @@ extension String {
             fatalError("Unreachable code path")
         }
 
+        return try self.withSpan_Compatibility_SlowPath(body)
+    }
+
+    /// This function can only be reached on Darwin and only for some objc-bridged strings.
+    /// Therefore it's not worth inlining. As a matter of fact it's worth not inlining it at all.
+    @usableFromInline
+    @inline(never)
+    func withSpan_Compatibility_SlowPath<T, E: Error>(
+        _ body: (Span<UInt8>) throws(E) -> T
+    ) throws(E) -> T {
         if #available(SwiftStdlib 6.2, *) {
             return try body(self.utf8Span.span)
         }
 
+        var copy = self
         do {
-            var copy = self
-            return try copy.withUTF8 {
+            return try copy.withUTF8({
                 try body(unsafe $0.span)
-            }
+            })
         } catch let error as E {
             throw error
         } catch {
             fatalError("Unreachable code path")
         }
     }
-    #else
-    @_transparent
-    @inlinable
-    func withSpan_Compatibility<T, E: Error>(
-        _ body: (Span<UInt8>) throws(E) -> T
-    ) throws(E) -> T {
-        try body(self.utf8Span.span)
-    }
-    #endif
 
     #if canImport(Darwin)
     @usableFromInline
@@ -83,12 +87,15 @@ extension String {
 
 @available(SwiftStdlib 5.1, *)
 extension Substring {
-    #if canImport(Darwin)
-    @usableFromInline
+    /// Calls `body` with a `Span` of this Substring's utf8 bytes.
+    @inlinable
+    @inline(always)
     func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
         do {
+            /// Fast path: Currently always the case for non-Darwin.
+            /// On Darwin, always the case unless for some objc-bridged strings.
             if let fastResult = unsafe try self.utf8.withContiguousStorageIfAvailable({
                 try body(unsafe $0.span)
             }) {
@@ -100,28 +107,29 @@ extension Substring {
             fatalError("Unreachable code path")
         }
 
+        return try self.withSpan_Compatibility_SlowPath(body)
+    }
+
+    /// This function can only be reached on Darwin and only for some objc-bridged strings.
+    /// Therefore it's not worth inlining. As a matter of fact it's worth not inlining it at all.
+    @usableFromInline
+    @inline(never)
+    func withSpan_Compatibility_SlowPath<T, E: Error>(
+        _ body: (Span<UInt8>) throws(E) -> T
+    ) throws(E) -> T {
         if #available(SwiftStdlib 6.2, *) {
             return try body(self.utf8Span.span)
         }
 
+        var copy = self
         do {
-            var copy = self
-            return try copy.withUTF8 {
+            return try copy.withUTF8({
                 try body(unsafe $0.span)
-            }
+            })
         } catch let error as E {
             throw error
         } catch {
             fatalError("Unreachable code path")
         }
     }
-    #else
-    @_transparent
-    @inlinable
-    func withSpan_Compatibility<T, E: Error>(
-        _ body: (Span<UInt8>) throws(E) -> T
-    ) throws(E) -> T {
-        try body(self.utf8Span.span)
-    }
-    #endif
 }

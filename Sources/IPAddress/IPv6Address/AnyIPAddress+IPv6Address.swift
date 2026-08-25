@@ -6,6 +6,7 @@ extension IPv6Address {
     /// Use `IPv4Address.asIPv4MappedIPv6` or
     /// `IPv4Address.asNAT64WellKnownIPv4EmbeddedIPv6` for that.
     @available(SwiftStdlib 5.1, *)
+    @inlinable
     public init?(exactly ipAddress: AnyIPAddress) {
         guard let ipv6 = ipAddress.ipv6Value else {
             return nil

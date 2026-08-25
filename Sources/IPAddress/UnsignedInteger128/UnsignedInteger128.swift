@@ -56,6 +56,8 @@ public struct UnsignedInteger128 {
     ///     _low: 0x9900665544332211, /// The least significant half of the value
     ///     _high: 0x1122334455667788 /// The most significant half of the value
     /// )
+    /// ```
+    @inlinable
     public init(_low: UInt64, _high: UInt64) {
         self._low = _low
         self._high = _high

@@ -1,25 +1,6 @@
 import Benchmark
+import CBenchSupport
 import IPAddress
-
-#if os(Linux) || os(FreeBSD) || os(Android)
-
-#if canImport(Glibc)
-@preconcurrency import Glibc
-#elseif canImport(Musl)
-@preconcurrency import Musl
-#elseif canImport(Android)
-@preconcurrency import Android
-#endif
-
-#elseif os(Windows)
-import ucrt
-#elseif canImport(Darwin)
-import Darwin
-#elseif canImport(WASILibc)
-@preconcurrency import WASILibc
-#else
-#error("The PortSerializing benchmarks module was unable to identify your C library.")
-#endif
 
 let portToStringBenchmarks: @Sendable () -> Void = {
     // MARK: - Port_Serializing_SSH
@@ -220,12 +201,10 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: Port_Serializing_Multiple_Ports_vsnprintf
+    // MARK: Port_Serializing_Multiple_Ports_snprintf
 
     /// Same as portMultiplePorts.map(\.rawValue) but inlined.
-    /// `snprintf` is a C variadic so it is not importable; `vsnprintf` is the way to reach it.
-    /// The mallocs this reports come from `withVaList` boxing the argument, not from `snprintf`.
-    let portMultiplePortsVsnprintf: [32 of UInt32] = [
+    let portMultiplePortsSnprintf: [32 of UInt32] = [
         9, 21, 22, 23, 25, 53, 80, 110,
         123, 143, 179, 389, 443, 514, 587, 853,
         993, 995, 1194, 1433, 2049, 3306, 3389, 5060,
@@ -233,7 +212,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "Port_Serializing_Multiple_Ports_vsnprintf_400K",
+        "Port_Serializing_Multiple_Ports_snprintf_2M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -241,14 +220,12 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<400_000 {
-            let idx = Int(rng.next() % UInt64(portMultiplePortsVsnprintf.count))
+        for _ in 0..<2_000_000 {
+            let idx = Int(rng.next() % UInt64(portMultiplePortsSnprintf.count))
             withUnsafeTemporaryAllocation(byteCount: 6, alignment: 1) { buffer in
                 let base = unsafe buffer.baseAddress.unsafelyUnwrapped
                     .assumingMemoryBound(to: CChar.self)
-                let written = unsafe withVaList([portMultiplePortsVsnprintf[idx]]) { vaList in
-                    unsafe vsnprintf(base, 6, "%u", vaList)
-                }
+                let written = unsafe cbench_snprintf_u32(base, 6, portMultiplePortsSnprintf[idx])
                 unsafe blackHole(buffer)
                 blackHole(written)
             }
@@ -256,20 +233,18 @@ let portToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "Port_Serializing_Multiple_Ports_vsnprintf_Malloc",
+        "Port_Serializing_Multiple_Ports_snprintf_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
             maxIterations: 10
         )
     ) { benchmark in
-        for idx in portMultiplePortsVsnprintf.indices {
+        for idx in portMultiplePortsSnprintf.indices {
             withUnsafeTemporaryAllocation(byteCount: 6, alignment: 1) { buffer in
                 let base = unsafe buffer.baseAddress.unsafelyUnwrapped
                     .assumingMemoryBound(to: CChar.self)
-                let written = unsafe withVaList([portMultiplePortsVsnprintf[idx]]) { vaList in
-                    unsafe vsnprintf(base, 6, "%u", vaList)
-                }
+                let written = unsafe cbench_snprintf_u32(base, 6, portMultiplePortsSnprintf[idx])
                 unsafe blackHole(buffer)
                 blackHole(written)
             }
@@ -277,20 +252,18 @@ let portToStringBenchmarks: @Sendable () -> Void = {
     }
 
     Benchmark(
-        "Port_Serializing_Multiple_Ports_vsnprintf_Instructions",
+        "Port_Serializing_Multiple_Ports_snprintf_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 100,
             maxIterations: 10
         )
     ) { benchmark in
-        for idx in portMultiplePortsVsnprintf.indices {
+        for idx in portMultiplePortsSnprintf.indices {
             withUnsafeTemporaryAllocation(byteCount: 6, alignment: 1) { buffer in
                 let base = unsafe buffer.baseAddress.unsafelyUnwrapped
                     .assumingMemoryBound(to: CChar.self)
-                let written = unsafe withVaList([portMultiplePortsVsnprintf[idx]]) { vaList in
-                    unsafe vsnprintf(base, 6, "%u", vaList)
-                }
+                let written = unsafe cbench_snprintf_u32(base, 6, portMultiplePortsSnprintf[idx])
                 unsafe blackHole(buffer)
                 blackHole(written)
             }

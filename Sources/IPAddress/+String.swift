@@ -1,6 +1,7 @@
 @available(SwiftStdlib 5.1, *)
 extension String {
     /// Calls `body` with a `Span` of this String's utf8 bytes.
+    @inlinable
     @inline(always)
     func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
@@ -24,6 +25,7 @@ extension String {
 
     /// This function can only be reached on Darwin and only for some objc-bridged strings.
     /// Therefore it's not worth inlining. As a matter of fact it's worth not inlining it at all.
+    @usableFromInline
     @inline(never)
     func withSpan_Compatibility_SlowPath<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
@@ -86,6 +88,7 @@ extension String {
 @available(SwiftStdlib 5.1, *)
 extension Substring {
     /// Calls `body` with a `Span` of this Substring's utf8 bytes.
+    @inlinable
     @inline(always)
     func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
@@ -109,6 +112,7 @@ extension Substring {
 
     /// This function can only be reached on Darwin and only for some objc-bridged strings.
     /// Therefore it's not worth inlining. As a matter of fact it's worth not inlining it at all.
+    @usableFromInline
     @inline(never)
     func withSpan_Compatibility_SlowPath<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T

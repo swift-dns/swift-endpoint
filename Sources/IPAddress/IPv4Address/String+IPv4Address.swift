@@ -136,6 +136,7 @@ extension IPv4Address: LosslessStringConvertible {
     /// Initialize an IPv4 address from its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    @inlinable
     public init?(_ description: String) {
         guard
             let result = description.withSpan_Compatibility({
@@ -150,6 +151,7 @@ extension IPv4Address: LosslessStringConvertible {
     /// Initialize an IPv4 address from its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    @inlinable
     public init?(_ description: Substring) {
         guard
             let result = description.withSpan_Compatibility({

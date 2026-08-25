@@ -124,6 +124,7 @@ package.dependencies.append(
 )
 
 package.targets += [
+    .target(name: "CBenchSupport", path: "CBenchSupport"),
     .executableTarget(
         name: "DomainNameBenchs",
         dependencies: [
@@ -139,6 +140,7 @@ package.targets += [
     .executableTarget(
         name: "IPAddressBenchs",
         dependencies: [
+            "CBenchSupport",
             "Endpoint",
             .product(name: "Benchmark", package: "benchmark"),
         ],

@@ -22,22 +22,6 @@ import Darwin
 #endif
 
 let portFromStringBenchmarks: @Sendable () -> Void = {
-    // MARK: - Port_Parsing_SSH
-
-    Benchmark(
-        "Port_Parsing_SSH_12M",
-        configuration: .init(
-            metrics: [.cpuUser],
-            warmupIterations: 5,
-            maxIterations: 1000
-        )
-    ) { benchmark in
-        for _ in 0..<12_000_000 {
-            let port = unsafe Port("22").unsafelyUnwrapped
-            blackHole(port)
-        }
-    }
-
     // MARK: - Port_Parsing_HTTPS
 
     Benchmark(
@@ -54,59 +38,27 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
         }
     }
 
-    // MARK: - Port_Parsing_HTTP_Alt
-
     Benchmark(
-        "Port_Parsing_HTTP_Alt_12M",
-        configuration: .init(
-            metrics: [.cpuUser],
-            warmupIterations: 5,
-            maxIterations: 1000
-        )
-    ) { benchmark in
-        for _ in 0..<12_000_000 {
-            let port = unsafe Port("8080").unsafelyUnwrapped
-            blackHole(port)
-        }
-    }
-
-    // MARK: - Port_Parsing_Ephemeral
-
-    Benchmark(
-        "Port_Parsing_Ephemeral_12M",
-        configuration: .init(
-            metrics: [.cpuUser],
-            warmupIterations: 5,
-            maxIterations: 1000
-        )
-    ) { benchmark in
-        for _ in 0..<12_000_000 {
-            let port = unsafe Port("33435").unsafelyUnwrapped
-            blackHole(port)
-        }
-    }
-
-    Benchmark(
-        "Port_Parsing_Ephemeral_Malloc",
+        "Port_Parsing_HTTPS_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
             warmupIterations: 1,
             maxIterations: 10
         )
     ) { benchmark in
-        let port = unsafe Port("33435").unsafelyUnwrapped
+        let port = unsafe Port("443").unsafelyUnwrapped
         blackHole(port)
     }
 
     Benchmark(
-        "Port_Parsing_Ephemeral_Instructions",
+        "Port_Parsing_HTTPS_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 100,
             maxIterations: 10
         )
     ) { benchmark in
-        let port = unsafe Port("33435").unsafelyUnwrapped
+        let port = unsafe Port("443").unsafelyUnwrapped
         blackHole(port)
     }
 

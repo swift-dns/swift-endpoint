@@ -42,6 +42,7 @@ extension DomainName {
             Self(rawValue: 1 << 0)
         }
 
+        @inlinable
         public init(rawValue: Int) {
             self.rawValue = rawValue
         }
@@ -132,6 +133,7 @@ extension DomainName {
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName("mahdibm.com")
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
+    @inlinable
     public init(
         _ description: String,
         idnaConfiguration: IDNA.Configuration = .default
@@ -147,6 +149,7 @@ extension DomainName {
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName("mahdibm.com")
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
+    @inlinable
     public init(
         _ description: Substring,
         idnaConfiguration: IDNA.Configuration = .default

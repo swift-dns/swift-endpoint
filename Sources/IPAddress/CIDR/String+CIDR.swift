@@ -29,6 +29,7 @@ extension CIDR: LosslessStringConvertible {
     /// e.g. 2001::/220 will result in nil.
     /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
+    @inlinable
     public init?(_ description: String) {
         guard
             let result = description.withSpan_Compatibility({
@@ -46,6 +47,7 @@ extension CIDR: LosslessStringConvertible {
     /// e.g. 2001::/220 will result in nil.
     /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
+    @inlinable
     public init?(_ description: Substring) {
         guard
             let result = description.withSpan_Compatibility({

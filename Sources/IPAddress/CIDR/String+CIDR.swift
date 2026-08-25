@@ -16,6 +16,7 @@ extension CIDR {
     /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
     @inlinable
+    @inline(always)
     public init?(textualRepresentation utf8Span: UTF8Span) {
         self.init(textualRepresentation: utf8Span.span)
     }
@@ -30,6 +31,7 @@ extension CIDR: LosslessStringConvertible {
     /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
     @inlinable
+    @inline(always)
     public init?(_ description: String) {
         guard
             let result = description.withSpan_Compatibility({
@@ -48,6 +50,7 @@ extension CIDR: LosslessStringConvertible {
     /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
     @inlinable
+    @inline(always)
     public init?(_ description: Substring) {
         guard
             let result = description.withSpan_Compatibility({

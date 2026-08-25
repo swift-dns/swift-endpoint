@@ -82,6 +82,7 @@ extension Port {
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
     /// For example `"8080"` will parse into `Port(8080)`.
     @inlinable
+    @inline(always)
     public init?(textualRepresentation utf8Span: UTF8Span) {
         self.init(textualRepresentation: utf8Span.span)
     }
@@ -93,6 +94,7 @@ extension Port: LosslessStringConvertible {
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
     /// For example `"8080"` will parse into `Port(8080)`.
     @inlinable
+    @inline(always)
     public init?(_ description: String) {
         guard
             let result = description.withSpan_Compatibility({
@@ -108,6 +110,7 @@ extension Port: LosslessStringConvertible {
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
     /// For example `"8080"` will parse into `Port(8080)`.
     @inlinable
+    @inline(always)
     public init?(_ description: Substring) {
         guard
             let result = description.withSpan_Compatibility({

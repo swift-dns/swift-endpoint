@@ -134,6 +134,7 @@ extension DomainName {
     /// Example: try DomainName("mahdibm.com")
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
     @inlinable
+    @inline(always)
     public init(
         _ description: String,
         idnaConfiguration: IDNA.Configuration = .default
@@ -150,6 +151,7 @@ extension DomainName {
     /// Example: try DomainName("mahdibm.com")
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
     @inlinable
+    @inline(always)
     public init(
         _ description: Substring,
         idnaConfiguration: IDNA.Configuration = .default
@@ -169,6 +171,7 @@ extension DomainName {
     /// Example: try DomainName(textualRepresentation: "mahdibm.com".utf8Span)
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
     @inlinable
+    @inline(always)
     public init(
         textualRepresentation span: UTF8Span,
         idnaConfiguration: IDNA.Configuration = .default

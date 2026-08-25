@@ -30,9 +30,13 @@ extension String {
     func withSpan_Compatibility_SlowPath<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
+        /// Same availability guard as `utf8Span` has in swift repo.
+        /// The symbol is available there but will just abort.
+        #if !(os(watchOS) && _pointerBitWidth(_32))
         if #available(SwiftStdlib 6.2, *) {
             return try body(self.utf8Span.span)
         }
+        #endif
 
         var copy = self
         do {
@@ -117,9 +121,13 @@ extension Substring {
     func withSpan_Compatibility_SlowPath<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
+        /// Same availability guard as `utf8Span` has in swift repo.
+        /// The symbol is available there but will just abort.
+        #if !(os(watchOS) && _pointerBitWidth(_32))
         if #available(SwiftStdlib 6.2, *) {
             return try body(self.utf8Span.span)
         }
+        #endif
 
         var copy = self
         do {

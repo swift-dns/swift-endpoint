@@ -33,6 +33,7 @@ extension UnsignedInteger128: CustomStringConvertible {
     }
 
     @inlinable
+    @inline(always)
     public init?(_ description: String) {
         guard
             let result =

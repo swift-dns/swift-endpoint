@@ -126,6 +126,7 @@ extension Port: LosslessStringConvertible {
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
     /// For example `"8080"` will parse into `Port(8080)`.
     @inlinable
+    @inline(always)
     public init?(textualRepresentation span: Span<UInt8>) {
         var rawValue: UInt16 = 0
         let success = Port.parsePort(
@@ -154,19 +155,48 @@ extension Port: LosslessStringConvertible {
             return false
         }
 
-        guard let digit1 = unsafe UInt8.mapUTF8ByteToUInt8(span[unchecked: 0]) else {
+        /// `count > 0` so `(0...4) ~ (count - 1)`.
+        let last = count &- 1
+
+        /// The reads are clamped to `last` instead of being skipped, so that the number of
+        /// digits never decides control flow. A rolled or unrolled digit loop makes the
+        /// branch predictor guess the length of every input, which costs a full mispredict
+        /// per parse on real-world port lists, where the lengths vary unpredictably.
+        /// Lanes past `last` re-read the final byte, and are discarded below.
+        let bytes =
+            UInt64(unsafe span[unchecked: 0])
+            | (UInt64(unsafe span[unchecked: min(1, last)]) &<< 8)
+            | (UInt64(unsafe span[unchecked: min(2, last)]) &<< 16)
+            | (UInt64(unsafe span[unchecked: min(3, last)]) &<< 24)
+            | (UInt64(unsafe span[unchecked: last]) &<< 32)
+
+        let m30: UInt64 = 0x30_30_30_30_30
+        let significantBits = UInt64(8 &* count)
+
+        /// Shift the `count` real bytes up so the least significant digit always lands in
+        /// lane 4, then fill the vacated low lanes — the most significant places — with
+        /// ASCII `0`. So `"443"` becomes the 5 lanes of `"00443"`, and every input is
+        /// weighted by the same fixed lane weights below.
+        /// The duplicated lanes are pushed above bit 39, where nothing below reads them.
+        let digits = (bytes &<< (40 &- significantBits)) | (m30 &>> significantBits)
+
+        /// Subtracting `0x30` == ASCII `0` from each lane turns the ASCII codes into numbers.
+        let lowered = digits &- m30
+        /// Adding `0x46` pushes any lane above ASCII `9` into the top half of its lane.
+        let raised = digits &+ 0x46_46_46_46_46
+        /// A lane below ASCII `0` borrows and sets its own top bit in `lowered`; a lane above
+        /// ASCII `9` sets its top bit in `raised`. Valid lanes set neither, and neither
+        /// borrow nor carry, so they cannot disturb their neighbours.
+        guard (lowered | raised) & 0x80_80_80_80_80 == 0 else {
             return false
         }
-        var value = UInt32(digit1)
 
-        var idx = 1
-        while idx < count {
-            guard let digit = unsafe UInt8.mapUTF8ByteToUInt8(span[unchecked: idx]) else {
-                return false
-            }
-            value = value &* 10 &+ UInt32(digit)
-            idx &+= 1
-        }
+        let value =
+            UInt32(lowered & 0xFF) &* 10_000
+            &+ UInt32((lowered &>> 8) & 0xFF) &* 1_000
+            &+ UInt32((lowered &>> 16) & 0xFF) &* 100
+            &+ UInt32((lowered &>> 24) & 0xFF) &* 10
+            &+ UInt32((lowered &>> 32) & 0xFF)
 
         guard value <= 65535 else {
             return false

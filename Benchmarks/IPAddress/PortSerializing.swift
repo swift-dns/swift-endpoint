@@ -33,16 +33,13 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 1000
         )
     ) { benchmark in
-        var port = portSSH
-        withUnsafeMutablePointer(to: &port) { portPointer in
-            unsafe blackHole(portPointer)
-            for _ in 0..<30_000_000 {
-                withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
-                    let written = unsafe portPointer.pointee
-                        .writeTextualRepresentation_RequiringMinimumCapacityOf8(into: buffer)
-                    unsafe blackHole(buffer)
-                    blackHole(written)
-                }
+        for _ in 0..<30_000_000 {
+            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
+                let written = unsafe portSSH.writeTextualRepresentation_RequiringMinimumCapacityOf8(
+                    into: buffer
+                )
+                unsafe blackHole(buffer)
+                blackHole(written)
             }
         }
     }
@@ -58,16 +55,14 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 1000
         )
     ) { benchmark in
-        var port = portHTTPS
-        withUnsafeMutablePointer(to: &port) { portPointer in
-            unsafe blackHole(portPointer)
-            for _ in 0..<30_000_000 {
-                withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
-                    let written = unsafe portPointer.pointee
-                        .writeTextualRepresentation_RequiringMinimumCapacityOf8(into: buffer)
-                    unsafe blackHole(buffer)
-                    blackHole(written)
-                }
+        for _ in 0..<30_000_000 {
+            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
+                let written =
+                    unsafe portHTTPS.writeTextualRepresentation_RequiringMinimumCapacityOf8(
+                        into: buffer
+                    )
+                unsafe blackHole(buffer)
+                blackHole(written)
             }
         }
     }
@@ -83,16 +78,14 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 1000
         )
     ) { benchmark in
-        var port = portHTTPAlt
-        withUnsafeMutablePointer(to: &port) { portPointer in
-            unsafe blackHole(portPointer)
-            for _ in 0..<30_000_000 {
-                withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
-                    let written = unsafe portPointer.pointee
-                        .writeTextualRepresentation_RequiringMinimumCapacityOf8(into: buffer)
-                    unsafe blackHole(buffer)
-                    blackHole(written)
-                }
+        for _ in 0..<30_000_000 {
+            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
+                let written =
+                    unsafe portHTTPAlt.writeTextualRepresentation_RequiringMinimumCapacityOf8(
+                        into: buffer
+                    )
+                unsafe blackHole(buffer)
+                blackHole(written)
             }
         }
     }
@@ -108,16 +101,14 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 1000
         )
     ) { benchmark in
-        var port = portEphemeral
-        withUnsafeMutablePointer(to: &port) { portPointer in
-            unsafe blackHole(portPointer)
-            for _ in 0..<30_000_000 {
-                withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
-                    let written = unsafe portPointer.pointee
-                        .writeTextualRepresentation_RequiringMinimumCapacityOf8(into: buffer)
-                    unsafe blackHole(buffer)
-                    blackHole(written)
-                }
+        for _ in 0..<30_000_000 {
+            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
+                let written =
+                    unsafe portEphemeral.writeTextualRepresentation_RequiringMinimumCapacityOf8(
+                        into: buffer
+                    )
+                unsafe blackHole(buffer)
+                blackHole(written)
             }
         }
     }
@@ -130,15 +121,13 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        var port = portEphemeral
-        withUnsafeMutablePointer(to: &port) { portPointer in
-            unsafe blackHole(portPointer)
-            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
-                let written = unsafe portPointer.pointee
-                    .writeTextualRepresentation_RequiringMinimumCapacityOf8(into: buffer)
-                unsafe blackHole(buffer)
-                blackHole(written)
-            }
+        withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
+            let written =
+                unsafe portEphemeral.writeTextualRepresentation_RequiringMinimumCapacityOf8(
+                    into: buffer
+                )
+            unsafe blackHole(buffer)
+            blackHole(written)
         }
     }
 
@@ -150,15 +139,13 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        var port = portEphemeral
-        withUnsafeMutablePointer(to: &port) { portPointer in
-            unsafe blackHole(portPointer)
-            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
-                let written = unsafe portPointer.pointee
-                    .writeTextualRepresentation_RequiringMinimumCapacityOf8(into: buffer)
-                unsafe blackHole(buffer)
-                blackHole(written)
-            }
+        withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
+            let written =
+                unsafe portEphemeral.writeTextualRepresentation_RequiringMinimumCapacityOf8(
+                    into: buffer
+                )
+            unsafe blackHole(buffer)
+            blackHole(written)
         }
     }
 

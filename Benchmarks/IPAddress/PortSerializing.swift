@@ -26,7 +26,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
 
     let portSSH = Port(rawValue: 22)
     Benchmark(
-        "Port_Serializing_SSH_60M",
+        "Port_Serializing_SSH_30M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -36,7 +36,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         var port = portSSH
         withUnsafeMutablePointer(to: &port) { portPointer in
             unsafe blackHole(portPointer)
-            for _ in 0..<60_000_000 {
+            for _ in 0..<30_000_000 {
                 withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
                     let written = unsafe portPointer.pointee
                         .writeTextualRepresentation_RequiringMinimumCapacityOf8(into: buffer)
@@ -51,7 +51,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
 
     let portHTTPS = Port(rawValue: 443)
     Benchmark(
-        "Port_Serializing_HTTPS_60M",
+        "Port_Serializing_HTTPS_30M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -61,7 +61,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         var port = portHTTPS
         withUnsafeMutablePointer(to: &port) { portPointer in
             unsafe blackHole(portPointer)
-            for _ in 0..<60_000_000 {
+            for _ in 0..<30_000_000 {
                 withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
                     let written = unsafe portPointer.pointee
                         .writeTextualRepresentation_RequiringMinimumCapacityOf8(into: buffer)
@@ -76,7 +76,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
 
     let portHTTPAlt = Port(rawValue: 8080)
     Benchmark(
-        "Port_Serializing_HTTP_Alt_60M",
+        "Port_Serializing_HTTP_Alt_30M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -86,7 +86,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         var port = portHTTPAlt
         withUnsafeMutablePointer(to: &port) { portPointer in
             unsafe blackHole(portPointer)
-            for _ in 0..<60_000_000 {
+            for _ in 0..<30_000_000 {
                 withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
                     let written = unsafe portPointer.pointee
                         .writeTextualRepresentation_RequiringMinimumCapacityOf8(into: buffer)
@@ -101,7 +101,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
 
     let portEphemeral = Port(rawValue: 33435)
     Benchmark(
-        "Port_Serializing_Ephemeral_60M",
+        "Port_Serializing_Ephemeral_30M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -111,7 +111,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         var port = portEphemeral
         withUnsafeMutablePointer(to: &port) { portPointer in
             unsafe blackHole(portPointer)
-            for _ in 0..<60_000_000 {
+            for _ in 0..<30_000_000 {
                 withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
                     let written = unsafe portPointer.pointee
                         .writeTextualRepresentation_RequiringMinimumCapacityOf8(into: buffer)
@@ -178,7 +178,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "Port_Serializing_Multiple_Ports_25M",
+        "Port_Serializing_Multiple_Ports_15M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -186,7 +186,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<25_000_000 {
+        for _ in 0..<15_000_000 {
             let idx = Int(rng.next() % UInt64(portMultiplePorts.count))
             withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
                 let written = unsafe portMultiplePorts[idx]
@@ -246,7 +246,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "Port_Serializing_Multiple_Ports_vsnprintf_500K",
+        "Port_Serializing_Multiple_Ports_vsnprintf_400K",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -254,7 +254,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<500_000 {
+        for _ in 0..<400_000 {
             let idx = Int(rng.next() % UInt64(portMultiplePortsVsnprintf.count))
             withUnsafeTemporaryAllocation(byteCount: 6, alignment: 1) { buffer in
                 let base = unsafe buffer.baseAddress.unsafelyUnwrapped
@@ -316,7 +316,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
     /// against the stdlib's `String(UInt16)` on equal terms.
 
     Benchmark(
-        "Port_Serializing_Multiple_Ports_description_15M",
+        "Port_Serializing_Multiple_Ports_description_6M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -324,7 +324,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<15_000_000 {
+        for _ in 0..<6_000_000 {
             let idx = Int(rng.next() % UInt64(portMultiplePorts.count))
             let description = portMultiplePorts[idx].description
             blackHole(description)
@@ -362,7 +362,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
     // MARK: Port_Serializing_Multiple_Ports_String
 
     Benchmark(
-        "Port_Serializing_Multiple_Ports_String_8M",
+        "Port_Serializing_Multiple_Ports_String_6M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -370,7 +370,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<8_000_000 {
+        for _ in 0..<6_000_000 {
             let idx = Int(rng.next() % UInt64(portMultiplePorts.count))
             let description = String(portMultiplePorts[idx].rawValue)
             blackHole(description)

@@ -25,14 +25,14 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - Port_Parsing_SSH
 
     Benchmark(
-        "Port_Parsing_SSH_20M",
+        "Port_Parsing_SSH_12M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<20_000_000 {
+        for _ in 0..<12_000_000 {
             let port = unsafe Port("22").unsafelyUnwrapped
             blackHole(port)
         }
@@ -41,14 +41,14 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - Port_Parsing_HTTPS
 
     Benchmark(
-        "Port_Parsing_HTTPS_20M",
+        "Port_Parsing_HTTPS_12M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<20_000_000 {
+        for _ in 0..<12_000_000 {
             let port = unsafe Port("443").unsafelyUnwrapped
             blackHole(port)
         }
@@ -57,14 +57,14 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - Port_Parsing_HTTP_Alt
 
     Benchmark(
-        "Port_Parsing_HTTP_Alt_20M",
+        "Port_Parsing_HTTP_Alt_12M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<20_000_000 {
+        for _ in 0..<12_000_000 {
             let port = unsafe Port("8080").unsafelyUnwrapped
             blackHole(port)
         }
@@ -73,14 +73,14 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - Port_Parsing_Ephemeral
 
     Benchmark(
-        "Port_Parsing_Ephemeral_20M",
+        "Port_Parsing_Ephemeral_12M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<20_000_000 {
+        for _ in 0..<12_000_000 {
             let port = unsafe Port("33435").unsafelyUnwrapped
             blackHole(port)
         }
@@ -303,7 +303,7 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "Port_Parsing_Multiple_Ports_String_12M",
+        "Port_Parsing_Multiple_Ports_String_7M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -311,7 +311,7 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<12_000_000 {
+        for _ in 0..<7_000_000 {
             let idx = Int(rng.next() % UInt64(portMultiplePortsString.count))
             let port = unsafe Port(portMultiplePortsString[idx]).unsafelyUnwrapped
             blackHole(port)
@@ -349,7 +349,7 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: Port_Parsing_Multiple_Ports_UInt16
 
     Benchmark(
-        "Port_Parsing_Multiple_Ports_UInt16_15M",
+        "Port_Parsing_Multiple_Ports_UInt16_12M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -357,7 +357,7 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<15_000_000 {
+        for _ in 0..<12_000_000 {
             let idx = Int(rng.next() % UInt64(portMultiplePortsString.count))
             let port = unsafe UInt16(portMultiplePortsString[idx]).unsafelyUnwrapped
             blackHole(port)

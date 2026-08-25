@@ -42,14 +42,14 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - IPv6_Parsing_Zero_Compressed
 
     Benchmark(
-        "IPv6_Parsing_Zero_Compressed_15M",
+        "IPv6_Parsing_Zero_Compressed_10M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<15_000_000 {
+        for _ in 0..<10_000_000 {
             let ip = unsafe IPv6Address("[::]").unsafelyUnwrapped
             blackHole(ip)
         }
@@ -75,14 +75,14 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - IPv6_Parsing_Localhost_Compressed
 
     Benchmark(
-        "IPv6_Parsing_Localhost_Compressed_15M",
+        "IPv6_Parsing_Localhost_Compressed_10M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<15_000_000 {
+        for _ in 0..<10_000_000 {
             let ip = unsafe IPv6Address("[::1]").unsafelyUnwrapped
             blackHole(ip)
         }
@@ -91,14 +91,14 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets
 
     Benchmark(
-        "IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets_5M",
+        "IPv6_Parsing_2_Groups_Compressed_In_The_Middle_No_Brackets_4M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<5_000_000 {
+        for _ in 0..<4_000_000 {
             let ip = unsafe IPv6Address("2a03:2880:f177::face:b00c:25de").unsafelyUnwrapped
             blackHole(ip)
         }
@@ -131,14 +131,14 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - IPv6_Parsing_2_Groups_Compressed_At_The_End
 
     Benchmark(
-        "IPv6_Parsing_2_Groups_Compressed_At_The_End_5M",
+        "IPv6_Parsing_2_Groups_Compressed_At_The_End_4M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<5_000_000 {
+        for _ in 0..<4_000_000 {
             let ip = unsafe IPv6Address("[2a03:2880:f177:0185:face:b00c::]").unsafelyUnwrapped
             blackHole(ip)
         }
@@ -147,14 +147,14 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - IPv6_Parsing_2_Groups_Compressed_At_The_Begining
 
     Benchmark(
-        "IPv6_Parsing_2_Groups_Compressed_At_The_Begining_5M",
+        "IPv6_Parsing_2_Groups_Compressed_At_The_Begining_4M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<5_000_000 {
+        for _ in 0..<4_000_000 {
             let ip = unsafe IPv6Address("[::2a03:2880:f177:face:b00c:25de]").unsafelyUnwrapped
             blackHole(ip)
         }
@@ -380,7 +380,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "IPv6_Parsing_Multiple_IPs_5M",
+        "IPv6_Parsing_Multiple_IPs_4M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -388,7 +388,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<5_000_000 {
+        for _ in 0..<4_000_000 {
             let idx = Int(rng.next() % UInt64(ipv6MultipleIPs.count))
             let ip = unsafe IPv6Address(
                 textualRepresentation: ipv6MultipleIPs[idx].span

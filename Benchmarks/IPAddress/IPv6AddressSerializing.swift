@@ -26,7 +26,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     let ipv6Zero: IPv6Address = 0
     Benchmark(
-        "IPv6_Serializing_Zero_20M",
+        "IPv6_Serializing_Zero_16M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -36,7 +36,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         var address = ipv6Zero
         withUnsafeMutablePointer(to: &address) { addressPointer in
             unsafe blackHole(addressPointer)
-            for _ in 0..<20_000_000 {
+            for _ in 0..<16_000_000 {
                 unsafe addressPointer.pointee.makeDescription(options: .standardOptions) {
                     (maxBytes, writeBytes) in
                     withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in
@@ -214,7 +214,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     let ipv6Max: IPv6Address = 0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF
     Benchmark(
-        "IPv6_Serializing_Max_5M",
+        "IPv6_Serializing_Max_4M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -224,7 +224,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         var address = ipv6Max
         withUnsafeMutablePointer(to: &address) { addressPointer in
             unsafe blackHole(addressPointer)
-            for _ in 0..<5_000_000 {
+            for _ in 0..<4_000_000 {
                 unsafe addressPointer.pointee.makeDescription(options: .standardOptions) {
                     (maxBytes, writeBytes) in
                     withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in

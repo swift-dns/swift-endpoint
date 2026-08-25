@@ -7,14 +7,14 @@ let portToStringBenchmarks: @Sendable () -> Void = {
 
     let portSSH = Port(rawValue: 22)
     Benchmark(
-        "Port_Serializing_SSH_30M",
+        "Port_Serializing_SSH_50M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<30_000_000 {
+        for _ in 0..<50_000_000 {
             withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
                 let written = unsafe portSSH.writeTextualRepresentation_RequiringMinimumCapacityOf8(
                     into: buffer
@@ -29,14 +29,14 @@ let portToStringBenchmarks: @Sendable () -> Void = {
 
     let portHTTPS = Port(rawValue: 443)
     Benchmark(
-        "Port_Serializing_HTTPS_30M",
+        "Port_Serializing_HTTPS_50M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<30_000_000 {
+        for _ in 0..<50_000_000 {
             withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
                 let written =
                     unsafe portHTTPS.writeTextualRepresentation_RequiringMinimumCapacityOf8(
@@ -52,14 +52,14 @@ let portToStringBenchmarks: @Sendable () -> Void = {
 
     let portHTTPAlt = Port(rawValue: 8080)
     Benchmark(
-        "Port_Serializing_HTTP_Alt_30M",
+        "Port_Serializing_HTTP_Alt_50M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<30_000_000 {
+        for _ in 0..<50_000_000 {
             withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
                 let written =
                     unsafe portHTTPAlt.writeTextualRepresentation_RequiringMinimumCapacityOf8(
@@ -75,14 +75,14 @@ let portToStringBenchmarks: @Sendable () -> Void = {
 
     let portEphemeral = Port(rawValue: 33435)
     Benchmark(
-        "Port_Serializing_Ephemeral_30M",
+        "Port_Serializing_Ephemeral_50M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<30_000_000 {
+        for _ in 0..<50_000_000 {
             withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
                 let written =
                     unsafe portEphemeral.writeTextualRepresentation_RequiringMinimumCapacityOf8(
@@ -212,7 +212,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "Port_Serializing_Multiple_Ports_snprintf_2M",
+        "Port_Serializing_Multiple_Ports_snprintf_3M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -220,7 +220,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<2_000_000 {
+        for _ in 0..<3_000_000 {
             let idx = Int(rng.next() % UInt64(portMultiplePortsSnprintf.count))
             withUnsafeTemporaryAllocation(byteCount: 6, alignment: 1) { buffer in
                 let base = unsafe buffer.baseAddress.unsafelyUnwrapped

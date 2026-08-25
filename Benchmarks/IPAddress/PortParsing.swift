@@ -25,20 +25,6 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - Port_Parsing_HTTPS
 
     Benchmark(
-        "Port_Parsing_HTTPS_12M",
-        configuration: .init(
-            metrics: [.cpuUser],
-            warmupIterations: 5,
-            maxIterations: 1000
-        )
-    ) { benchmark in
-        for _ in 0..<12_000_000 {
-            let port = unsafe Port("443").unsafelyUnwrapped
-            blackHole(port)
-        }
-    }
-
-    Benchmark(
         "Port_Parsing_HTTPS_Malloc",
         configuration: .init(
             metrics: [.mallocCountTotal],
@@ -255,7 +241,7 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "Port_Parsing_Multiple_Ports_String_7M",
+        "Port_Parsing_Multiple_Ports_String_15M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -263,7 +249,7 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<7_000_000 {
+        for _ in 0..<15_000_000 {
             let idx = Int(rng.next() % UInt64(portMultiplePortsString.count))
             let port = unsafe Port(portMultiplePortsString[idx]).unsafelyUnwrapped
             blackHole(port)

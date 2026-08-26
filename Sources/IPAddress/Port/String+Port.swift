@@ -176,23 +176,23 @@ extension Port: LosslessStringConvertible {
 
         let significantBits = UInt64(8 &* count)
 
-        /// Make sure the most significant digit is in the 5th lane.
-        /// Example: `0x34_3434_3433` ("44443" for "443") -> `0x34_3433_0000`.
-        /// The leading "44" in "44443" is practically discarded as we won't read above 5th lane.
+        /// Make sure the least significant digit is in the 5th lane.
+        /// Example: `0x33_3333_3434` ("33344" for "443") -> `0x33_3333_3434_0000`.
+        /// The leading "33" in "33344" will be discarded later when it can matter.
         let pushedBytes = bytes &<< (40 &- significantBits)
-        /// We want to later subtract, so we need to make sure any `0x00` lane don't overflow.
+        /// We want to later subtract, so we need to make sure any `0x00` lane don't underflow.
         /// Therefore we generate `0x30` for those trailing lanes.
         let m30ForInsignificantBits = m30 &>> significantBits
-        /// Example: `0x34_3433_0000` -> `0x34_3433_3030` ("44300").
+        /// Example: `0x33_3333_3434_0000` -> `0x33_3333_3434_3030` ("3334400").
         let digits = pushedBytes | m30ForInsignificantBits
 
         /// Subtracting `0x30` == ASCII `0` from each lane turns the ASCII codes into numbers.
-        /// Example: `0x34_3433_3030` ("44300") -> `0x04_04_03_00_00`.
+        /// Example: `0x33_3333_3434_3030` ("3334400") -> `0x33_33_03_04_04_00_00`.
         ///
         ///
         /// For bad input with ASCII codes below `0x30`, this will set the 8th bit of the lower lane.
         ///
-        /// Generally, if a < b, then `a &- b` == `UInt_.max + a - b + 1` or more
+        /// Generally, if a < b, then `a &- b` == `(UInt_.max + 1) + a - b` or more
         /// accurately `UInt_.max - b + a + 1`.
         /// In other terms, `a &- b` == `2^n - b + a` where `n` is numbers of bits in the type.
         /// For example in `UInt64`, n == `64`. Also `2^64` == `UInt64.max + 1`.
@@ -203,21 +203,39 @@ extension Port: LosslessStringConvertible {
         /// So for bad input, 8th bit of the lane will always be set.
         /// For UInt64 there will be overflows to higher lanes, but at that point we don't care anymore.
         /// We know that 1 lane has 8th bit set and later we'll detect that as a parsing failure.
-        let lowered = digits &- m30
+        let digitsInBytes = digits &- m30
         /// `0x46` is `0x80`(0b1000_0000) - (`0x39` (ASCII code of "9") + 1).
         /// So any bad input above `0x39` will turn on the 8th bit of the lane, unconditionally.
         let raised = digits &+ m46
-        /// Check if 8th bit of any lane in `lower` of `raised` is set. If so, the port is invalid.
-        guard (lowered | raised) & m80 == 0 else {
+        /// Check if 8th bit of any lane in `digitsInBytes` or `raised` is set. If so, the port is invalid.
+        guard (digitsInBytes | raised) & m80 == 0 else {
             return false
         }
 
-        let value =
-            UInt32(lowered & 0xFF) &* 10_000
-            &+ UInt32((lowered &>> 8) & 0xFF) &* 1_000
-            &+ UInt32((lowered &>> 16) & 0xFF) &* 100
-            &+ UInt32((lowered &>> 24) & 0xFF) &* 10
-            &+ UInt32((lowered &>> 32) & 0xFF)
+        /// `0x0A01` == `0x0A` (10) then `0x01` (1), so multiplying by it folds the lanes in pairs.
+        let nA1: UInt64 = 0x0A01
+        /// The `&<<` that made `pushedBytes` left leftover digits above the 5 lanes, and the
+        /// multiplication would fold those into the 7th lane, which we do read below.
+        /// `& 0xFF_FFFF_FFFF` clears them so the 7th lane is guaranteed to stay `0x00`.
+        let clearedDigitsInBytes = digitsInBytes & 0xFF_FFFF_FFFF
+        /// Each lane turns into `10 * previousLane + lane`, which is at most
+        /// `10 * 9 + 9` == `99` < `256`, so no lane can ever overflow into the next one.
+        /// Example: `0x03_04_04_00_00` ("34400" for "443") -> `0x1E_2B_2C_04_00_00` (30, 43, 44, 4, 0, 0).
+        let multipliedDigitsInBytes = clearedDigitsInBytes &* nA1
+        /// We only need the 1st, 3rd and 5th lanes, so mask off the ones in between.
+        /// Lane 1st is the ten-thousands, Lane 3rd is the hundreds + 10*thousands and lane 5th is the ones + 10*tens.
+        /// Example: `0x1E_2B_2C_04_00_00` -> `0x2B_00_04_00_00` (43, 4, 0).
+        ///
+        /// The 7th lane survives too, but it's already `0x00`, and on arm64 this mask is a
+        /// single `and` while one that also clears the 7th lane costs 3 instructions.
+        let pairs = multipliedDigitsInBytes & 0x00FF_00FF_00FF_00FF
+        /// `0x1388_0032_0000_8000` == `10_000 << 47 | 100 << 31 | 1 << 15`.
+        /// This means (1st lane) * 10_000 + (3rd lane) * 100 + (5th lane) * 1 end up in bits 47th...63rd.
+        /// Example: `0x2B_00_04_00_00` -> `0xDD_8002_0000_0000`, and `&>> 47` of that is `443`.
+        ///
+        /// The biggest value this can produce is `99999`, which needs 17 bits, and bits 47...63
+        /// are exactly 17 bits.
+        let value = UInt32(truncatingIfNeeded: (pairs &* 0x1388_0032_0000_8000) &>> 47)
 
         guard value <= 65535 else {
             return false

@@ -189,10 +189,23 @@ extension Port: LosslessStringConvertible {
         /// Subtracting `0x30` == ASCII `0` from each lane turns the ASCII codes into numbers.
         /// Example: `0x34_3433_3030` ("44300") -> `0x04_04_03_00_00`.
         ///
+        ///
         /// For bad input with ASCII codes below `0x30`, this will set the 8th bit of the lower lane.
+        ///
+        /// Generally, if a < b, then `a &- b` == `UInt_.max + a - b + 1` or more
+        /// accurately `UInt_.max - b + a + 1`.
+        /// In other terms, `a &- b` == `2^n - b + a` where `n` is numbers of bits in the type.
+        /// For example in `UInt64`, n == `64`. Also `2^64` == `UInt64.max + 1`.
+        ///
+        /// So if lane L is < 0x30, then `L - 0x30` == `L - 0x30 + 0x100` == `L + 0xD0`.
+        /// `0x100` is `UInt_.max + 1`, where the `UInt_` type is `8 + 1` == `9` bits ("UInt9").
+        /// `0xD0` is `1101_0000`, which has the 8th bit set.
+        /// So for bad input, 8th bit of the lane will always be set.
+        /// For UInt64 there will be overflows to higher lanes, but at that point we don't care anymore.
+        /// We know that 1 lane has 8th bit set and later we'll detect that as a parsing failure.
         let lowered = digits &- m30
         /// `0x46` is `0x80`(0b1000_0000) - (`0x39` (ASCII code of "9") + 1).
-        /// So anything above `0x39` will turn on the 8th bit of the lane, unconditionally.
+        /// So any bad input above `0x39` will turn on the 8th bit of the lane, unconditionally.
         let raised = digits &+ m46
         /// Check if 8th bit of any lane in `lower` of `raised` is set. If so, the port is invalid.
         guard (lowered | raised) & m80 == 0 else {

@@ -152,44 +152,50 @@ extension Port: LosslessStringConvertible {
         let count = span.count
 
         /// The shortest possible port is "0" with 1 byte, and the longest possible
-        /// one is "65535" with 5 bytes.
+        /// port is "65535" with 5 bytes.
         guard count >= 1, count <= 5 else {
             return false
         }
 
-        /// `count > 0` so `(0...4) ~ (count - 1)`.
-        let last = count &- 1
-
-        /// The reads are clamped to `last` instead of being skipped, so that the number of
-        /// digits never decides control flow. A rolled or unrolled digit loop makes the
-        /// branch predictor guess the length of every input, which costs a full mispredict
-        /// per parse on real-world port lists, where the lengths vary unpredictably.
-        /// Lanes past `last` re-read the final byte, and are discarded below.
+        let lastIdx = count &- 1
+        /// Read all possible 5 digits, clamped to `lastIdx` so we don't read out of bounds.
         let bytes =
             UInt64(unsafe span[unchecked: 0])
-            | (UInt64(unsafe span[unchecked: min(1, last)]) &<< 8)
-            | (UInt64(unsafe span[unchecked: min(2, last)]) &<< 16)
-            | (UInt64(unsafe span[unchecked: min(3, last)]) &<< 24)
-            | (UInt64(unsafe span[unchecked: last]) &<< 32)
+            | (UInt64(unsafe span[unchecked: min(1, lastIdx)]) &<< 8)
+            | (UInt64(unsafe span[unchecked: min(2, lastIdx)]) &<< 16)
+            | (UInt64(unsafe span[unchecked: min(3, lastIdx)]) &<< 24)
+            | (UInt64(unsafe span[unchecked: lastIdx]) &<< 32)
 
+        /// `0x30` == ASCII `0`
         let m30: UInt64 = 0x30_30_30_30_30
+        /// `0x46` == `0b0100_0110` == `0x80`(0b1000_0000) - (`0x39` + 1)
+        /// (`0x39` + 1) == `0x39` (ASCII code of "9") + 1
+        let m46: UInt64 = 0x46_46_46_46_46
+        /// `0x80` == `0b1000_0000`
+        let m80: UInt64 = 0x80_80_80_80_80
+
         let significantBits = UInt64(8 &* count)
 
-        /// Shift the `count` real bytes up so the least significant digit always lands in
-        /// lane 4, then fill the vacated low lanes — the most significant places — with
-        /// ASCII `0`. So `"443"` becomes the 5 lanes of `"00443"`, and every input is
-        /// weighted by the same fixed lane weights below.
-        /// The duplicated lanes are pushed above bit 39, where nothing below reads them.
-        let digits = (bytes &<< (40 &- significantBits)) | (m30 &>> significantBits)
+        /// Make sure the most significant digit is in the 5th lane.
+        /// Example: `0x34_3434_3433` ("44443" for "443") -> `0x34_3433_0000`.
+        /// The leading "44" in "44443" is practically discarded as we won't read above 5th lane.
+        let pushedBytes = bytes &<< (40 &- significantBits)
+        /// We want to later subtract, so we need to make sure any `0x00` lane don't overflow.
+        /// Therefore we generate `0x30` for those trailing lanes.
+        let m30ForInsignificantBits = m30 &>> significantBits
+        /// Example: `0x34_3433_0000` -> `0x34_3433_3030` ("44300").
+        let digits = pushedBytes | m30ForInsignificantBits
 
         /// Subtracting `0x30` == ASCII `0` from each lane turns the ASCII codes into numbers.
+        /// Example: `0x34_3433_3030` ("44300") -> `0x04_04_03_00_00`.
+        ///
+        /// For bad input with ASCII codes below `0x30`, this will set the 8th bit of the lower lane.
         let lowered = digits &- m30
-        /// Adding `0x46` pushes any lane above ASCII `9` into the top half of its lane.
-        let raised = digits &+ 0x46_46_46_46_46
-        /// A lane below ASCII `0` borrows and sets its own top bit in `lowered`; a lane above
-        /// ASCII `9` sets its top bit in `raised`. Valid lanes set neither, and neither
-        /// borrow nor carry, so they cannot disturb their neighbours.
-        guard (lowered | raised) & 0x80_80_80_80_80 == 0 else {
+        /// `0x46` is `0x80`(0b1000_0000) - (`0x39` (ASCII code of "9") + 1).
+        /// So anything above `0x39` will turn on the 8th bit of the lane, unconditionally.
+        let raised = digits &+ m46
+        /// Check if 8th bit of any lane in `lower` of `raised` is set. If so, the port is invalid.
+        guard (lowered | raised) & m80 == 0 else {
             return false
         }
 

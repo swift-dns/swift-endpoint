@@ -92,7 +92,7 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "Port_Parsing_Multiple_Ports_15M",
+        "Port_Parsing_Multiple_Ports_20M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -100,7 +100,7 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<15_000_000 {
+        for _ in 0..<20_000_000 {
             let idx = Int(rng.next() % UInt64(portMultiplePorts.count))
             let port = unsafe Port(
                 textualRepresentation: portMultiplePorts[idx].span

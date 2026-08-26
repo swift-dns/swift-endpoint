@@ -105,6 +105,15 @@ struct PortTests {
             " 80",
             "8_0",
             "8.0",
+            "/",
+            ":",
+            ";",
+            "/80",
+            "80:",
+            "8:0",
+            "1/2",
+            ":6553",
+            "6553:",
             "٨٠",
         ])
     )
@@ -139,6 +148,48 @@ struct PortTests {
         #expect(Port(textualRepresentation: description.utf8Span) == port)
         #expect(Port(textualRepresentation: description.utf8Span.span) == port)
         description.withCString { #expect(unsafe Port(cString: $0) == port) }
+    }
+
+    @Test(arguments: [0] + Array(6...16))
+    func `Port rejects spans whose length is outside 1...5`(count: Int) {
+        let bytes = ContiguousArray<UInt8>(repeating: 0x30, count: count)
+        #expect(Port(textualRepresentation: bytes.span) == nil)
+    }
+
+    @Test(arguments: UInt8.min...UInt8.max)
+    func `Port parsing exhaustive byte-substitution test`(byte: UInt8) {
+
+        func slowParsePort(_ bytes: ContiguousArray<UInt8>) -> Port? {
+            guard bytes.count >= 1, bytes.count <= 5 else {
+                return nil
+            }
+
+            var value = 0
+            for byte in bytes {
+                guard byte >= 0x30, byte <= 0x39 else {
+                    return nil
+                }
+                value = value * 10 + Int(byte - 0x30)
+            }
+
+            guard value <= 65535 else {
+                return nil
+            }
+
+            return Port(value)
+        }
+
+        for count in 1...5 {
+            let digits = ContiguousArray("65535".utf8.prefix(count))
+            for position in 0..<count {
+                var bytes = digits
+                bytes[position] = byte
+                #expect(Port(textualRepresentation: bytes.span) == slowParsePort(bytes))
+            }
+
+            let repeated = ContiguousArray(repeating: byte, count: count)
+            #expect(Port(textualRepresentation: repeated.span) == slowParsePort(repeated))
+        }
     }
 
     @Test func `IANA service ports have the registered values`() {

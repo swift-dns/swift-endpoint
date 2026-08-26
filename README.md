@@ -177,7 +177,7 @@ These were performed on my M1 Pro MacBook, on macOS 27.
 
 #### Against glibc
 
-These were performed on a dedicated-cpu-core AMD EPYC-Milan machine from Hetzner, on Ubuntu 24.04.
+These were performed on a dedicated-cpu-core AMD EPYC-Milan VM from Hetzner, on Ubuntu 24.04.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
@@ -188,36 +188,32 @@ These were performed on a dedicated-cpu-core AMD EPYC-Milan machine from Hetzner
 
 ### Ports
 
-* `Port` has no inet counterpart, so it's benchmarked against the C library's `strtoul` and `snprintf`, and against the stdlib's `UInt16(String)` and `String(UInt16)`.
-* `snprintf` is a C variadic and is therefore not importable into Swift.
-  * Reaching it through `vsnprintf` and `withVaList` costs 2-3 mallocs per call just to box the argument, which a C user never pays.
-  * It is instead called through a `static inline` C wrapper, so the numbers below are the ones a C user actually gets.
-* Each benchmark runs against the same 32 real-world ports, one by one and in a random manner, exactly like the IP benchmarks above.
-* None of the port benchmarks allocate. Every one of them reports 0 mallocs.
-* **`Port(String)` currently wins against the stdlib's `UInt16(String)`.**
-  * The span-based `Port(textualRepresentation:)` is still the fast path, and it wins by a bigger margin on both platforms.
+* `Port` has no similar inet counterpart.
+  * It's benchmarked against each C library's `strtoul` and `snprintf`, and stdlib's `UInt16(String)` and `String(UInt16)`.
+* **In all cases, swift-endpoint wins against the C/stdlib APIs.**
+* Each benchmark runs against the same 32 real-world ports randomly, writing to stack-allocated memory, similar to the IP benchmarks above.
 
 #### Against Darwin
 
 These were performed on my M1 Pro MacBook, on macOS 27.
 
-| Operation   | swift-endpoint                    | Swift (ns/op) | Compared against    | Other (ns/op) | Speedup |
-| ----------- | --------------------------------- | ------------- | ------------------- | ------------- | ------- |
-| Serializing | `writeTextualRepresentation(...)` | 4.7           | `snprintf`          | 43.0          | 9.15x   |
-| Serializing | `Port.description`                | 9.0           | `String(UInt16)`    | 15.4          | 1.71x   |
-| Parsing     | `Port(textualRepresentation:)`    | 3.5           | `strtoul`           | 12.8          | 3.66x   |
-| Parsing     | `Port(String)`                    | 4.0           | `UInt16(String)`    | 9.3           | 2.33x   |
+| Operation   | Swift (ns/op) | Compared against    | Other (ns/op) | Speedup |
+| ----------- | ------------- | ------------------- | ------------- | ------- |
+| Serializing | 4.7           | `snprintf`          | 43.0          | 9.15x   |
+| Serializing | 9.0           | `String(UInt16)`    | 15.4          | 1.71x   |
+| Parsing     | 3.5           | `strtoul`           | 12.8          | 3.66x   |
+| Parsing     | 4.0           | `UInt16(String)`    | 9.3           | 2.33x   |
 
 #### Against glibc
 
-These were performed on a dedicated-cpu-core AMD EPYC-Milan machine from Hetzner, on Ubuntu 24.04.
+These were performed on a dedicated-cpu-core AMD EPYC-Milan VM from Hetzner, on Ubuntu 24.04.
 
-| Operation   | swift-endpoint                    | Swift (ns/op) | Compared against    | Other (ns/op) | Speedup |
-| ----------- | --------------------------------- | ------------- | ------------------- | ------------- | ------- |
-| Serializing | `writeTextualRepresentation(...)` | 8.6           | `snprintf`          | 38.0          | 4.42x   |
-| Serializing | `Port.description`                | 20.2          | `String(UInt16)`    | 21.2          | 1.05x   |
-| Parsing     | `Port(textualRepresentation:)`    | 6.0           | `strtoul`           | 15.0          | 2.50x   |
-| Parsing     | `Port(String)`                    | 9.0           | `UInt16(String)`    | 11.1          | 1.23x   |
+| Operation   | Swift (ns/op) | Compared against    | Other (ns/op) | Speedup |
+| ----------- | ------------- | ------------------- | ------------- | ------- |
+| Serializing | 8.6           | `snprintf`          | 38.0          | 4.42x   |
+| Serializing | 20.2          | `String(UInt16)`    | 21.2          | 1.05x   |
+| Parsing     | 6.0           | `strtoul`           | 15.0          | 2.50x   |
+| Parsing     | 9.0           | `UInt16(String)`    | 11.1          | 1.23x   |
 
 #### Additional Notes
 

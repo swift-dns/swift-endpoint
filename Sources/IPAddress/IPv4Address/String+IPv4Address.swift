@@ -169,6 +169,9 @@ extension IPv4Address: LosslessStringConvertible {
     /// Initialize an IPv4 address from a `Span<UInt8>` of its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    ///
+    /// This init unlike the other ones above is intentionally not `@inline(always)` to act as the
+    /// inlining boundary and allow the compiler to decide what to do.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
         var address: UInt32 = 0

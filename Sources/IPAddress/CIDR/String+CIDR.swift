@@ -68,6 +68,9 @@ extension CIDR: LosslessStringConvertible {
     /// e.g. 2001::/220 will result in nil.
     /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
+    ///
+    /// This init unlike the other ones above is intentionally not `@inline(always)` to act as the
+    /// inlining boundary and allow the compiler to decide what to do.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
         let count = span.count

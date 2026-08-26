@@ -125,8 +125,10 @@ extension Port: LosslessStringConvertible {
     /// Initialize a `Port` from a `Span<UInt8>` of its textual representation.
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
     /// For example `"8080"` will parse into `Port(8080)`.
+    ///
+    /// This init unlike the other ones above is intentionally not `@inline(always)` to act as the
+    /// inlining boundary and allow the compiler to decide what to do.
     @inlinable
-    @inline(always)
     public init?(textualRepresentation span: Span<UInt8>) {
         var rawValue: UInt16 = 0
         let success = Port.parsePort(

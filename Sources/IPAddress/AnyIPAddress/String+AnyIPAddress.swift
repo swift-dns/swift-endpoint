@@ -92,6 +92,9 @@ extension AnyIPAddress: LosslessStringConvertible {
     /// For example `"192.168.1.98"` will parse into `.v4(192.168.1.98)`.
     /// and `"[2001:db8:1111::]"` will parse into `.v6(2001:DB8:1111:0:0:0:0:0)`,
     /// or in other words `.v6(0x2001_0DB8_1111_0000_0000_0000_0000_0000)`.
+    ///
+    /// This init unlike the other ones above is intentionally not `@inline(always)` to act as the
+    /// inlining boundary and allow the compiler to decide what to do.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
         /// Finds the first either "." or ":" and based on that decide what IP version this could be.

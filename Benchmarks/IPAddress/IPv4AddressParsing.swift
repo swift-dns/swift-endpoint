@@ -416,4 +416,84 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         blackHole(unsafe IPv4Address("34.107.221.82" as StaticString).unsafelyUnwrapped)
     }
 
+    // MARK: IPv4_Parsing_Multiple_IPs_StaticString_64_IPs
+
+    /// Headroom tripwire. `IPv4Address` folds through the Swift inliner, so past a certain number
+    /// of literals in one function the caller-size budget runs out and every site degrades to a
+    /// guarded parse. Double the size of the one above, to keep that one clear of the cliff.
+
+    Benchmark(
+        "IPv4_Parsing_Multiple_IPs_StaticString_64_IPs_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 100,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        blackHole(unsafe IPv4Address("127.0.0.1" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("1.1.1.1" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("8.8.8.8" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("9.9.9.9" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("255.255.255.255" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("192.168.1.1" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("10.0.0.1" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("172.16.0.1" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("100.64.0.1" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("208.67.222.222" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("185.199.108.153" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("151.101.1.140" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("104.16.132.229" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("142.250.185.78" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("13.107.42.14" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("23.185.0.2" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("0.0.0.0" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("224.0.0.1" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("169.254.169.254" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("8.8.4.4" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("1.0.0.1" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("149.112.112.112" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("208.67.220.220" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("172.217.16.142" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("140.82.121.4" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("198.41.0.4" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("192.33.4.12" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("193.0.14.129" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("199.7.83.42" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("93.184.215.14" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("20.190.160.14" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("34.107.221.82" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("1.0.0.3" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("9.9.9.10" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("9.9.9.11" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("76.76.2.0" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("76.76.10.0" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("94.140.14.14" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("94.140.15.15" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("45.90.28.0" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("45.90.30.0" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("156.154.70.1" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("156.154.71.1" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("8.26.56.26" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("8.20.247.20" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("195.46.39.39" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("195.46.39.40" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("77.88.8.8" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("77.88.8.1" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("185.228.168.9" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("185.228.169.9" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("176.103.130.130" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("176.103.130.131" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("216.239.32.10" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("216.239.34.10" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("205.251.192.47" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("199.9.14.201" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("192.203.230.10" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("192.5.5.241" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("192.112.36.4" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("198.97.190.53" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("192.36.148.17" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("192.58.128.30" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv4Address("202.12.27.33" as StaticString).unsafelyUnwrapped)
+    }
+
 }

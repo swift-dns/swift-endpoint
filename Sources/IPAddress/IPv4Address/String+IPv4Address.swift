@@ -182,7 +182,7 @@ extension IPv4Address: LosslessStringConvertible {
     public init?(_ description: StaticString) {
         guard
             let result = description.withUTF8Buffer({
-                IPv4Address(_inlined_textualRepresentation: unsafe $0.span)
+                IPv4Address(_inlined_textualRepresentation: unsafe $0.span, count: $0.count)
             })
         else {
             return nil
@@ -207,9 +207,21 @@ extension IPv4Address: LosslessStringConvertible {
     @inlinable
     @inline(always)
     init?(_inlined_textualRepresentation span: Span<UInt8>) {
+        self.init(_inlined_textualRepresentation: span, count: span.count)
+    }
+
+    /// Initialize an IPv4 address from a `Span<UInt8>` of its textual representation, with the
+    /// count of the span passed in explicitly.
+    ///
+    /// `StaticString` call sites pass the literal's length directly so no `Span.count` access
+    /// remains on the path that is expected to be folded at compile time.
+    @inlinable
+    @inline(always)
+    init?(_inlined_textualRepresentation span: Span<UInt8>, count: Int) {
         var address: UInt32 = 0
         let success = IPv4Address.parseIPv4(
             span: span,
+            count: count,
             address: &address
         )
 
@@ -226,8 +238,20 @@ extension IPv4Address: LosslessStringConvertible {
         span: Span<UInt8>,
         address: inout UInt32
     ) -> Bool {
-        let count = span.count
+        IPv4Address.parseIPv4(
+            span: span,
+            count: span.count,
+            address: &address
+        )
+    }
 
+    @inlinable
+    @inline(always)
+    static func parseIPv4(
+        span: Span<UInt8>,
+        count: Int,
+        address: inout UInt32
+    ) -> Bool {
         /// The shortest possible IPv4 address is "0.0.0.0" with 7 bytes, and the longest possible
         /// one is "255.255.255.255" with 15 bytes.
         guard count >= 7, count <= 15 else {
@@ -237,7 +261,7 @@ extension IPv4Address: LosslessStringConvertible {
         var idx = 0
 
         guard
-            let segment1 = IPv4Address._parseSegment(from: span, advancing: &idx),
+            let segment1 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
             idx < count,
             span[idx] == .asciiDot
         else {
@@ -246,7 +270,7 @@ extension IPv4Address: LosslessStringConvertible {
         idx += 1
 
         guard
-            let segment2 = IPv4Address._parseSegment(from: span, advancing: &idx),
+            let segment2 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
             idx < count,
             span[idx] == .asciiDot
         else {
@@ -255,7 +279,7 @@ extension IPv4Address: LosslessStringConvertible {
         idx += 1
 
         guard
-            let segment3 = IPv4Address._parseSegment(from: span, advancing: &idx),
+            let segment3 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
             idx < count,
             span[idx] == .asciiDot
         else {
@@ -264,7 +288,7 @@ extension IPv4Address: LosslessStringConvertible {
         idx += 1
 
         guard
-            let segment4 = IPv4Address._parseSegment(from: span, advancing: &idx),
+            let segment4 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
             idx == count
         else {
             return false
@@ -279,9 +303,9 @@ extension IPv4Address: LosslessStringConvertible {
     @inline(always)
     static func _parseSegment(
         from span: Span<UInt8>,
+        count: Int,
         advancing idx: inout Int
     ) -> UInt32? {
-        let count = span.count
         guard idx < count,
             let digit1 = UInt8.mapUTF8ByteToUInt8(span[idx])
         else {

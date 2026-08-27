@@ -631,8 +631,12 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     /// Every call site here is a `StaticString` literal, so the whole parse is expected to be
     /// folded into a constant at compile time and the only work left is `blackHole`.
     /// The instruction count is the assertion; a `cpuUser` benchmark would measure nothing.
+    ///
+    /// Split into batches of 8: the fold parser's compile time grows super-linearly with the
+    /// number of literals in one function. 32 in one costs 54s of CPU, 4x8 costs 4s.
+
     Benchmark(
-        "IPv6_Parsing_Multiple_IPs_StaticString_Instructions",
+        "IPv6_Parsing_Multiple_IPs_StaticString_1_Instructions",
         configuration: .init(
             metrics: [.instructions],
             warmupIterations: 100,
@@ -649,6 +653,16 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
         blackHole(unsafe IPv6Address("2620:FE::FE" as StaticString).unsafelyUnwrapped)
         blackHole(unsafe IPv6Address("2620:119:35::35" as StaticString).unsafelyUnwrapped)
+    }
+
+    Benchmark(
+        "IPv6_Parsing_Multiple_IPs_StaticString_2_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 100,
+            maxIterations: 10
+        )
+    ) { benchmark in
         blackHole(unsafe IPv6Address("2620:0:ccc::2" as StaticString).unsafelyUnwrapped)
         blackHole(
             unsafe IPv6Address("2a03:2880:f177:185:face:b00c:0:25de" as StaticString)
@@ -663,6 +677,16 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         blackHole(unsafe IPv6Address("::ffff:151.101.1.140" as StaticString).unsafelyUnwrapped)
         blackHole(unsafe IPv6Address("[64:ff9b::8.8.8.8]" as StaticString).unsafelyUnwrapped)
         blackHole(unsafe IPv6Address("2606:4700::6810:84e5" as StaticString).unsafelyUnwrapped)
+    }
+
+    Benchmark(
+        "IPv6_Parsing_Multiple_IPs_StaticString_3_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 100,
+            maxIterations: 10
+        )
+    ) { benchmark in
         blackHole(
             unsafe IPv6Address("2400:cb00:2049:1::a29f:1804" as StaticString).unsafelyUnwrapped
         )
@@ -679,6 +703,16 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         blackHole(unsafe IPv6Address("FE80::1FF:FE23:4567:890A" as StaticString).unsafelyUnwrapped)
         blackHole(unsafe IPv6Address("fe80::200:5eff:fe00:5213" as StaticString).unsafelyUnwrapped)
         blackHole(unsafe IPv6Address("fe80::" as StaticString).unsafelyUnwrapped)
+    }
+
+    Benchmark(
+        "IPv6_Parsing_Multiple_IPs_StaticString_4_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 100,
+            maxIterations: 10
+        )
+    ) { benchmark in
         blackHole(unsafe IPv6Address("ff02::1" as StaticString).unsafelyUnwrapped)
         blackHole(unsafe IPv6Address("ff02::1:ff00:1" as StaticString).unsafelyUnwrapped)
         blackHole(unsafe IPv6Address("ff05:0:0:0:0:0:1:3" as StaticString).unsafelyUnwrapped)
@@ -687,6 +721,142 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         blackHole(unsafe IPv6Address("2a01:4f8:c010:d56::" as StaticString).unsafelyUnwrapped)
         blackHole(unsafe IPv6Address("[2a00:1450:4001:c15::8a]" as StaticString).unsafelyUnwrapped)
         blackHole(unsafe IPv6Address("fd00:ec2:0:0:0:0:0:254" as StaticString).unsafelyUnwrapped)
+    }
+
+    // MARK: IPv6_Parsing_StaticString_Shapes
+
+    /// One benchmark per textual shape the parser has to handle, so a shape that stops folding
+    /// at compile time shows up on its own instead of being averaged into one opaque number.
+    /// A folded literal costs about 5 instructions, an unfolded one about 300.
+
+    Benchmark(
+        "IPv6_Parsing_StaticString_Compressed_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 100,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        blackHole(unsafe IPv6Address("2606:4700:4700::1111" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("fe80::" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("::1" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("2001:db8::8a2e:370:7334" as StaticString).unsafelyUnwrapped)
+    }
+
+    Benchmark(
+        "IPv6_Parsing_StaticString_Uncompressed_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 100,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        blackHole(
+            unsafe IPv6Address("2001:4860:4860:0:0:0:0:8844" as StaticString).unsafelyUnwrapped
+        )
+        blackHole(
+            unsafe IPv6Address("2a03:2880:f177:185:face:b00c:0:25de" as StaticString)
+                .unsafelyUnwrapped
+        )
+        blackHole(
+            unsafe IPv6Address("2606:2800:220:1:248:1893:25c8:1946" as StaticString)
+                .unsafelyUnwrapped
+        )
+        blackHole(unsafe IPv6Address("ff05:0:0:0:0:0:1:3" as StaticString).unsafelyUnwrapped)
+    }
+
+    Benchmark(
+        "IPv6_Parsing_StaticString_Brackets_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 100,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        blackHole(unsafe IPv6Address("[::1]" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("[2a03:2880:f177:185::]" as StaticString).unsafelyUnwrapped)
+        blackHole(
+            unsafe IPv6Address("[2600:9000:2241:5800:0001:5a21:7c40:93a1]" as StaticString)
+                .unsafelyUnwrapped
+        )
+        blackHole(unsafe IPv6Address("[2A01:4F8:C010:D56::1]" as StaticString).unsafelyUnwrapped)
+    }
+
+    Benchmark(
+        "IPv6_Parsing_StaticString_Embedded_IPv4_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 100,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        blackHole(unsafe IPv6Address("::ffff:151.101.1.140" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("64:ff9b::8.8.8.8" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("::ffff:0:255.255.255.255" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("0:0:0:0:0:ffff:8.8.4.4" as StaticString).unsafelyUnwrapped)
+    }
+
+    Benchmark(
+        "IPv6_Parsing_StaticString_Uppercase_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 100,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        blackHole(unsafe IPv6Address("FE80::1FF:FE23:4567:890A" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("2620:FE::FE" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("FF00:9328:3212:0:1::" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("FF02::1" as StaticString).unsafelyUnwrapped)
+    }
+
+    Benchmark(
+        "IPv6_Parsing_StaticString_Leading_Zeros_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 100,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        blackHole(
+            unsafe IPv6Address("2001:0500:0002:0000:0000:0000:0000:000c" as StaticString)
+                .unsafelyUnwrapped
+        )
+        blackHole(
+            unsafe IPv6Address("2001:0db8:0000:0000:0000:0000:0000:0001" as StaticString)
+                .unsafelyUnwrapped
+        )
+        blackHole(
+            unsafe IPv6Address("0000:0000:0000:0000:0000:0000:0000:0000" as StaticString)
+                .unsafelyUnwrapped
+        )
+        blackHole(
+            unsafe IPv6Address("fe80:0000:0000:0000:0204:61ff:fe9d:f156" as StaticString)
+                .unsafelyUnwrapped
+        )
+    }
+
+    // MARK: IPv6_Parsing_StaticString_Invalid
+
+    /// The failure path has to fold too. Every literal here is rejected by the parser, so a
+    /// folded call site is just `blackHole(true)`.
+
+    Benchmark(
+        "IPv6_Parsing_StaticString_Invalid_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 100,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        blackHole(IPv6Address("" as StaticString) == nil)
+        blackHole(IPv6Address(":::" as StaticString) == nil)
+        blackHole(IPv6Address("1:2:3:4:5:6:7:8:9" as StaticString) == nil)
+        blackHole(IPv6Address("12345::" as StaticString) == nil)
+        blackHole(IPv6Address("::ffff:204.152.189.256" as StaticString) == nil)
+        blackHole(IPv6Address("fe80::1%" as StaticString) == nil)
+        blackHole(IPv6Address("2001:db8:g::1" as StaticString) == nil)
+        blackHole(IPv6Address("[2001:db8::1" as StaticString) == nil)
     }
 
 }

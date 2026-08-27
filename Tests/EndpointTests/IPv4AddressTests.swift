@@ -401,26 +401,9 @@ struct IPv4AddressTests {
             IPv4Address("010.010.010.010" as StaticString)
                 == IPv4Address("010.010.010.010" as String)
         )
-        #expect(IPv4Address("" as StaticString) == IPv4Address("" as String))
-        #expect(IPv4Address("1.2.3" as StaticString) == IPv4Address("1.2.3" as String))
-        #expect(IPv4Address("1.2.3.4.5" as StaticString) == IPv4Address("1.2.3.4.5" as String))
-        #expect(
-            IPv4Address("192.168.1.256" as StaticString) == IPv4Address("192.168.1.256" as String)
-        )
-        #expect(
-            IPv4Address("192.168.1.-1" as StaticString) == IPv4Address("192.168.1.-1" as String)
-        )
-        #expect(
-            IPv4Address("0x1.0x2.0x3.0x4" as StaticString)
-                == IPv4Address("0x1.0x2.0x3.0x4" as String)
-        )
-        #expect(IPv4Address(" 1.2.3.4" as StaticString) == IPv4Address(" 1.2.3.4" as String))
-        #expect(IPv4Address("1.2.3.4 " as StaticString) == IPv4Address("1.2.3.4 " as String))
-        #expect(IPv4Address("١.٢.٣.٤" as StaticString) == IPv4Address("١.٢.٣.٤" as String))
 
         #expect(IPv4Address("192.168.1.98" as StaticString) == IPv4Address(192, 168, 1, 98))
         #expect(IPv4Address("255.255.255.255" as StaticString) == IPv4Address(255, 255, 255, 255))
-        #expect(IPv4Address("192.168.1.256" as StaticString) == nil)
     }
 
     /// An unannotated literal must reach the `StaticString` overload, not the `String` one.
@@ -428,8 +411,6 @@ struct IPv4AddressTests {
     @Test func `IPv4Address parses unannotated literals`() {
         #expect(IPv4Address("0.0.0.0") == IPv4Address(0, 0, 0, 0))
         #expect(IPv4Address("192.168.1.98") == IPv4Address(192, 168, 1, 98))
-        #expect(IPv4Address("1.2.3") == nil)
-        #expect(IPv4Address("") == nil)
     }
 
 }
@@ -459,3 +440,21 @@ private func testTextualRepresentationLengths(
     let produced = unsafe String(decoding: buffer[0..<written], as: UTF8.self)
     #expect(produced == description, sourceLocation: sourceLocation)
 }
+
+#if os(macOS) || os(Linux)
+extension IPv4AddressTests {
+    /// Kept to three literals: each one is unrolled and constant-folded at compile time.
+    @available(SwiftStdlib 5.1, *)
+    @Test func `IPv4Address initializer crashes on an invalid StaticString`() async {
+        await #expect(processExitsWith: .failure) {
+            blackHole(IPv4Address("" as StaticString))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(IPv4Address("1.2.3" as StaticString))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(IPv4Address("192.168.1.256" as StaticString))
+        }
+    }
+}
+#endif

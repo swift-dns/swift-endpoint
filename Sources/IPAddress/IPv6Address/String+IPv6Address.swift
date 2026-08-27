@@ -492,15 +492,16 @@ extension IPv6Address: LosslessStringConvertible {
     /// **This initializer is free: It's unrolled to a constant at compile time.**
     /// That is, as long as the static-string is passed directly to the init like so: `IPv6Address("2001:db8:85a3::100")`.
     /// **Passing a dynamic `StaticString` (`let str: StaticString = "2001:db8:85a3::100"; IPv6Address(str)`) to this init is a bad idea.**
+    /// In that case, use `IPv6Address(String(str))` instead.
     /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
     @inlinable
     @inline(always)
-    public init?(_ description: StaticString) {
+    public init(_ description: StaticString) {
         let result = description.withUTF8Buffer {
             unsafe cswift_endpoint_slow_static_parse_ipv6($0.baseAddress, $0.count)
         }
         guard result.ok else {
-            return nil
+            fatalError("StaticString passed to IPv6Address initializer was invalid")
         }
         self.init(
             _CompatibilityUInt128Typealias(

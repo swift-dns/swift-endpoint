@@ -263,21 +263,9 @@ struct PortTests {
         #expect(Port("8080" as StaticString) == Port("8080" as String))
         #expect(Port("00080" as StaticString) == Port("00080" as String))
         #expect(Port("65535" as StaticString) == Port("65535" as String))
-        #expect(Port("" as StaticString) == Port("" as String))
-        #expect(Port(" " as StaticString) == Port(" " as String))
-        #expect(Port("-1" as StaticString) == Port("-1" as String))
-        #expect(Port("+1" as StaticString) == Port("+1" as String))
-        #expect(Port("65536" as StaticString) == Port("65536" as String))
-        #expect(Port("99999" as StaticString) == Port("99999" as String))
-        #expect(Port("065535" as StaticString) == Port("065535" as String))
-        #expect(Port("0x10" as StaticString) == Port("0x10" as String))
-        #expect(Port("8.0" as StaticString) == Port("8.0" as String))
-        #expect(Port("8:0" as StaticString) == Port("8:0" as String))
-        #expect(Port("٨٠" as StaticString) == Port("٨٠" as String))
 
         #expect(Port("8080" as StaticString) == 8080)
         #expect(Port("65535" as StaticString) == 65535)
-        #expect(Port("65536" as StaticString) == nil)
     }
 
     /// An unannotated literal must reach the `StaticString` overload, not the `String` one.
@@ -286,14 +274,24 @@ struct PortTests {
         #expect(Port("0") == 0)
         #expect(Port("443") == 443)
         #expect(Port("65535") == 65535)
-        #expect(Port("65536") == nil)
-        #expect(Port("") == nil)
     }
 
 }
 
 #if os(macOS) || os(Linux)
 extension PortTests {
+    @Test func `Port initializer crashes on an invalid StaticString`() async {
+        await #expect(processExitsWith: .failure) {
+            blackHole(Port("" as StaticString))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(Port("65536" as StaticString))
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(Port("80a0" as StaticString))
+        }
+    }
+
     @Test func `Port initializer crashes when the value is out of bounds`() async {
         await #expect(processExitsWith: .failure) {
             blackHole(Port(noOptimize(-1)))

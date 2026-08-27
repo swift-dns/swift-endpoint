@@ -135,16 +135,17 @@ extension Port: LosslessStringConvertible {
     /// **This initializer is free: It's unrolled to a constant at compile time.**
     /// That is, as long as the static-string is passed directly to the init like so: `Port("443")`.
     /// **Passing a dynamic `StaticString` (`let str: StaticString = "443"; Port(str)`) to this init is a bad idea.**
+    /// In that case, use `Port(String(str))` instead.
     /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
     @inlinable
     @inline(always)
-    public init?(_ description: StaticString) {
+    public init(_ description: StaticString) {
         guard
             let result = description.withUTF8Buffer({
                 Port(_inlined_textualRepresentation: unsafe $0.span)
             })
         else {
-            return nil
+            fatalError("StaticString passed to Port initializer was invalid")
         }
         self = result
     }

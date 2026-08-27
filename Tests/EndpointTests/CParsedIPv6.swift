@@ -6,7 +6,7 @@ import Endpoint
 /// against the Swift one everywhere the Swift one is tested.
 @available(SwiftStdlib 5.1, *)
 func cParsedIPv6(_ bytes: [UInt8]) -> IPv6Address? {
-    let result = unsafe bytes.withUnsafeBufferPointer {
+    let result = bytes.withUnsafeBufferPointer {
         unsafe cswift_endpoint_slow_static_parse_ipv6($0.baseAddress, $0.count)
     }
     guard result.ok else {

@@ -176,9 +176,10 @@ extension IPv4Address: LosslessStringConvertible {
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
     ///
-    /// This initializer is free: It's unrolled to a constant at compile time.
+    /// **This initializer is free: It's unrolled to a constant at compile time.**
     /// That is, as long as the static-string is passed directly to the init like so: `IPv4Address("192.168.1.1")`.
-    /// Passing a dynamic `StaticString` (`let str: StaticString = "192.168.1.1"; IPv4Address(str)`) to this init is a bad idea.
+    /// **Passing a dynamic `StaticString` (`let str: StaticString = "192.168.1.1"; IPv4Address(str)`) to this init is a bad idea.**
+    /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
     @inlinable
     @inline(always)
     public init?(_ description: StaticString) {

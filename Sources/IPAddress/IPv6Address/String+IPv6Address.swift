@@ -490,6 +490,8 @@ extension IPv6Address: LosslessStringConvertible {
     /// This includes blocks that are not used for embedded IPv4 addresses in practice or are deprecated.
     ///
     /// This initializer is free: It's unrolled to a constant at compile time.
+    /// That is, as long as the static-string is passed directly to the init like so: `IPv6Address("2001:db8:85a3::100")`.
+    /// Passing a dynamic `StaticString` (`let str: StaticString = "2001:db8:85a3::100"; IPv6Address(str)`) to this init is a bad idea.
     @inlinable
     @inline(always)
     public init?(_ description: StaticString) {

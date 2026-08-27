@@ -133,6 +133,8 @@ extension Port: LosslessStringConvertible {
     /// For example `"8080"` will parse into `Port(8080)`.
     ///
     /// This initializer is free: It's unrolled to a constant at compile time.
+    /// That is, as long as the static-string is passed directly to the init like so: `Port("443")`.
+    /// Passing a dynamic `StaticString` (`let str: StaticString = "443"; Port(str)`) to this init is not a good idea.
     @inlinable
     @inline(always)
     public init?(_ description: StaticString) {

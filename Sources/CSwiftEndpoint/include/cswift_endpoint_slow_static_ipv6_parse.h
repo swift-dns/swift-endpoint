@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-// A second, slower IPv6 parser, used only by `IPv6Address(_ description: StaticString)`, so a
+// A second, slower IPv6 parser, used only by `IPv6Address(stringLiteral:)`, so a
 // literal address folds to a constant. The Swift `parseIPv6` cannot do that: its byte loop is
 // never unrolled.
 //

@@ -277,7 +277,7 @@ struct IPv6AddressTests {
                 try! DomainName(
                     "b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6.arpa."
                 ),
-                IPv6Address("4321:0:1:2:3:4:567:89ab")!
+                IPv6Address("4321:0:1:2:3:4:567:89ab" as String)!
             ),
             (
                 try! DomainName(
@@ -496,49 +496,52 @@ struct IPv6AddressTests {
 
     @available(SwiftStdlib 6.0, *)
     @Test func `IPv6Address parses StaticString exactly like String`() {
-        #expect(IPv6Address("::" as StaticString) == IPv6Address("::" as String))
-        #expect(IPv6Address("::1" as StaticString) == IPv6Address("::1" as String))
-        #expect(IPv6Address("fe80::" as StaticString) == IPv6Address("fe80::" as String))
-        #expect(IPv6Address("2001:db8::1" as StaticString) == IPv6Address("2001:db8::1" as String))
+        #expect(("::" as IPv6Address) == IPv6Address("::" as String))
+        #expect(("::1" as IPv6Address) == IPv6Address("::1" as String))
+        #expect(("fe80::" as IPv6Address) == IPv6Address("fe80::" as String))
+        #expect(("2001:db8::1" as IPv6Address) == IPv6Address("2001:db8::1" as String))
         #expect(
-            IPv6Address("2001:0db8:1111:2222:3333:4444:5555:6666" as StaticString)
+            ("2001:0db8:1111:2222:3333:4444:5555:6666" as IPv6Address)
                 == IPv6Address("2001:0db8:1111:2222:3333:4444:5555:6666" as String)
         )
         #expect(
-            IPv6Address("[2001:db8:1111::]" as StaticString)
+            ("[2001:db8:1111::]" as IPv6Address)
                 == IPv6Address("[2001:db8:1111::]" as String)
         )
         #expect(
-            IPv6Address("::ffff:204.152.189.116" as StaticString)
+            ("::ffff:204.152.189.116" as IPv6Address)
                 == IPv6Address("::ffff:204.152.189.116" as String)
         )
         #expect(
-            IPv6Address("64:ff9b::8.8.8.8" as StaticString)
+            ("64:ff9b::8.8.8.8" as IPv6Address)
                 == IPv6Address("64:ff9b::8.8.8.8" as String)
         )
         #expect(
-            IPv6Address("::ffff:0:255.255.255.255" as StaticString)
+            ("::ffff:0:255.255.255.255" as IPv6Address)
                 == IPv6Address("::ffff:0:255.255.255.255" as String)
         )
         #expect(
-            IPv6Address("FE80::1FF:FE23:4567:890A" as StaticString)
+            ("FE80::1FF:FE23:4567:890A" as IPv6Address)
                 == IPv6Address("FE80::1FF:FE23:4567:890A" as String)
         )
         #expect(
-            IPv6Address("0:0:0:0:0:0:0:0" as StaticString)
+            ("0:0:0:0:0:0:0:0" as IPv6Address)
                 == IPv6Address("0:0:0:0:0:0:0:0" as String)
         )
         #expect(
-            IPv6Address("2001:4860:4860:0:0:0:0:8844" as StaticString)
+            ("2001:4860:4860:0:0:0:0:8844" as IPv6Address)
                 == IPv6Address("2001:4860:4860:0:0:0:0:8844" as String)
         )
     }
 
-    /// An unannotated literal must reach the `StaticString` overload, not the `String` one.
+    /// A bare string literal must reach the `ExpressibleByStringLiteral` init, not the `String` one.
     @available(SwiftStdlib 6.0, *)
-    @Test func `IPv6Address parses unannotated literals`() {
-        #expect(IPv6Address("::") == IPv6Address(0))
-        #expect(IPv6Address("::1") == IPv6Address(1))
+    @Test func `IPv6Address parses string literals`() {
+        let unspecified: IPv6Address = "::"
+        #expect(unspecified == IPv6Address(0))
+
+        let loopback: IPv6Address = "::1"
+        #expect(loopback == IPv6Address(1))
     }
 
 }
@@ -591,13 +594,13 @@ extension IPv6AddressTests {
     @available(SwiftStdlib 6.0, *)
     @Test func `IPv6Address initializer crashes on an invalid StaticString`() async {
         await #expect(processExitsWith: .failure) {
-            blackHole(IPv6Address("" as StaticString))
+            blackHole("" as IPv6Address)
         }
         await #expect(processExitsWith: .failure) {
-            blackHole(IPv6Address(":::" as StaticString))
+            blackHole(":::" as IPv6Address)
         }
         await #expect(processExitsWith: .failure) {
-            blackHole(IPv6Address("12345::" as StaticString))
+            blackHole("12345::" as IPv6Address)
         }
     }
 }

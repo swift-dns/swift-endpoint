@@ -1,7 +1,7 @@
 import CSwiftEndpoint
 import Endpoint
 
-/// The C parser behind `IPv6Address(_ description: StaticString)`.
+/// The C parser behind `IPv6Address(stringLiteral:)`.
 /// That initializer only takes literals, this takes anything, so the C parser can be pinned
 /// against the Swift one everywhere the Swift one is tested.
 @available(SwiftStdlib 5.1, *)

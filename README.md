@@ -64,9 +64,9 @@ You can either initialize each type using a `String`, or initialize the exact un
 Here are some examples:
 
 > [!NOTE]
-> The following initializers **free** for `StaticString`s (hardcoded strings).
-> They act like macros and are folded to a constant at compile time:
-> `IPv6Address("2001:db8:85a3::100")`, `IPv4Address("192.168.1.1")`, `Port("443")`.
+> `IPv4Address`, `IPv6Address` and `Port` are `ExpressibleByStringLiteral`, and that path is **free**.
+> It acts like a macro and is folded to a constant at compile time:
+> `let ip: IPv6Address = "2001:db8:85a3::100"`, `let ip: IPv4Address = "192.168.1.1"`, `let port: Port = "443"`.
 
 ```swift
 import Endpoint
@@ -81,23 +81,23 @@ print(domainName2) /// prints "新华网.中国"
 print(domainName2.debugDescription) /// prints "xn--xkrr14bows.xn--fiqs8s"
 
 /// Define an ipv4 address. The type will parse the ip address into a UInt32 internally.
-let ipv4Address1 = IPv4Address("127.0.0.1")!
+let ipv4Address1: IPv4Address = "127.0.0.1"
 let ipv4Address2 = IPv4Address(192, 168, 1, 1)
 print(ipv4Address1) /// prints "127.0.0.1"
 print(ipv4Address2) /// prints "192.168.1.1"
 
 /// Define an ipv6 address. The type will parse the ip address into a UInt128 internally.
-let ipv6Address1 = IPv6Address("[FF::]")!
-let ipv6Address2 = IPv6Address("2001:db8:85a3:0:0:0:0:100")!
+let ipv6Address1: IPv6Address = "[FF::]"
+let ipv6Address2: IPv6Address = "2001:db8:85a3:0:0:0:0:100"
 /// Prints the ipv6 representations according to RFC 5952
 print(ipv6Address1) /// prints "ff::"
 print(ipv6Address2) /// prints "2001:db8:85a3::100"
 
 /// Define IPv4-embedded IPv6 addresses via the mixed IPv4-embedded notation.
 /// An IPv4-mapped IPv6 address (RFC 4291).
-let ipv4InIPv6Address1 = IPv6Address("::FFFF:192.168.1.1")!
+let ipv4InIPv6Address1: IPv6Address = "::FFFF:192.168.1.1"
 /// Any IPv4-**embedded** IPv6 address containing an IPv4 in the trailing 32 bits.
-let ipv4InIPv6Address2 = IPv6Address("[2001:db8:122:344::192.0.2.33]")!
+let ipv4InIPv6Address2: IPv6Address = "[2001:db8:122:344::192.0.2.33]"
 print(ipv4InIPv6Address1) /// prints "::ffff:192.168.1.1"
 // By default, only IPv4-**mapped** addresses use the mixed notation
 print(ipv4InIPv6Address2) /// prints "2001:db8:122:344::c000:221"

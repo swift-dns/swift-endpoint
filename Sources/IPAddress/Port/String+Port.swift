@@ -89,15 +89,60 @@ extension Port {
 }
 
 @available(SwiftStdlib 5.1, *)
-extension Port: LosslessStringConvertible {
+extension Port: ExpressibleByStringLiteral {
     /// Initialize a `Port` from its textual representation.
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
     /// For example `"8080"` will parse into `Port(8080)`.
     ///
-    /// `@_disfavoredOverload` so the compiler prefers the `StaticString` init over this one.
+    /// **This initializer is free: It's unrolled to a constant at compile time.**
+    /// That is, as long as the string literal is passed directly to the init like so: `let port: Port = "443"`.
+    /// **Passing a dynamic `StaticString` (`let str: StaticString = "443"; Port(stringLiteral: str)`) to this init is a bad idea.**
+    /// In that case, use `Port(String(str))` instead.
+    /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
+    @inlinable
+    @inline(always)
+    public init(stringLiteral value: StaticString) {
+        guard
+            let result = value.withUTF8Buffer({
+                Port(_inlined_textualRepresentation: unsafe $0.span)
+            })
+        else {
+            fatalError("StaticString passed to Port initializer was invalid")
+        }
+        self = result
+    }
+
+    /// Initialize a `Port` from its textual representation.
+    /// That is, at most 5 decimal digits amounting to a value of at most 65535.
+    /// For example `"8080"` will parse into `Port(8080)`.
+    ///
+    /// **This initializer is free: It's unrolled to a constant at compile time.**
+    /// That is, as long as the string literal is passed directly to the init like so: `let port: Port = "443"`.
+    /// **Passing a dynamic `StaticString` (`let str: StaticString = "443"; Port(stringLiteral: str)`) to this init is a bad idea.**
+    /// In that case, use `Port(String(str))` instead.
+    /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
     @inlinable
     @inline(always)
     @_disfavoredOverload
+    @available(
+        *,
+        deprecated,
+        message: """
+            For literal strings, use `Port(stringLiteral:)` or `let port: Port = "443"` instead
+            """
+    )
+    public init(_ value: StaticString) {
+        self.init(stringLiteral: value)
+    }
+}
+
+@available(SwiftStdlib 5.1, *)
+extension Port: LosslessStringConvertible {
+    /// Initialize a `Port` from its textual representation.
+    /// That is, at most 5 decimal digits amounting to a value of at most 65535.
+    /// For example `"8080"` will parse into `Port(8080)`.
+    @inlinable
+    @inline(always)
     public init?(_ description: String) {
         guard
             let result = description.withSpan_Compatibility({
@@ -112,11 +157,8 @@ extension Port: LosslessStringConvertible {
     /// Initialize a `Port` from its textual representation.
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
     /// For example `"8080"` will parse into `Port(8080)`.
-    ///
-    /// `@_disfavoredOverload` so the compiler prefers the `StaticString` init over this one.
     @inlinable
     @inline(always)
-    @_disfavoredOverload
     public init?(_ description: Substring) {
         guard
             let result = description.withSpan_Compatibility({
@@ -124,28 +166,6 @@ extension Port: LosslessStringConvertible {
             })
         else {
             return nil
-        }
-        self = result
-    }
-
-    /// Initialize a `Port` from its textual representation.
-    /// That is, at most 5 decimal digits amounting to a value of at most 65535.
-    /// For example `"8080"` will parse into `Port(8080)`.
-    ///
-    /// **This initializer is free: It's unrolled to a constant at compile time.**
-    /// That is, as long as the static-string is passed directly to the init like so: `Port("443")`.
-    /// **Passing a dynamic `StaticString` (`let str: StaticString = "443"; Port(str)`) to this init is a bad idea.**
-    /// In that case, use `Port(String(str))` instead.
-    /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
-    @inlinable
-    @inline(always)
-    public init(_ description: StaticString) {
-        guard
-            let result = description.withUTF8Buffer({
-                Port(_inlined_textualRepresentation: unsafe $0.span)
-            })
-        else {
-            fatalError("StaticString passed to Port initializer was invalid")
         }
         self = result
     }

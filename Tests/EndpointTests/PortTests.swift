@@ -256,24 +256,29 @@ struct PortTests {
 
     @available(SwiftStdlib 5.1, *)
     @Test func `Port parses StaticString exactly like String`() {
-        #expect(Port("0" as StaticString) == Port("0" as String))
-        #expect(Port("5" as StaticString) == Port("5" as String))
-        #expect(Port("80" as StaticString) == Port("80" as String))
-        #expect(Port("443" as StaticString) == Port("443" as String))
-        #expect(Port("8080" as StaticString) == Port("8080" as String))
-        #expect(Port("00080" as StaticString) == Port("00080" as String))
-        #expect(Port("65535" as StaticString) == Port("65535" as String))
+        #expect(("0" as Port) == Port("0" as String))
+        #expect(("5" as Port) == Port("5" as String))
+        #expect(("80" as Port) == Port("80" as String))
+        #expect(("443" as Port) == Port("443" as String))
+        #expect(("8080" as Port) == Port("8080" as String))
+        #expect(("00080" as Port) == Port("00080" as String))
+        #expect(("65535" as Port) == Port("65535" as String))
 
-        #expect(Port("8080" as StaticString) == 8080)
-        #expect(Port("65535" as StaticString) == 65535)
+        #expect(("8080" as Port) == 8080)
+        #expect(("65535" as Port) == 65535)
     }
 
-    /// An unannotated literal must reach the `StaticString` overload, not the `String` one.
+    /// A bare string literal must reach the `ExpressibleByStringLiteral` init, not the `String` one.
     @available(SwiftStdlib 5.1, *)
-    @Test func `Port parses unannotated literals`() {
-        #expect(Port("0") == 0)
-        #expect(Port("443") == 443)
-        #expect(Port("65535") == 65535)
+    @Test func `Port parses string literals`() {
+        let zero: Port = "0"
+        #expect(zero == 0)
+
+        let https: Port = "443"
+        #expect(https == 443)
+
+        let max: Port = "65535"
+        #expect(max == 65535)
     }
 
 }
@@ -282,13 +287,13 @@ struct PortTests {
 extension PortTests {
     @Test func `Port initializer crashes on an invalid StaticString`() async {
         await #expect(processExitsWith: .failure) {
-            blackHole(Port("" as StaticString))
+            blackHole("" as Port)
         }
         await #expect(processExitsWith: .failure) {
-            blackHole(Port("65536" as StaticString))
+            blackHole("65536" as Port)
         }
         await #expect(processExitsWith: .failure) {
-            blackHole(Port("80a0" as StaticString))
+            blackHole("80a0" as Port)
         }
     }
 

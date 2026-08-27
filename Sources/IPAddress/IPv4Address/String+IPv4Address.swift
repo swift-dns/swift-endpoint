@@ -133,15 +133,60 @@ extension IPv4Address {
 }
 
 @available(SwiftStdlib 5.1, *)
-extension IPv4Address: LosslessStringConvertible {
+extension IPv4Address: ExpressibleByStringLiteral {
     /// Initialize an IPv4 address from its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
     ///
-    /// `@_disfavoredOverload` so the compiler prefers the `StaticString` init over this one.
+    /// **This initializer is free: It's unrolled to a constant at compile time.**
+    /// That is, as long as the string literal is passed directly to the init like so: `let ip: IPv4Address = "192.168.1.1"`.
+    /// **Passing a dynamic `StaticString` (`let str: StaticString = "192.168.1.1"; IPv4Address(stringLiteral: str)`) to this init is a bad idea.**
+    /// In that case, use `IPv4Address(String(str))` instead.
+    /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
+    @inlinable
+    @inline(always)
+    public init(stringLiteral value: StaticString) {
+        guard
+            let result = value.withUTF8Buffer({
+                IPv4Address(_inlined_textualRepresentation: unsafe $0.span, count: $0.count)
+            })
+        else {
+            fatalError("StaticString passed to IPv4Address initializer was invalid")
+        }
+        self = result
+    }
+
+    /// Initialize an IPv4 address from its textual representation.
+    /// That is, 4 decimal UInt8s separated by `.`.
+    /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    ///
+    /// **This initializer is free: It's unrolled to a constant at compile time.**
+    /// That is, as long as the string literal is passed directly to the init like so: `let ip: IPv4Address = "192.168.1.1"`.
+    /// **Passing a dynamic `StaticString` (`let str: StaticString = "192.168.1.1"; IPv4Address(stringLiteral: str)`) to this init is a bad idea.**
+    /// In that case, use `IPv4Address(String(str))` instead.
+    /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
     @inlinable
     @inline(always)
     @_disfavoredOverload
+    @available(
+        *,
+        deprecated,
+        message: """
+            For literal strings, use `IPv4Address(stringLiteral:)` or `let ip: IPv4Address = "192.168.1.1"` instead
+            """
+    )
+    public init(_ value: StaticString) {
+        self.init(stringLiteral: value)
+    }
+}
+
+@available(SwiftStdlib 5.1, *)
+extension IPv4Address: LosslessStringConvertible {
+    /// Initialize an IPv4 address from its textual representation.
+    /// That is, 4 decimal UInt8s separated by `.`.
+    /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    @inlinable
+    @inline(always)
     public init?(_ description: String) {
         guard
             let result = description.withSpan_Compatibility({
@@ -156,11 +201,8 @@ extension IPv4Address: LosslessStringConvertible {
     /// Initialize an IPv4 address from its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
-    ///
-    /// `@_disfavoredOverload` so the compiler prefers the `StaticString` init over this one.
     @inlinable
     @inline(always)
-    @_disfavoredOverload
     public init?(_ description: Substring) {
         guard
             let result = description.withSpan_Compatibility({
@@ -168,28 +210,6 @@ extension IPv4Address: LosslessStringConvertible {
             })
         else {
             return nil
-        }
-        self = result
-    }
-
-    /// Initialize an IPv4 address from its textual representation.
-    /// That is, 4 decimal UInt8s separated by `.`.
-    /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
-    ///
-    /// **This initializer is free: It's unrolled to a constant at compile time.**
-    /// That is, as long as the static-string is passed directly to the init like so: `IPv4Address("192.168.1.1")`.
-    /// **Passing a dynamic `StaticString` (`let str: StaticString = "192.168.1.1"; IPv4Address(str)`) to this init is a bad idea.**
-    /// In that case, use `IPv4Address(String(str))` instead.
-    /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
-    @inlinable
-    @inline(always)
-    public init(_ description: StaticString) {
-        guard
-            let result = description.withUTF8Buffer({
-                IPv4Address(_inlined_textualRepresentation: unsafe $0.span, count: $0.count)
-            })
-        else {
-            fatalError("StaticString passed to IPv4Address initializer was invalid")
         }
         self = result
     }

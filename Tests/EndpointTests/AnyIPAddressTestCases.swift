@@ -25,39 +25,43 @@ extension IPPropertyTestCase where IPAddressType == AnyIPAddress {
             { @Sendable in !$0.isMulticast }
         ),
 
-        IPPropertyTestCase(.v6(IPv6Address("::1")!), "isLoopback", \.isLoopback),
+        IPPropertyTestCase(.v6(IPv6Address("::1" as String)!), "isLoopback", \.isLoopback),
         IPPropertyTestCase(
-            .v6(IPv6Address("::1:1")!),
+            .v6(IPv6Address("::1:1" as String)!),
             "!isLoopback",
             { @Sendable in !$0.isLoopback }
         ),
-        IPPropertyTestCase(.v6(IPv6Address("FF00::")!), "isMulticast", \.isMulticast),
-        IPPropertyTestCase(.v6(IPv6Address("FF92::")!), "isMulticast", \.isMulticast),
-        IPPropertyTestCase(.v6(IPv6Address("FFFF:998A::1")!), "isMulticast", \.isMulticast),
+        IPPropertyTestCase(.v6(IPv6Address("FF00::" as String)!), "isMulticast", \.isMulticast),
+        IPPropertyTestCase(.v6(IPv6Address("FF92::" as String)!), "isMulticast", \.isMulticast),
         IPPropertyTestCase(
-            .v6(IPv6Address("FF::")!),
+            .v6(IPv6Address("FFFF:998A::1" as String)!),
+            "isMulticast",
+            \.isMulticast
+        ),
+        IPPropertyTestCase(
+            .v6(IPv6Address("FF::" as String)!),
             "!isMulticast",
             { @Sendable in !$0.isMulticast }
         ),
         IPPropertyTestCase(
-            .v6(IPv6Address("00FF::")!),
+            .v6(IPv6Address("00FF::" as String)!),
             "!isMulticast",
             { @Sendable in !$0.isMulticast }
         ),
         IPPropertyTestCase(
-            .v6(IPv6Address("FAFF::")!),
+            .v6(IPv6Address("FAFF::" as String)!),
             "!isMulticast",
             { @Sendable in !$0.isMulticast }
         ),
         IPPropertyTestCase(.v4(IPv4Address(255, 255, 192, 0)), "isContiguous", \.isContiguous),
-        IPPropertyTestCase(.v6(IPv6Address("FFFF::")!), "isContiguous", \.isContiguous),
+        IPPropertyTestCase(.v6(IPv6Address("FFFF::" as String)!), "isContiguous", \.isContiguous),
         IPPropertyTestCase(
             .v4(IPv4Address(255, 0, 0, 255)),
             "!isContiguous",
             { @Sendable in !$0.isContiguous }
         ),
         IPPropertyTestCase(
-            .v6(IPv6Address("FFFF::FFFF")!),
+            .v6(IPv6Address("FFFF::FFFF" as String)!),
             "!isContiguous",
             { @Sendable in !$0.isContiguous }
         ),

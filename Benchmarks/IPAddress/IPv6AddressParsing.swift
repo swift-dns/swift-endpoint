@@ -33,7 +33,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<4_000_000 {
-            let ip = unsafe IPv6Address("[2600:9000:2241:5800:0001:5a21:7c40:93a1]")
+            let ip = unsafe IPv6Address("[2600:9000:2241:5800:0001:5a21:7c40:93a1]" as String)
                 .unsafelyUnwrapped
             blackHole(ip)
         }
@@ -50,7 +50,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<25_000_000 {
-            let ip = unsafe IPv6Address("[::]").unsafelyUnwrapped
+            let ip = unsafe IPv6Address("[::]" as String).unsafelyUnwrapped
             blackHole(ip)
         }
     }
@@ -66,7 +66,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<4_000_000 {
-            let ip = unsafe IPv6Address("[0000:0000:0000:0000:0000:0000:0000:0000]")
+            let ip = unsafe IPv6Address("[0000:0000:0000:0000:0000:0000:0000:0000]" as String)
                 .unsafelyUnwrapped
             blackHole(ip)
         }
@@ -83,7 +83,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<20_000_000 {
-            let ip = unsafe IPv6Address("[::1]").unsafelyUnwrapped
+            let ip = unsafe IPv6Address("[::1]" as String).unsafelyUnwrapped
             blackHole(ip)
         }
     }
@@ -99,7 +99,8 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<4_000_000 {
-            let ip = unsafe IPv6Address("2a03:2880:f177::face:b00c:25de").unsafelyUnwrapped
+            let ip = unsafe IPv6Address("2a03:2880:f177::face:b00c:25de" as String)
+                .unsafelyUnwrapped
             blackHole(ip)
         }
     }
@@ -112,7 +113,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        let ip = unsafe IPv6Address("2a03:2880:f177::face:b00c:25de").unsafelyUnwrapped
+        let ip = unsafe IPv6Address("2a03:2880:f177::face:b00c:25de" as String).unsafelyUnwrapped
         blackHole(ip)
     }
 
@@ -124,7 +125,7 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        let ip = unsafe IPv6Address("2a03:2880:f177::face:b00c:25de").unsafelyUnwrapped
+        let ip = unsafe IPv6Address("2a03:2880:f177::face:b00c:25de" as String).unsafelyUnwrapped
         blackHole(ip)
     }
 
@@ -139,7 +140,8 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<4_000_000 {
-            let ip = unsafe IPv6Address("[2a03:2880:f177:0185:face:b00c::]").unsafelyUnwrapped
+            let ip = unsafe IPv6Address("[2a03:2880:f177:0185:face:b00c::]" as String)
+                .unsafelyUnwrapped
             blackHole(ip)
         }
     }
@@ -155,7 +157,8 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<4_000_000 {
-            let ip = unsafe IPv6Address("[::2a03:2880:f177:face:b00c:25de]").unsafelyUnwrapped
+            let ip = unsafe IPv6Address("[::2a03:2880:f177:face:b00c:25de]" as String)
+                .unsafelyUnwrapped
             blackHole(ip)
         }
     }
@@ -622,4 +625,68 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
             blackHole(ipv6Address)
         }
     }
+
+    // MARK: IPv6_Parsing_Multiple_IPs_StaticString
+
+    /// Every call site here is a `StaticString` literal, so the whole parse is expected to be
+    /// folded into a constant at compile time and the only work left is `blackHole`.
+    /// The instruction count is the assertion; a `cpuUser` benchmark would measure nothing.
+    Benchmark(
+        "IPv6_Parsing_Multiple_IPs_StaticString_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 100,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        blackHole(unsafe IPv6Address("[::1]" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("::" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("2606:4700:4700::1111" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("2606:4700:4700::1001" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("2001:4860:4860::8888" as StaticString).unsafelyUnwrapped)
+        blackHole(
+            unsafe IPv6Address("2001:4860:4860:0:0:0:0:8844" as StaticString).unsafelyUnwrapped
+        )
+        blackHole(unsafe IPv6Address("2620:FE::FE" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("2620:119:35::35" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("2620:0:ccc::2" as StaticString).unsafelyUnwrapped)
+        blackHole(
+            unsafe IPv6Address("2a03:2880:f177:185:face:b00c:0:25de" as StaticString)
+                .unsafelyUnwrapped
+        )
+        blackHole(unsafe IPv6Address("[2a03:2880:f177:185::]" as StaticString).unsafelyUnwrapped)
+        blackHole(
+            unsafe IPv6Address("[2600:9000:2241:5800:0001:5a21:7c40:93a1]" as StaticString)
+                .unsafelyUnwrapped
+        )
+        blackHole(unsafe IPv6Address("2600:9000:2241:5800::" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("::ffff:151.101.1.140" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("[64:ff9b::8.8.8.8]" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("2606:4700::6810:84e5" as StaticString).unsafelyUnwrapped)
+        blackHole(
+            unsafe IPv6Address("2400:cb00:2049:1::a29f:1804" as StaticString).unsafelyUnwrapped
+        )
+        blackHole(
+            unsafe IPv6Address("2606:2800:220:1:248:1893:25c8:1946" as StaticString)
+                .unsafelyUnwrapped
+        )
+        blackHole(
+            unsafe IPv6Address("2001:0500:0002:0000:0000:0000:0000:000c" as StaticString)
+                .unsafelyUnwrapped
+        )
+        blackHole(unsafe IPv6Address("2001:503:ba3e::2:30" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("2001:7fd::1" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("FE80::1FF:FE23:4567:890A" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("fe80::200:5eff:fe00:5213" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("fe80::" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("ff02::1" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("ff02::1:ff00:1" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("ff05:0:0:0:0:0:1:3" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("2001:41d0:302:2200::180" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("[2A01:4F8:C010:D56::1]" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("2a01:4f8:c010:d56::" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("[2a00:1450:4001:c15::8a]" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe IPv6Address("fd00:ec2:0:0:0:0:0:254" as StaticString).unsafelyUnwrapped)
+    }
+
 }

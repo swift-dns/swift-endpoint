@@ -79,6 +79,7 @@ let package = Package(
                     condition: .when(traits: ["NIO_BYTE_BUFFER_SUPPORT"])
                 ),
                 "Endpoint",
+                "CSwiftEndpoint",
             ],
             swiftSettings: settings
         ),

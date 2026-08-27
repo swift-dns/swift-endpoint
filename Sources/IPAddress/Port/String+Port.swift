@@ -93,8 +93,11 @@ extension Port: LosslessStringConvertible {
     /// Initialize a `Port` from its textual representation.
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
     /// For example `"8080"` will parse into `Port(8080)`.
+    ///
+    /// `@_disfavoredOverload` so the compiler prefers the `StaticString` init over this one.
     @inlinable
     @inline(always)
+    @_disfavoredOverload
     public init?(_ description: String) {
         guard
             let result = description.withSpan_Compatibility({
@@ -109,12 +112,33 @@ extension Port: LosslessStringConvertible {
     /// Initialize a `Port` from its textual representation.
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
     /// For example `"8080"` will parse into `Port(8080)`.
+    ///
+    /// `@_disfavoredOverload` so the compiler prefers the `StaticString` init over this one.
     @inlinable
     @inline(always)
+    @_disfavoredOverload
     public init?(_ description: Substring) {
         guard
             let result = description.withSpan_Compatibility({
                 Port(textualRepresentation: $0)
+            })
+        else {
+            return nil
+        }
+        self = result
+    }
+
+    /// Initialize a `Port` from its textual representation.
+    /// That is, at most 5 decimal digits amounting to a value of at most 65535.
+    /// For example `"8080"` will parse into `Port(8080)`.
+    ///
+    /// This initializer is free: It's unrolled to a constant at compile time.
+    @inlinable
+    @inline(always)
+    public init?(_ description: StaticString) {
+        guard
+            let result = description.withUTF8Buffer({
+                Port(_inlined_textualRepresentation: unsafe $0.span)
             })
         else {
             return nil
@@ -130,6 +154,15 @@ extension Port: LosslessStringConvertible {
     /// inlining boundary and allow the compiler to decide what to do.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
+        self.init(_inlined_textualRepresentation: span)
+    }
+
+    /// Initialize a `Port` from a `Span<UInt8>` of its textual representation.
+    /// That is, at most 5 decimal digits amounting to a value of at most 65535.
+    /// For example `"8080"` will parse into `Port(8080)`.
+    @inlinable
+    @inline(always)
+    init?(_inlined_textualRepresentation span: Span<UInt8>) {
         var rawValue: UInt16 = 0
         let success = Port.parsePort(
             span: span,
@@ -143,6 +176,11 @@ extension Port: LosslessStringConvertible {
         self.init(rawValue: rawValue)
     }
 
+    /// Credit goes to @aqrit for original impl.
+    /// See:
+    /// https://github.com/fastfloat/fast_float/blob/a8a02f77480d10c5dc90d39f7b890bc1dff9c1b9/include/fast_float/ascii_number.h#L143
+    /// https://lemire.me/blog/2018/10/03/quickly-parsing-eight-digits/
+    /// https://lemire.me/blog/2022/01/21/swar-explained-parsing-eight-digits/
     @inlinable
     @inline(always)
     static func parsePort(

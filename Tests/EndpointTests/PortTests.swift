@@ -253,6 +253,43 @@ struct PortTests {
             #expect(Port(parsing: outputSpan.span) == port)
         }
     }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test func `Port parses StaticString exactly like String`() {
+        #expect(Port("0" as StaticString) == Port("0" as String))
+        #expect(Port("5" as StaticString) == Port("5" as String))
+        #expect(Port("80" as StaticString) == Port("80" as String))
+        #expect(Port("443" as StaticString) == Port("443" as String))
+        #expect(Port("8080" as StaticString) == Port("8080" as String))
+        #expect(Port("00080" as StaticString) == Port("00080" as String))
+        #expect(Port("65535" as StaticString) == Port("65535" as String))
+        #expect(Port("" as StaticString) == Port("" as String))
+        #expect(Port(" " as StaticString) == Port(" " as String))
+        #expect(Port("-1" as StaticString) == Port("-1" as String))
+        #expect(Port("+1" as StaticString) == Port("+1" as String))
+        #expect(Port("65536" as StaticString) == Port("65536" as String))
+        #expect(Port("99999" as StaticString) == Port("99999" as String))
+        #expect(Port("065535" as StaticString) == Port("065535" as String))
+        #expect(Port("0x10" as StaticString) == Port("0x10" as String))
+        #expect(Port("8.0" as StaticString) == Port("8.0" as String))
+        #expect(Port("8:0" as StaticString) == Port("8:0" as String))
+        #expect(Port("٨٠" as StaticString) == Port("٨٠" as String))
+
+        #expect(Port("8080" as StaticString) == 8080)
+        #expect(Port("65535" as StaticString) == 65535)
+        #expect(Port("65536" as StaticString) == nil)
+    }
+
+    /// An unannotated literal must reach the `StaticString` overload, not the `String` one.
+    @available(SwiftStdlib 5.1, *)
+    @Test func `Port parses unannotated literals`() {
+        #expect(Port("0") == 0)
+        #expect(Port("443") == 443)
+        #expect(Port("65535") == 65535)
+        #expect(Port("65536") == nil)
+        #expect(Port("") == nil)
+    }
+
 }
 
 #if os(macOS) || os(Linux)

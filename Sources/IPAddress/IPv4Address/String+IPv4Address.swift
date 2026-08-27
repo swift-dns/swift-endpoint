@@ -137,8 +137,11 @@ extension IPv4Address: LosslessStringConvertible {
     /// Initialize an IPv4 address from its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    ///
+    /// `@_disfavoredOverload` so the compiler prefers the `StaticString` init over this one.
     @inlinable
     @inline(always)
+    @_disfavoredOverload
     public init?(_ description: String) {
         guard
             let result = description.withSpan_Compatibility({
@@ -153,12 +156,33 @@ extension IPv4Address: LosslessStringConvertible {
     /// Initialize an IPv4 address from its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    ///
+    /// `@_disfavoredOverload` so the compiler prefers the `StaticString` init over this one.
     @inlinable
     @inline(always)
+    @_disfavoredOverload
     public init?(_ description: Substring) {
         guard
             let result = description.withSpan_Compatibility({
                 IPv4Address(textualRepresentation: $0)
+            })
+        else {
+            return nil
+        }
+        self = result
+    }
+
+    /// Initialize an IPv4 address from its textual representation.
+    /// That is, 4 decimal UInt8s separated by `.`.
+    /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    ///
+    /// This initializer is free: It's unrolled to a constant at compile time.
+    @inlinable
+    @inline(always)
+    public init?(_ description: StaticString) {
+        guard
+            let result = description.withUTF8Buffer({
+                IPv4Address(_inlined_textualRepresentation: unsafe $0.span)
             })
         else {
             return nil
@@ -174,6 +198,15 @@ extension IPv4Address: LosslessStringConvertible {
     /// inlining boundary and allow the compiler to decide what to do.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
+        self.init(_inlined_textualRepresentation: span)
+    }
+
+    /// Initialize an IPv4 address from a `Span<UInt8>` of its textual representation.
+    /// That is, 4 decimal UInt8s separated by `.`.
+    /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    @inlinable
+    @inline(always)
+    init?(_inlined_textualRepresentation span: Span<UInt8>) {
         var address: UInt32 = 0
         let success = IPv4Address.parseIPv4(
             span: span,

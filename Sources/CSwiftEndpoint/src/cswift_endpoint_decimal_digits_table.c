@@ -1,6 +1,6 @@
-// The table layout is documented in ../include/CSwiftEndpoint.h.
+// The table layout is documented in ../include/cswift_endpoint_decimal_digits_table.h.
 
-#include "../include/CSwiftEndpoint.h"
+#include "../include/cswift_endpoint_decimal_digits_table.h"
 #include <stdint.h>
 
 const uint32_t cswift_endpoint_decimal_digits_table[256] = {
@@ -47,4 +47,4 @@ const uint32_t cswift_endpoint_decimal_digits_table[256] = {
     0x04303432, 0x04313432, 0x04323432, 0x04333432, 0x04343432, 0x04353432,
     0x04363432, 0x04373432, 0x04383432, 0x04393432, 0x04303532, 0x04313532,
     0x04323532, 0x04333532, 0x04343532, 0x04353532,
-};
+};;

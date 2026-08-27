@@ -63,6 +63,11 @@ You can either initialize each type using a `String`, or initialize the exact un
 
 Here are some examples:
 
+> [!NOTE]
+> The following initializers **free** for `StaticString`s (hardcoded strings).
+> They act like macros and are folded to a constant at compile time:
+> `IPv6Address("2001:db8:85a3::100")`, `IPv4Address("192.168.1.1")`, `Port("443")`.
+
 ```swift
 import Endpoint
 

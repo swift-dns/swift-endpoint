@@ -385,6 +385,53 @@ struct IPv4AddressTests {
         let span = bytes.span
         #expect(IPv4Address(textualRepresentation: span) == nil)
     }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test func `IPv4Address parses StaticString exactly like String`() {
+        #expect(IPv4Address("0.0.0.0" as StaticString) == IPv4Address("0.0.0.0" as String))
+        #expect(IPv4Address("127.0.0.1" as StaticString) == IPv4Address("127.0.0.1" as String))
+        #expect(
+            IPv4Address("192.168.1.98" as StaticString) == IPv4Address("192.168.1.98" as String)
+        )
+        #expect(
+            IPv4Address("255.255.255.255" as StaticString)
+                == IPv4Address("255.255.255.255" as String)
+        )
+        #expect(
+            IPv4Address("010.010.010.010" as StaticString)
+                == IPv4Address("010.010.010.010" as String)
+        )
+        #expect(IPv4Address("" as StaticString) == IPv4Address("" as String))
+        #expect(IPv4Address("1.2.3" as StaticString) == IPv4Address("1.2.3" as String))
+        #expect(IPv4Address("1.2.3.4.5" as StaticString) == IPv4Address("1.2.3.4.5" as String))
+        #expect(
+            IPv4Address("192.168.1.256" as StaticString) == IPv4Address("192.168.1.256" as String)
+        )
+        #expect(
+            IPv4Address("192.168.1.-1" as StaticString) == IPv4Address("192.168.1.-1" as String)
+        )
+        #expect(
+            IPv4Address("0x1.0x2.0x3.0x4" as StaticString)
+                == IPv4Address("0x1.0x2.0x3.0x4" as String)
+        )
+        #expect(IPv4Address(" 1.2.3.4" as StaticString) == IPv4Address(" 1.2.3.4" as String))
+        #expect(IPv4Address("1.2.3.4 " as StaticString) == IPv4Address("1.2.3.4 " as String))
+        #expect(IPv4Address("١.٢.٣.٤" as StaticString) == IPv4Address("١.٢.٣.٤" as String))
+
+        #expect(IPv4Address("192.168.1.98" as StaticString) == IPv4Address(192, 168, 1, 98))
+        #expect(IPv4Address("255.255.255.255" as StaticString) == IPv4Address(255, 255, 255, 255))
+        #expect(IPv4Address("192.168.1.256" as StaticString) == nil)
+    }
+
+    /// An unannotated literal must reach the `StaticString` overload, not the `String` one.
+    @available(SwiftStdlib 5.1, *)
+    @Test func `IPv4Address parses unannotated literals`() {
+        #expect(IPv4Address("0.0.0.0") == IPv4Address(0, 0, 0, 0))
+        #expect(IPv4Address("192.168.1.98") == IPv4Address(192, 168, 1, 98))
+        #expect(IPv4Address("1.2.3") == nil)
+        #expect(IPv4Address("") == nil)
+    }
+
 }
 
 @available(SwiftStdlib 5.1, *)

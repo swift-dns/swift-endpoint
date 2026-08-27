@@ -32,7 +32,7 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        let port = unsafe Port("443").unsafelyUnwrapped
+        let port = unsafe Port("443" as String).unsafelyUnwrapped
         blackHole(port)
     }
 
@@ -44,7 +44,7 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        let port = unsafe Port("443").unsafelyUnwrapped
+        let port = unsafe Port("443" as String).unsafelyUnwrapped
         blackHole(port)
     }
 
@@ -329,4 +329,52 @@ let portFromStringBenchmarks: @Sendable () -> Void = {
             blackHole(port)
         }
     }
+
+    // MARK: Port_Parsing_Multiple_Ports_StaticString
+
+    /// Every call site here is a `StaticString` literal, so the whole parse is expected to be
+    /// folded into a constant at compile time and the only work left is `blackHole`.
+    /// The instruction count is the assertion; a `cpuUser` benchmark would measure nothing.
+    Benchmark(
+        "Port_Parsing_Multiple_Ports_StaticString_Instructions",
+        configuration: .init(
+            metrics: [.instructions],
+            warmupIterations: 100,
+            maxIterations: 10
+        )
+    ) { benchmark in
+        blackHole(unsafe Port("9" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("21" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("22" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("23" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("25" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("53" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("80" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("110" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("123" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("143" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("179" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("389" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("443" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("514" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("587" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("853" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("993" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("995" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("1194" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("1433" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("2049" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("3306" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("3389" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("5060" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("5353" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("5432" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("6379" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("8080" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("8443" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("11211" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("27017" as StaticString).unsafelyUnwrapped)
+        blackHole(unsafe Port("33435" as StaticString).unsafelyUnwrapped)
+    }
+
 }

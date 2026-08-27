@@ -149,6 +149,7 @@ struct IPv6AddressTests {
     @Test(arguments: IPv6AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
     func `IPv6Address description and serialization round-trip`(ip: IPv6Address) {
         #expect(IPv6Address(ip.description) == ip)
+        #expect(cParsedIPv6(ip.description) == ip)
 
         let viaCString = ip.withCString { span in
             span.withUnsafeBufferPointer { unsafe IPv6Address(cString: $0.baseAddress!) }
@@ -176,6 +177,7 @@ struct IPv6AddressTests {
         let expected = try #require(testCase.expectedDescription(options: options))
         #expect(ip.description(options: options) == expected)
         #expect(IPv6Address(expected) == ip)
+        #expect(cParsedIPv6(expected) == ip)
     }
 
     @available(SwiftStdlib 6.0, *)
@@ -242,6 +244,8 @@ struct IPv6AddressTests {
         #expect(IPv6Address(Substring(string)) == expectedAddress)
         #expect(IPv6Address(textualRepresentation: string.utf8Span) == expectedAddress)
         #expect(IPv6Address(textualRepresentation: string.utf8Span.span) == expectedAddress)
+        #expect(cParsedIPv6(string) == expectedAddress)
+        #expect(cParsedIPv6(Substring(string)) == expectedAddress)
 
         if isValidIPv4 {
             #expect(AnyIPAddress(string)?.isIPv4 == true)
@@ -320,6 +324,7 @@ struct IPv6AddressTests {
         let isValidIPv4 = testCase.isValidAsOtherIPVersion
 
         let plainIPv6Address = IPv6Address(string)
+        #expect(cParsedIPv6(string) == plainIPv6Address)
         let arpa: String? = plainIPv6Address.map(\.arpaDomainNameString)
         let domainName = arpa.flatMap { try? DomainName($0) }
 
@@ -353,6 +358,8 @@ struct IPv6AddressTests {
 
         #expect(mapped == IPv6Address(testCase.ipv4MappedExpandedIPv6Description))
         #expect(nat64 == IPv6Address(testCase.nat64ExpandedIPv6Description))
+        #expect(mapped == cParsedIPv6(testCase.ipv4MappedExpandedIPv6Description))
+        #expect(nat64 == cParsedIPv6(testCase.nat64ExpandedIPv6Description))
         #expect(mapped.isIPv4Mapped)
         #expect(nat64.isNAT64WellKnownIPv4Embedded)
     }
@@ -403,6 +410,7 @@ struct IPv6AddressTests {
     @Test(arguments: AnyIPAddressTestCase.rawByteReject)
     func `Non-ASCII byte inputs are rejected by the parser`(bytes: [UInt8]) {
         #expect(IPv6Address(textualRepresentation: bytes.span) == nil)
+        #expect(cParsedIPv6(bytes) == nil)
     }
 
     @available(SwiftStdlib 5.1, *)
@@ -462,6 +470,271 @@ struct IPv6AddressTests {
         #expect(unpacked.minReserveBytes == Int(minReserveBytes))
         #expect(unpacked.writeCsAtEnd == writeCsAtEnd)
     }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `C parser agrees with the Swift parser on generated inputs`() {
+        let alphabet = Array("0123456789abcdefABCDEF:.[]xg -%/".utf8)
+        var state: UInt64 = 0x2545_F491_4F6C_DD1D
+        func next() -> UInt64 {
+            state ^= state &<< 13
+            state ^= state &>> 7
+            state ^= state &<< 17
+            return state
+        }
+
+        for _ in 0..<200_000 {
+            let count = Int(next() % 24)
+            var bytes: [UInt8] = []
+            bytes.reserveCapacity(count)
+            for _ in 0..<count {
+                bytes.append(alphabet[Int(next() % UInt64(alphabet.count))])
+            }
+            let string = String(decoding: bytes, as: UTF8.self)
+            #expect(cParsedIPv6(bytes) == IPv6Address(string), "\(string.debugDescription)")
+        }
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `IPv6Address parses StaticString exactly like String`() {
+        #expect(IPv6Address("::" as StaticString) == IPv6Address("::" as String))
+        #expect(IPv6Address("::1" as StaticString) == IPv6Address("::1" as String))
+        #expect(IPv6Address("1::" as StaticString) == IPv6Address("1::" as String))
+        #expect(IPv6Address("fe80::" as StaticString) == IPv6Address("fe80::" as String))
+        #expect(
+            IPv6Address("2001:db8:1111::" as StaticString)
+                == IPv6Address("2001:db8:1111::" as String)
+        )
+        #expect(IPv6Address("2001:db8::1" as StaticString) == IPv6Address("2001:db8::1" as String))
+        #expect(
+            IPv6Address("2606:4700::6810:84e5" as StaticString)
+                == IPv6Address("2606:4700::6810:84e5" as String)
+        )
+        #expect(
+            IPv6Address("2001:0db8:1111:2222:3333:4444:5555:6666" as StaticString)
+                == IPv6Address("2001:0db8:1111:2222:3333:4444:5555:6666" as String)
+        )
+        #expect(
+            IPv6Address("[2001:db8:1111::]" as StaticString)
+                == IPv6Address("[2001:db8:1111::]" as String)
+        )
+        #expect(IPv6Address("[::1]" as StaticString) == IPv6Address("[::1]" as String))
+        #expect(IPv6Address("[fe80::1]" as StaticString) == IPv6Address("[fe80::1]" as String))
+        #expect(
+            IPv6Address("::ffff:204.152.189.116" as StaticString)
+                == IPv6Address("::ffff:204.152.189.116" as String)
+        )
+        #expect(
+            IPv6Address("::ffff:0:255.255.255.255" as StaticString)
+                == IPv6Address("::ffff:0:255.255.255.255" as String)
+        )
+        #expect(
+            IPv6Address("64:ff9b::8.8.8.8" as StaticString)
+                == IPv6Address("64:ff9b::8.8.8.8" as String)
+        )
+        #expect(
+            IPv6Address("2001:4860:4860:0:0:0:0:8844" as StaticString)
+                == IPv6Address("2001:4860:4860:0:0:0:0:8844" as String)
+        )
+        #expect(IPv6Address("ff02::1" as StaticString) == IPv6Address("ff02::1" as String))
+        #expect(
+            IPv6Address("2620:0:ccc::2" as StaticString) == IPv6Address("2620:0:ccc::2" as String)
+        )
+        #expect(
+            IPv6Address("fd00:ec2:0:0:0:0:0:254" as StaticString)
+                == IPv6Address("fd00:ec2:0:0:0:0:0:254" as String)
+        )
+        #expect(IPv6Address(":::" as StaticString) == IPv6Address(":::" as String))
+        #expect(IPv6Address("" as StaticString) == IPv6Address("" as String))
+        #expect(
+            IPv6Address("1:2:3:4:5:6:7:8:9" as StaticString)
+                == IPv6Address("1:2:3:4:5:6:7:8:9" as String)
+        )
+        #expect(IPv6Address("12345::" as StaticString) == IPv6Address("12345::" as String))
+        #expect(
+            IPv6Address("::ffff:204.152.189.256" as StaticString)
+                == IPv6Address("::ffff:204.152.189.256" as String)
+        )
+        #expect(IPv6Address("٢٠٠١:db8::" as StaticString) == IPv6Address("٢٠٠١:db8::" as String))
+        #expect(IPv6Address("::2" as StaticString) == IPv6Address("::2" as String))
+        #expect(IPv6Address("1::2" as StaticString) == IPv6Address("1::2" as String))
+        #expect(
+            IPv6Address("0:0:0:0:0:0:0:0" as StaticString)
+                == IPv6Address("0:0:0:0:0:0:0:0" as String)
+        )
+        #expect(
+            IPv6Address("0:0:0:0:0:0:0:1" as StaticString)
+                == IPv6Address("0:0:0:0:0:0:0:1" as String)
+        )
+        #expect(IPv6Address("2001:db8::" as StaticString) == IPv6Address("2001:db8::" as String))
+        #expect(
+            IPv6Address("2001:db8:0:0:0:0:0:1" as StaticString)
+                == IPv6Address("2001:db8:0:0:0:0:0:1" as String)
+        )
+        #expect(IPv6Address("fe80::1%" as StaticString) == IPv6Address("fe80::1%" as String))
+        #expect(IPv6Address("FF00::" as StaticString) == IPv6Address("FF00::" as String))
+        #expect(
+            IPv6Address("FF00:9328:3212:0:1::" as StaticString)
+                == IPv6Address("FF00:9328:3212:0:1::" as String)
+        )
+        #expect(
+            IPv6Address("EEFF:9328:3212:0:1::" as StaticString)
+                == IPv6Address("EEFF:9328:3212:0:1::" as String)
+        )
+        #expect(
+            IPv6Address("2606:4700:4700::1111" as StaticString)
+                == IPv6Address("2606:4700:4700::1111" as String)
+        )
+        #expect(
+            IPv6Address("2606:4700:4700::1001" as StaticString)
+                == IPv6Address("2606:4700:4700::1001" as String)
+        )
+        #expect(
+            IPv6Address("2001:4860:4860::8888" as StaticString)
+                == IPv6Address("2001:4860:4860::8888" as String)
+        )
+        #expect(IPv6Address("2620:FE::FE" as StaticString) == IPv6Address("2620:FE::FE" as String))
+        #expect(
+            IPv6Address("2620:119:35::35" as StaticString)
+                == IPv6Address("2620:119:35::35" as String)
+        )
+        #expect(
+            IPv6Address("2a03:2880:f177:185:face:b00c:0:25de" as StaticString)
+                == IPv6Address("2a03:2880:f177:185:face:b00c:0:25de" as String)
+        )
+        #expect(
+            IPv6Address("[2a03:2880:f177:185::]" as StaticString)
+                == IPv6Address("[2a03:2880:f177:185::]" as String)
+        )
+        #expect(
+            IPv6Address("[2600:9000:2241:5800:0001:5a21:7c40:93a1]" as StaticString)
+                == IPv6Address("[2600:9000:2241:5800:0001:5a21:7c40:93a1]" as String)
+        )
+        #expect(
+            IPv6Address("2600:9000:2241:5800::" as StaticString)
+                == IPv6Address("2600:9000:2241:5800::" as String)
+        )
+        #expect(
+            IPv6Address("::ffff:151.101.1.140" as StaticString)
+                == IPv6Address("::ffff:151.101.1.140" as String)
+        )
+        #expect(
+            IPv6Address("[64:ff9b::8.8.8.8]" as StaticString)
+                == IPv6Address("[64:ff9b::8.8.8.8]" as String)
+        )
+        #expect(
+            IPv6Address("2400:cb00:2049:1::a29f:1804" as StaticString)
+                == IPv6Address("2400:cb00:2049:1::a29f:1804" as String)
+        )
+        #expect(
+            IPv6Address("2606:2800:220:1:248:1893:25c8:1946" as StaticString)
+                == IPv6Address("2606:2800:220:1:248:1893:25c8:1946" as String)
+        )
+        #expect(
+            IPv6Address("2001:0500:0002:0000:0000:0000:0000:000c" as StaticString)
+                == IPv6Address("2001:0500:0002:0000:0000:0000:0000:000c" as String)
+        )
+        #expect(
+            IPv6Address("2001:503:ba3e::2:30" as StaticString)
+                == IPv6Address("2001:503:ba3e::2:30" as String)
+        )
+        #expect(IPv6Address("2001:7fd::1" as StaticString) == IPv6Address("2001:7fd::1" as String))
+        #expect(
+            IPv6Address("FE80::1FF:FE23:4567:890A" as StaticString)
+                == IPv6Address("FE80::1FF:FE23:4567:890A" as String)
+        )
+        #expect(
+            IPv6Address("fe80::200:5eff:fe00:5213" as StaticString)
+                == IPv6Address("fe80::200:5eff:fe00:5213" as String)
+        )
+        #expect(
+            IPv6Address("ff02::1:ff00:1" as StaticString) == IPv6Address("ff02::1:ff00:1" as String)
+        )
+        #expect(
+            IPv6Address("ff05:0:0:0:0:0:1:3" as StaticString)
+                == IPv6Address("ff05:0:0:0:0:0:1:3" as String)
+        )
+        #expect(
+            IPv6Address("2001:41d0:302:2200::180" as StaticString)
+                == IPv6Address("2001:41d0:302:2200::180" as String)
+        )
+        #expect(
+            IPv6Address("[2A01:4F8:C010:D56::1]" as StaticString)
+                == IPv6Address("[2A01:4F8:C010:D56::1]" as String)
+        )
+        #expect(
+            IPv6Address("2a01:4f8:c010:d56::" as StaticString)
+                == IPv6Address("2a01:4f8:c010:d56::" as String)
+        )
+        #expect(
+            IPv6Address("[2a00:1450:4001:c15::8a]" as StaticString)
+                == IPv6Address("[2a00:1450:4001:c15::8a]" as String)
+        )
+        #expect(
+            IPv6Address("::ffff:0.0.0.0" as StaticString) == IPv6Address("::ffff:0.0.0.0" as String)
+        )
+        #expect(
+            IPv6Address("::ffff:255.255.255.255" as StaticString)
+                == IPv6Address("::ffff:255.255.255.255" as String)
+        )
+        #expect(IPv6Address("::1.2.3.4" as StaticString) == IPv6Address("::1.2.3.4" as String))
+        #expect(
+            IPv6Address("64:ff9b::0.0.0.0" as StaticString)
+                == IPv6Address("64:ff9b::0.0.0.0" as String)
+        )
+        #expect(IPv6Address(":" as StaticString) == IPv6Address(":" as String))
+        #expect(IPv6Address("::::" as StaticString) == IPv6Address("::::" as String))
+        #expect(IPv6Address(":::1" as StaticString) == IPv6Address(":::1" as String))
+        #expect(IPv6Address("1:::2" as StaticString) == IPv6Address("1:::2" as String))
+        #expect(
+            IPv6Address("1:2:3:4:5:6:7" as StaticString) == IPv6Address("1:2:3:4:5:6:7" as String)
+        )
+        #expect(IPv6Address("::12345" as StaticString) == IPv6Address("::12345" as String))
+        #expect(IPv6Address("g::" as StaticString) == IPv6Address("g::" as String))
+        #expect(IPv6Address("::g" as StaticString) == IPv6Address("::g" as String))
+        #expect(IPv6Address("1::2::3" as StaticString) == IPv6Address("1::2::3" as String))
+        #expect(IPv6Address("[::1" as StaticString) == IPv6Address("[::1" as String))
+        #expect(IPv6Address("::1]" as StaticString) == IPv6Address("::1]" as String))
+        #expect(IPv6Address("[]" as StaticString) == IPv6Address("[]" as String))
+        #expect(IPv6Address("[::]" as StaticString) == IPv6Address("[::]" as String))
+        #expect(IPv6Address("1.2.3.4" as StaticString) == IPv6Address("1.2.3.4" as String))
+        #expect(
+            IPv6Address("::ffff:1.2.3.256" as StaticString)
+                == IPv6Address("::ffff:1.2.3.256" as String)
+        )
+        #expect(
+            IPv6Address("::ffff:1.2.3" as StaticString) == IPv6Address("::ffff:1.2.3" as String)
+        )
+        #expect(
+            IPv6Address("::ffff:1.2.3.4.5" as StaticString)
+                == IPv6Address("::ffff:1.2.3.4.5" as String)
+        )
+        #expect(
+            IPv6Address("::ffff:01.2.3.4" as StaticString)
+                == IPv6Address("::ffff:01.2.3.4" as String)
+        )
+        #expect(IPv6Address("1::2:" as StaticString) == IPv6Address("1::2:" as String))
+        #expect(IPv6Address("::-1" as StaticString) == IPv6Address("::-1" as String))
+        #expect(
+            IPv6Address("1:2:3:4:5:6:7:8:" as StaticString)
+                == IPv6Address("1:2:3:4:5:6:7:8:" as String)
+        )
+        #expect(IPv6Address(" ::1" as StaticString) == IPv6Address(" ::1" as String))
+        #expect(IPv6Address("::1 " as StaticString) == IPv6Address("::1 " as String))
+
+        #expect(IPv6Address("::1" as StaticString) == IPv6Address(1))
+        #expect(IPv6Address("::" as StaticString) == IPv6Address(0))
+        #expect(IPv6Address(":::" as StaticString) == nil)
+    }
+
+    /// An unannotated literal must reach the `StaticString` overload, not the `String` one.
+    @available(SwiftStdlib 6.0, *)
+    @Test func `IPv6Address parses unannotated literals`() {
+        #expect(IPv6Address("::") == IPv6Address(0))
+        #expect(IPv6Address("::1") == IPv6Address(1))
+        #expect(IPv6Address(":::") == nil)
+        #expect(IPv6Address("") == nil)
+    }
+
 }
 
 // 16 means no compression sign.

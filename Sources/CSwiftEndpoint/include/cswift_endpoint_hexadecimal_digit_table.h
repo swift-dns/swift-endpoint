@@ -1,9 +1,19 @@
-// The table layout is documented in ../include/CSwiftEndpoint.h.
+#ifndef CSWIFT_DNS_ENDPOINT_HEXADECIMAL_DIGIT_TABLE_H
+#define CSWIFT_DNS_ENDPOINT_HEXADECIMAL_DIGIT_TABLE_H
 
-#include "../include/CSwiftEndpoint.h"
 #include <stdint.h>
 
-const uint8_t cswift_endpoint_hexadecimal_digit_table[256] = {
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// Defined here rather than in a `.c` file so `cswift_endpoint_slow_static_parse_ipv6` can fold
+// its lookups at compile time.
+
+// The hexadecimal-digit table is indexed by an ASCII byte and maps `0-9`, `a-f` and `A-F` to
+// their 0-15 numeric value. Every other byte maps to 0xFF.
+
+static const uint8_t cswift_endpoint_hexadecimal_digit_table[256] = {
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
@@ -21,3 +31,14 @@ const uint8_t cswift_endpoint_hexadecimal_digit_table[256] = {
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 };
+
+// Returns the 0-15 value of the given hexadecimal ASCII digit, or 0xFF if it isn't one.
+static inline uint8_t cswift_endpoint_hexadecimal_digit(uint8_t ascii_byte) {
+    return cswift_endpoint_hexadecimal_digit_table[ascii_byte];
+}
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#endif // CSWIFT_DNS_ENDPOINT_HEXADECIMAL_DIGIT_TABLE_H

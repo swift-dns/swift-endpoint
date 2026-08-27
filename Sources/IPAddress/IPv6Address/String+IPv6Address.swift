@@ -374,6 +374,7 @@ extension IPv6Address {
     }
 
     @inlinable
+    @inline(always)
     func _writeSegmentAsLowercasedHexASCII_RequiringMinimumCapacityOf4(
         into buffer: UnsafeMutableRawBufferPointer,
         advancingIdx idx: inout Int,
@@ -444,8 +445,11 @@ extension IPv6Address: LosslessStringConvertible {
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     /// Parses all IPv4-embedded address forms where the embedded IPv4 is in the last 32 bits.
     /// This includes blocks that are not used for embedded IPv4 addresses in practice or are deprecated.
+    ///
+    /// `@_disfavoredOverload` so the compiler prefers the `StaticString` init over this one.
     @inlinable
     @inline(always)
+    @_disfavoredOverload
     public init?(_ description: String) {
         guard
             let result = description.withSpan_Compatibility({
@@ -461,8 +465,11 @@ extension IPv6Address: LosslessStringConvertible {
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
+    ///
+    /// `@_disfavoredOverload` so the compiler prefers the `StaticString` init over this one.
     @inlinable
     @inline(always)
+    @_disfavoredOverload
     public init?(_ description: Substring) {
         guard
             let result = description.withSpan_Compatibility({
@@ -474,6 +481,32 @@ extension IPv6Address: LosslessStringConvertible {
         self = result
     }
 
+    /// Initialize an IPv6 address from its textual representation.
+    /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
+    /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
+    ///
+    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
+    /// Parses all IPv4-embedded address forms where the embedded IPv4 is in the last 32 bits.
+    /// This includes blocks that are not used for embedded IPv4 addresses in practice or are deprecated.
+    ///
+    /// This initializer is free: It's unrolled to a constant at compile time.
+    @inlinable
+    @inline(always)
+    public init?(_ description: StaticString) {
+        let result = description.withUTF8Buffer {
+            unsafe cswift_endpoint_slow_static_parse_ipv6($0.baseAddress, $0.count)
+        }
+        guard result.ok else {
+            return nil
+        }
+        self.init(
+            _CompatibilityUInt128Typealias(
+                _low: result.lo,
+                _high: result.hi
+            )
+        )
+    }
+
     /// Initialize an IPv6 address from a `Span<UInt8>` of its textual representation.
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
@@ -483,6 +516,16 @@ extension IPv6Address: LosslessStringConvertible {
     /// inlining boundary and allow the compiler to decide what to do.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
+        self.init(_inlined_textualRepresentation: span)
+    }
+
+    /// Initialize an IPv6 address from a `Span<UInt8>` of its textual representation.
+    /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
+    /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
+    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
+    @inlinable
+    @inline(always)
+    init?(_inlined_textualRepresentation span: Span<UInt8>) {
         /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics here
         /// and write backwards.
         var address = _CompatibilityUInt128Typealias.zero

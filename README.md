@@ -64,8 +64,9 @@ You can either initialize each type using a `String`, or initialize the exact un
 Here are some examples:
 
 > [!NOTE]
-> `IPv4Address`, `IPv6Address` and `Port` are `ExpressibleByStringLiteral`, and that path is **free**.
-> It acts like a macro and is folded to a constant at compile time:
+> `IPv4Address`, `IPv6Address` and `Port` are `ExpressibleByStringLiteral` and `ExpressibleByIntegerLiteral`.
+> **Both** of those initializers are free. `ExpressibleByIntegerLiteral` feeds the raw value, and
+> `ExpressibleByStringLiteral` initializers act like macros and are folded to a constant at compile time:
 > `let ip: IPv6Address = "2001:db8:85a3::100"`, `let ip: IPv4Address = "192.168.1.1"`, `let port: Port = "443"`.
 
 ```swift

@@ -94,6 +94,8 @@ extension Port: ExpressibleByStringLiteral {
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
     /// For example `"8080"` will parse into `Port(8080)`.
     ///
+    /// This initializer will **crash** when given an invalid string literal value.
+    ///
     /// **This initializer is free: It's unrolled to a constant at compile time.**
     /// That is, as long as the string literal is passed directly to the init like so: `let port: Port = "443"`.
     /// **Passing a dynamic `StaticString` (`let str: StaticString = "443"; Port(stringLiteral: str)`) to this init is a bad idea.**
@@ -107,7 +109,21 @@ extension Port: ExpressibleByStringLiteral {
                 Port(_inlined_textualRepresentation: unsafe $0.span)
             })
         else {
-            fatalError("StaticString passed to Port initializer was invalid")
+            fatalError(
+                """
+                An invalid StaticString passed to a Port initializer:
+                Example:
+                let ip: Port = "99999"
+                ❌ Will CRASH due to invalid Port string literal value.
+
+                Use `Port(String(str))` instead to validate the string literal if needed:
+                let port: Port? = Port(String("99999"))
+                ✅ Will return nil on invalid string literal values.
+
+                Note that all initializers that take a `String` or `Substring` and return optional values are safe.
+                These initializers that take a string-literal `StaticString` assume correct input and crash on invalid values.
+                """
+            )
         }
         self = result
     }
@@ -115,6 +131,8 @@ extension Port: ExpressibleByStringLiteral {
     /// Initialize a `Port` from its textual representation.
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
     /// For example `"8080"` will parse into `Port(8080)`.
+    ///
+    /// This initializer will **crash** when given an invalid string literal value.
     ///
     /// **This initializer is free: It's unrolled to a constant at compile time.**
     /// That is, as long as the string literal is passed directly to the init like so: `let port: Port = "443"`.

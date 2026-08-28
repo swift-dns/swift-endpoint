@@ -138,6 +138,8 @@ extension IPv4Address: ExpressibleByStringLiteral {
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
     ///
+    /// This initializer will **crash** when given an invalid string literal value.
+    ///
     /// **This initializer is free: It's unrolled to a constant at compile time.**
     /// That is, as long as the string literal is passed directly to the init like so: `let ip: IPv4Address = "192.168.1.1"`.
     /// **Passing a dynamic `StaticString` (`let str: StaticString = "192.168.1.1"; IPv4Address(stringLiteral: str)`) to this init is a bad idea.**
@@ -151,7 +153,21 @@ extension IPv4Address: ExpressibleByStringLiteral {
                 IPv4Address(_inlined_textualRepresentation: unsafe $0.span, count: $0.count)
             })
         else {
-            fatalError("StaticString passed to IPv4Address initializer was invalid")
+            fatalError(
+                """
+                An invalid StaticString passed to an IPv4Address initializer:
+                Example:
+                let ip: IPv4Address = "500.168.1.98"
+                ❌ Will CRASH due to invalid IPv4Address string literal value.
+
+                Use `IPv4Address(String(str))` instead to validate the string literal if needed:
+                let ip: IPv4Address? = IPv4Address(String("500.168.1.98"))
+                ✅ Will return nil on invalid string literal values.
+
+                Note that all initializers that take a `String` or `Substring` and return optional values are safe.
+                These initializers that take a string-literal `StaticString` assume correct input and crash on invalid values.
+                """
+            )
         }
         self = result
     }
@@ -159,6 +175,8 @@ extension IPv4Address: ExpressibleByStringLiteral {
     /// Initialize an IPv4 address from its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    ///
+    /// This initializer will **crash** when given an invalid string literal value.
     ///
     /// **This initializer is free: It's unrolled to a constant at compile time.**
     /// That is, as long as the string literal is passed directly to the init like so: `let ip: IPv4Address = "192.168.1.1"`.

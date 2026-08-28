@@ -442,6 +442,8 @@ extension IPv6Address: ExpressibleByStringLiteral {
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
     ///
+    /// This initializer will **crash** when given an invalid string literal value.
+    ///
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     /// Parses all IPv4-embedded address forms where the embedded IPv4 is in the last 32 bits.
     /// This includes blocks that are not used for embedded IPv4 addresses in practice or are deprecated.
@@ -458,7 +460,21 @@ extension IPv6Address: ExpressibleByStringLiteral {
             unsafe cswift_endpoint_slow_static_parse_ipv6($0.baseAddress, $0.count)
         }
         guard result.ok else {
-            fatalError("StaticString passed to IPv6Address initializer was invalid")
+            fatalError(
+                """
+                An invalid StaticString passed to an IPv6Address initializer:
+                Example:
+                let ip: IPv6Address = "2001:db8:85a3::1999999900"
+                ❌ Will CRASH due to invalid IPv6Address string literal value.
+
+                Use `IPv6Address(String(str))` instead to validate the string literal if needed:
+                let ip: IPv6Address? = IPv6Address(String("2001:db8:85a3::1999999900"))
+                ✅ Will return nil on invalid string literal values.
+
+                Note that all initializers that take a `String` or `Substring` and return optional values are safe.
+                These initializers that take a string-literal `StaticString` assume correct input and crash on invalid values.
+                """
+            )
         }
         self.init(
             _CompatibilityUInt128Typealias(
@@ -471,6 +487,8 @@ extension IPv6Address: ExpressibleByStringLiteral {
     /// Initialize an IPv6 address from its textual representation.
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
+    ///
+    /// This initializer will **crash** when given an invalid string literal value.
     ///
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     /// Parses all IPv4-embedded address forms where the embedded IPv4 is in the last 32 bits.

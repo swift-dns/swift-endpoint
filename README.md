@@ -189,7 +189,7 @@ These were performed on a dedicated-cpu-core AMD EPYC-Milan VM from Hetzner, on 
 | ------- | ----------- | ------------- | ------------ | ------- |
 | IPv4    | Serializing | 5.0           | 115.0        | 23.00x  |
 | IPv4    | Parsing     | 16.9          | 26.8         | 1.59x   |
-| IPv6    | Serializing | 37.8          | 164.0        | 4.34x   |
+| IPv6    | Serializing | 37.0          | 164.0        | 4.43x   |
 | IPv6    | Parsing     | 34.5          | 48.0         | 1.39x   |
 
 ### Ports

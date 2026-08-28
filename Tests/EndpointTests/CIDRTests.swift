@@ -222,23 +222,25 @@ struct CIDRTests {
 
         let v6 = try #require(
             CIDR(
-                prefix: IPv6Address("2001:DB8::")!,
-                mask: IPv6Address("FFFF::")!
+                prefix: IPv6Address("2001:DB8::" as String)!,
+                mask: IPv6Address("FFFF::" as String)!
             )
         )
         #expect(v6.prefixLength == 16)
-        #expect(v6.mask == IPv6Address("FFFF::")!)
+        #expect(v6.mask == IPv6Address("FFFF::" as String)!)
         #expect(
             CIDR(
-                prefix: IPv6Address("2001:DB8::")!,
-                mask: IPv6Address("FFFF::FFFF")!
+                prefix: IPv6Address("2001:DB8::" as String)!,
+                mask: IPv6Address("FFFF::FFFF" as String)!
             ) == nil
         )
     }
 
     @available(SwiftStdlib 6.2, *)
     @Test func `CIDR containment check rejects the other IP version`() {
-        #expect(!CIDR<IPv4Address>.loopback.contains(AnyIPAddress.v6(IPv6Address("::1")!)))
+        #expect(
+            !CIDR<IPv4Address>.loopback.contains(AnyIPAddress.v6(IPv6Address("::1" as String)!))
+        )
         #expect(!CIDR<IPv6Address>.loopback.contains(AnyIPAddress.v4(IPv4Address(127, 0, 0, 1))))
     }
 
@@ -398,7 +400,7 @@ struct CIDRTests {
                 expectedDescription: "2001:db8:85a3::100/24"
             ),
             (
-                cidr: CIDR(prefix: IPv6Address("FF00::")!, prefixLength: 8),
+                cidr: CIDR(prefix: IPv6Address("FF00::" as String)!, prefixLength: 8),
                 expectedDescription: "ff00::/8"
             ),
             (
@@ -429,11 +431,11 @@ struct CIDRTests {
     static let ipv6ParseTestCases: [(text: String, expectedCIDR: CIDR<IPv6Address>?)] = [
         (
             text: "FF::/24",
-            expectedCIDR: CIDR(prefix: IPv6Address("FF::")!, prefixLength: 24)
+            expectedCIDR: CIDR(prefix: IPv6Address("FF::" as String)!, prefixLength: 24)
         ),
         (
             text: "12::/111",
-            expectedCIDR: CIDR(prefix: IPv6Address("12::")!, prefixLength: 111)
+            expectedCIDR: CIDR(prefix: IPv6Address("12::" as String)!, prefixLength: 111)
         ),
         (
             text: "[1234:5678::]/188",
@@ -441,38 +443,41 @@ struct CIDRTests {
         ),
         (
             text: "::1234/0",
-            expectedCIDR: CIDR(prefix: IPv6Address("::1234")!, prefixLength: 0)
+            expectedCIDR: CIDR(prefix: IPv6Address("::1234" as String)!, prefixLength: 0)
         ),
         (
             text: "[::]/8",
-            expectedCIDR: CIDR(prefix: IPv6Address("::")!, prefixLength: 8)
+            expectedCIDR: CIDR(prefix: IPv6Address("::" as String)!, prefixLength: 8)
         ),
         (
             text: "[FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF]/32",
             expectedCIDR: CIDR(
-                prefix: IPv6Address("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF")!,
+                prefix: IPv6Address("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF" as String)!,
                 prefixLength: 32
             )
         ),
         (
             text: "[1:2:33:Ff:AAaa::]",
-            expectedCIDR: CIDR(prefix: IPv6Address("1:2:33:ff:aaaa::")!, prefixLength: 128)
+            expectedCIDR: CIDR(
+                prefix: IPv6Address("1:2:33:ff:aaaa::" as String)!,
+                prefixLength: 128
+            )
         ),
         (
             text: "[::]/0",
-            expectedCIDR: CIDR(prefix: IPv6Address("::")!, prefixLength: 0)
+            expectedCIDR: CIDR(prefix: IPv6Address("::" as String)!, prefixLength: 0)
         ),
         (
             text: "[2001:db8::]/064",
-            expectedCIDR: CIDR(prefix: IPv6Address("2001:db8::")!, prefixLength: 64)
+            expectedCIDR: CIDR(prefix: IPv6Address("2001:db8::" as String)!, prefixLength: 64)
         ),
         (
             text: "[::]/000",
-            expectedCIDR: CIDR(prefix: IPv6Address("::")!, prefixLength: 0)
+            expectedCIDR: CIDR(prefix: IPv6Address("::" as String)!, prefixLength: 0)
         ),
         (
             text: "[0000:0db8::]/0",
-            expectedCIDR: CIDR(prefix: IPv6Address("0:db8::")!, prefixLength: 0)
+            expectedCIDR: CIDR(prefix: IPv6Address("0:db8::" as String)!, prefixLength: 0)
         ),
         (text: "[::]/-1", expectedCIDR: nil),
         (text: "/", expectedCIDR: nil),
@@ -502,34 +507,34 @@ struct CIDRTests {
         arguments: [(cidr: CIDR<IPv6Address>, containsIP: IPv6Address, result: Bool)]([
             (
                 /// `FF::` is equivalent to `00FF::`
-                cidr: CIDR(prefix: IPv6Address("FF::")!, prefixLength: 8),
-                containsIP: IPv6Address("FF00::")!,
+                cidr: CIDR(prefix: IPv6Address("FF::" as String)!, prefixLength: 8),
+                containsIP: IPv6Address("FF00::" as String)!,
                 result: false
             ),
             (
                 /// `FF::` is equivalent to `00FF::`
-                cidr: CIDR(prefix: IPv6Address("FF::")!, prefixLength: 16),
-                containsIP: IPv6Address("FF::")!,
+                cidr: CIDR(prefix: IPv6Address("FF::" as String)!, prefixLength: 16),
+                containsIP: IPv6Address("FF::" as String)!,
                 result: true
             ),
             (
-                cidr: CIDR(prefix: IPv6Address("FF00::")!, prefixLength: 8),
-                containsIP: IPv6Address("FF92::")!,
+                cidr: CIDR(prefix: IPv6Address("FF00::" as String)!, prefixLength: 8),
+                containsIP: IPv6Address("FF92::" as String)!,
                 result: true
             ),
             (
-                cidr: CIDR(prefix: IPv6Address("FF00::")!, prefixLength: 8),
-                containsIP: IPv6Address("FFEE:9328:3212:0:1::")!,
+                cidr: CIDR(prefix: IPv6Address("FF00::" as String)!, prefixLength: 8),
+                containsIP: IPv6Address("FFEE:9328:3212:0:1::" as String)!,
                 result: true
             ),
             (
-                cidr: CIDR(prefix: IPv6Address("FF00::")!, prefixLength: 8),
-                containsIP: IPv6Address("FF00:9328:3212:0:1::")!,
+                cidr: CIDR(prefix: IPv6Address("FF00::" as String)!, prefixLength: 8),
+                containsIP: IPv6Address("FF00:9328:3212:0:1::" as String)!,
                 result: true
             ),
             (
-                cidr: CIDR(prefix: IPv6Address("FF00::")!, prefixLength: 8),
-                containsIP: IPv6Address("EEFF:9328:3212:0:1::")!,
+                cidr: CIDR(prefix: IPv6Address("FF00::" as String)!, prefixLength: 8),
+                containsIP: IPv6Address("EEFF:9328:3212:0:1::" as String)!,
                 result: false
             ),
         ])

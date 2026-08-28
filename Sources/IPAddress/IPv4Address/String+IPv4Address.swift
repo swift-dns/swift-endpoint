@@ -35,23 +35,23 @@ extension IPv4Address: CustomStringConvertible {
     package func writeTextualRepresentation_Requiring2HeadroomBytes(
         into buffer: UnsafeMutableRawBufferPointer
     ) -> Int {
-        var resultIdx = 0
-
-        let byte = UInt8(truncatingIfNeeded: self.address &>> 24)
-        /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
-        unsafe byte.asDecimal_RequiringMinimumCapacityOf3(buffer: buffer, advancingIdx: &resultIdx)
+        /// These are safe; We've already reserved max capacity needed for the longest possible
+        /// IPv4 address, and only the last segment needs the 2 headroom bytes.
+        let (paddedBytes, count) = UInt8(truncatingIfNeeded: self.address &>> 24).asDecimal()
+        /// The first segment has no leading `.`, so it writes the digits a byte lower.
+        unsafe buffer.storeBytes(of: paddedBytes &>> 8, toByteOffset: 0, as: UInt32.self)
+        var resultIdx = count
 
         for idx in 1..<4 {
-            unsafe buffer[resultIdx] = .asciiDot
-            resultIdx += 1
-
             let shift = 24 - idx * 8
             let byte = UInt8(truncatingIfNeeded: self.address &>> shift)
-            /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
-            unsafe byte.asDecimal_RequiringMinimumCapacityOf3(
-                buffer: buffer,
-                advancingIdx: &resultIdx
+            let (paddedBytes, count) = byte.asDecimal()
+            unsafe buffer.storeBytes(
+                of: paddedBytes | UInt32(UInt8.asciiDot),
+                toByteOffset: resultIdx,
+                as: UInt32.self
             )
+            resultIdx += count + 1
         }
 
         return resultIdx
@@ -126,8 +126,75 @@ extension IPv4Address {
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
     @inlinable
+    @inline(always)
     public init?(textualRepresentation utf8Span: UTF8Span) {
         self.init(textualRepresentation: utf8Span.span)
+    }
+}
+
+@available(SwiftStdlib 5.1, *)
+extension IPv4Address: ExpressibleByStringLiteral {
+    /// Initialize an IPv4 address from its textual representation.
+    /// That is, 4 decimal UInt8s separated by `.`.
+    /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    ///
+    /// This initializer will **crash** when given an invalid string literal value.
+    ///
+    /// **This initializer is free: It's unrolled to a constant at compile time.**
+    /// That is, as long as the string literal is passed directly to the init like so: `let ip: IPv4Address = "192.168.1.1"`.
+    /// **Passing a dynamic `StaticString` (`let str: StaticString = "192.168.1.1"; IPv4Address(stringLiteral: str)`) to this init is a bad idea.**
+    /// In that case, use `IPv4Address(String(str))` instead.
+    /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
+    @inlinable
+    @inline(always)
+    public init(stringLiteral value: StaticString) {
+        guard
+            let result = value.withUTF8Buffer({
+                IPv4Address(_inlined_textualRepresentation: unsafe $0.span, count: $0.count)
+            })
+        else {
+            fatalError(
+                """
+                An invalid StaticString passed to an IPv4Address initializer:
+                Example:
+                let ip: IPv4Address = "500.168.1.98"
+                ❌ Will CRASH due to invalid IPv4Address string literal value.
+
+                Use `IPv4Address(String(str))` instead to validate the string literal if needed:
+                let ip: IPv4Address? = IPv4Address(String("500.168.1.98"))
+                ✅ Will return nil on invalid string literal values.
+
+                Note that all initializers that take a `String` or `Substring` and return optional values are safe.
+                These initializers that take a string-literal `StaticString` assume correct input and crash on invalid values.
+                """
+            )
+        }
+        self = result
+    }
+
+    /// Initialize an IPv4 address from its textual representation.
+    /// That is, 4 decimal UInt8s separated by `.`.
+    /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    ///
+    /// This initializer will **crash** when given an invalid string literal value.
+    ///
+    /// **This initializer is free: It's unrolled to a constant at compile time.**
+    /// That is, as long as the string literal is passed directly to the init like so: `let ip: IPv4Address = "192.168.1.1"`.
+    /// **Passing a dynamic `StaticString` (`let str: StaticString = "192.168.1.1"; IPv4Address(stringLiteral: str)`) to this init is a bad idea.**
+    /// In that case, use `IPv4Address(String(str))` instead.
+    /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
+    @inlinable
+    @inline(always)
+    @_disfavoredOverload
+    @available(
+        *,
+        deprecated,
+        message: """
+            For literal strings, use `IPv4Address(stringLiteral:)` or `let ip: IPv4Address = "192.168.1.1"` instead
+            """
+    )
+    public init(_ value: StaticString) {
+        self.init(stringLiteral: value)
     }
 }
 
@@ -136,6 +203,8 @@ extension IPv4Address: LosslessStringConvertible {
     /// Initialize an IPv4 address from its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    @inlinable
+    @inline(always)
     public init?(_ description: String) {
         guard
             let result = description.withSpan_Compatibility({
@@ -150,6 +219,8 @@ extension IPv4Address: LosslessStringConvertible {
     /// Initialize an IPv4 address from its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    @inlinable
+    @inline(always)
     public init?(_ description: Substring) {
         guard
             let result = description.withSpan_Compatibility({
@@ -164,11 +235,35 @@ extension IPv4Address: LosslessStringConvertible {
     /// Initialize an IPv4 address from a `Span<UInt8>` of its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    ///
+    /// This init unlike the other ones above is intentionally not `@inline(always)` to act as the
+    /// inlining boundary and allow the compiler to decide what to do.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
+        self.init(_inlined_textualRepresentation: span)
+    }
+
+    /// Initialize an IPv4 address from a `Span<UInt8>` of its textual representation.
+    /// That is, 4 decimal UInt8s separated by `.`.
+    /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
+    @inlinable
+    @inline(always)
+    init?(_inlined_textualRepresentation span: Span<UInt8>) {
+        self.init(_inlined_textualRepresentation: span, count: span.count)
+    }
+
+    /// Initialize an IPv4 address from a `Span<UInt8>` of its textual representation, with the
+    /// count of the span passed in explicitly.
+    ///
+    /// `StaticString` call sites pass the literal's length directly so no `Span.count` access
+    /// remains on the path that is expected to be folded at compile time.
+    @inlinable
+    @inline(always)
+    init?(_inlined_textualRepresentation span: Span<UInt8>, count: Int) {
         var address: UInt32 = 0
         let success = IPv4Address.parseIPv4(
             span: span,
+            count: count,
             address: &address
         )
 
@@ -185,8 +280,20 @@ extension IPv4Address: LosslessStringConvertible {
         span: Span<UInt8>,
         address: inout UInt32
     ) -> Bool {
-        let count = span.count
+        IPv4Address.parseIPv4(
+            span: span,
+            count: span.count,
+            address: &address
+        )
+    }
 
+    @inlinable
+    @inline(always)
+    static func parseIPv4(
+        span: Span<UInt8>,
+        count: Int,
+        address: inout UInt32
+    ) -> Bool {
         /// The shortest possible IPv4 address is "0.0.0.0" with 7 bytes, and the longest possible
         /// one is "255.255.255.255" with 15 bytes.
         guard count >= 7, count <= 15 else {
@@ -196,7 +303,7 @@ extension IPv4Address: LosslessStringConvertible {
         var idx = 0
 
         guard
-            let segment1 = IPv4Address._parseSegment(from: span, advancing: &idx),
+            let segment1 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
             idx < count,
             span[idx] == .asciiDot
         else {
@@ -205,7 +312,7 @@ extension IPv4Address: LosslessStringConvertible {
         idx += 1
 
         guard
-            let segment2 = IPv4Address._parseSegment(from: span, advancing: &idx),
+            let segment2 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
             idx < count,
             span[idx] == .asciiDot
         else {
@@ -214,7 +321,7 @@ extension IPv4Address: LosslessStringConvertible {
         idx += 1
 
         guard
-            let segment3 = IPv4Address._parseSegment(from: span, advancing: &idx),
+            let segment3 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
             idx < count,
             span[idx] == .asciiDot
         else {
@@ -223,7 +330,7 @@ extension IPv4Address: LosslessStringConvertible {
         idx += 1
 
         guard
-            let segment4 = IPv4Address._parseSegment(from: span, advancing: &idx),
+            let segment4 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
             idx == count
         else {
             return false
@@ -238,9 +345,9 @@ extension IPv4Address: LosslessStringConvertible {
     @inline(always)
     static func _parseSegment(
         from span: Span<UInt8>,
+        count: Int,
         advancing idx: inout Int
     ) -> UInt32? {
-        let count = span.count
         guard idx < count,
             let digit1 = UInt8.mapUTF8ByteToUInt8(span[idx])
         else {

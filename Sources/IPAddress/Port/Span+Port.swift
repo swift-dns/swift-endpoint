@@ -1,6 +1,7 @@
 @available(SwiftStdlib 5.1, *)
 extension Port {
     /// Initialize a `Port` by parsing the 2 bytes representing it, in network byte order.
+    @inlinable
     public init?(parsing span: Span<UInt8>) {
         guard span.count >= 2 else {
             return nil
@@ -14,6 +15,7 @@ extension Port {
 
     /// Serialize the port into the provided span, in network byte order.
     /// Returns true if the port was serialized successfully, false otherwise.
+    @inlinable
     public func serialize(into span: inout OutputSpan<UInt8>) -> Bool {
         guard span.freeCapacity >= 2 else {
             return false

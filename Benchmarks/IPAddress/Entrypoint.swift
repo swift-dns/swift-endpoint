@@ -15,7 +15,8 @@ let benchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<1_000 {
-            let ip = unsafe IPv6Address("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF").unsafelyUnwrapped
+            let ip = unsafe IPv6Address("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF" as String)
+                .unsafelyUnwrapped
             let description = ip.description
             blackHole(ip)
             blackHole(description)
@@ -29,4 +30,7 @@ let benchmarks: @Sendable () -> Void = {
 
     ipv6AddressFromStringBenchmarks()
     ipv6AddressToStringBenchmarks()
+
+    portFromStringBenchmarks()
+    portToStringBenchmarks()
 }

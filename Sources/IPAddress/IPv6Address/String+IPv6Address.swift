@@ -374,6 +374,7 @@ extension IPv6Address {
     }
 
     @inlinable
+    @inline(always)
     func _writeSegmentAsLowercasedHexASCII_RequiringMinimumCapacityOf4(
         into buffer: UnsafeMutableRawBufferPointer,
         advancingIdx idx: inout Int,
@@ -429,8 +430,87 @@ extension IPv6Address {
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     @inlinable
+    @inline(always)
     public init?(textualRepresentation utf8Span: UTF8Span) {
         self.init(textualRepresentation: utf8Span.span)
+    }
+}
+
+@available(SwiftStdlib 5.1, *)
+extension IPv6Address: ExpressibleByStringLiteral {
+    /// Initialize an IPv6 address from its textual representation.
+    /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
+    /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
+    ///
+    /// This initializer will **crash** when given an invalid string literal value.
+    ///
+    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
+    /// Parses all IPv4-embedded address forms where the embedded IPv4 is in the last 32 bits.
+    /// This includes blocks that are not used for embedded IPv4 addresses in practice or are deprecated.
+    ///
+    /// **This initializer is free: It's unrolled to a constant at compile time.**
+    /// That is, as long as the string literal is passed directly to the init like so: `let ip: IPv6Address = "2001:db8:85a3::100"`.
+    /// **Passing a dynamic `StaticString` (`let str: StaticString = "2001:db8:85a3::100"; IPv6Address(stringLiteral: str)`) to this init is a bad idea.**
+    /// In that case, use `IPv6Address(String(str))` instead.
+    /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
+    @inlinable
+    @inline(always)
+    public init(stringLiteral value: StaticString) {
+        let result = value.withUTF8Buffer {
+            unsafe cswift_endpoint_slow_static_parse_ipv6($0.baseAddress, $0.count)
+        }
+        guard result.ok else {
+            fatalError(
+                """
+                An invalid StaticString passed to an IPv6Address initializer:
+                Example:
+                let ip: IPv6Address = "2001:db8:85a3::1999999900"
+                ❌ Will CRASH due to invalid IPv6Address string literal value.
+
+                Use `IPv6Address(String(str))` instead to validate the string literal if needed:
+                let ip: IPv6Address? = IPv6Address(String("2001:db8:85a3::1999999900"))
+                ✅ Will return nil on invalid string literal values.
+
+                Note that all initializers that take a `String` or `Substring` and return optional values are safe.
+                These initializers that take a string-literal `StaticString` assume correct input and crash on invalid values.
+                """
+            )
+        }
+        self.init(
+            _CompatibilityUInt128Typealias(
+                _low: result.lo,
+                _high: result.hi
+            )
+        )
+    }
+
+    /// Initialize an IPv6 address from its textual representation.
+    /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
+    /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
+    ///
+    /// This initializer will **crash** when given an invalid string literal value.
+    ///
+    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
+    /// Parses all IPv4-embedded address forms where the embedded IPv4 is in the last 32 bits.
+    /// This includes blocks that are not used for embedded IPv4 addresses in practice or are deprecated.
+    ///
+    /// **This initializer is free: It's unrolled to a constant at compile time.**
+    /// That is, as long as the string literal is passed directly to the init like so: `let ip: IPv6Address = "2001:db8:85a3::100"`.
+    /// **Passing a dynamic `StaticString` (`let str: StaticString = "2001:db8:85a3::100"; IPv6Address(stringLiteral: str)`) to this init is a bad idea.**
+    /// In that case, use `IPv6Address(String(str))` instead.
+    /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
+    @inlinable
+    @inline(always)
+    @_disfavoredOverload
+    @available(
+        *,
+        deprecated,
+        message: """
+            For literal strings, use `IPv6Address(stringLiteral:)` or `let ip: IPv6Address = "2001:db8:85a3::100"` instead
+            """
+    )
+    public init(_ value: StaticString) {
+        self.init(stringLiteral: value)
     }
 }
 
@@ -443,6 +523,8 @@ extension IPv6Address: LosslessStringConvertible {
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     /// Parses all IPv4-embedded address forms where the embedded IPv4 is in the last 32 bits.
     /// This includes blocks that are not used for embedded IPv4 addresses in practice or are deprecated.
+    @inlinable
+    @inline(always)
     public init?(_ description: String) {
         guard
             let result = description.withSpan_Compatibility({
@@ -458,6 +540,8 @@ extension IPv6Address: LosslessStringConvertible {
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
+    @inlinable
+    @inline(always)
     public init?(_ description: Substring) {
         guard
             let result = description.withSpan_Compatibility({
@@ -473,8 +557,21 @@ extension IPv6Address: LosslessStringConvertible {
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
+    ///
+    /// This init unlike the other ones above is intentionally not `@inline(always)` to act as the
+    /// inlining boundary and allow the compiler to decide what to do.
     @inlinable
     public init?(textualRepresentation span: Span<UInt8>) {
+        self.init(_inlined_textualRepresentation: span)
+    }
+
+    /// Initialize an IPv6 address from a `Span<UInt8>` of its textual representation.
+    /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
+    /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
+    /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
+    @inlinable
+    @inline(always)
+    init?(_inlined_textualRepresentation span: Span<UInt8>) {
         /// Swift stores integers in little-endian, so we need to do a little bit of gymnastics here
         /// and write backwards.
         var address = _CompatibilityUInt128Typealias.zero

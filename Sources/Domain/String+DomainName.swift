@@ -42,6 +42,7 @@ extension DomainName {
             Self(rawValue: 1 << 0)
         }
 
+        @inlinable
         public init(rawValue: Int) {
             self.rawValue = rawValue
         }
@@ -52,38 +53,41 @@ extension DomainName {
         format: DescriptionFormat,
         options: DescriptionOptions = []
     ) -> String {
-        /// The needed capacity without the root label indicator
-        let neededCapacity = self.encodedLength - 1
+        let wireLength = self._data.readableBytes
+        let neededCapacity = wireLength > 0 ? wireLength &- 1 : 0
         var domainName = unsafe String(
             unsafeUninitializedCapacity_Compatibility: neededCapacity
         ) { stringBuffer in
-            var bufferIdx = 0
+            if neededCapacity == 0 {
+                return 0
+            }
+
+            assert(stringBuffer.count > 0)
+            assert(self._data.readableBytes > 0)
+            assert(neededCapacity > 0)
 
             unsafe self._data.withUnsafeReadableBytes { domainNamePtr in
-                var iterator = self.makePositionIterator()
-                if let range = iterator.next()?.range {
-                    /// These are all ASCII bytes so safe to map directly
-                    for idx in range {
-                        unsafe stringBuffer[bufferIdx] = unsafe domainNamePtr[idx]
-                        /// Can't possibly overflow since it can't be greater than the buffer size
-                        bufferIdx &+= 1
-                    }
-                }
+                /// These are safe based on above assertions
+                let stringBufferBase = unsafe stringBuffer.baseAddress.unsafelyUnwrapped
+                let domainNamePtrBase = unsafe domainNamePtr.baseAddress.unsafelyUnwrapped
 
-                while let range = iterator.next()?.range {
-                    unsafe stringBuffer[bufferIdx] = .asciiDot
-                    /// Can't possibly overflow since it can't be greater than the buffer size
-                    bufferIdx &+= 1
-                    /// These are all ASCII bytes so safe to map directly
-                    for idx in range {
-                        unsafe stringBuffer[bufferIdx] = unsafe domainNamePtr[idx]
-                        /// Can't possibly overflow since it can't be greater than the buffer size
-                        bufferIdx &+= 1
-                    }
+                let rawStringBuffer = UnsafeMutableRawPointer(stringBufferBase)
+                /// These are all ASCII bytes so safe to map directly
+                unsafe rawStringBuffer.copyMemory(
+                    from: domainNamePtrBase.advanced(by: 1),
+                    byteCount: neededCapacity
+                )
+
+                /// Skip the first label's length byte, which is not part of the description.
+                /// Replace all other length bytes with dots.
+                var wireIdx = 1 &+ Int(unsafe domainNamePtr[0])
+                while wireIdx < wireLength {
+                    unsafe stringBuffer[wireIdx &- 1] = .asciiDot
+                    wireIdx &+= 1 &+ Int(unsafe domainNamePtr[wireIdx])
                 }
             }
 
-            return bufferIdx
+            return neededCapacity
         }
 
         if format == .unicode {
@@ -129,6 +133,8 @@ extension DomainName {
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName("mahdibm.com")
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
+    @inlinable
+    @inline(always)
     public init(
         _ description: String,
         idnaConfiguration: IDNA.Configuration = .default
@@ -144,6 +150,8 @@ extension DomainName {
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName("mahdibm.com")
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
+    @inlinable
+    @inline(always)
     public init(
         _ description: Substring,
         idnaConfiguration: IDNA.Configuration = .default
@@ -163,6 +171,7 @@ extension DomainName {
     /// Example: try DomainName(textualRepresentation: "mahdibm.com".utf8Span)
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
     @inlinable
+    @inline(always)
     public init(
         textualRepresentation span: UTF8Span,
         idnaConfiguration: IDNA.Configuration = .default

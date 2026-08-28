@@ -146,6 +146,7 @@ extension UnsignedInteger128 {
         )
     }
 
+    @inlinable
     public func multipliedFullWidth(by rhs: Self) -> (high: Self, low: Self) {
         /// We return (high: Self, low: Self). Let's name them like so:
         /// `high == (_high: H0, _low: L0)`
@@ -230,6 +231,7 @@ extension UnsignedInteger128 {
         return (remainder, false)
     }
 
+    @inlinable
     public init(bigEndian value: Self) {
         #if _endian(big)
         self = value
@@ -238,6 +240,7 @@ extension UnsignedInteger128 {
         #endif
     }
 
+    @inlinable
     public init(littleEndian value: Self) {
         #if _endian(little)
         self = value
@@ -246,6 +249,7 @@ extension UnsignedInteger128 {
         #endif
     }
 
+    @inlinable
     public var littleEndian: Self {
         #if _endian(little)
         return self
@@ -254,6 +258,7 @@ extension UnsignedInteger128 {
         #endif
     }
 
+    @inlinable
     public var bigEndian: Self {
         #if _endian(big)
         return self

@@ -385,6 +385,37 @@ struct IPv4AddressTests {
         let span = bytes.span
         #expect(IPv4Address(textualRepresentation: span) == nil)
     }
+
+    @available(SwiftStdlib 5.1, *)
+    @Test func `IPv4Address parses StaticString exactly like String`() {
+        #expect(("0.0.0.0" as IPv4Address) == IPv4Address("0.0.0.0" as String))
+        #expect(("127.0.0.1" as IPv4Address) == IPv4Address("127.0.0.1" as String))
+        #expect(
+            ("192.168.1.98" as IPv4Address) == IPv4Address("192.168.1.98" as String)
+        )
+        #expect(
+            ("255.255.255.255" as IPv4Address)
+                == IPv4Address("255.255.255.255" as String)
+        )
+        #expect(
+            ("010.010.010.010" as IPv4Address)
+                == IPv4Address("010.010.010.010" as String)
+        )
+
+        #expect(("192.168.1.98" as IPv4Address) == IPv4Address(192, 168, 1, 98))
+        #expect(("255.255.255.255" as IPv4Address) == IPv4Address(255, 255, 255, 255))
+    }
+
+    /// A bare string literal must reach the `ExpressibleByStringLiteral` init, not the `String` one.
+    @available(SwiftStdlib 5.1, *)
+    @Test func `IPv4Address parses string literals`() {
+        let zeros: IPv4Address = "0.0.0.0"
+        #expect(zeros == IPv4Address(0, 0, 0, 0))
+
+        let privateIP: IPv4Address = "192.168.1.98"
+        #expect(privateIP == IPv4Address(192, 168, 1, 98))
+    }
+
 }
 
 @available(SwiftStdlib 5.1, *)
@@ -412,3 +443,21 @@ private func testTextualRepresentationLengths(
     let produced = unsafe String(decoding: buffer[0..<written], as: UTF8.self)
     #expect(produced == description, sourceLocation: sourceLocation)
 }
+
+#if os(macOS) || os(Linux)
+extension IPv4AddressTests {
+    /// Kept to three literals: each one is unrolled and constant-folded at compile time.
+    @available(SwiftStdlib 5.1, *)
+    @Test func `IPv4Address initializer crashes on an invalid StaticString`() async {
+        await #expect(processExitsWith: .failure) {
+            blackHole("" as IPv4Address)
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole("1.2.3" as IPv4Address)
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole("192.168.1.256" as IPv4Address)
+        }
+    }
+}
+#endif

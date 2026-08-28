@@ -199,6 +199,7 @@ public struct IPv6Address: Sendable, Hashable {
     /// For example `IPv6Address(0x0102_0304_0506_0708_090A_0B0C_0D0E_0F10)` will
     /// result in an IP address equal to `0102:0304:0506:0708:090A:0B0C:0D0E:0F10`.
     /// Or `IPv6Address(0x0102)` will result in an IP address equal to `::0102`.
+    @inlinable
     public init(_ address: UnsignedInteger128) {
         self.address = address
     }
@@ -209,6 +210,7 @@ public struct IPv6Address: Sendable, Hashable {
     /// Or `IPv6Address(0x0102)` will result in an IP address equal to `::0102`.
     @available(SwiftStdlib 6.0, *)
     @_disfavoredOverload
+    @inlinable
     public init(_ address: UInt128) {
         self.address = UnsignedInteger128(address)
     }
@@ -291,6 +293,7 @@ extension IPv6Address: ExpressibleByIntegerLiteral {
     /// For example `IPv6Address(0x0102_0304_0506_0708_090A_0B0C_0D0E_0F10)` will
     /// result in an IP address equal to `0102:0304:0506:0708:090A:0B0C:0D0E:0F10`.
     /// Or `IPv6Address(0x0102)` will result in an IP address equal to `::0102`.
+    @inlinable
     public init(integerLiteral value: UInt128) {
         self.address = UnsignedInteger128(value)
     }

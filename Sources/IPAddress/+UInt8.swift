@@ -100,29 +100,27 @@ extension UInt8 {
 }
 
 extension UInt8 {
+    /// Calculates the ascii representation of this byte.
+    ///
+    /// Returns `paddedBytes` as a `UInt32`. The least significant byte is always irrelevant.
+    /// The previous 3 bytes might or might not be 0.
+    ///
+    /// Returns `count` as an `Int`. The count is the number of digits in the ascii representation.
+    /// For example for 249, `paddedBytes` will be `0x3934_3200`, which is the bytes
+    /// `0`, `'2'`, `'4'`, `'9'`, and `count` will be `3`.
+    ///
+    /// Given enough buffer capacity, this function can be used like so:
+    /// ```
+    /// let (paddedBytes, count) = uint8Value.asDecimal()
+    /// buffer.storeBytes(of: paddedBytes &>> 8, toByteOffset: writerIndex, as: UInt32.self)
+    /// writerIndex += count
+    /// ```
     @inlinable
     @inline(always)
-    package func asDecimal_RequiringMinimumCapacityOf3(
-        buffer: UnsafeMutableRawBufferPointer,
-        advancingIdx idx: inout Int
-    ) {
-        assert(buffer.count >= idx + 3)
-
+    package func asDecimal() -> (paddedBytes: UInt32, count: Int) {
         let entry = cswift_endpoint_decimal_digits(self)
-
-        /// Always write all 3 digits, but only advance past the significant ones.
-        /// The insignificant ones are overwritten by whatever is written next.
-        unsafe buffer.storeBytes(
-            of: UInt16(truncatingIfNeeded: entry),
-            toByteOffset: idx,
-            as: UInt16.self
-        )
-        unsafe buffer.storeBytes(
-            of: UInt8(truncatingIfNeeded: entry &>> 16),
-            toByteOffset: idx + 2,
-            as: UInt8.self
-        )
-
-        idx += Int(entry &>> 24)
+        let paddedBytes = entry &<< 8
+        let count = Int(entry &>> 24) &- 1
+        return (paddedBytes, count)
     }
 }

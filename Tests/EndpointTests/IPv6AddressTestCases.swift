@@ -1094,197 +1094,237 @@ extension IPv6Address.DescriptionOptions {
 @available(SwiftStdlib 6.0, *)
 extension IPPropertyTestCase where IPAddressType == IPv6Address {
     static let all: [Self] = [
-        IPPropertyTestCase(IPv6Address("::1")!, "isLoopback", \.isLoopback),
-        IPPropertyTestCase(IPv6Address("::1:1")!, "!isLoopback", { @Sendable in !$0.isLoopback }),
-        IPPropertyTestCase(IPv6Address("FF00::")!, "isMulticast", \.isMulticast),
-        IPPropertyTestCase(IPv6Address("FF92::")!, "isMulticast", \.isMulticast),
-        IPPropertyTestCase(IPv6Address("FFFF:998A::1")!, "isMulticast", \.isMulticast),
-        IPPropertyTestCase(IPv6Address("FF::")!, "!isMulticast", { @Sendable in !$0.isMulticast }),
+        IPPropertyTestCase(IPv6Address("::1" as String)!, "isLoopback", \.isLoopback),
         IPPropertyTestCase(
-            IPv6Address("00FF::")!,
+            IPv6Address("::1:1" as String)!,
+            "!isLoopback",
+            { @Sendable in !$0.isLoopback }
+        ),
+        IPPropertyTestCase(IPv6Address("FF00::" as String)!, "isMulticast", \.isMulticast),
+        IPPropertyTestCase(IPv6Address("FF92::" as String)!, "isMulticast", \.isMulticast),
+        IPPropertyTestCase(IPv6Address("FFFF:998A::1" as String)!, "isMulticast", \.isMulticast),
+        IPPropertyTestCase(
+            IPv6Address("FF::" as String)!,
             "!isMulticast",
             { @Sendable in !$0.isMulticast }
         ),
         IPPropertyTestCase(
-            IPv6Address("FAFF::")!,
+            IPv6Address("00FF::" as String)!,
             "!isMulticast",
             { @Sendable in !$0.isMulticast }
         ),
-        IPPropertyTestCase(IPv6Address("FE80::")!, "isLinkLocalUnicast", \.isLinkLocalUnicast),
-        IPPropertyTestCase(IPv6Address("FE90::")!, "isLinkLocalUnicast", \.isLinkLocalUnicast),
-        IPPropertyTestCase(IPv6Address("FEBF::")!, "isLinkLocalUnicast", \.isLinkLocalUnicast),
         IPPropertyTestCase(
-            IPv6Address("FEAA:9876:1928::9")!,
+            IPv6Address("FAFF::" as String)!,
+            "!isMulticast",
+            { @Sendable in !$0.isMulticast }
+        ),
+        IPPropertyTestCase(
+            IPv6Address("FE80::" as String)!,
             "isLinkLocalUnicast",
             \.isLinkLocalUnicast
         ),
         IPPropertyTestCase(
-            IPv6Address("FE70::")!,
+            IPv6Address("FE90::" as String)!,
+            "isLinkLocalUnicast",
+            \.isLinkLocalUnicast
+        ),
+        IPPropertyTestCase(
+            IPv6Address("FEBF::" as String)!,
+            "isLinkLocalUnicast",
+            \.isLinkLocalUnicast
+        ),
+        IPPropertyTestCase(
+            IPv6Address("FEAA:9876:1928::9" as String)!,
+            "isLinkLocalUnicast",
+            \.isLinkLocalUnicast
+        ),
+        IPPropertyTestCase(
+            IPv6Address("FE70::" as String)!,
             "!isLinkLocalUnicast",
             { @Sendable in !$0.isLinkLocalUnicast }
         ),
-        IPPropertyTestCase(IPv6Address("::")!, "isUnspecified", \.isUnspecified),
+        IPPropertyTestCase(IPv6Address("::" as String)!, "isUnspecified", \.isUnspecified),
         IPPropertyTestCase(
-            IPv6Address("::1")!,
+            IPv6Address("::1" as String)!,
             "!isUnspecified",
             { @Sendable in !$0.isUnspecified }
         ),
-        IPPropertyTestCase(IPv6Address("FC00::")!, "isUniqueLocal", \.isUniqueLocal),
-        IPPropertyTestCase(IPv6Address("FD12:3456::1")!, "isUniqueLocal", \.isUniqueLocal),
+        IPPropertyTestCase(IPv6Address("FC00::" as String)!, "isUniqueLocal", \.isUniqueLocal),
         IPPropertyTestCase(
-            IPv6Address("FDFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF")!,
+            IPv6Address("FD12:3456::1" as String)!,
             "isUniqueLocal",
             \.isUniqueLocal
         ),
         IPPropertyTestCase(
-            IPv6Address("FB00::")!,
+            IPv6Address("FDFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF" as String)!,
+            "isUniqueLocal",
+            \.isUniqueLocal
+        ),
+        IPPropertyTestCase(
+            IPv6Address("FB00::" as String)!,
             "!isUniqueLocal",
             { @Sendable in !$0.isUniqueLocal }
         ),
         IPPropertyTestCase(
-            IPv6Address("FE00::")!,
+            IPv6Address("FE00::" as String)!,
             "!isUniqueLocal",
             { @Sendable in !$0.isUniqueLocal }
         ),
-        IPPropertyTestCase(IPv6Address("2001:DB8::")!, "isDocumentation", \.isDocumentation),
-        IPPropertyTestCase(IPv6Address("2001:DB8:1234::1")!, "isDocumentation", \.isDocumentation),
         IPPropertyTestCase(
-            IPv6Address("2001:DB8:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF")!,
+            IPv6Address("2001:DB8::" as String)!,
             "isDocumentation",
             \.isDocumentation
         ),
         IPPropertyTestCase(
-            IPv6Address("2001:DB7::")!,
+            IPv6Address("2001:DB8:1234::1" as String)!,
+            "isDocumentation",
+            \.isDocumentation
+        ),
+        IPPropertyTestCase(
+            IPv6Address("2001:DB8:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF" as String)!,
+            "isDocumentation",
+            \.isDocumentation
+        ),
+        IPPropertyTestCase(
+            IPv6Address("2001:DB7::" as String)!,
             "!isDocumentation",
             { @Sendable in !$0.isDocumentation }
         ),
         IPPropertyTestCase(
-            IPv6Address("2001:DB9::")!,
+            IPv6Address("2001:DB9::" as String)!,
             "!isDocumentation",
             { @Sendable in !$0.isDocumentation }
         ),
-        IPPropertyTestCase(IPv6Address("::FFFF:0:0")!, "isIPv4Mapped", \.isIPv4Mapped),
-        IPPropertyTestCase(IPv6Address("::FFFF:1.2.3.4")!, "isIPv4Mapped", \.isIPv4Mapped),
-        IPPropertyTestCase(IPv6Address("::FFFF:255.255.255.255")!, "isIPv4Mapped", \.isIPv4Mapped),
+        IPPropertyTestCase(IPv6Address("::FFFF:0:0" as String)!, "isIPv4Mapped", \.isIPv4Mapped),
         IPPropertyTestCase(
-            IPv6Address("::FFFE:0:0")!,
+            IPv6Address("::FFFF:1.2.3.4" as String)!,
+            "isIPv4Mapped",
+            \.isIPv4Mapped
+        ),
+        IPPropertyTestCase(
+            IPv6Address("::FFFF:255.255.255.255" as String)!,
+            "isIPv4Mapped",
+            \.isIPv4Mapped
+        ),
+        IPPropertyTestCase(
+            IPv6Address("::FFFE:0:0" as String)!,
             "!isIPv4Mapped",
             { @Sendable in !$0.isIPv4Mapped }
         ),
         IPPropertyTestCase(
-            IPv6Address("::1:FFFF:0:0")!,
+            IPv6Address("::1:FFFF:0:0" as String)!,
             "!isIPv4Mapped",
             { @Sendable in !$0.isIPv4Mapped }
         ),
         IPPropertyTestCase(
-            IPv6Address("::1.2.3.4")!,
+            IPv6Address("::1.2.3.4" as String)!,
             "!isIPv4Mapped",
             { @Sendable in !$0.isIPv4Mapped }
         ),
         IPPropertyTestCase(
-            IPv6Address("64:FF9B::")!,
+            IPv6Address("64:FF9B::" as String)!,
             "!isIPv4Mapped",
             { @Sendable in !$0.isIPv4Mapped }
         ),
         IPPropertyTestCase(
-            IPv6Address("64:FF9B::")!,
+            IPv6Address("64:FF9B::" as String)!,
             "isNAT64WellKnownIPv4Embedded",
             \.isNAT64WellKnownIPv4Embedded
         ),
         IPPropertyTestCase(
-            IPv6Address("64:FF9B::192.0.2.33")!,
+            IPv6Address("64:FF9B::192.0.2.33" as String)!,
             "isNAT64WellKnownIPv4Embedded",
             \.isNAT64WellKnownIPv4Embedded
         ),
         IPPropertyTestCase(
-            IPv6Address("64:FF9B::FFFF:FFFF")!,
+            IPv6Address("64:FF9B::FFFF:FFFF" as String)!,
             "isNAT64WellKnownIPv4Embedded",
             \.isNAT64WellKnownIPv4Embedded
         ),
         IPPropertyTestCase(
-            IPv6Address("64:FF9B:1::")!,
+            IPv6Address("64:FF9B:1::" as String)!,
             "!isNAT64WellKnownIPv4Embedded",
             { @Sendable in !$0.isNAT64WellKnownIPv4Embedded }
         ),
         IPPropertyTestCase(
-            IPv6Address("64:FF9C::")!,
+            IPv6Address("64:FF9C::" as String)!,
             "!isNAT64WellKnownIPv4Embedded",
             { @Sendable in !$0.isNAT64WellKnownIPv4Embedded }
         ),
         IPPropertyTestCase(
-            IPv6Address("65:FF9B::")!,
+            IPv6Address("65:FF9B::" as String)!,
             "!isNAT64WellKnownIPv4Embedded",
             { @Sendable in !$0.isNAT64WellKnownIPv4Embedded }
         ),
         IPPropertyTestCase(
-            IPv6Address("64:FF9B:0:0:0:1::")!,
+            IPv6Address("64:FF9B:0:0:0:1::" as String)!,
             "!isNAT64WellKnownIPv4Embedded",
             { @Sendable in !$0.isNAT64WellKnownIPv4Embedded }
         ),
         IPPropertyTestCase(
-            IPv6Address("::FFFF:0:0")!,
+            IPv6Address("::FFFF:0:0" as String)!,
             "!isNAT64WellKnownIPv4Embedded",
             { @Sendable in !$0.isNAT64WellKnownIPv4Embedded }
         ),
         IPPropertyTestCase(
-            IPv6Address("::FFFF:1.2.3.4")!,
+            IPv6Address("::FFFF:1.2.3.4" as String)!,
             "isWellKnownIPv4Embedded",
             \.isWellKnownIPv4Embedded
         ),
         IPPropertyTestCase(
-            IPv6Address("::FFFF:0:0")!,
+            IPv6Address("::FFFF:0:0" as String)!,
             "isWellKnownIPv4Embedded",
             \.isWellKnownIPv4Embedded
         ),
         IPPropertyTestCase(
-            IPv6Address("64:FF9B::1.2.3.4")!,
+            IPv6Address("64:FF9B::1.2.3.4" as String)!,
             "isWellKnownIPv4Embedded",
             \.isWellKnownIPv4Embedded
         ),
         IPPropertyTestCase(
-            IPv6Address("64:FF9B::")!,
+            IPv6Address("64:FF9B::" as String)!,
             "isWellKnownIPv4Embedded",
             \.isWellKnownIPv4Embedded
         ),
         IPPropertyTestCase(
-            IPv6Address("::1.2.3.4")!,
+            IPv6Address("::1.2.3.4" as String)!,
             "!isWellKnownIPv4Embedded",
             { @Sendable in !$0.isWellKnownIPv4Embedded }
         ),
         IPPropertyTestCase(
-            IPv6Address("::")!,
+            IPv6Address("::" as String)!,
             "!isWellKnownIPv4Embedded",
             { @Sendable in !$0.isWellKnownIPv4Embedded }
         ),
         IPPropertyTestCase(
-            IPv6Address("64:FF9B:1::1.2.3.4")!,
+            IPv6Address("64:FF9B:1::1.2.3.4" as String)!,
             "!isWellKnownIPv4Embedded",
             { @Sendable in !$0.isWellKnownIPv4Embedded }
         ),
         IPPropertyTestCase(
-            IPv6Address("2001:DB8::")!,
+            IPv6Address("2001:DB8::" as String)!,
             "!isWellKnownIPv4Embedded",
             { @Sendable in !$0.isWellKnownIPv4Embedded }
         ),
-        IPPropertyTestCase(IPv6Address("::")!, "isContiguous", \.isContiguous),
-        IPPropertyTestCase(IPv6Address("FFFF::")!, "isContiguous", \.isContiguous),
+        IPPropertyTestCase(IPv6Address("::" as String)!, "isContiguous", \.isContiguous),
+        IPPropertyTestCase(IPv6Address("FFFF::" as String)!, "isContiguous", \.isContiguous),
         IPPropertyTestCase(
-            IPv6Address("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF")!,
+            IPv6Address("FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF" as String)!,
             "isContiguous",
             \.isContiguous
         ),
         IPPropertyTestCase(
-            IPv6Address("::FFFF")!,
+            IPv6Address("::FFFF" as String)!,
             "!isContiguous",
             { @Sendable in !$0.isContiguous }
         ),
         IPPropertyTestCase(
-            IPv6Address("FFFF::FFFF")!,
+            IPv6Address("FFFF::FFFF" as String)!,
             "!isContiguous",
             { @Sendable in !$0.isContiguous }
         ),
         IPPropertyTestCase(
-            IPv6Address("FEFF::")!,
+            IPv6Address("FEFF::" as String)!,
             "!isContiguous",
             { @Sendable in !$0.isContiguous }
         ),

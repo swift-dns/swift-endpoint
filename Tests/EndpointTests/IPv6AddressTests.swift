@@ -149,6 +149,7 @@ struct IPv6AddressTests {
     @Test(arguments: IPv6AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
     func `IPv6Address description and serialization round-trip`(ip: IPv6Address) {
         #expect(IPv6Address(ip.description) == ip)
+        #expect(cParsedIPv6(ip.description) == ip)
 
         let viaCString = ip.withCString { span in
             span.withUnsafeBufferPointer { unsafe IPv6Address(cString: $0.baseAddress!) }
@@ -176,6 +177,7 @@ struct IPv6AddressTests {
         let expected = try #require(testCase.expectedDescription(options: options))
         #expect(ip.description(options: options) == expected)
         #expect(IPv6Address(expected) == ip)
+        #expect(cParsedIPv6(expected) == ip)
     }
 
     @available(SwiftStdlib 6.0, *)
@@ -242,6 +244,8 @@ struct IPv6AddressTests {
         #expect(IPv6Address(Substring(string)) == expectedAddress)
         #expect(IPv6Address(textualRepresentation: string.utf8Span) == expectedAddress)
         #expect(IPv6Address(textualRepresentation: string.utf8Span.span) == expectedAddress)
+        #expect(cParsedIPv6(string) == expectedAddress)
+        #expect(cParsedIPv6(Substring(string)) == expectedAddress)
 
         if isValidIPv4 {
             #expect(AnyIPAddress(string)?.isIPv4 == true)
@@ -273,7 +277,7 @@ struct IPv6AddressTests {
                 try! DomainName(
                     "b.a.9.8.7.6.5.0.4.0.0.0.3.0.0.0.2.0.0.0.1.0.0.0.0.0.0.0.1.2.3.4.ip6.arpa."
                 ),
-                IPv6Address("4321:0:1:2:3:4:567:89ab")!
+                IPv6Address("4321:0:1:2:3:4:567:89ab" as String)!
             ),
             (
                 try! DomainName(
@@ -320,6 +324,7 @@ struct IPv6AddressTests {
         let isValidIPv4 = testCase.isValidAsOtherIPVersion
 
         let plainIPv6Address = IPv6Address(string)
+        #expect(cParsedIPv6(string) == plainIPv6Address)
         let arpa: String? = plainIPv6Address.map(\.arpaDomainNameString)
         let domainName = arpa.flatMap { try? DomainName($0) }
 
@@ -353,6 +358,8 @@ struct IPv6AddressTests {
 
         #expect(mapped == IPv6Address(testCase.ipv4MappedExpandedIPv6Description))
         #expect(nat64 == IPv6Address(testCase.nat64ExpandedIPv6Description))
+        #expect(mapped == cParsedIPv6(testCase.ipv4MappedExpandedIPv6Description))
+        #expect(nat64 == cParsedIPv6(testCase.nat64ExpandedIPv6Description))
         #expect(mapped.isIPv4Mapped)
         #expect(nat64.isNAT64WellKnownIPv4Embedded)
     }
@@ -403,6 +410,7 @@ struct IPv6AddressTests {
     @Test(arguments: AnyIPAddressTestCase.rawByteReject)
     func `Non-ASCII byte inputs are rejected by the parser`(bytes: [UInt8]) {
         #expect(IPv6Address(textualRepresentation: bytes.span) == nil)
+        #expect(cParsedIPv6(bytes) == nil)
     }
 
     @available(SwiftStdlib 5.1, *)
@@ -462,6 +470,80 @@ struct IPv6AddressTests {
         #expect(unpacked.minReserveBytes == Int(minReserveBytes))
         #expect(unpacked.writeCsAtEnd == writeCsAtEnd)
     }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `C parser agrees with the Swift parser on generated inputs`() {
+        let alphabet = Array("0123456789abcdefABCDEF:.[]xg -%/".utf8)
+        var state: UInt64 = 0x2545_F491_4F6C_DD1D
+        func next() -> UInt64 {
+            state ^= state &<< 13
+            state ^= state &>> 7
+            state ^= state &<< 17
+            return state
+        }
+
+        for _ in 0..<200_000 {
+            let count = Int(next() % 24)
+            var bytes: [UInt8] = []
+            bytes.reserveCapacity(count)
+            for _ in 0..<count {
+                bytes.append(alphabet[Int(next() % UInt64(alphabet.count))])
+            }
+            let string = String(decoding: bytes, as: UTF8.self)
+            #expect(cParsedIPv6(bytes) == IPv6Address(string), "\(string.debugDescription)")
+        }
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test func `IPv6Address parses StaticString exactly like String`() {
+        #expect(("::" as IPv6Address) == IPv6Address("::" as String))
+        #expect(("::1" as IPv6Address) == IPv6Address("::1" as String))
+        #expect(("fe80::" as IPv6Address) == IPv6Address("fe80::" as String))
+        #expect(("2001:db8::1" as IPv6Address) == IPv6Address("2001:db8::1" as String))
+        #expect(
+            ("2001:0db8:1111:2222:3333:4444:5555:6666" as IPv6Address)
+                == IPv6Address("2001:0db8:1111:2222:3333:4444:5555:6666" as String)
+        )
+        #expect(
+            ("[2001:db8:1111::]" as IPv6Address)
+                == IPv6Address("[2001:db8:1111::]" as String)
+        )
+        #expect(
+            ("::ffff:204.152.189.116" as IPv6Address)
+                == IPv6Address("::ffff:204.152.189.116" as String)
+        )
+        #expect(
+            ("64:ff9b::8.8.8.8" as IPv6Address)
+                == IPv6Address("64:ff9b::8.8.8.8" as String)
+        )
+        #expect(
+            ("::ffff:0:255.255.255.255" as IPv6Address)
+                == IPv6Address("::ffff:0:255.255.255.255" as String)
+        )
+        #expect(
+            ("FE80::1FF:FE23:4567:890A" as IPv6Address)
+                == IPv6Address("FE80::1FF:FE23:4567:890A" as String)
+        )
+        #expect(
+            ("0:0:0:0:0:0:0:0" as IPv6Address)
+                == IPv6Address("0:0:0:0:0:0:0:0" as String)
+        )
+        #expect(
+            ("2001:4860:4860:0:0:0:0:8844" as IPv6Address)
+                == IPv6Address("2001:4860:4860:0:0:0:0:8844" as String)
+        )
+    }
+
+    /// A bare string literal must reach the `ExpressibleByStringLiteral` init, not the `String` one.
+    @available(SwiftStdlib 6.0, *)
+    @Test func `IPv6Address parses string literals`() {
+        let unspecified: IPv6Address = "::"
+        #expect(unspecified == IPv6Address(0))
+
+        let loopback: IPv6Address = "::1"
+        #expect(loopback == IPv6Address(1))
+    }
+
 }
 
 // 16 means no compression sign.
@@ -505,3 +587,21 @@ private let compressionRangeTable: [(Int, Int)] = {
 
     return table
 }()
+
+#if os(macOS) || os(Linux)
+extension IPv6AddressTests {
+    /// Kept to three literals: each one is unrolled and constant-folded at compile time.
+    @available(SwiftStdlib 6.0, *)
+    @Test func `IPv6Address initializer crashes on an invalid StaticString`() async {
+        await #expect(processExitsWith: .failure) {
+            blackHole("" as IPv6Address)
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole(":::" as IPv6Address)
+        }
+        await #expect(processExitsWith: .failure) {
+            blackHole("12345::" as IPv6Address)
+        }
+    }
+}
+#endif

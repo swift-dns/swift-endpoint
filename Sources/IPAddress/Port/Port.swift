@@ -20,6 +20,7 @@ public struct Port: Sendable, Hashable, RawRepresentable {
 
     /// Create a new port with the given value.
     /// Precondition: the value must be inclusively between 0 and 65535 (UInt16.max).
+    @inlinable
     public init(_ value: Int) {
         guard let rawValue = UInt16(exactly: value) else {
             preconditionFailure("Port must be inclusively between 0 and 65535")
@@ -30,6 +31,7 @@ public struct Port: Sendable, Hashable, RawRepresentable {
 
 extension Port: ExpressibleByIntegerLiteral {
     /// Create a new port with the given canonical value.
+    @inlinable
     public init(integerLiteral value: UInt16) {
         self.init(rawValue: value)
     }

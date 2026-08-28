@@ -39,6 +39,9 @@ The package contains a great amount of unit tests as well as benchmarks to ensur
 - [Performance](#performance)
   - [Against Darwin](#against-darwin)
   - [Against glibc](#against-glibc)
+  - [Ports](#ports)
+    - [Against Darwin](#against-darwin-1)
+    - [Against glibc](#against-glibc-1)
   - [Additional Notes](#additional-notes)
 
 ## Implementations
@@ -60,6 +63,12 @@ You can either initialize each type using a `String`, or initialize the exact un
 
 Here are some examples:
 
+> [!NOTE]
+> `IPv4Address`, `IPv6Address` and `Port` are `ExpressibleByStringLiteral` and `ExpressibleByIntegerLiteral`.
+> **Both** of those initializers are free. `ExpressibleByIntegerLiteral` feeds the raw value, and
+> `ExpressibleByStringLiteral` initializers act like macros and are folded to a constant at compile time:
+> `let ip: IPv6Address = "2001:db8:85a3::100"`, `let ip: IPv4Address = "192.168.1.1"`, `let port: Port = "443"`.
+
 ```swift
 import Endpoint
 
@@ -73,23 +82,23 @@ print(domainName2) /// prints "新华网.中国"
 print(domainName2.debugDescription) /// prints "xn--xkrr14bows.xn--fiqs8s"
 
 /// Define an ipv4 address. The type will parse the ip address into a UInt32 internally.
-let ipv4Address1 = IPv4Address("127.0.0.1")!
+let ipv4Address1: IPv4Address = "127.0.0.1"
 let ipv4Address2 = IPv4Address(192, 168, 1, 1)
 print(ipv4Address1) /// prints "127.0.0.1"
 print(ipv4Address2) /// prints "192.168.1.1"
 
 /// Define an ipv6 address. The type will parse the ip address into a UInt128 internally.
-let ipv6Address1 = IPv6Address("[FF::]")!
-let ipv6Address2 = IPv6Address("2001:db8:85a3:0:0:0:0:100")!
+let ipv6Address1: IPv6Address = "[FF::]"
+let ipv6Address2: IPv6Address = "2001:db8:85a3:0:0:0:0:100"
 /// Prints the ipv6 representations according to RFC 5952
 print(ipv6Address1) /// prints "ff::"
 print(ipv6Address2) /// prints "2001:db8:85a3::100"
 
 /// Define IPv4-embedded IPv6 addresses via the mixed IPv4-embedded notation.
 /// An IPv4-mapped IPv6 address (RFC 4291).
-let ipv4InIPv6Address1 = IPv6Address("::FFFF:192.168.1.1")!
+let ipv4InIPv6Address1: IPv6Address = "::FFFF:192.168.1.1"
 /// Any IPv4-**embedded** IPv6 address containing an IPv4 in the trailing 32 bits.
-let ipv4InIPv6Address2 = IPv6Address("[2001:db8:122:344::192.0.2.33]")!
+let ipv4InIPv6Address2: IPv6Address = "[2001:db8:122:344::192.0.2.33]"
 print(ipv4InIPv6Address1) /// prints "::ffff:192.168.1.1"
 // By default, only IPv4-**mapped** addresses use the mixed notation
 print(ipv4InIPv6Address2) /// prints "2001:db8:122:344::c000:221"
@@ -167,21 +176,50 @@ These were performed on my M1 Pro MacBook, on macOS 27.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 6.0           | 179.5        | 29.92x  |
-| IPv4    | Parsing     | 15.7          | 48.3         | 3.08x   |
-| IPv6    | Serializing | 31.0          | 226.9        | 7.32x   |
-| IPv6    | Parsing     | 25.8          | 103.3        | 4.00x   |
+| IPv4    | Serializing | 3.9           | 179.8        | 46.10x  |
+| IPv4    | Parsing     | 15.0          | 46.9         | 3.13x   |
+| IPv6    | Serializing | 30.4          | 221.6        | 7.29x   |
+| IPv6    | Parsing     | 25.1          | 100.5        | 4.00x   |
 
 #### Against glibc
 
-These were performed on a dedicated-cpu-core AMD EPYC-Milan machine from Hetzner, on Ubuntu 24.04.
+These were performed on a dedicated-cpu-core AMD EPYC-Milan VM from Hetzner, on Ubuntu 24.04.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 7.0           | 115.0        | 16.43x  |
-| IPv4    | Parsing     | 16.8          | 27.0         | 1.61x   |
-| IPv6    | Serializing | 36.8          | 164.0        | 4.46x   |
-| IPv6    | Parsing     | 33.0          | 48.0         | 1.45x   |
+| IPv4    | Serializing | 5.0           | 115.0        | 23.00x  |
+| IPv4    | Parsing     | 16.9          | 26.8         | 1.59x   |
+| IPv6    | Serializing | 37.0          | 164.0        | 4.43x   |
+| IPv6    | Parsing     | 34.5          | 48.0         | 1.39x   |
+
+### Ports
+
+* `Port` has no similar inet counterpart.
+  * It's benchmarked against each C library's `strtoul` and `snprintf`, and stdlib's `UInt16(String)` and `String(UInt16)`.
+* **In all cases, swift-endpoint wins against the C/stdlib APIs.**
+* Each benchmark runs against the same 32 real-world ports randomly, writing to stack-allocated memory, similar to the IP benchmarks above.
+
+#### Against Darwin
+
+These were performed on my M1 Pro MacBook, on macOS 27.
+
+| Operation   | Swift (ns/op) | Compared against    | Other (ns/op) | Speedup |
+| ----------- | ------------- | ------------------- | ------------- | ------- |
+| Serializing | 4.4           | `snprintf`          | 42.0          | 9.55x   |
+| Serializing | 8.7           | `String(UInt16)`    | 15.1          | 1.74x   |
+| Parsing     | 3.4           | `strtoul`           | 12.6          | 3.71x   |
+| Parsing     | 4.1           | `UInt16(String)`    | 9.1           | 2.22x   |
+
+#### Against glibc
+
+These were performed on a dedicated-cpu-core AMD EPYC-Milan VM from Hetzner, on Ubuntu 24.04.
+
+| Operation   | Swift (ns/op) | Compared against    | Other (ns/op) | Speedup |
+| ----------- | ------------- | ------------------- | ------------- | ------- |
+| Serializing | 8.5           | `snprintf`          | 37.7          | 4.44x   |
+| Serializing | 20.2          | `String(UInt16)`    | 21.3          | 1.05x   |
+| Parsing     | 5.1           | `strtoul`           | 14.9          | 2.92x   |
+| Parsing     | 7.5           | `UInt16(String)`    | 11.1          | 1.48x   |
 
 #### Additional Notes
 

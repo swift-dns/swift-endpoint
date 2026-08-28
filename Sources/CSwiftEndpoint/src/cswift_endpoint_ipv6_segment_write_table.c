@@ -1,6 +1,6 @@
-// The table layout is documented in ../include/CSwiftEndpoint.h.
+// The table layout is documented in ../include/cswift_endpoint_ipv6_segment_write_table.h.
 
-#include "../include/CSwiftEndpoint.h"
+#include "../include/cswift_endpoint_ipv6_segment_write_table.h"
 #include <stdint.h>
 
 const uint8_t cswift_endpoint_ipv6_segment_write_index[256] = {
@@ -20,7 +20,7 @@ const uint8_t cswift_endpoint_ipv6_segment_write_index[256] = {
      22,  22,  22,   1,  22,  22,   2,   3,   7,   7,   7,   1,   8,   8,   9,  10,
      23,  23,  23,  23,  23,  23,  23,   3,  23,  23,  23,  23,  23,  23,   5,   6,
      24,  24,  24,  24,  24,  24,  24,  24,  25,  25,  25,  25,  26,  26,  27,  28,
-};
+};;
 
 const uint64_t cswift_endpoint_ipv6_segment_write_values[29] = {
     0x0001187B9AC5A920, 0x0000F6001EE6B172, 0x0000E6001EE6B260, 0x0000D50000F73593,
@@ -31,4 +31,4 @@ const uint64_t cswift_endpoint_ipv6_segment_write_values[29] = {
     0x00006200000002E0, 0x0000510000000017, 0x0004E6001AC5A920, 0x0004C50000C5A920,
     0x0004A4000005A920, 0x0004830000002920, 0x0004620000000120, 0x0004410000000000,
     0x0004300000000000,
-};
+};;

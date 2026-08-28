@@ -1,13 +1,13 @@
 {
-  "originHash" : "663219a3cf68b08b12d90eb30285722010ad6500792d6fe81793999fd419d3de",
+  "originHash" : "d572553a306b969fbfd0393f7d04548337d3cde4a6ea01faaaa7fba613614d68",
   "pins" : [
     {
       "identity" : "benchmark",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/MahdiBM/benchmark.git",
       "state" : {
-        "branch" : "mmbm-cpu-user-precision",
-        "revision" : "9294475b83d1a13f3ff0b92a05baf58de7d017ed"
+        "branch" : "mmbm-more-hardware-counters",
+        "revision" : "57d33d6cfcb32a4e576454b4f9071996f56ddadf"
       }
     },
     {

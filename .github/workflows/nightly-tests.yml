@@ -379,6 +379,7 @@ jobs:
       - name: Check relevance
         id: check-relevance
         env:
+          JOB_KEYS: "android"
           GITHUB_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
@@ -410,3 +411,380 @@ jobs:
             --build-tests
             --explicit-target-dependency-import-check error
           swift-test-flags: --skip "IntegrationTests."
+
+  windows-nightly-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        windows:
+          # The Swift nightly image is built against Windows Server 2022.
+          - version: windows-2022
+        swift-image:
+          - name: swiftlang/swift:nightly-main-windowsservercore-ltsc2022
+        config:
+          - mode: "debug"
+          - mode: "release"
+
+    runs-on: ${{ matrix.windows.version }}
+
+    timeout-minutes: 60
+
+    permissions:
+      actions: read # For reading the previous commit's workflow runs
+      contents: read
+
+    steps:
+      - name: Check out ${{ github.event.repository.name }}
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check relevance
+        id: check-relevance
+        env:
+          JOB_KEYS: "windows"
+          GITHUB_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          SHOULD_RUN="$(.github/scripts/check-relevance.sh)"
+          printf '%s\n' "should-run=${SHOULD_RUN}" >> "${GITHUB_OUTPUT}"
+
+      # swift.org stopped publishing Windows development snapshot installers, so the nightly
+      # toolchain is only reachable through the Windows container image.
+      - name: Pull ${{ matrix.swift-image.name }}
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        shell: pwsh
+        run: |
+          Start-Service docker
+          docker pull ${{ matrix.swift-image.name }}
+
+      - name: Write the container script
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "${env:RUNNER_TEMP}\container-script" | Out-Null
+          @'
+          $ErrorActionPreference = "Stop"
+
+          swift --version
+
+          swift build --build-tests --disable-xctest --explicit-target-dependency-import-check error -Xswiftc -require-explicit-sendable -c $env:BUILD_MODE
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          swift test --skip "IntegrationTests." --skip-build --disable-xctest -Xswiftc -require-explicit-sendable -c $env:BUILD_MODE
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          '@ | Set-Content -Path "${env:RUNNER_TEMP}\container-script\run.ps1"
+
+      - name: Build ${{ github.event.repository.name }} and run tests
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        shell: pwsh
+        env:
+          BUILD_MODE: ${{ matrix.config.mode }}
+        run: |
+          docker run --rm `
+            --env BUILD_MODE `
+            --workdir C:\source `
+            --volume "${env:GITHUB_WORKSPACE}:C:\source" `
+            --volume "${env:RUNNER_TEMP}\container-script:C:\container-script" `
+            ${{ matrix.swift-image.name }} `
+            powershell.exe -NoLogo -File C:\container-script\run.ps1
+
+  freebsd-nightly-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        freebsd:
+          - version: "14.3"
+        config:
+          - mode: "debug"
+          - mode: "release"
+
+    runs-on: ubuntu-24.04
+
+    timeout-minutes: 60
+
+    permissions:
+      actions: read # For reading the previous commit's workflow runs
+      contents: read
+
+    steps:
+      - name: Check out ${{ github.event.repository.name }}
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check relevance
+        id: check-relevance
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          SHOULD_RUN="$(.github/scripts/check-relevance.sh)"
+          printf '%s\n' "should-run=${SHOULD_RUN}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build ${{ github.event.repository.name }} and run tests
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        uses: vmactions/freebsd-vm@f0552d3b69211736abd97f02ff3d4674c56b73b1 # v1.5.5
+        env:
+          # swift.org publishes no FreeBSD release toolchain; this nightly build is the only one.
+          SWIFT_TOOLCHAIN_URL: "https://download.swift.org/tmp-ci-nightly/development/freebsd-14_ci_latest.tar.gz"
+          BUILD_MODE: ${{ matrix.config.mode }}
+        with:
+          release: ${{ matrix.freebsd.version }}
+          arch: x86_64
+          sync: rsync
+          copyback: false
+          envs: "SWIFT_TOOLCHAIN_URL BUILD_MODE"
+          prepare: |
+            fetch -o /tmp/swift.tar.gz "${SWIFT_TOOLCHAIN_URL}"
+            mkdir -p /opt/swift
+            tar -xzf /tmp/swift.tar.gz -C /opt/swift
+            pkg install -y bash brotli curl git libuuid python3 sqlite3
+          run: |
+            set -e
+
+            export PATH="/opt/swift/usr/bin:${PATH}"
+            swift --version
+
+            swift build \
+              --build-tests \
+              --disable-xctest \
+              --explicit-target-dependency-import-check error \
+              -Xswiftc -require-explicit-sendable \
+              -c "${BUILD_MODE}"
+
+            swift test \
+              --skip "IntegrationTests." \
+              --skip-build \
+              --disable-xctest \
+              -Xswiftc -require-explicit-sendable \
+              -c "${BUILD_MODE}"
+
+  musl-nightly-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        swift-image:
+          - name: swiftlang/swift:nightly-main-noble
+        swift:
+          - version: nightly-main
+        config:
+          - mode: "debug"
+          - mode: "release"
+
+    runs-on: ubuntu-latest
+
+    container: ${{ matrix.swift-image.name }}
+
+    timeout-minutes: 30
+
+    permissions:
+      actions: read # For reading the previous commit's workflow runs
+      contents: read
+
+    steps:
+      - name: Check out ${{ github.event.repository.name }}
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y zstd curl jq
+
+      - name: Check relevance
+        id: check-relevance
+        env:
+          JOB_KEYS: "musl"
+          GITHUB_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          SHOULD_RUN="$(.github/scripts/check-relevance.sh)"
+          printf '%s\n' "should-run=${SHOULD_RUN}" >> "${GITHUB_OUTPUT}"
+
+      # The Static Linux SDK ships no static swift-testing or XCTest, so the tests can only be compiled for glibc.
+      - name: Build ${{ github.event.repository.name }}
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        env:
+          SDK: static
+          SWIFT_VERSION: ${{ matrix.swift.version }}
+          BUILD_MODE: ${{ matrix.config.mode }}
+          BUILD_FLAGS: >-
+            --explicit-target-dependency-import-check error
+            -Xswiftc -require-explicit-sendable
+        run: .github/scripts/build-with-sdk.sh
+
+  wasi-nightly-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        swift-image:
+          - name: swiftlang/swift:nightly-main-noble
+        swift:
+          - version: nightly-main
+        config:
+          - mode: "debug"
+          - mode: "release"
+
+    runs-on: ubuntu-latest
+
+    container: ${{ matrix.swift-image.name }}
+
+    timeout-minutes: 30
+
+    permissions:
+      actions: read # For reading the previous commit's workflow runs
+      contents: read
+
+    steps:
+      - name: Check out ${{ github.event.repository.name }}
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y zstd curl jq xz-utils
+
+      - name: Check relevance
+        id: check-relevance
+        env:
+          JOB_KEYS: "wasm"
+          GITHUB_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          SHOULD_RUN="$(.github/scripts/check-relevance.sh)"
+          printf '%s\n' "should-run=${SHOULD_RUN}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build ${{ github.event.repository.name }}
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        env:
+          SDK: wasm
+          SWIFT_VERSION: ${{ matrix.swift.version }}
+          BUILD_MODE: ${{ matrix.config.mode }}
+          BUILD_FLAGS: >-
+            --build-tests
+            --explicit-target-dependency-import-check error
+            -Xswiftc -require-explicit-sendable
+        run: .github/scripts/build-with-sdk.sh
+
+      - name: Run tests with wasmtime
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        env:
+          BUILD_MODE: ${{ matrix.config.mode }}
+          WASMTIME_VERSION: "48.0.1"
+          WASMTIME_SHA256: "4c2e31b68ad99e0a519f225a261fda099eb15f056d4a24fdb3c2a46517bde1df"
+          TEST_FLAGS: >-
+            --skip IntegrationTests.
+        run: .github/scripts/test-with-wasmtime.sh
+
+  embedded-wasm-nightly-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        swift-image:
+          - name: swiftlang/swift:nightly-main-noble
+        swift:
+          - version: nightly-main
+        config:
+          - mode: "debug"
+          - mode: "release"
+
+    runs-on: ubuntu-latest
+
+    container: ${{ matrix.swift-image.name }}
+
+    timeout-minutes: 30
+
+    permissions:
+      actions: read # For reading the previous commit's workflow runs
+      contents: read
+
+    steps:
+      - name: Check out ${{ github.event.repository.name }}
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y zstd curl jq
+
+      - name: Check relevance
+        id: check-relevance
+        env:
+          JOB_KEYS: "wasm embedded"
+          GITHUB_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          SHOULD_RUN="$(.github/scripts/check-relevance.sh)"
+          printf '%s\n' "should-run=${SHOULD_RUN}" >> "${GITHUB_OUTPUT}"
+
+      # Embedded Swift has no swift-testing or XCTest, so only the library is compiled.
+      - name: Build ${{ github.event.repository.name }}
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        env:
+          SDK: embedded-wasm
+          SWIFT_VERSION: ${{ matrix.swift.version }}
+          BUILD_MODE: ${{ matrix.config.mode }}
+          BUILD_FLAGS: >-
+            --explicit-target-dependency-import-check error
+            -Xswiftc -require-explicit-sendable
+        run: .github/scripts/build-with-sdk.sh
+
+  embedded-baremetal-nightly-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        swift-image:
+          - name: swiftlang/swift:nightly-main-noble
+        triple:
+          - name: armv7em-none-none-eabi
+          - name: aarch64-none-none-elf
+          - name: riscv32-none-none-eabi
+
+    runs-on: ubuntu-latest
+
+    container: ${{ matrix.swift-image.name }}
+
+    timeout-minutes: 30
+
+    permissions:
+      actions: read # For reading the previous commit's workflow runs
+      contents: read
+
+    steps:
+      - name: Check out ${{ github.event.repository.name }}
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies
+        run: |
+          apt-get update
+          apt-get install -y zstd curl jq
+
+      - name: Check relevance
+        id: check-relevance
+        env:
+          JOB_KEYS: "embedded"
+          GITHUB_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          SHOULD_RUN="$(.github/scripts/check-relevance.sh)"
+          printf '%s\n' "should-run=${SHOULD_RUN}" >> "${GITHUB_OUTPUT}"
+
+      # Embedded Swift needs whole-module optimization, which only the release configuration turns on.
+      - name: Build ${{ github.event.repository.name }}
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        run: |
+          swift build \
+            --build-system native \
+            --triple ${{ matrix.triple.name }} \
+            --toolset .github/toolsets/embedded.json \
+            --explicit-target-dependency-import-check error \
+            -Xswiftc -require-explicit-sendable \
+            -c release

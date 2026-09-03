@@ -15,6 +15,8 @@ readonly run_id="${GITHUB_RUN_ID:?the id of the current workflow run}"
 readonly run_attempt="${GITHUB_RUN_ATTEMPT:?the attempt number of the current workflow run}"
 readonly runner_name="${RUNNER_NAME:-}"
 readonly github_token="${GITHUB_TOKEN:?a token with 'contents: read' and 'actions: read' permissions}"
+readonly job_keys="${JOB_KEYS:-}"
+readonly scripts_dir="${BASH_SOURCE[0]%/*}"
 
 # Both the benchmark and the threshold-update workflows commit with this subject prefix.
 readonly benchmark_update_subject_prefix="Update of benchmark thresholds"
@@ -56,6 +58,17 @@ is_benchmark_update_commit() {
   fi
   return 1
 }
+
+if ! job_is_enabled="$(JOB_KEYS="${job_keys}" "${scripts_dir}/ci-config.sh")"; then
+  fatal "Failed to read the ci config of '${repository}'"
+fi
+readonly job_is_enabled
+
+if [[ "${job_is_enabled}" != "true" ]]; then
+  log "This job is turned off for '${repository}'; skipping."
+  printf 'false\n'
+  exit 0
+fi
 
 head_commit_json="$(github_api "repos/${repository}/commits/${head_sha}")" \
   || fatal "could not fetch commit '${head_sha}' of '${repository}'"

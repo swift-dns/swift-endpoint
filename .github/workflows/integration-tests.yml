@@ -14,8 +14,6 @@ defaults:
 
 jobs:
   linux-integration-tests:
-    if: ${{ github.event.repository.name == 'swift-dns' }}
-
     strategy:
       fail-fast: false
       matrix:
@@ -49,6 +47,7 @@ jobs:
       - name: Check relevance
         id: check-relevance
         env:
+          JOB_KEYS: "integration-tests"
           GITHUB_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
@@ -127,8 +126,6 @@ jobs:
         run: exit ${{ steps.tests-run.outputs.exit-status }}
 
   cache-swiftly-toolchain-for-macos:
-    if: ${{ github.event.repository.name == 'swift-dns' }}
-
     strategy:
       fail-fast: false
       matrix:
@@ -160,6 +157,7 @@ jobs:
       - name: Check relevance
         id: check-relevance
         env:
+          JOB_KEYS: "integration-tests"
           GITHUB_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
@@ -228,8 +226,6 @@ jobs:
           key: "${{ github.event.repository.name }}-swiftly-toolchain-integration-tests-${{ matrix.swift.version }}-${{ runner.os }}"
 
   macos-integration-tests:
-    if: ${{ github.event.repository.name == 'swift-dns' }}
-
     strategy:
       fail-fast: false
       matrix:
@@ -271,6 +267,7 @@ jobs:
       - name: Check relevance
         id: check-relevance
         env:
+          JOB_KEYS: "integration-tests"
           GITHUB_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
@@ -409,8 +406,6 @@ jobs:
         run: exit ${{ steps.tests-run.outputs.exit-status }}
 
   android-integration-tests:
-    if: ${{ github.event.repository.name == 'swift-dns' }}
-
     strategy:
       fail-fast: false
       matrix:
@@ -437,6 +432,7 @@ jobs:
       - name: Check relevance
         id: check-relevance
         env:
+          JOB_KEYS: "integration-tests android"
           GITHUB_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |

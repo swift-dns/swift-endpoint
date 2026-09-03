@@ -41,7 +41,32 @@ env:
   RUN_LINK: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   THRESHOLDS_PATH: "Benchmarks/Thresholds/"
 jobs:
+  check-ci-config:
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 5
+
+    outputs:
+      enabled: ${{ steps.ci-config.outputs.enabled }}
+
+    steps:
+      - name: Check out ${{ github.event.repository.name }}
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check the ci config
+        id: ci-config
+        env:
+          JOB_KEYS: "benchmarks"
+        run: |
+          ENABLED="$(.github/scripts/ci-config.sh)"
+          printf '%s\n' "enabled=${ENABLED}" >> "${GITHUB_OUTPUT}"
+
   update-benchmark-thresholds:
+    needs: check-ci-config
+    if: ${{ needs.check-ci-config.outputs.enabled == 'true' }}
+
     runs-on: [self-hosted, linux, x64]
 
     timeout-minutes: 1440

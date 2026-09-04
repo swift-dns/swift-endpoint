@@ -149,7 +149,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv6_Serializing_Compact_inet_ntop
 
-    var ipv6CompactInetNtop = ipv6Compact.address.bigEndian
+    var ipv6CompactInetNtop = ipv6Compact.asUInt128().bigEndian
 
     Benchmark(
         "IPv6_Serializing_Compact_inet_ntop_1M",
@@ -386,7 +386,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv6_Serializing_Mixed_inet_ntop
 
-    var ipv6MixedInetNtop = ipv6Mixed.address.bigEndian
+    var ipv6MixedInetNtop = ipv6Mixed.asUInt128().bigEndian
 
     Benchmark(
         "IPv6_Serializing_Mixed_inet_ntop_1M",
@@ -619,7 +619,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
 
     // MARK: IPv6_Serializing_Multiple_IPs_inet_ntop
 
-    /// Same as ipv6MultipleIPs.map(\.address.bigEndian) but inlined
+    /// Same as ipv6MultipleIPs.map(\.asUInt128().bigEndian) but inlined
     var ipv6MultipleIPsInetNtop: [32 of UInt128] = [
         0x0100_0000_0000_0000_0000_0000_0000_0000,
         0x0000_0000_0000_0000_0000_0000_0000_0000,

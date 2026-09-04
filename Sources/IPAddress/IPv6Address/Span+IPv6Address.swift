@@ -37,8 +37,8 @@ extension IPv6Address {
             return false
         }
 
-        let hi = self.address._high
-        let lo = self.address._low
+        let hi = self._address._high
+        let lo = self._address._low
         span.append(UInt8(truncatingIfNeeded: hi &>> 56))
         span.append(UInt8(truncatingIfNeeded: hi &>> 48))
         span.append(UInt8(truncatingIfNeeded: hi &>> 40))

@@ -23,10 +23,10 @@ extension IPv4Address {
             return false
         }
 
-        span.append(UInt8(truncatingIfNeeded: self.address &>> 24))
-        span.append(UInt8(truncatingIfNeeded: self.address &>> 16))
-        span.append(UInt8(truncatingIfNeeded: self.address &>> 8))
-        span.append(UInt8(truncatingIfNeeded: self.address))
+        span.append(UInt8(truncatingIfNeeded: self._address &>> 24))
+        span.append(UInt8(truncatingIfNeeded: self._address &>> 16))
+        span.append(UInt8(truncatingIfNeeded: self._address &>> 8))
+        span.append(UInt8(truncatingIfNeeded: self._address))
 
         return true
     }

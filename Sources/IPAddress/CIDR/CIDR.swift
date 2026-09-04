@@ -21,7 +21,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     /// There is no need to assume any other type will be added in the future, as that would
     /// require a new IP version to be introduced, in which case it'll take years before that
     /// new IP version is adopted, and at that point we'll just have released a new major version.
-    public typealias AddressValueType = IPAddressType.AddressValueType
+    public typealias _AddressValueType = IPAddressType._AddressValueType
 
     /// The IP address exactly as it was provided, without normalizing away the host bits.
     /// Of type `IPv4Address` or `IPv6Address`.
@@ -48,7 +48,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     /// in 0xFF00::/120, the prefix length is 120.
     @inlinable
     public var prefixLength: Int {
-        AddressValueType.bitWidth &- self.mask.address.trailingZeroBitCount
+        _AddressValueType.bitWidth &- self.mask._address.trailingZeroBitCount
     }
 
     /// The network address of the CIDR block.
@@ -57,7 +57,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     /// In 0xFF00::/8, the network address is 0xFF00::.
     @inlinable
     public var networkAddress: IPAddressType {
-        IPAddressType(self.prefix.address & self.mask.address)
+        IPAddressType(self.prefix._address & self.mask._address)
     }
 
     /// Create a new CIDR with the given prefix and mask.
@@ -118,7 +118,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     ///     Example: in 192.168.1.0/24, the prefix length is 24.
     @inlinable
     public init(prefix: IPAddressType, prefixLength: Int) {
-        precondition(prefixLength >= 0 && prefixLength <= AddressValueType.bitWidth)
+        precondition(prefixLength >= 0 && prefixLength <= _AddressValueType.bitWidth)
         let mask = Self.makeMaskBasedOn(prefixLength: prefixLength)
         self.init(prefix: prefix, uncheckedMask: mask)
     }
@@ -127,14 +127,14 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     /// Amounts greater than the bit width of the IP address type are clamped to the bit width.
     @inlinable
     package static func makeMaskBasedOn(prefixLength: Int) -> IPAddressType {
-        IPAddressType(~(AddressValueType.max >> prefixLength))
+        IPAddressType(~(_AddressValueType.max >> prefixLength))
     }
 
     /// Whether or not the given AnyIPAddress is within this CIDR block.
     /// Complexity: O(1)
     @inlinable
     public func contains(_ other: IPAddressType) -> Bool {
-        other.address & self.mask.address == self.networkAddress.address
+        other._address & self.mask._address == self.networkAddress._address
     }
 
     /// Whether or not the given AnyIPAddress is within this CIDR block.

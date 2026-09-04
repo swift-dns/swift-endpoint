@@ -38,7 +38,7 @@ extension IPv4Address {
 
                         /// Unchecked because `idx` can't exceed `3` anyway
                         let shift = 8 * (3 - idx)
-                        ipv4.address |= UInt32(byte) &<< shift
+                        ipv4._address |= UInt32(byte) &<< shift
                     }
 
                     if iterator.reachedEnd() {
@@ -70,7 +70,7 @@ extension IPv4Address {
                     }
 
                     /// Arpa domain names have the domain name bytes in reversed order.
-                    ipv4.address = ipv4.address.byteSwapped
+                    ipv4._address = ipv4._address.byteSwapped
 
                     return ipv4
                 }
@@ -111,7 +111,7 @@ extension IPv4Address {
                             return nil
                         }
                         let shift = 8 * idx
-                        ipv4.address |= UInt32(byte) &<< shift
+                        ipv4._address |= UInt32(byte) &<< shift
                     }
 
                     guard let inAddrRange = iterator.next()?.range,

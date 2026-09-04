@@ -53,9 +53,9 @@ struct IPv6AddressTests {
             0x0F,
             0x11,
         )
-        #expect(ip.address == ipWithUInt16.address)
-        let expectedAddress: UnsignedInteger128 = 0x0102_F3F4_1516_7080_90A0_CBBC_0D0E_0F11
-        #expect(ip.address == expectedAddress)
+        #expect(ip.asUInt128() == ipWithUInt16.asUInt128())
+        let expectedAddress: UInt128 = 0x0102_F3F4_1516_7080_90A0_CBBC_0D0E_0F11
+        #expect(ip.asUInt128() == expectedAddress)
 
         #expect(ip.bytes.0 == 0x01)
         #expect(ip.bytes.1 == 0x02)

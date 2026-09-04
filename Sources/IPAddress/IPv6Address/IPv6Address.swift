@@ -89,7 +89,8 @@ public struct IPv6Address: Sendable, Hashable {
     }
 
     /// The underlying 128 bits (16 bytes) representing this IPv6 address.
-    public var address: UnsignedInteger128
+    package var _address: UnsignedInteger128
+    public var _address: UnsignedInteger128
 
     /// Whether this address is the IPv6 Loopback address, known as localhost, or not.
     /// Equivalent to `::1` or `0:0:0:0:0:0:0:1` in IPv6 description format.
@@ -201,7 +202,7 @@ public struct IPv6Address: Sendable, Hashable {
     /// Or `IPv6Address(0x0102)` will result in an IP address equal to `::0102`.
     @inlinable
     public init(_ address: UnsignedInteger128) {
-        self.address = address
+        self._address = address
     }
 
     /// Initialize an `IPv6Address` from its raw 128-bit unsigned integer representation.
@@ -212,7 +213,7 @@ public struct IPv6Address: Sendable, Hashable {
     @_disfavoredOverload
     @inlinable
     public init(_ address: UInt128) {
-        self.address = UnsignedInteger128(address)
+        self._address = UnsignedInteger128(address)
     }
 
     /// Initialize an IPv6 from the 8 16-bits (2-bytes) representing it.
@@ -229,7 +230,7 @@ public struct IPv6Address: Sendable, Hashable {
         _ _7: UInt16,
         _ _8: UInt16
     ) {
-        self.address = UnsignedInteger128(
+        self._address = UnsignedInteger128(
             _low: UInt64(_5) &<< 48
                 | UInt64(_6) &<< 32
                 | UInt64(_7) &<< 16
@@ -263,7 +264,7 @@ public struct IPv6Address: Sendable, Hashable {
         _ _15: UInt8,
         _ _16: UInt8
     ) {
-        self.address = UnsignedInteger128(
+        self._address = UnsignedInteger128(
             _low: UInt64(_9) &<< 56
                 | UInt64(_10) &<< 48
                 | UInt64(_11) &<< 40
@@ -295,7 +296,20 @@ extension IPv6Address: ExpressibleByIntegerLiteral {
     /// Or `IPv6Address(0x0102)` will result in an IP address equal to `::0102`.
     @inlinable
     public init(integerLiteral value: UInt128) {
-        self.address = UnsignedInteger128(value)
+        self._address = UnsignedInteger128(value)
+    }
+}
+
+@available(SwiftStdlib 6.0, *)
+extension IPv6Address {
+    /// The underlying 128 bits (16 bytes) representing this IPv6 address, as a `UInt128`.
+    /// For example `IPv6Address("::1")!.asUInt128()` is `0x0000_0000_0000_0000_0000_0000_0000_0001`.
+    @inlinable
+    public func asUInt128() -> UInt128 {
+        UInt128(
+            _low: self._address._low,
+            _high: self._address._high
+        )
     }
 }
 
@@ -309,8 +323,8 @@ extension IPv6Address {
             UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8
         )
     {
-        let hi = self.address._high
-        let lo = self.address._low
+        let hi = self._address._high
+        let lo = self._address._low
         return (
             UInt8(truncatingIfNeeded: hi &>> 56),
             UInt8(truncatingIfNeeded: hi &>> 48),
@@ -335,8 +349,8 @@ extension IPv6Address {
     /// The same as 8-segments / groups divided by colons (`:`) in the textual representation.
     @inlinable
     public var segments: (UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16) {
-        let hi = self.address._high
-        let lo = self.address._low
+        let hi = self._address._high
+        let lo = self._address._low
         return (
             UInt16(truncatingIfNeeded: hi &>> 48),
             UInt16(truncatingIfNeeded: hi &>> 32),

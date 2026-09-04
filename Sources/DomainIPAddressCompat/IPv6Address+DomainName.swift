@@ -19,8 +19,8 @@ extension DomainName {
         unsafe buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 73) { bufferPtr in
             var bufferIdx = 0
 
-            let lo = ipv6.address._low
-            let hi = ipv6.address._high
+            let lo = ipv6._address._low
+            let hi = ipv6._address._high
             for idx in 0..<16 {
                 let word = idx < 8 ? lo : hi
                 let byte = UInt8(truncatingIfNeeded: word &>> ((idx & 7) * 8))

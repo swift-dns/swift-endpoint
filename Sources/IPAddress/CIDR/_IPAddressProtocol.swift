@@ -13,11 +13,11 @@ public protocol _IPAddressProtocol:
     Hashable,
     CustomStringConvertible
 {
-    associatedtype AddressValueType: _IPAddressProtocolAddressValueType
+    associatedtype _AddressValueType: _IPAddressProtocolAddressValueType
 
-    var address: AddressValueType { get }
+    var _address: _AddressValueType { get }
 
-    init(_ value: AddressValueType)
+    init(_ value: _AddressValueType)
 
     @available(SwiftStdlib 5.1, *)
     init?(exactly ipAddress: AnyIPAddress)
@@ -38,7 +38,7 @@ extension _IPAddressProtocol {
     /// [IETF RFC 4632]: https://datatracker.ietf.org/doc/html/rfc4632
     @inlinable
     public var isContiguous: Bool {
-        self.address == ~(AddressValueType.max >> (~self.address).leadingZeroBitCount)
+        self._address == ~(_AddressValueType.max >> (~self._address).leadingZeroBitCount)
     }
 }
 

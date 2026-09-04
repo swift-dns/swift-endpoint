@@ -158,8 +158,8 @@ extension IPv6Address {
             /// `upperBound == 7`, and since we mask off 2 segments, upperBound <= 5.
             addressToPrint = IPv6Address(
                 UnsignedInteger128(
-                    _low: self.address._low & 0xFFFF_FFFF_0000_0000,
-                    _high: self.address._high
+                    _low: self._address._low & 0xFFFF_FFFF_0000_0000,
+                    _high: self._address._high
                 )
             )
         }
@@ -175,7 +175,7 @@ extension IPv6Address {
         let ipv4EmbeddedWalkBackBytes = 3
         var mixedNotationReserve: Int = 0
         if mustUseMixedNotation {
-            let embeddedIPv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
+            let embeddedIPv4 = IPv4Address(UInt32(truncatingIfNeeded: self._address._low))
             let ipv4Length = embeddedIPv4.textualRepresentationLength
             /// The embedded IPv4 replaces the masked-off last two segments, which the walk-back bytes
             /// account for.
@@ -185,7 +185,7 @@ extension IPv6Address {
 
         var lastSegmentReserve: Int = 0
         if !mustUseMixedNotation {
-            let lastSegmentBits = self.address._low & 0xFFFF
+            let lastSegmentBits = self._address._low & 0xFFFF
             let lastSegmentIsSingleDigit = lastSegmentBits <= 0xF
             /// We do speculative writes, but if the last segment is a single hex digit, then we only
             /// write 1 byte while we still need to reserve 4 bytes of headroom so the speculative write
@@ -241,7 +241,7 @@ extension IPv6Address {
             if mustUseMixedNotation {
                 assert(!entry.writeCsAtEnd)
 
-                let embeddedIPv4 = IPv4Address(UInt32(truncatingIfNeeded: self.address._low))
+                let embeddedIPv4 = IPv4Address(UInt32(truncatingIfNeeded: self._address._low))
                 let lowerBound = writeIdx &- ipv4EmbeddedWalkBackBytes
                 let ipv4Buffer = unsafe UnsafeMutableRawBufferPointer(
                     rebasing: buffer[lowerBound...]
@@ -273,8 +273,8 @@ extension IPv6Address {
     @inlinable
     @inline(always)
     func makeSegmentsMask() -> UInt8 {
-        let highNibble = IPv6Address.makeNibbleFor4Segments(of: self.address._high)
-        let lowNibble = IPv6Address.makeNibbleFor4Segments(of: self.address._low)
+        let highNibble = IPv6Address.makeNibbleFor4Segments(of: self._address._high)
+        let lowNibble = IPv6Address.makeNibbleFor4Segments(of: self._address._low)
         return highNibble | (lowNibble &<< 4)
     }
 
@@ -310,10 +310,10 @@ extension IPv6Address {
     @inline(always)
     func countAllDigitsRequiredToPrintExcludingTrailingDigits() -> Int {
         let high = IPv6Address.countDigitsRequiredToPrintExcludingTrailingDigits(
-            of: self.address._high
+            of: self._address._high
         )
         let low = IPv6Address.countDigitsRequiredToPrintExcludingTrailingDigits(
-            of: self.address._low
+            of: self._address._low
         )
         return high &+ low
     }
@@ -373,7 +373,7 @@ extension IPv6Address {
     @inlinable
     func _segment(atUncheckedIndex segmentIdx: Int) -> UInt16 {
         assert(segmentIdx >= 0 && segmentIdx <= 7)
-        let word = segmentIdx < 4 ? self.address._high : self.address._low
+        let word = segmentIdx < 4 ? self._address._high : self._address._low
         let shift = (3 - (segmentIdx & 3)) * 16
         return UInt16(truncatingIfNeeded: word &>> shift)
     }

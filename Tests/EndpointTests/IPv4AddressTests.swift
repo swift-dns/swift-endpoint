@@ -25,7 +25,7 @@ import Darwin
 struct IPv4AddressTests {
     @Test func ipv4Address() {
         let ip = IPv4Address(127, 0, 0, 1)
-        #expect(ip.address == 0x7F00_0001)
+        #expect(ip.asUInt32() == 0x7F00_0001)
         #expect(ip.bytes == (0x7F, 0x00, 0x00, 0x01))
     }
 
@@ -86,7 +86,7 @@ struct IPv4AddressTests {
         #expect(IPv4Address(ipv6: ipv4.asNAT64WellKnownIPv4EmbeddedIPv6) == ipv4)
 
         let deprecatedIPv4Compatible = IPv6Address(
-            UnsignedInteger128(_low: UInt64(ipv4.address), _high: 0x0000_0000_0000_0000)
+            UnsignedInteger128(_low: UInt64(ipv4.asUInt32()), _high: 0x0000_0000_0000_0000)
         )
         #expect(IPv4Address(ipv6: deprecatedIPv4Compatible) == nil)
         #expect(!deprecatedIPv4Compatible.isWellKnownIPv4Embedded)

@@ -22,7 +22,7 @@ public struct IPv4Address: Sendable, Hashable {
     }
 
     /// The underlying 32 bits (4 bytes) representing this IPv4 address.
-    public var address: UInt32
+    public var _address: UInt32
 
     /// Whether this address is an IPv4 Loopback address, known as localhost, or not.
     /// Equivalent to `127.0.0.0/8` in CIDR notation.
@@ -136,14 +136,14 @@ public struct IPv4Address: Sendable, Hashable {
     /// Or `IPv4Address(0x7F)` will result in an IP address equal to `0.0.0.127`.
     @inlinable
     public init(_ address: UInt32) {
-        self.address = address
+        self._address = address
     }
 
     /// Initialize an IPv4 from the 4 8-bits (1-bytes) representing it.
     /// For example `IPv4Address(127, 0, 0, 1)` will result in an IP address equal to `127.0.0.1`.
     @inlinable
     public init(_ _1: UInt8, _ _2: UInt8, _ _3: UInt8, _ _4: UInt8) {
-        self.address =
+        self._address =
             UInt32(_1) &<< 24
             | UInt32(_2) &<< 16
             | UInt32(_3) &<< 8
@@ -160,18 +160,25 @@ extension IPv4Address: ExpressibleByIntegerLiteral {
     /// Or `IPv4Address(0x7F)` will result in an IP address equal to `0.0.0.127`.
     @inlinable
     public init(integerLiteral value: UInt32) {
-        self.address = value
+        self._address = value
     }
 }
 
 extension IPv4Address {
+    /// The underlying 32 bits (4 bytes) representing this IPv4 address, as a `UInt32`.
+    /// For example `IPv4Address("127.0.0.1")!.asUInt32()` is `0x7F00_0001`.
+    @inlinable
+    public func asUInt32() -> UInt32 {
+        self._address
+    }
+
     /// The 4 bytes representing this IPv4 address.
     public var bytes: (UInt8, UInt8, UInt8, UInt8) {
         (
-            UInt8(truncatingIfNeeded: self.address &>> 24),
-            UInt8(truncatingIfNeeded: self.address &>> 16),
-            UInt8(truncatingIfNeeded: self.address &>> 8),
-            UInt8(truncatingIfNeeded: self.address)
+            UInt8(truncatingIfNeeded: self._address &>> 24),
+            UInt8(truncatingIfNeeded: self._address &>> 16),
+            UInt8(truncatingIfNeeded: self._address &>> 8),
+            UInt8(truncatingIfNeeded: self._address)
         )
     }
 }

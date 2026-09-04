@@ -37,14 +37,14 @@ extension IPv4Address: CustomStringConvertible {
     ) -> Int {
         /// These are safe; We've already reserved max capacity needed for the longest possible
         /// IPv4 address, and only the last segment needs the 2 headroom bytes.
-        let (paddedBytes, count) = UInt8(truncatingIfNeeded: self.address &>> 24).asDecimal()
+        let (paddedBytes, count) = UInt8(truncatingIfNeeded: self._address &>> 24).asDecimal()
         /// The first segment has no leading `.`, so it writes the digits a byte lower.
         unsafe buffer.storeBytes(of: paddedBytes &>> 8, toByteOffset: 0, as: UInt32.self)
         var resultIdx = count
 
         for idx in 1..<4 {
             let shift = 24 - idx * 8
-            let byte = UInt8(truncatingIfNeeded: self.address &>> shift)
+            let byte = UInt8(truncatingIfNeeded: self._address &>> shift)
             let (paddedBytes, count) = byte.asDecimal()
             unsafe buffer.storeBytes(
                 of: paddedBytes | UInt32(UInt8.asciiDot),
@@ -63,7 +63,7 @@ extension IPv4Address: CustomStringConvertible {
     @inlinable
     @inline(always)
     var _extraDecimalDigitsToPrintPerByte: UInt32 {
-        let address = self.address
+        let address = self._address
         /// `0x7F` == `0b0111_1111`
         let m7f: UInt32 = 0x7F7F_7F7F
         /// `0x76` == `0b0111_0110` == `118` == `128 - 10`

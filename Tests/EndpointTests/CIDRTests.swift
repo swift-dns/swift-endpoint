@@ -342,8 +342,8 @@ struct CIDRTests {
             cidr.prefix == ip,
             """
             prefixLength: \(prefixLength)
-            prefix:   0b\(String(cidr.prefix.address, radix: 2)); \(cidr.prefix.address.trailingZeroBitCount) trailing zeros
-            ip:       0b\(String(ip.address, radix: 2)); \(ip.address.trailingZeroBitCount) trailing zeros
+            prefix:   0b\(String(cidr.prefix._address, radix: 2)); \(cidr.prefix._address.trailingZeroBitCount) trailing zeros
+            ip:       0b\(String(ip._address, radix: 2)); \(ip._address.trailingZeroBitCount) trailing zeros
             """
         )
         /// The masked network address is still considered within the block.
@@ -380,10 +380,10 @@ struct CIDRTests {
             prefixLength: prefixLength
         )
         #expect(
-            calculatedMask.address == expectedMask,
+            calculatedMask._address == expectedMask,
             """
             prefixLength: \(prefixLength)
-            calculated: 0b\(String(calculatedMask.address, radix: 2)); \(calculatedMask.address.trailingZeroBitCount) trailing zeros
+            calculated: 0b\(String(calculatedMask._address, radix: 2)); \(calculatedMask._address.trailingZeroBitCount) trailing zeros
             expected:   0b\(String(expectedMask, radix: 2)); \(expectedMask.trailingZeroBitCount) trailing zeros
             """
         )
@@ -571,8 +571,8 @@ struct CIDRTests {
         )
         let comment: Comment = """
             prefixLength: \(prefixLength)
-            prefix:   0b\(String(cidr.prefix.address, radix: 2)); \(cidr.prefix.address.trailingZeroBitCount) trailing zeros
-            ip:       0b\(String(ip.address, radix: 2)); \(ip.address.trailingZeroBitCount) trailing zeros
+            prefix:   0b\(String(cidr.prefix._address.asUInt128, radix: 2)); \(cidr.prefix._address.trailingZeroBitCount) trailing zeros
+            ip:       0b\(String(ip._address.asUInt128, radix: 2)); \(ip._address.trailingZeroBitCount) trailing zeros
             """
         /// The prefix is stored exactly as provided, host bits are not truncated.
         #expect(cidr.prefix == ip, comment)
@@ -661,10 +661,10 @@ struct CIDRTests {
             prefixLength: prefixLength
         )
         #expect(
-            calculatedMask.address == expectedMask,
+            calculatedMask._address.asUInt128 == expectedMask,
             """
             prefixLength: \(prefixLength)
-            calculated: 0b\(String(calculatedMask.address, radix: 2)); \(calculatedMask.address.trailingZeroBitCount) trailing zeros
+            calculated: 0b\(String(calculatedMask._address.asUInt128, radix: 2)); \(calculatedMask._address.trailingZeroBitCount) trailing zeros
             expected:   0b\(String(expectedMask, radix: 2)); \(expectedMask.trailingZeroBitCount) trailing zeros
             """
         )
@@ -679,9 +679,9 @@ struct CIDRTests {
         sourceLocation: SourceLocation = #_sourceLocation
     ) {
         let details = """
-            mask:    \(Self.binaryDescription(cidr.mask.address))
-            prefix:  \(Self.binaryDescription(cidr.prefix.address))
-            checked: \(Self.binaryDescription(ip.address))
+            mask:    \(Self.binaryDescription(cidr.mask._address))
+            prefix:  \(Self.binaryDescription(cidr.prefix._address))
+            checked: \(Self.binaryDescription(ip._address))
             """
         #expect(
             cidr.contains(ip) == expected,
@@ -731,7 +731,7 @@ struct CIDRTests {
         ofType: IPAddressType.Type,
         countForEachBit: Int
     ) -> [(cidr: CIDR<IPAddressType>, containsIP: IPAddressType, result: Bool)] {
-        let bitWidth = IPAddressType.AddressValueType.bitWidth
+        let bitWidth = IPAddressType._AddressValueType.bitWidth
         var results: [(cidr: CIDR<IPAddressType>, containsIP: IPAddressType, result: Bool)] = []
         results.reserveCapacity((bitWidth + 1) * 2 * countForEachBit)
 
@@ -741,7 +741,7 @@ struct CIDRTests {
                 prefixLength: bitCount
             )
 
-            var cidrPrefixBits = String(value: cidr.prefix.address, radix: 2)
+            var cidrPrefixBits = String(value: cidr.prefix._address, radix: 2)
             let remainingBits = bitWidth - cidrPrefixBits.count
             cidrPrefixBits = String(repeating: "0", count: remainingBits) + cidrPrefixBits
             let matchingBits = cidrPrefixBits.prefix(bitCount)
@@ -750,7 +750,7 @@ struct CIDRTests {
                 let theRest = (0..<(bitWidth - bitCount)).map { _ in
                     "\(UInt8.random(in: 0...1))"
                 }
-                let number = IPAddressType.AddressValueType(
+                let number = IPAddressType._AddressValueType(
                     matchingBits + theRest.joined(separator: ""),
                     radix: 2
                 )!
@@ -772,7 +772,7 @@ struct CIDRTests {
                 let theRest = (0..<(bitWidth - bitCount)).map { _ in
                     "\(UInt8.random(in: 0...1))"
                 }
-                let number = IPAddressType.AddressValueType(
+                let number = IPAddressType._AddressValueType(
                     messedUpBits + theRest.joined(separator: ""),
                     radix: 2
                 )!
@@ -791,7 +791,7 @@ extension _IPAddressProtocolAddressValueType {
         case is UInt32.Type:
             return UInt32.random(in: .min ... .max) as! Self
         case is UnsignedInteger128.Type:
-            return UnsignedInteger128.random(in: .min ... .max) as! Self
+            return UnsignedInteger128(UInt128.random(in: .min ... .max)) as! Self
         default:
             fatalError("Unsupported type: \(Self.self)")
         }
@@ -804,8 +804,8 @@ extension _IPAddressProtocolAddressValueType {
             guard let value = UInt32(value, radix: radix) else { return nil }
             self = value as! Self
         case is UnsignedInteger128.Type:
-            guard let value = UnsignedInteger128(value, radix: radix) else { return nil }
-            self = value as! Self
+            guard let value = UInt128(value, radix: radix) else { return nil }
+            self = UnsignedInteger128(value) as! Self
         default:
             fatalError("Unsupported type: \(Self.self)")
         }
@@ -819,7 +819,7 @@ extension String {
         case is UInt32.Type:
             self = String(value as! UInt32, radix: radix)
         case is UnsignedInteger128.Type:
-            self = String(value as! UnsignedInteger128, radix: radix)
+            self = String((value as! UnsignedInteger128).asUInt128, radix: radix)
         default:
             fatalError("Unsupported type: \(T.self)")
         }

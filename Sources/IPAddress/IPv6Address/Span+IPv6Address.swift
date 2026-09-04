@@ -37,24 +37,25 @@ extension IPv6Address {
             return false
         }
 
-        let hi = self._address._high
-        let lo = self._address._low
-        span.append(UInt8(truncatingIfNeeded: hi &>> 56))
-        span.append(UInt8(truncatingIfNeeded: hi &>> 48))
-        span.append(UInt8(truncatingIfNeeded: hi &>> 40))
-        span.append(UInt8(truncatingIfNeeded: hi &>> 32))
-        span.append(UInt8(truncatingIfNeeded: hi &>> 24))
-        span.append(UInt8(truncatingIfNeeded: hi &>> 16))
-        span.append(UInt8(truncatingIfNeeded: hi &>> 8))
-        span.append(UInt8(truncatingIfNeeded: hi))
-        span.append(UInt8(truncatingIfNeeded: lo &>> 56))
-        span.append(UInt8(truncatingIfNeeded: lo &>> 48))
-        span.append(UInt8(truncatingIfNeeded: lo &>> 40))
-        span.append(UInt8(truncatingIfNeeded: lo &>> 32))
-        span.append(UInt8(truncatingIfNeeded: lo &>> 24))
-        span.append(UInt8(truncatingIfNeeded: lo &>> 16))
-        span.append(UInt8(truncatingIfNeeded: lo &>> 8))
-        span.append(UInt8(truncatingIfNeeded: lo))
+        let address = self._storage.littleEndian
+        let low = address._low
+        let high = address._high
+        span.append(UInt8(truncatingIfNeeded: low))
+        span.append(UInt8(truncatingIfNeeded: low &>> 8))
+        span.append(UInt8(truncatingIfNeeded: low &>> 16))
+        span.append(UInt8(truncatingIfNeeded: low &>> 24))
+        span.append(UInt8(truncatingIfNeeded: low &>> 32))
+        span.append(UInt8(truncatingIfNeeded: low &>> 40))
+        span.append(UInt8(truncatingIfNeeded: low &>> 48))
+        span.append(UInt8(truncatingIfNeeded: low &>> 56))
+        span.append(UInt8(truncatingIfNeeded: high))
+        span.append(UInt8(truncatingIfNeeded: high &>> 8))
+        span.append(UInt8(truncatingIfNeeded: high &>> 16))
+        span.append(UInt8(truncatingIfNeeded: high &>> 24))
+        span.append(UInt8(truncatingIfNeeded: high &>> 32))
+        span.append(UInt8(truncatingIfNeeded: high &>> 40))
+        span.append(UInt8(truncatingIfNeeded: high &>> 48))
+        span.append(UInt8(truncatingIfNeeded: high &>> 56))
 
         return true
     }

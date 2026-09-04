@@ -342,8 +342,8 @@ struct CIDRTests {
             cidr.prefix == ip,
             """
             prefixLength: \(prefixLength)
-            prefix:   0b\(String(cidr.prefix._address, radix: 2)); \(cidr.prefix._address.trailingZeroBitCount) trailing zeros
-            ip:       0b\(String(ip._address, radix: 2)); \(ip._address.trailingZeroBitCount) trailing zeros
+            prefix:   0b\(String(cidr.prefix._numericAddress, radix: 2)); \(cidr.prefix._numericAddress.trailingZeroBitCount) trailing zeros
+            ip:       0b\(String(ip._numericAddress, radix: 2)); \(ip._numericAddress.trailingZeroBitCount) trailing zeros
             """
         )
         /// The masked network address is still considered within the block.
@@ -380,10 +380,10 @@ struct CIDRTests {
             prefixLength: prefixLength
         )
         #expect(
-            calculatedMask._address == expectedMask,
+            calculatedMask._numericAddress == expectedMask,
             """
             prefixLength: \(prefixLength)
-            calculated: 0b\(String(calculatedMask._address, radix: 2)); \(calculatedMask._address.trailingZeroBitCount) trailing zeros
+            calculated: 0b\(String(calculatedMask._numericAddress, radix: 2)); \(calculatedMask._numericAddress.trailingZeroBitCount) trailing zeros
             expected:   0b\(String(expectedMask, radix: 2)); \(expectedMask.trailingZeroBitCount) trailing zeros
             """
         )
@@ -571,8 +571,8 @@ struct CIDRTests {
         )
         let comment: Comment = """
             prefixLength: \(prefixLength)
-            prefix:   0b\(String(cidr.prefix._address.asUInt128, radix: 2)); \(cidr.prefix._address.trailingZeroBitCount) trailing zeros
-            ip:       0b\(String(ip._address.asUInt128, radix: 2)); \(ip._address.trailingZeroBitCount) trailing zeros
+            prefix:   0b\(String(cidr.prefix._numericAddress.asUInt128, radix: 2)); \(cidr.prefix._numericAddress.trailingZeroBitCount) trailing zeros
+            ip:       0b\(String(ip._numericAddress.asUInt128, radix: 2)); \(ip._numericAddress.trailingZeroBitCount) trailing zeros
             """
         /// The prefix is stored exactly as provided, host bits are not truncated.
         #expect(cidr.prefix == ip, comment)
@@ -661,10 +661,10 @@ struct CIDRTests {
             prefixLength: prefixLength
         )
         #expect(
-            calculatedMask._address.asUInt128 == expectedMask,
+            calculatedMask._numericAddress.asUInt128 == expectedMask,
             """
             prefixLength: \(prefixLength)
-            calculated: 0b\(String(calculatedMask._address.asUInt128, radix: 2)); \(calculatedMask._address.trailingZeroBitCount) trailing zeros
+            calculated: 0b\(String(calculatedMask._numericAddress.asUInt128, radix: 2)); \(calculatedMask._numericAddress.trailingZeroBitCount) trailing zeros
             expected:   0b\(String(expectedMask, radix: 2)); \(expectedMask.trailingZeroBitCount) trailing zeros
             """
         )
@@ -679,9 +679,9 @@ struct CIDRTests {
         sourceLocation: SourceLocation = #_sourceLocation
     ) {
         let details = """
-            mask:    \(Self.binaryDescription(cidr.mask._address))
-            prefix:  \(Self.binaryDescription(cidr.prefix._address))
-            checked: \(Self.binaryDescription(ip._address))
+            mask:    \(Self.binaryDescription(cidr.mask._numericAddress))
+            prefix:  \(Self.binaryDescription(cidr.prefix._numericAddress))
+            checked: \(Self.binaryDescription(ip._numericAddress))
             """
         #expect(
             cidr.contains(ip) == expected,
@@ -741,7 +741,7 @@ struct CIDRTests {
                 prefixLength: bitCount
             )
 
-            var cidrPrefixBits = String(value: cidr.prefix._address, radix: 2)
+            var cidrPrefixBits = String(value: cidr.prefix._numericAddress, radix: 2)
             let remainingBits = bitWidth - cidrPrefixBits.count
             cidrPrefixBits = String(repeating: "0", count: remainingBits) + cidrPrefixBits
             let matchingBits = cidrPrefixBits.prefix(bitCount)
@@ -809,6 +809,14 @@ extension _IPAddressProtocolAddressValueType {
         default:
             fatalError("Unsupported type: \(Self.self)")
         }
+    }
+}
+
+@available(SwiftStdlib 5.1, *)
+extension _IPAddressProtocol {
+    /// The address as a number in the host's byte order, as opposed to the big-endian ``_storage``.
+    fileprivate var _numericAddress: _AddressValueType {
+        _AddressValueType(bigEndian: self._storage)
     }
 }
 

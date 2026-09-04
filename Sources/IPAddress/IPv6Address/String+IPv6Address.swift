@@ -149,6 +149,7 @@ extension IPv6Address {
             _ callbackReturningBytesWritten: (UnsafeMutableRawBufferPointer) -> Int
         ) throws(E) -> Buffer
     ) throws(E) -> Buffer {
+        let address = UnsignedInteger128(bigEndian: self._storage)
         var addressToPrint: IPv6Address = self
         /// This function in always inlined with static `mustUseMixedNotation` values.
         /// So all these branches around `mustUseMixedNotation` will be eliminated at compile time.
@@ -158,8 +159,8 @@ extension IPv6Address {
             /// `upperBound == 7`, and since we mask off 2 segments, upperBound <= 5.
             addressToPrint = IPv6Address(
                 UnsignedInteger128(
-                    _low: self._address._low & 0xFFFF_FFFF_0000_0000,
-                    _high: self._address._high
+                    _low: address._low & 0xFFFF_FFFF_0000_0000,
+                    _high: address._high
                 )
             )
         }
@@ -175,7 +176,7 @@ extension IPv6Address {
         let ipv4EmbeddedWalkBackBytes = 3
         var mixedNotationReserve: Int = 0
         if mustUseMixedNotation {
-            let embeddedIPv4 = IPv4Address(UInt32(truncatingIfNeeded: self._address._low))
+            let embeddedIPv4 = IPv4Address(UInt32(truncatingIfNeeded: address._low))
             let ipv4Length = embeddedIPv4.textualRepresentationLength
             /// The embedded IPv4 replaces the masked-off last two segments, which the walk-back bytes
             /// account for.
@@ -185,7 +186,7 @@ extension IPv6Address {
 
         var lastSegmentReserve: Int = 0
         if !mustUseMixedNotation {
-            let lastSegmentBits = self._address._low & 0xFFFF
+            let lastSegmentBits = address._low & 0xFFFF
             let lastSegmentIsSingleDigit = lastSegmentBits <= 0xF
             /// We do speculative writes, but if the last segment is a single hex digit, then we only
             /// write 1 byte while we still need to reserve 4 bytes of headroom so the speculative write
@@ -241,7 +242,7 @@ extension IPv6Address {
             if mustUseMixedNotation {
                 assert(!entry.writeCsAtEnd)
 
-                let embeddedIPv4 = IPv4Address(UInt32(truncatingIfNeeded: self._address._low))
+                let embeddedIPv4 = IPv4Address(UInt32(truncatingIfNeeded: address._low))
                 let lowerBound = writeIdx &- ipv4EmbeddedWalkBackBytes
                 let ipv4Buffer = unsafe UnsafeMutableRawBufferPointer(
                     rebasing: buffer[lowerBound...]
@@ -273,13 +274,15 @@ extension IPv6Address {
     @inlinable
     @inline(always)
     func makeSegmentsMask() -> UInt8 {
-        let highNibble = IPv6Address.makeNibbleFor4Segments(of: self._address._high)
-        let lowNibble = IPv6Address.makeNibbleFor4Segments(of: self._address._low)
-        return highNibble | (lowNibble &<< 4)
+        let address = self._storage.littleEndian
+        let firstNibble = IPv6Address.makeNibbleFor4Segments(of: address._low)
+        let secondNibble = IPv6Address.makeNibbleFor4Segments(of: address._high)
+        return firstNibble | (secondNibble &<< 4)
     }
 
-    /// Makes a nibble for 4 segments of a 64-bit word,
-    /// each bit representing whether the segment is all-zero (1) or not (0).
+    /// Makes a nibble for 4 segments of a little-endian-viewed 64-bit word, each bit
+    /// representing whether the segment at that lane is all-zero (1) or not (0).
+    /// Zeroness is unaffected by the byte order within a segment.
     @inlinable
     static func makeNibbleFor4Segments(of word: UInt64) -> UInt8 {
         /// 4x 16 bit lanes, each for a segment
@@ -296,11 +299,11 @@ extension IPv6Address {
         let topBitsZeroIfLaneZero = ~topBitsSetIfLaneNonZero
         let m1111: UInt64 = 0b1000000000000000_1000000000000000_1000000000000000_1000000000000000
         let lowBitsZeroIfLaneZero = ((topBitsZeroIfLaneZero & m1111) &>> 15)
-        let m1000100101: UInt64 =
-            0b0000000000001000_0000000000000100_0000000000000010_0000000000000001
+        let mGatherLanes: UInt64 =
+            0b0000000000000001_0000000000000010_0000000000000100_0000000000001000
         /// Puts each low bit of a lane, into bits 49th-52nd.
         /// Then we bit shift by 48 to get each lane's bits into bits 1st-4th.
-        let mask = ((lowBitsZeroIfLaneZero &* m1000100101) &>> 48)
+        let mask = ((lowBitsZeroIfLaneZero &* mGatherLanes) &>> 48)
         return UInt8(truncatingIfNeeded: mask)
     }
 
@@ -309,11 +312,12 @@ extension IPv6Address {
     @inlinable
     @inline(always)
     func countAllDigitsRequiredToPrintExcludingTrailingDigits() -> Int {
+        let address = UnsignedInteger128(bigEndian: self._storage)
         let high = IPv6Address.countDigitsRequiredToPrintExcludingTrailingDigits(
-            of: self._address._high
+            of: address._high
         )
         let low = IPv6Address.countDigitsRequiredToPrintExcludingTrailingDigits(
-            of: self._address._low
+            of: address._low
         )
         return high &+ low
     }
@@ -373,7 +377,8 @@ extension IPv6Address {
     @inlinable
     func _segment(atUncheckedIndex segmentIdx: Int) -> UInt16 {
         assert(segmentIdx >= 0 && segmentIdx <= 7)
-        let word = segmentIdx < 4 ? self._address._high : self._address._low
+        let address = UnsignedInteger128(bigEndian: self._storage)
+        let word = segmentIdx < 4 ? address._high : address._low
         let shift = (3 - (segmentIdx & 3)) * 16
         return UInt16(truncatingIfNeeded: word &>> shift)
     }

@@ -15,7 +15,7 @@ public protocol _IPAddressProtocol:
 {
     associatedtype _AddressValueType: _IPAddressProtocolAddressValueType
 
-    var _address: _AddressValueType { get }
+    var _storage: _AddressValueType { get }
 
     init(_ value: _AddressValueType)
 
@@ -38,7 +38,8 @@ extension _IPAddressProtocol {
     /// [IETF RFC 4632]: https://datatracker.ietf.org/doc/html/rfc4632
     @inlinable
     public var isContiguous: Bool {
-        self._address == ~(_AddressValueType.max >> (~self._address).leadingZeroBitCount)
+        let address = _AddressValueType(bigEndian: self._storage)
+        return address == ~(_AddressValueType.max >> (~address).leadingZeroBitCount)
     }
 }
 
@@ -54,6 +55,8 @@ public protocol _IPAddressProtocolAddressValueType:
     static var max: Self { get }
     var trailingZeroBitCount: Int { get }
     var leadingZeroBitCount: Int { get }
+
+    init(bigEndian value: Self)
 
     static func >> (lhs: Self, rhs: Int) -> Self
 

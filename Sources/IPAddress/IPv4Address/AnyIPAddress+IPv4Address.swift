@@ -45,7 +45,9 @@ extension IPv4Address {
             return nil
         }
 
-        self._address = UInt32(truncatingIfNeeded: ipv6._address._low)
+        self.init(
+            UInt32(truncatingIfNeeded: UnsignedInteger128(bigEndian: ipv6._storage)._low)
+        )
     }
 
     /// Maps this address to an IPv4-mapped IPv6 address, in the reserved address space by [RFC 4291, IP Version 6 Addressing Architecture, February 2006](https://datatracker.ietf.org/doc/rfc4291#section-2.5.5.2).
@@ -72,7 +74,7 @@ extension IPv4Address {
     public var asIPv4MappedIPv6: IPv6Address {
         IPv6Address(
             UnsignedInteger128(
-                _low: 0x0000_FFFF_0000_0000 | UInt64(self._address),
+                _low: 0x0000_FFFF_0000_0000 | UInt64(self.asUInt32()),
                 _high: 0x0000_0000_0000_0000
             )
         )
@@ -92,7 +94,7 @@ extension IPv4Address {
     public var asNAT64WellKnownIPv4EmbeddedIPv6: IPv6Address {
         IPv6Address(
             UnsignedInteger128(
-                _low: UInt64(self._address),
+                _low: UInt64(self.asUInt32()),
                 _high: 0x0064_FF9B_0000_0000
             )
         )

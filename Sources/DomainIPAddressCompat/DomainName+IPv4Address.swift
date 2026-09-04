@@ -18,7 +18,7 @@ extension IPv4Address {
         guard
             let result = unsafe domainName._data.withUnsafeReadableBytes({ ptr -> IPv4Address? in
                 unsafe ptr.withMemoryRebound(to: UInt8.self) { ptr -> IPv4Address? in
-                    var ipv4 = IPv4Address(0)
+                    var address: UInt32 = 0
                     var iterator = domainName.makePositionIterator()
 
                     /// `DomainName.data` always only contains ASCII bytes
@@ -38,12 +38,12 @@ extension IPv4Address {
 
                         /// Unchecked because `idx` can't exceed `3` anyway
                         let shift = 8 * (3 - idx)
-                        ipv4._address |= UInt32(byte) &<< shift
+                        address |= UInt32(byte) &<< shift
                     }
 
                     if iterator.reachedEnd() {
                         /// We've had exactly enough labels, let's return
-                        return ipv4
+                        return IPv4Address(address)
                     }
 
                     /// Check to see if this is an arpa domain name
@@ -70,9 +70,7 @@ extension IPv4Address {
                     }
 
                     /// Arpa domain names have the domain name bytes in reversed order.
-                    ipv4._address = ipv4._address.byteSwapped
-
-                    return ipv4
+                    return IPv4Address(address.byteSwapped)
                 }
             })
         else {
@@ -93,7 +91,7 @@ extension IPv4Address {
         guard
             let result = unsafe domainName._data.withUnsafeReadableBytes({ ptr -> IPv4Address? in
                 unsafe ptr.withMemoryRebound(to: UInt8.self) { ptr -> IPv4Address? in
-                    var ipv4 = IPv4Address(0)
+                    var address: UInt32 = 0
                     var iterator = domainName.makePositionIterator()
 
                     /// `DomainName.data` always only contains ASCII bytes
@@ -111,7 +109,7 @@ extension IPv4Address {
                             return nil
                         }
                         let shift = 8 * idx
-                        ipv4._address |= UInt32(byte) &<< shift
+                        address |= UInt32(byte) &<< shift
                     }
 
                     guard let inAddrRange = iterator.next()?.range,
@@ -136,7 +134,7 @@ extension IPv4Address {
                         return nil
                     }
 
-                    return ipv4
+                    return IPv4Address(address)
                 }
             })
         else {

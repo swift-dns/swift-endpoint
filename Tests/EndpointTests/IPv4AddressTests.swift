@@ -359,6 +359,14 @@ struct IPv4AddressTests {
     }
 
     @available(SwiftStdlib 5.1, *)
+    @Test(arguments: IPv4AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
+    func `IPv4Address stores its bytes in big-endian order`(ip: IPv4Address) {
+        let expectedBytes = [ip.bytes.0, ip.bytes.1, ip.bytes.2, ip.bytes.3]
+        let storageBytes = withUnsafeBytes(of: ip._storage) { unsafe Array($0) }
+        #expect(storageBytes == expectedBytes)
+    }
+
+    @available(SwiftStdlib 5.1, *)
     @Test(arguments: IPv4DecimalLengthTestCase.all)
     func `IPv4Address cString APIs compatibility with C in byte-length test cases`(
         testCase: IPv4DecimalLengthTestCase

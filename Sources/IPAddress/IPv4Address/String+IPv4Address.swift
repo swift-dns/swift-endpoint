@@ -37,14 +37,15 @@ extension IPv4Address: CustomStringConvertible {
     ) -> Int {
         /// These are safe; We've already reserved max capacity needed for the longest possible
         /// IPv4 address, and only the last segment needs the 2 headroom bytes.
-        let (paddedBytes, count) = UInt8(truncatingIfNeeded: self._address &>> 24).asDecimal()
+        let address = self._storage.littleEndian
+        let (paddedBytes, count) = UInt8(truncatingIfNeeded: address).asDecimal()
         /// The first segment has no leading `.`, so it writes the digits a byte lower.
         unsafe buffer.storeBytes(of: paddedBytes &>> 8, toByteOffset: 0, as: UInt32.self)
         var resultIdx = count
 
         for idx in 1..<4 {
-            let shift = 24 - idx * 8
-            let byte = UInt8(truncatingIfNeeded: self._address &>> shift)
+            let shift = idx * 8
+            let byte = UInt8(truncatingIfNeeded: address &>> shift)
             let (paddedBytes, count) = byte.asDecimal()
             unsafe buffer.storeBytes(
                 of: paddedBytes | UInt32(UInt8.asciiDot),
@@ -59,11 +60,12 @@ extension IPv4Address: CustomStringConvertible {
 
     /// 4x 8-bit lanes, one for each byte, each holding how many decimal digits that byte needs
     /// beyond its first one which is always written even if 0 (Example: "0.0.0.0").
-    /// For example for 192.168.1.98, this will be `0x02_02_00_01`, each lane representing a segment's `digitCount - 1`.
+    /// The lanes run from the leftmost address byte upwards, so for 192.168.1.98 this is
+    /// `0x01_00_02_02`, each lane representing a segment's `digitCount - 1`.
     @inlinable
     @inline(always)
     var _extraDecimalDigitsToPrintPerByte: UInt32 {
-        let address = self._address
+        let address = self._storage.littleEndian
         /// `0x7F` == `0b0111_1111`
         let m7f: UInt32 = 0x7F7F_7F7F
         /// `0x76` == `0b0111_0110` == `118` == `128 - 10`
@@ -99,7 +101,7 @@ extension IPv4Address: CustomStringConvertible {
     package var _textualRepresentationWriteRequiredCapacity: Int {
         /// Mask out the last byte to avoid counting the extra digits it would require.
         /// At the end, we add 2 headroom bytes anyways.
-        let extraDigits = self._extraDecimalDigitsToPrintPerByte & 0xFFFF_FF00
+        let extraDigits = self._extraDecimalDigitsToPrintPerByte & 0x00FF_FFFF
         /// Puts sum of all 4 lanes into bits 25th-28th.
         /// Then we bit shift by 24 to get the sum into bits 1st-3rd.
         let extraDigitsCount = (extraDigits &* 0x0101_0101) &>> 24

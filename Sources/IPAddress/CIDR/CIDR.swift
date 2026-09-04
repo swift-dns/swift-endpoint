@@ -48,7 +48,8 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     /// in 0xFF00::/120, the prefix length is 120.
     @inlinable
     public var prefixLength: Int {
-        _AddressValueType.bitWidth &- self.mask._address.trailingZeroBitCount
+        _AddressValueType.bitWidth
+            &- _AddressValueType(bigEndian: self.mask._storage).trailingZeroBitCount
     }
 
     /// The network address of the CIDR block.
@@ -57,7 +58,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     /// In 0xFF00::/8, the network address is 0xFF00::.
     @inlinable
     public var networkAddress: IPAddressType {
-        IPAddressType(self.prefix._address & self.mask._address)
+        IPAddressType(_AddressValueType(bigEndian: self.prefix._storage & self.mask._storage))
     }
 
     /// Create a new CIDR with the given prefix and mask.
@@ -134,7 +135,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     /// Complexity: O(1)
     @inlinable
     public func contains(_ other: IPAddressType) -> Bool {
-        other._address & self.mask._address == self.networkAddress._address
+        other._storage & self.mask._storage == self.networkAddress._storage
     }
 
     /// Whether or not the given AnyIPAddress is within this CIDR block.

@@ -58,7 +58,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     /// In 0xFF00::/8, the network address is 0xFF00::.
     @inlinable
     public var networkAddress: IPAddressType {
-        IPAddressType(_AddressValueType(bigEndian: self.prefix._storage & self.mask._storage))
+        IPAddressType(_storage: self.prefix._storage & self.mask._storage)
     }
 
     /// Create a new CIDR with the given prefix and mask.

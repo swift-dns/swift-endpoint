@@ -19,6 +19,8 @@ public protocol _IPAddressProtocol:
 
     init(_ value: _AddressValueType)
 
+    init(_storage: _AddressValueType)
+
     @available(SwiftStdlib 5.1, *)
     init?(exactly ipAddress: AnyIPAddress)
 

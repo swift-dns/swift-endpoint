@@ -19,11 +19,14 @@ extension DomainName {
         unsafe buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 73) { bufferPtr in
             var bufferIdx = 0
 
-            let lo = ipv6.address._low
-            let hi = ipv6.address._high
+            /// Arpa domain names have the address bytes in reversed order.
+            let address = ipv6._storage.littleEndian
+            let high = address._high
+            let low = address._low
             for idx in 0..<16 {
-                let word = idx < 8 ? lo : hi
-                let byte = UInt8(truncatingIfNeeded: word &>> ((idx & 7) * 8))
+                let word = idx < 8 ? high : low
+                let shift = 56 - (idx & 7) * 8
+                let byte = UInt8(truncatingIfNeeded: word &>> shift)
                 let num1 = byte &>> 4
                 let num2 = byte & 0x0F
 

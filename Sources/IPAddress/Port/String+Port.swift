@@ -218,11 +218,14 @@ extension Port: LosslessStringConvertible {
         self.init(rawValue: rawValue)
     }
 
-    /// Credit goes to @aqrit for original impl.
+    /// Credits:
+    /// To @aqrit: The original impl, and the `(digitsInBytes | raised) & m80` check.
+    /// To Wojciech Mula: The `&* nA1` pair-fold, and the fold after it.
+    /// To Jeroen Koekkoek: The clamped 5-lane read and `m30ForInsignificantBits` padding.
     /// See:
     /// https://github.com/fastfloat/fast_float/blob/a8a02f77480d10c5dc90d39f7b890bc1dff9c1b9/include/fast_float/ascii_number.h#L143
-    /// https://lemire.me/blog/2018/10/03/quickly-parsing-eight-digits/
-    /// https://lemire.me/blog/2022/01/21/swar-explained-parsing-eight-digits/
+    /// https://lemire.me/blog/2023/11/28/parsing-8-bit-integers-quickly/
+    /// http://0x80.pl/notesen/2014-10-12-parsing-decimal-numbers-part-1-swar.html
     @inlinable
     @inline(always)
     static func parsePort(

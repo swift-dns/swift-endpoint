@@ -91,7 +91,7 @@ extension CIDR: LosslessStringConvertible {
                 guard
                     let prefix = IPAddressType(textualRepresentation: prefixSpan),
                     let prefixLength = UInt8(decimalRepresentation: prefixLengthSpan),
-                    prefixLength <= AddressValueType.bitWidth
+                    prefixLength <= _AddressValueType.bitWidth
                 else {
                     return nil
                 }
@@ -109,6 +109,6 @@ extension CIDR: LosslessStringConvertible {
         guard let prefix = IPAddressType(textualRepresentation: span) else {
             return nil
         }
-        self.init(prefix: prefix, prefixLength: AddressValueType.bitWidth)
+        self.init(prefix: prefix, prefixLength: _AddressValueType.bitWidth)
     }
 }

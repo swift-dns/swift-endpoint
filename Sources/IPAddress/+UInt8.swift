@@ -47,6 +47,11 @@ extension UInt8 {
     /// Reads a span of a text like "127" as a `UInt8`, if the bytes are in correct form.
     /// Otherwise returns `nil`.
     /// Equivalent to `UInt8(string, radix: 10)`, but faster.
+    ///
+    /// Credits:
+    /// To Daniel Lemire: The `multiplier0`/`multiplier1` digit weighting.
+    /// See:
+    /// https://lemire.me/blog/2023/11/28/parsing-8-bit-integers-quickly/
     @inlinable
     package init?(decimalRepresentation span: Span<UInt8>) {
         let count = span.count

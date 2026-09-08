@@ -70,7 +70,7 @@ extension IPv4Address {
                     }
 
                     /// Arpa domain names have the domain name bytes in reversed order.
-                    return IPv4Address(address.byteSwapped)
+                    return IPv4Address(address, byteOrder: .bigEndian)
                 }
             })
         else {

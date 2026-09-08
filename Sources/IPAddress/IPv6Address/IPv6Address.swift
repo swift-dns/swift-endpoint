@@ -199,15 +199,10 @@ public struct IPv6Address: Sendable, Hashable {
     /// For example `IPv6Address(0x0102_0304_0506_0708_090A_0B0C_0D0E_0F10)` will
     /// result in an IP address equal to `0102:0304:0506:0708:090A:0B0C:0D0E:0F10`.
     /// Or `IPv6Address(0x0102)` will result in an IP address equal to `::0102`.
+    /// Or `IPv6Address(0x0102, byteOrder: .bigEndian)` will result in an IP address equal to `0201::`.
     @inlinable
-    public init(_ address: UnsignedInteger128) {
-        self._storage = address.bigEndian
-    }
-
-    /// Initialize an `IPv6Address` from the 16 bytes representing it, in big-endian byte order.
-    @inlinable
-    public init(_storage: UnsignedInteger128) {
-        self._storage = _storage
+    public init(_ address: UnsignedInteger128, byteOrder: ByteOrder = .native) {
+        self._storage = byteOrder == .bigEndian ? address : address.byteSwapped
     }
 
     /// Initialize an `IPv6Address` from its raw 128-bit unsigned integer representation.

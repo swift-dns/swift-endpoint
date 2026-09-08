@@ -103,7 +103,6 @@ extension IPv6Address: CustomStringConvertible {
 
 @available(SwiftStdlib 5.1, *)
 extension IPv6Address {
-    @inlinable
     @inline(always)
     package func makeDescription<Buffer, E: Error>(
         options: DescriptionOptions,
@@ -443,7 +442,6 @@ extension IPv6Address {
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
-    @inlinable
     @inline(always)
     public init?(textualRepresentation utf8Span: UTF8Span) {
         self.init(textualRepresentation: utf8Span.span)
@@ -467,7 +465,6 @@ extension IPv6Address: ExpressibleByStringLiteral {
     /// **Passing a dynamic `StaticString` (`let str: StaticString = "2001:db8:85a3::100"; IPv6Address(stringLiteral: str)`) to this init is a bad idea.**
     /// In that case, use `IPv6Address(String(str))` instead.
     /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
-    @inlinable
     @inline(always)
     public init(stringLiteral value: StaticString) {
         let result = value.withUTF8Buffer {
@@ -537,7 +534,6 @@ extension IPv6Address: LosslessStringConvertible {
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
     /// Parses all IPv4-embedded address forms where the embedded IPv4 is in the last 32 bits.
     /// This includes blocks that are not used for embedded IPv4 addresses in practice or are deprecated.
-    @inlinable
     @inline(always)
     public init?(_ description: String) {
         guard
@@ -554,7 +550,6 @@ extension IPv6Address: LosslessStringConvertible {
     /// For example `"[2001:db8:1111::]"` will parse into `2001:DB8:1111:0:0:0:0:0`,
     /// or in other words `0x2001_0DB8_1111_0000_0000_0000_0000_0000`.
     /// Can also parse IPv4-mapped IPv6 addresses in format `"::FFFF:204.152.189.116"`.
-    @inlinable
     @inline(always)
     public init?(_ description: Substring) {
         guard
@@ -817,7 +812,6 @@ extension IPv6Address {
             }
 
             /// The entry for the given all-zero-segments mask.
-            @inlinable
             @inline(always)
             package init(forMask mask: UInt8) {
                 self = SegmentWriteTableEntry(forMask: mask).unpack()
@@ -837,7 +831,6 @@ extension IPv6Address {
         }
 
         /// The entry for the given all-zero-segments mask.
-        @inlinable
         @inline(always)
         package init(forMask mask: UInt8) {
             self.init(cswift_endpoint_ipv6_segment_write_entry(mask))

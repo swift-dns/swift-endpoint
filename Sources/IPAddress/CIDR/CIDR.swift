@@ -58,7 +58,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     /// In 0xFF00::/8, the network address is 0xFF00::.
     @inlinable
     public var networkAddress: IPAddressType {
-        IPAddressType(_storage: self.prefix._storage & self.mask._storage)
+        IPAddressType(self.prefix._storage & self.mask._storage, byteOrder: .bigEndian)
     }
 
     /// Create a new CIDR with the given prefix and mask.
@@ -128,7 +128,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     /// Amounts greater than the bit width of the IP address type are clamped to the bit width.
     @inlinable
     package static func makeMaskBasedOn(prefixLength: Int) -> IPAddressType {
-        IPAddressType(~(_AddressValueType.max >> prefixLength))
+        IPAddressType(~(_AddressValueType.max >> prefixLength), byteOrder: .littleEndian)
     }
 
     /// Whether or not the given AnyIPAddress is within this CIDR block.

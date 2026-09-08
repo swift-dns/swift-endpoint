@@ -95,7 +95,6 @@ extension UInt8 {
     }
 
     /// Maps a hexadecimal ASCII byte to its `0...15` value.
-    @inlinable
     @inline(always)
     package static func mapHexadecimalByteToUInt8(_ asciiByte: UInt8) -> UInt8? {
         let digit = cswift_endpoint_hexadecimal_digit(asciiByte)
@@ -120,7 +119,6 @@ extension UInt8 {
     /// buffer.storeBytes(of: paddedBytes &>> 8, toByteOffset: writerIndex, as: UInt32.self)
     /// writerIndex += count
     /// ```
-    @inlinable
     @inline(always)
     package func asDecimal() -> (paddedBytes: UInt32, count: Int) {
         let entry = cswift_endpoint_decimal_digits(self)

@@ -17,9 +17,7 @@ public protocol _IPAddressProtocol:
 
     var _storage: _AddressValueType { get }
 
-    init(_ value: _AddressValueType)
-
-    init(_storage: _AddressValueType)
+    init(_ value: _AddressValueType, byteOrder: ByteOrder)
 
     @available(SwiftStdlib 5.1, *)
     init?(exactly ipAddress: AnyIPAddress)

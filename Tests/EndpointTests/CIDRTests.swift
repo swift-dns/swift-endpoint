@@ -737,7 +737,7 @@ struct CIDRTests {
 
         for bitCount in 0...bitWidth {
             let cidr = CIDR(
-                prefix: IPAddressType(.anyRandom()),
+                prefix: IPAddressType(.anyRandom(), byteOrder: .littleEndian),
                 prefixLength: bitCount
             )
 
@@ -754,7 +754,7 @@ struct CIDRTests {
                     matchingBits + theRest.joined(separator: ""),
                     radix: 2
                 )!
-                results.append((cidr, IPAddressType(number), true))
+                results.append((cidr, IPAddressType(number, byteOrder: .littleEndian), true))
             }
 
             guard bitCount > 0 else {
@@ -776,7 +776,7 @@ struct CIDRTests {
                     messedUpBits + theRest.joined(separator: ""),
                     radix: 2
                 )!
-                results.append((cidr, IPAddressType(number), false))
+                results.append((cidr, IPAddressType(number, byteOrder: .littleEndian), false))
             }
         }
 

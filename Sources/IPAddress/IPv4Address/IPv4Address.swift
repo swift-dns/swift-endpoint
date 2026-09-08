@@ -134,15 +134,10 @@ public struct IPv4Address: Sendable, Hashable {
     /// Initialize an `IPv4Address` from its raw 32-bit unsigned integer representation.
     /// For example `IPv4Address(0x7F00_0001)` will result in an IP address equal to `127.0.0.1`.
     /// Or `IPv4Address(0x7F)` will result in an IP address equal to `0.0.0.127`.
+    /// Or `IPv4Address(0x0100_007F, byteOrder: .bigEndian)` will result in an IP address equal to `127.0.0.1`.
     @inlinable
-    public init(_ address: UInt32) {
-        self._storage = address.bigEndian
-    }
-
-    /// Initialize an `IPv4Address` from the 4 bytes representing it, in big-endian byte order.
-    @inlinable
-    public init(_storage: UInt32) {
-        self._storage = _storage
+    public init(_ address: UInt32, byteOrder: ByteOrder = .native) {
+        self._storage = byteOrder == .bigEndian ? address : address.byteSwapped
     }
 
     /// Initialize an IPv4 from the 4 8-bits (1-bytes) representing it.

@@ -133,7 +133,6 @@ extension DomainName {
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName("mahdibm.com")
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
-    @inlinable
     @inline(always)
     public init(
         _ description: String,
@@ -150,7 +149,6 @@ extension DomainName {
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName("mahdibm.com")
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
-    @inlinable
     @inline(always)
     public init(
         _ description: Substring,
@@ -170,7 +168,6 @@ extension DomainName {
     /// Parses and case-folds the domainName from the string, and ensures the domainName is valid.
     /// Example: try DomainName(textualRepresentation: "mahdibm.com".utf8Span)
     /// Converts the domain name to ASCII if it's not already, according to the IDNA spec.
-    @inlinable
     @inline(always)
     public init(
         textualRepresentation span: UTF8Span,

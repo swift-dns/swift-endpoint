@@ -30,7 +30,6 @@ extension IPv4Address: CustomStringConvertible {
     /// Writes the textual representation of this address into `buffer` and returns the number of
     /// bytes written.
     /// Requires 3 bytes worth of room for the least significant byte at all times.
-    @inlinable
     @inline(always)
     package func writeTextualRepresentation_Requiring2HeadroomBytes(
         into buffer: UnsafeMutableRawBufferPointer
@@ -96,7 +95,6 @@ extension IPv4Address: CustomStringConvertible {
     ///
     /// Essentially, this var has to assume that the least significant byte of the address which is
     /// written last, will require 3 bytes of room at all times.
-    @inlinable
     @inline(always)
     package var _textualRepresentationWriteRequiredCapacity: Int {
         /// Mask out the last byte to avoid counting the extra digits it would require.
@@ -110,7 +108,6 @@ extension IPv4Address: CustomStringConvertible {
     }
 
     /// The exact number of bytes that the textual representation of this address occupies.
-    @inlinable
     @inline(always)
     package var textualRepresentationLength: Int {
         let allDigits = self._extraDecimalDigitsToPrintPerByte
@@ -127,7 +124,6 @@ extension IPv4Address {
     /// Initialize an IPv4 address from a `UTF8Span` of its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
-    @inlinable
     @inline(always)
     public init?(textualRepresentation utf8Span: UTF8Span) {
         self.init(textualRepresentation: utf8Span.span)
@@ -147,7 +143,6 @@ extension IPv4Address: ExpressibleByStringLiteral {
     /// **Passing a dynamic `StaticString` (`let str: StaticString = "192.168.1.1"; IPv4Address(stringLiteral: str)`) to this init is a bad idea.**
     /// In that case, use `IPv4Address(String(str))` instead.
     /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
-    @inlinable
     @inline(always)
     public init(stringLiteral value: StaticString) {
         guard
@@ -205,7 +200,6 @@ extension IPv4Address: LosslessStringConvertible {
     /// Initialize an IPv4 address from its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
-    @inlinable
     @inline(always)
     public init?(_ description: String) {
         guard
@@ -221,7 +215,6 @@ extension IPv4Address: LosslessStringConvertible {
     /// Initialize an IPv4 address from its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
-    @inlinable
     @inline(always)
     public init?(_ description: Substring) {
         guard

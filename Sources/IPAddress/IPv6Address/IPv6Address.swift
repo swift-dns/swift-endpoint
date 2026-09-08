@@ -306,9 +306,10 @@ extension IPv6Address: ExpressibleByIntegerLiteral {
 extension IPv6Address {
     /// The underlying 128 bits (16 bytes) representing this IPv6 address, as a `UInt128`.
     /// For example `IPv6Address("::1")!.asUInt128()` is `0x0000_0000_0000_0000_0000_0000_0000_0001`.
+    /// Or `IPv6Address("::1")!.asUInt128(byteOrder: .bigEndian)` is `0x0100_0000_0000_0000_0000_0000_0000_0000`.
     @inlinable
-    public func asUInt128() -> UInt128 {
-        let address = UnsignedInteger128(bigEndian: self._storage)
+    public func asUInt128(byteOrder: ByteOrder = .native) -> UInt128 {
+        let address = byteOrder == .bigEndian ? self._storage : self._storage.byteSwapped
         return UInt128(
             _low: address._low,
             _high: address._high

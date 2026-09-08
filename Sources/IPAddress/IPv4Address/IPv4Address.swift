@@ -169,9 +169,10 @@ extension IPv4Address: ExpressibleByIntegerLiteral {
 extension IPv4Address {
     /// The underlying 32 bits (4 bytes) representing this IPv4 address, as a `UInt32`.
     /// For example `IPv4Address("127.0.0.1")!.asUInt32()` is `0x7F00_0001`.
+    /// Or `IPv4Address("127.0.0.1")!.asUInt32(byteOrder: .bigEndian)` is `0x0100_007F`.
     @inlinable
-    public func asUInt32() -> UInt32 {
-        UInt32(bigEndian: self._storage)
+    public func asUInt32(byteOrder: ByteOrder = .native) -> UInt32 {
+        byteOrder == .bigEndian ? self._storage : self._storage.byteSwapped
     }
 
     /// The 4 bytes representing this IPv4 address.

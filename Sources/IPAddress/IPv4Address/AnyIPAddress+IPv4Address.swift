@@ -46,7 +46,7 @@ extension IPv4Address {
         }
 
         self.init(
-            UInt32(truncatingIfNeeded: UnsignedInteger128(bigEndian: ipv6._storage)._low)
+            UInt32(truncatingIfNeeded: ipv6.asUnsignedInteger128()._low)
         )
     }
 

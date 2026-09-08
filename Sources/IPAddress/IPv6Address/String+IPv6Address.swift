@@ -148,7 +148,7 @@ extension IPv6Address {
             _ callbackReturningBytesWritten: (UnsafeMutableRawBufferPointer) -> Int
         ) throws(E) -> Buffer
     ) throws(E) -> Buffer {
-        let address = UnsignedInteger128(bigEndian: self._storage)
+        let address = self.asUnsignedInteger128()
         var addressToPrint: IPv6Address = self
         /// This function in always inlined with static `mustUseMixedNotation` values.
         /// So all these branches around `mustUseMixedNotation` will be eliminated at compile time.
@@ -273,7 +273,7 @@ extension IPv6Address {
     @inlinable
     @inline(always)
     func makeSegmentsMask() -> UInt8 {
-        let address = self._storage.littleEndian
+        let address = self.asUnsignedInteger128()
         let firstNibble = IPv6Address.makeNibbleFor4Segments(of: address._low)
         let secondNibble = IPv6Address.makeNibbleFor4Segments(of: address._high)
         return firstNibble | (secondNibble &<< 4)
@@ -311,7 +311,7 @@ extension IPv6Address {
     @inlinable
     @inline(always)
     func countAllDigitsRequiredToPrintExcludingTrailingDigits() -> Int {
-        let address = UnsignedInteger128(bigEndian: self._storage)
+        let address = self.asUnsignedInteger128()
         let high = IPv6Address.countDigitsRequiredToPrintExcludingTrailingDigits(
             of: address._high
         )
@@ -376,7 +376,7 @@ extension IPv6Address {
     @inlinable
     func _segment(atUncheckedIndex segmentIdx: Int) -> UInt16 {
         assert(segmentIdx >= 0 && segmentIdx <= 7)
-        let address = UnsignedInteger128(bigEndian: self._storage)
+        let address = self.asUnsignedInteger128()
         let word = segmentIdx < 4 ? address._high : address._low
         let shift = (3 - (segmentIdx & 3)) * 16
         return UInt16(truncatingIfNeeded: word &>> shift)

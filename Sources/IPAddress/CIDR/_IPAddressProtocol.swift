@@ -15,7 +15,7 @@ public protocol _IPAddressProtocol:
 {
     associatedtype _AddressValueType: _IPAddressProtocolAddressValueType
 
-    var _storage: _AddressValueType { get }
+    func _asUIntValue(byteOrder: ByteOrder) -> _AddressValueType
 
     init(_ value: _AddressValueType, byteOrder: ByteOrder)
 
@@ -38,7 +38,7 @@ extension _IPAddressProtocol {
     /// [IETF RFC 4632]: https://datatracker.ietf.org/doc/html/rfc4632
     @inlinable
     public var isContiguous: Bool {
-        let address = _AddressValueType(bigEndian: self._storage)
+        let address = self._asUIntValue(byteOrder: .littleEndian)
         return address == ~(_AddressValueType.max >> (~address).leadingZeroBitCount)
     }
 }
@@ -62,4 +62,16 @@ public protocol _IPAddressProtocolAddressValueType:
 
     static func & (lhs: Self, rhs: Self) -> Self
     static prefix func ~ (x: Self) -> Self
+}
+
+extension IPv4Address {
+    public func _asUIntValue(byteOrder: ByteOrder) -> UInt32 {
+        self.asUInt32(byteOrder: byteOrder)
+    }
+}
+
+extension IPv6Address {
+    public func _asUIntValue(byteOrder: ByteOrder) -> UnsignedInteger128 {
+        self.asUnsignedInteger128(byteOrder: byteOrder)
+    }
 }

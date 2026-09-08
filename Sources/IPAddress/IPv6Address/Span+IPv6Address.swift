@@ -37,7 +37,7 @@ extension IPv6Address {
             return false
         }
 
-        let address = self._storage.littleEndian
+        let address = self.asUnsignedInteger128()
         let low = address._low
         let high = address._high
         span.append(UInt8(truncatingIfNeeded: low))

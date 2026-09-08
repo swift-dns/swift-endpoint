@@ -22,7 +22,8 @@ public struct IPv4Address: Sendable, Hashable {
     }
 
     /// The underlying 4 bytes representing this IPv4 address, in big-endian byte order.
-    public var _storage: UInt32
+    @usableFromInline
+    var _storage: UInt32
 
     /// Whether this address is an IPv4 Loopback address, known as localhost, or not.
     /// Equivalent to `127.0.0.0/8` in CIDR notation.
@@ -177,7 +178,7 @@ extension IPv4Address {
 
     /// The 4 bytes representing this IPv4 address.
     public var bytes: (UInt8, UInt8, UInt8, UInt8) {
-        let address = self._storage.littleEndian
+        let address = self.asUInt32()
         return (
             UInt8(truncatingIfNeeded: address),
             UInt8(truncatingIfNeeded: address &>> 8),

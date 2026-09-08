@@ -64,7 +64,7 @@ extension IPv4Address: CustomStringConvertible {
     @inlinable
     @inline(always)
     var _extraDecimalDigitsToPrintPerByte: UInt32 {
-        let address = self._storage.littleEndian
+        let address = self.asUInt32()
         /// `0x7F` == `0b0111_1111`
         let m7f: UInt32 = 0x7F7F_7F7F
         /// `0x76` == `0b0111_0110` == `118` == `128 - 10`

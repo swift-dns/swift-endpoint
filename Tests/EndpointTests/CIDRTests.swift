@@ -816,7 +816,7 @@ extension _IPAddressProtocolAddressValueType {
 extension _IPAddressProtocol {
     /// The address as a number in the host's byte order, as opposed to the big-endian ``_storage``.
     fileprivate var _numericAddress: _AddressValueType {
-        _AddressValueType(bigEndian: self._storage)
+        self._asUIntValue(byteOrder: .littleEndian)
     }
 }
 

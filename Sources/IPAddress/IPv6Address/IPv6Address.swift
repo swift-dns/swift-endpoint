@@ -89,7 +89,8 @@ public struct IPv6Address: Sendable, Hashable {
     }
 
     /// The underlying 16 bytes representing this IPv6 address, in big-endian byte order.
-    public var _storage: UnsignedInteger128
+    @usableFromInline
+    var _storage: UnsignedInteger128
 
     /// Whether this address is the IPv6 Loopback address, known as localhost, or not.
     /// Equivalent to `::1` or `0:0:0:0:0:0:0:1` in IPv6 description format.
@@ -319,6 +320,14 @@ extension IPv6Address {
 
 @available(SwiftStdlib 5.1, *)
 extension IPv6Address {
+    /// The underlying 128 bits (16 bytes) representing this IPv6 address, as a `UInt128`.
+    /// For example `IPv6Address("::1")!.asUInt128()` is `0x0000_0000_0000_0000_0000_0000_0000_0001`.
+    /// Or `IPv6Address("::1")!.asUInt128(byteOrder: .bigEndian)` is `0x0100_0000_0000_0000_0000_0000_0000_0000`.
+    @inlinable
+    public func asUnsignedInteger128(byteOrder: ByteOrder = .native) -> UnsignedInteger128 {
+        byteOrder == .bigEndian ? self._storage : self._storage.byteSwapped
+    }
+
     /// The 16 bytes representing this IPv6 address.
     @inlinable
     public var bytes:
@@ -327,7 +336,7 @@ extension IPv6Address {
             UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8
         )
     {
-        let address = self._storage.littleEndian
+        let address = self.asUnsignedInteger128()
         let low = address._low
         let high = address._high
         return (
@@ -354,7 +363,7 @@ extension IPv6Address {
     /// The same as 8-segments / groups divided by colons (`:`) in the textual representation.
     @inlinable
     public var segments: (UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16, UInt16) {
-        let address = UnsignedInteger128(bigEndian: self._storage)
+        let address = self.asUnsignedInteger128()
         let high = address._high
         let low = address._low
         return (

@@ -362,7 +362,9 @@ struct IPv4AddressTests {
     @Test(arguments: IPv4AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
     func `IPv4Address stores its bytes in big-endian order`(ip: IPv4Address) {
         let expectedBytes = [ip.bytes.0, ip.bytes.1, ip.bytes.2, ip.bytes.3]
-        let storageBytes = withUnsafeBytes(of: ip._storage) { unsafe Array($0) }
+        let storageBytes = withUnsafeBytes(of: ip.asUInt32(byteOrder: .bigEndian)) {
+            unsafe Array($0)
+        }
         #expect(storageBytes == expectedBytes)
     }
 

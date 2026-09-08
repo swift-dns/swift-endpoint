@@ -23,7 +23,7 @@ extension IPv4Address {
             return false
         }
 
-        let address = self._storage.littleEndian
+        let address = self.asUInt32(byteOrder: .bigEndian)
         span.append(UInt8(truncatingIfNeeded: address))
         span.append(UInt8(truncatingIfNeeded: address &>> 8))
         span.append(UInt8(truncatingIfNeeded: address &>> 16))

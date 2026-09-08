@@ -132,6 +132,21 @@ public struct IPv4Address: Sendable, Hashable {
             || CIDR<Self>(prefix: 0xCB_00_71_00, prefixLength: 24).contains(self)
     }
 
+    /// Whether this address is contiguous, and thus suitable for use as a CIDR mask.
+    ///
+    /// A contiguous address has n contiguous 1-bits from the most significant bit and all other bits set to 0.
+    /// For example `255.255.0.0` is contiguous, but `255.0.255.0` is not.
+    ///
+    /// Classless Inter-Domain Routing is defined in [IETF RFC 4632].
+    ///
+    /// [IETF RFC 4632]: https://datatracker.ietf.org/doc/html/rfc4632
+    @available(SwiftStdlib 5.1, *)
+    @inlinable
+    public var isContiguous: Bool {
+        let address = self.asUInt32(byteOrder: .native)
+        return (address &<< 1) | address == address
+    }
+
     /// Initialize an `IPv4Address` from its raw 32-bit unsigned integer representation.
     /// For example `IPv4Address(0x7F00_0001)` will result in an IP address equal to `127.0.0.1`.
     /// Or `IPv4Address(0x7F)` will result in an IP address equal to `0.0.0.127`.
@@ -150,7 +165,7 @@ public struct IPv4Address: Sendable, Hashable {
             | UInt32(_2) &<< 8
             | UInt32(_3) &<< 16
             | UInt32(_4) &<< 24
-        self._storage = bytes.littleEndian
+        self._storage = bytes
     }
 }
 
@@ -178,7 +193,7 @@ extension IPv4Address {
 
     /// The 4 bytes representing this IPv4 address.
     public var bytes: (UInt8, UInt8, UInt8, UInt8) {
-        let address = self.asUInt32()
+        let address = self.asUInt32(byteOrder: .bigEndian)
         return (
             UInt8(truncatingIfNeeded: address),
             UInt8(truncatingIfNeeded: address &>> 8),

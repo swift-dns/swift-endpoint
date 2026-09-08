@@ -37,7 +37,7 @@ extension IPv6Address {
             return false
         }
 
-        let address = self.asUnsignedInteger128()
+        let address = self.asUnsignedInteger128(byteOrder: .bigEndian)
         let low = address._low
         let high = address._high
         span.append(UInt8(truncatingIfNeeded: low))

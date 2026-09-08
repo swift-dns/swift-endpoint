@@ -196,6 +196,23 @@ public struct IPv6Address: Sendable, Hashable {
         self.isIPv4Mapped || self.isNAT64WellKnownIPv4Embedded
     }
 
+    /// Whether this address is contiguous, and thus suitable for use as a CIDR mask.
+    ///
+    /// A contiguous address has n contiguous 1-bits from the most significant bit and all other bits set to 0.
+    /// For example `FFFF::` is contiguous, but `FF00:FFFF::` is not.
+    ///
+    /// Classless Inter-Domain Routing is defined in [IETF RFC 4632].
+    ///
+    /// [IETF RFC 4632]: https://datatracker.ietf.org/doc/html/rfc4632
+    @inlinable
+    public var isContiguous: Bool {
+        let address = self.asUnsignedInteger128(byteOrder: .native)
+        let high = address._high
+        let low = address._low
+        let shiftedHigh = (high &<< 1) | (low &>> 63)
+        return (shiftedHigh | high == high) && ((low &<< 1) | low == low)
+    }
+
     /// Initialize an `IPv6Address` from its raw 128-bit unsigned integer representation.
     /// For example `IPv6Address(0x0102_0304_0506_0708_090A_0B0C_0D0E_0F10)` will
     /// result in an IP address equal to `0102:0304:0506:0708:090A:0B0C:0D0E:0F10`.
@@ -310,19 +327,16 @@ extension IPv6Address {
     /// Or `IPv6Address("::1")!.asUInt128(byteOrder: .bigEndian)` is `0x0100_0000_0000_0000_0000_0000_0000_0000`.
     @inlinable
     public func asUInt128(byteOrder: ByteOrder = .native) -> UInt128 {
-        let address = byteOrder == .bigEndian ? self._storage : self._storage.byteSwapped
-        return UInt128(
-            _low: address._low,
-            _high: address._high
-        )
+        let address = self.asUnsignedInteger128(byteOrder: byteOrder)
+        return UInt128(_low: address._low, _high: address._high)
     }
 }
 
 @available(SwiftStdlib 5.1, *)
 extension IPv6Address {
     /// The underlying 128 bits (16 bytes) representing this IPv6 address, as a `UInt128`.
-    /// For example `IPv6Address("::1")!.asUInt128()` is `0x0000_0000_0000_0000_0000_0000_0000_0001`.
-    /// Or `IPv6Address("::1")!.asUInt128(byteOrder: .bigEndian)` is `0x0100_0000_0000_0000_0000_0000_0000_0000`.
+    /// For example `IPv6Address("::1")!.asUnsignedInteger128()` is `0x0000_0000_0000_0000_0000_0000_0000_0001`.
+    /// Or `IPv6Address("::1")!.asUnsignedInteger128(byteOrder: .bigEndian)` is `0x0100_0000_0000_0000_0000_0000_0000_0000`.
     @inlinable
     public func asUnsignedInteger128(byteOrder: ByteOrder = .native) -> UnsignedInteger128 {
         byteOrder == .bigEndian ? self._storage : self._storage.byteSwapped
@@ -336,7 +350,7 @@ extension IPv6Address {
             UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8
         )
     {
-        let address = self.asUnsignedInteger128()
+        let address = self.asUnsignedInteger128(byteOrder: .bigEndian)
         let low = address._low
         let high = address._high
         return (

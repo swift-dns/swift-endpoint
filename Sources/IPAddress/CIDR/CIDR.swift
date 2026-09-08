@@ -49,7 +49,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     @inlinable
     public var prefixLength: Int {
         _AddressValueType.bitWidth
-            &- self.mask._asUIntValue(byteOrder: .littleEndian).trailingZeroBitCount
+            &- self.mask._asUIntValue(byteOrder: .native).trailingZeroBitCount
     }
 
     /// The network address of the CIDR block.
@@ -132,7 +132,7 @@ public struct CIDR<IPAddressType: _IPAddressProtocol>: Sendable {
     /// Amounts greater than the bit width of the IP address type are clamped to the bit width.
     @inlinable
     package static func makeMaskBasedOn(prefixLength: Int) -> IPAddressType {
-        IPAddressType(~(_AddressValueType.max >> prefixLength), byteOrder: .littleEndian)
+        IPAddressType(~(_AddressValueType.max >> prefixLength), byteOrder: .native)
     }
 
     /// Whether or not the given AnyIPAddress is within this CIDR block.

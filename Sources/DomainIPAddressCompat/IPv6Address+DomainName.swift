@@ -20,12 +20,12 @@ extension DomainName {
             var bufferIdx = 0
 
             /// Arpa domain names have the address bytes in reversed order.
-            let address = ipv6.asUnsignedInteger128()
-            let low = address._low
+            let address = ipv6.asUnsignedInteger128(byteOrder: .bigEndian)
             let high = address._high
+            let low = address._low
             for idx in 0..<16 {
-                let word = idx < 8 ? low : high
-                let shift = (idx & 7) * 8
+                let word = idx < 8 ? high : low
+                let shift = 56 - (idx & 7) * 8
                 let byte = UInt8(truncatingIfNeeded: word &>> shift)
                 let num1 = byte &>> 4
                 let num2 = byte & 0x0F

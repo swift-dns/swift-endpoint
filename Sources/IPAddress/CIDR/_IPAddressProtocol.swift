@@ -15,6 +15,17 @@ public protocol _IPAddressProtocol:
 {
     associatedtype _AddressValueType: _IPAddressProtocolAddressValueType
 
+    /// Whether this address is contiguous, and thus suitable for use as a CIDR mask.
+    ///
+    /// A contiguous address has n contiguous 1-bits from the most significant bit and all other bits set to 0.
+    /// For example `255.255.0.0` is contiguous, but `255.0.255.0` is not.
+    ///
+    /// Classless Inter-Domain Routing is defined in [IETF RFC 4632].
+    ///
+    /// [IETF RFC 4632]: https://datatracker.ietf.org/doc/html/rfc4632
+    @available(SwiftStdlib 5.1, *)
+    var isContiguous: Bool { get }
+
     func _asUIntValue(byteOrder: ByteOrder) -> _AddressValueType
 
     init(_ value: _AddressValueType, byteOrder: ByteOrder)
@@ -24,23 +35,6 @@ public protocol _IPAddressProtocol:
 
     @available(SwiftStdlib 5.1, *)
     init?(textualRepresentation: Span<UInt8>)
-}
-
-@available(SwiftStdlib 5.1, *)
-extension _IPAddressProtocol {
-    /// Whether this address is contiguous, and thus suitable for use as a CIDR mask.
-    ///
-    /// A contiguous address has n contiguous 1-bits from the most significant bit and all other bits set to 0.
-    /// For example `255.255.0.0` is contiguous, but `255.0.255.0` is not.
-    ///
-    /// Classless Inter-Domain Routing is defined in [IETF RFC 4632].
-    ///
-    /// [IETF RFC 4632]: https://datatracker.ietf.org/doc/html/rfc4632
-    @inlinable
-    public var isContiguous: Bool {
-        let address = self._asUIntValue(byteOrder: .littleEndian)
-        return address == ~(_AddressValueType.max >> (~address).leadingZeroBitCount)
-    }
 }
 
 /// DO NOT IMPLEMENT THIS PROTOCOL YOURSELF.
@@ -54,9 +48,6 @@ public protocol _IPAddressProtocolAddressValueType:
     static var bitWidth: Int { get }
     static var max: Self { get }
     var trailingZeroBitCount: Int { get }
-    var leadingZeroBitCount: Int { get }
-
-    init(bigEndian value: Self)
 
     static func >> (lhs: Self, rhs: Int) -> Self
 

@@ -521,6 +521,7 @@ jobs:
       - name: Check relevance
         id: check-relevance
         env:
+          JOB_KEYS: "freebsd"
           GITHUB_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |

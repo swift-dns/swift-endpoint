@@ -13,7 +13,7 @@ readonly ci_config_path="${CI_CONFIG_PATH:-.github/ci-config.json}"
 
 # Every key a repository may turn off in its own '.github/ci-config.json'. That file is mandatory,
 # but a key that is absent from it leaves the jobs it gates enabled.
-readonly known_job_keys="android benchmarks embedded integration-tests musl wasm windows"
+readonly known_job_keys="android benchmarks embedded freebsd integration-tests musl wasm windows"
 
 validate_ci_config() {
   local config_path="${1:?validate_ci_config requires the path of the ci config file}"

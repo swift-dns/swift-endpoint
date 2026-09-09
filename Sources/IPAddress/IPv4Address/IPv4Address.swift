@@ -210,6 +210,11 @@ extension IPv4Address {
 
     /// A stack-unprotected view of exactly 4 (IPv4Address.size) bytes representing this IPv4 address, in network byte order.
     /// For example `IPv4Address("127.0.0.1")!._unprotectedBytes` contains `[127, 0, 0, 1]`.
+    ///
+    /// This unprotected accessor means there is no stack canary to protect the stack frame where this
+    /// accessor will land. An out-of-bounds write from any other code (e.g. when using unsafe-pointers)
+    /// in that same function will go undetected instead of trapping on the stack canary.
+    /// Therefore prefer `bytes` unless you trust the calling frame.
     @available(SwiftStdlib 5.1, *)
     @inlinable
     public var _unprotectedBytes: Span<UInt8> {

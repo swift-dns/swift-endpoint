@@ -361,11 +361,10 @@ extension IPv6Address {
     /// A stack-unprotected view of exactly 16 (IPv6Address.size) bytes representing this IPv6 address, in network byte order.
     /// For example `IPv6Address("::1")!._unprotectedBytes` contains `[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]`.
     ///
-    /// `bytes` vs `_unprotectedBytes`:
-    /// - `bytes` is stack-guarded, and thus safe to use in all contexts.
-    /// - `_unprotectedBytes` is stack-unprotected, and thus unsafe to use in some contexts.
-    /// - If you're NOT using `_unprotectedBytes.withUnsafe...` funcs, then you're guaranteed to be SAFE.
-    ///
+    /// This unprotected accessor means there is no stack canary to protect the stack frame where this
+    /// accessor will land. An out-of-bounds write from any other code (e.g. when using unsafe-pointers)
+    /// in that same function will go undetected instead of trapping on the stack canary.
+    /// Therefore prefer `bytes` unless you trust the calling frame.
     @available(SwiftStdlib 5.1, *)
     @inlinable
     public var _unprotectedBytes: Span<UInt8> {

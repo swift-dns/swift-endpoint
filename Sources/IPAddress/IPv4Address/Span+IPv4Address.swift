@@ -8,9 +8,9 @@ extension IPv4Address {
         }
 
         self.init(
-            UInt32(span[0]) &<< 24
-                | UInt32(span[1]) &<< 16
-                | UInt32(span[2]) &<< 8
+            UInt32(span[0]) << 24
+                | UInt32(span[1]) << 16
+                | UInt32(span[2]) << 8
                 | UInt32(span[3])
         )
     }
@@ -25,9 +25,9 @@ extension IPv4Address {
 
         let address = self.asUInt32(byteOrder: .bigEndian)
         span.append(UInt8(truncatingIfNeeded: address))
-        span.append(UInt8(truncatingIfNeeded: address &>> 8))
-        span.append(UInt8(truncatingIfNeeded: address &>> 16))
-        span.append(UInt8(truncatingIfNeeded: address &>> 24))
+        span.append(UInt8(truncatingIfNeeded: address >> 8))
+        span.append(UInt8(truncatingIfNeeded: address >> 16))
+        span.append(UInt8(truncatingIfNeeded: address >> 24))
 
         return true
     }

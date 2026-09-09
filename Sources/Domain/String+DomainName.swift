@@ -54,7 +54,7 @@ extension DomainName {
         options: DescriptionOptions = []
     ) -> String {
         let wireLength = self._data.readableBytes
-        let neededCapacity = wireLength > 0 ? wireLength &- 1 : 0
+        let neededCapacity = wireLength > 0 ? wireLength - 1 : 0
         var domainName = unsafe String(
             unsafeUninitializedCapacity_Compatibility: neededCapacity
         ) { stringBuffer in
@@ -80,7 +80,7 @@ extension DomainName {
 
                 /// Skip the first label's length byte, which is not part of the description.
                 /// Replace all other length bytes with dots.
-                var wireIdx = 1 &+ Int(unsafe domainNamePtr[0])
+                var wireIdx = 1 + Int(unsafe domainNamePtr[0])
                 while wireIdx < wireLength {
                     unsafe stringBuffer[wireIdx &- 1] = .asciiDot
                     wireIdx &+= 1 &+ Int(unsafe domainNamePtr[wireIdx])

@@ -26,20 +26,20 @@ extension DomainName {
             for idx in 0..<16 {
                 let word = idx < 8 ? high : low
                 let shift = 56 - (idx & 7) * 8
-                let byte = UInt8(truncatingIfNeeded: word &>> shift)
-                let num1 = byte &>> 4
+                let byte = UInt8(truncatingIfNeeded: word >> shift)
+                let num1 = byte >> 4
                 let num2 = byte & 0x0F
 
                 unsafe bufferPtr[bufferIdx] = 1
                 unsafe bufferPtr[bufferIdx + 1] =
                     num2 > 9
-                    ? num2 &+ UInt8.asciiLowercasedA &- 10
+                    ? num2 + UInt8.asciiLowercasedA - 10
                     : num2 &+ UInt8.ascii0
 
                 unsafe bufferPtr[bufferIdx + 2] = 1
                 unsafe bufferPtr[bufferIdx + 3] =
                     num1 > 9
-                    ? num1 &+ UInt8.asciiLowercasedA &- 10
+                    ? num1 + UInt8.asciiLowercasedA - 10
                     : num1 &+ UInt8.ascii0
 
                 bufferIdx += 4

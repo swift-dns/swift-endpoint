@@ -9,21 +9,21 @@ extension IPv6Address {
 
         self.init(
             UnsignedInteger128(
-                _low: UInt64(span[8]) &<< 56
-                    | UInt64(span[9]) &<< 48
-                    | UInt64(span[10]) &<< 40
-                    | UInt64(span[11]) &<< 32
-                    | UInt64(span[12]) &<< 24
-                    | UInt64(span[13]) &<< 16
-                    | UInt64(span[14]) &<< 8
+                _low: UInt64(span[8]) << 56
+                    | UInt64(span[9]) << 48
+                    | UInt64(span[10]) << 40
+                    | UInt64(span[11]) << 32
+                    | UInt64(span[12]) << 24
+                    | UInt64(span[13]) << 16
+                    | UInt64(span[14]) << 8
                     | UInt64(span[15]),
-                _high: UInt64(span[0]) &<< 56
-                    | UInt64(span[1]) &<< 48
-                    | UInt64(span[2]) &<< 40
-                    | UInt64(span[3]) &<< 32
-                    | UInt64(span[4]) &<< 24
-                    | UInt64(span[5]) &<< 16
-                    | UInt64(span[6]) &<< 8
+                _high: UInt64(span[0]) << 56
+                    | UInt64(span[1]) << 48
+                    | UInt64(span[2]) << 40
+                    | UInt64(span[3]) << 32
+                    | UInt64(span[4]) << 24
+                    | UInt64(span[5]) << 16
+                    | UInt64(span[6]) << 8
                     | UInt64(span[7])
             )
         )
@@ -41,21 +41,21 @@ extension IPv6Address {
         let low = address._low
         let high = address._high
         span.append(UInt8(truncatingIfNeeded: low))
-        span.append(UInt8(truncatingIfNeeded: low &>> 8))
-        span.append(UInt8(truncatingIfNeeded: low &>> 16))
-        span.append(UInt8(truncatingIfNeeded: low &>> 24))
-        span.append(UInt8(truncatingIfNeeded: low &>> 32))
-        span.append(UInt8(truncatingIfNeeded: low &>> 40))
-        span.append(UInt8(truncatingIfNeeded: low &>> 48))
-        span.append(UInt8(truncatingIfNeeded: low &>> 56))
+        span.append(UInt8(truncatingIfNeeded: low >> 8))
+        span.append(UInt8(truncatingIfNeeded: low >> 16))
+        span.append(UInt8(truncatingIfNeeded: low >> 24))
+        span.append(UInt8(truncatingIfNeeded: low >> 32))
+        span.append(UInt8(truncatingIfNeeded: low >> 40))
+        span.append(UInt8(truncatingIfNeeded: low >> 48))
+        span.append(UInt8(truncatingIfNeeded: low >> 56))
         span.append(UInt8(truncatingIfNeeded: high))
-        span.append(UInt8(truncatingIfNeeded: high &>> 8))
-        span.append(UInt8(truncatingIfNeeded: high &>> 16))
-        span.append(UInt8(truncatingIfNeeded: high &>> 24))
-        span.append(UInt8(truncatingIfNeeded: high &>> 32))
-        span.append(UInt8(truncatingIfNeeded: high &>> 40))
-        span.append(UInt8(truncatingIfNeeded: high &>> 48))
-        span.append(UInt8(truncatingIfNeeded: high &>> 56))
+        span.append(UInt8(truncatingIfNeeded: high >> 8))
+        span.append(UInt8(truncatingIfNeeded: high >> 16))
+        span.append(UInt8(truncatingIfNeeded: high >> 24))
+        span.append(UInt8(truncatingIfNeeded: high >> 32))
+        span.append(UInt8(truncatingIfNeeded: high >> 40))
+        span.append(UInt8(truncatingIfNeeded: high >> 48))
+        span.append(UInt8(truncatingIfNeeded: high >> 56))
 
         return true
     }

@@ -177,7 +177,7 @@ extension IPv6Address {
         var mixedNotationReserve: Int = 0
         if mustUseMixedNotation {
             let embeddedIPv4 = IPv4Address(
-                UInt32(truncatingIfNeeded: address._high &>> 32),
+                UInt32(truncatingIfNeeded: address._high >> 32),
                 byteOrder: .bigEndian
             )
             let ipv4Length = embeddedIPv4.textualRepresentationLength
@@ -226,7 +226,7 @@ extension IPv6Address {
             for offset in range {
                 let segmentInfo = packedSegmentInfos &>> (offset &* 5)
                 let segmentIdx = Int(truncatingIfNeeded: segmentInfo & 0x7)
-                let colonsCount = Int(truncatingIfNeeded: (segmentInfo &>> 3) & 0x3)
+                let colonsCount = Int(truncatingIfNeeded: (segmentInfo >> 3) & 0x3)
 
                 unsafe buffer[writeIdx] = .asciiColon
                 unsafe buffer[writeIdx &+ 1] = .asciiColon
@@ -249,7 +249,7 @@ extension IPv6Address {
                 assert(!entry.writeCsAtEnd)
 
                 let embeddedIPv4 = IPv4Address(
-                    UInt32(truncatingIfNeeded: address._high &>> 32),
+                    UInt32(truncatingIfNeeded: address._high >> 32),
                     byteOrder: .bigEndian
                 )
                 let lowerBound = writeIdx &- ipv4EmbeddedWalkBackBytes
@@ -269,9 +269,9 @@ extension IPv6Address {
             assert(
                 writeIdx
                     == toReserve
-                    &- (encloseInSquareBrackets ? 1 : 2)
-                    &+ (entry.writeCsAtEnd ? 1 : 0)
-                    &- lastSegmentReserve
+                    - (encloseInSquareBrackets ? 1 : 2)
+                    + (entry.writeCsAtEnd ? 1 : 0)
+                    - lastSegmentReserve
             )
 
             return writeIdx
@@ -286,7 +286,7 @@ extension IPv6Address {
         let address = self.asUnsignedInteger128(byteOrder: .bigEndian)
         let firstNibble = IPv6Address.makeNibbleFor4Segments(of: address._low)
         let secondNibble = IPv6Address.makeNibbleFor4Segments(of: address._high)
-        return firstNibble | (secondNibble &<< 4)
+        return firstNibble | (secondNibble << 4)
     }
 
     /// Makes a nibble for 4 segments of a big-endian-ordered 64-bit word, each bit
@@ -307,12 +307,12 @@ extension IPv6Address {
         /// Make sure all bits are set to 0, other than the top bits, which are set to 1 if it was a non-zero segment.
         let topBitsZeroIfLaneZero = ~topBitsSetIfLaneNonZero
         let m1111: UInt64 = 0b1000000000000000_1000000000000000_1000000000000000_1000000000000000
-        let lowBitsZeroIfLaneZero = ((topBitsZeroIfLaneZero & m1111) &>> 15)
+        let lowBitsZeroIfLaneZero = ((topBitsZeroIfLaneZero & m1111) >> 15)
         let mGatherLanes: UInt64 =
             0b0000000000000001_0000000000000010_0000000000000100_0000000000001000
         /// Puts each low bit of a lane, into bits 49th-52nd.
         /// Then we bit shift by 48 to get each lane's bits into bits 1st-4th.
-        let mask = ((lowBitsZeroIfLaneZero &* mGatherLanes) &>> 48)
+        let mask = ((lowBitsZeroIfLaneZero &* mGatherLanes) >> 48)
         return UInt8(truncatingIfNeeded: mask)
     }
 
@@ -364,12 +364,12 @@ extension IPv6Address {
         /// In each lane, make sure if a previous nibble is set to 1, then the right-side nibble is also set to 1.
         /// Only that it'll leak into the next lane, so we first mask out the leak with `m0008`.
         /// Then OR it with the original value to set back the left-side nibble.
-        var s = onlyTopBitsSetIfNibbleNonZero | ((onlyTopBitsSetIfNibbleNonZero &>> 4) & m0008)
+        var s = onlyTopBitsSetIfNibbleNonZero | ((onlyTopBitsSetIfNibbleNonZero >> 4) & m0008)
         /// In each lane, make sure if a previous nibble is set to 1, then the right-side nibble is also set to 1.
         /// Only that it'll leak into the next lane, so we mask out the leak with `m8000`.
         /// Then OR it with the original value to set back the left-side nibbles.
         /// After this, in a lane, if a nibble or any nibbles after it are not zero, then they are set to `0b1000`.
-        s = s | ((s &<< 12) & m8000)
+        s = s | ((s << 12) & m8000)
         /// `0x1011` == `0b0001_0000_0001_0001`
         /// Because the lane is byte-swapped, segment 0xABCD is stored in the lane as 0xCDAB.
         /// So we need to target D, and therefore the second nibble from the left.
@@ -377,11 +377,11 @@ extension IPv6Address {
         /// Now we move the `0b1000` nibbles to be `0b0001` aka, 1.
         /// We mask out the last nibble because we have to write 1 digit anyway even for an empty segment,
         /// unless the segment is compressed which we don't care about here.
-        let extraDigitFlags = (s &>> 3) & m1011
+        let extraDigitFlags = (s >> 3) & m1011
         /// `0x1111` == `0b0001_0001_0001_0001`
         let m1111: UInt64 = 0x1111_1111_1111_1111
         /// Count of all `0b0001` nibbles
-        return Int(truncatingIfNeeded: (extraDigitFlags &* m1111) &>> 60)
+        return Int(truncatingIfNeeded: (extraDigitFlags &* m1111) >> 60)
     }
 
     /// The 16-bit segment at `segmentIdx`, in big-endian byte order.
@@ -412,14 +412,14 @@ extension IPv6Address {
         var nibbles = UInt32(segment)
         /// `nibbles` is in form `0x00_00_2d_1c` here, byte-swapped.
         /// We make it `0x01_0c_02_0d`, so each nibble is in its own 8-bit lane.
-        nibbles = ((nibbles &>> 8) | (nibbles &<< 16)) & 0x00FF_00FF
-        nibbles = ((nibbles &<< 4) | nibbles) & 0x0F0F_0F0F
+        nibbles = ((nibbles >> 8) | (nibbles << 16)) & 0x00FF_00FF
+        nibbles = ((nibbles << 4) | nibbles) & 0x0F0F_0F0F
 
         /// Now we add 6 to each lane, if it overflows to more than 4 bits, we know the lane contained
         /// a hex digit in range 10...15 (a...f). Otherwise it contained a digit in range 0...9.
         /// For `0x01_0c_02_0d`, we'll have something in form `0x00_01_00_01` here.
         /// If 1, then the lane contained a to f.
-        let above9Mask = ((nibbles &+ 0x0606_0606) & 0x1010_1010) &>> 4
+        let above9Mask = ((nibbles &+ 0x0606_0606) & 0x1010_1010) >> 4
         /// 0x27
         let adjustment = UInt32(UInt8.asciiLowercasedA - UInt8.ascii0 - 10)
         /// This will make the a to f lanes contain 0x27, and the 0...9 lanes contain 0.
@@ -435,7 +435,7 @@ extension IPv6Address {
         /// We don't want to write any leading 0s.
         let systemRepresentationBytes = hexASCII.byteSwapped
         // nibbles.leadingZeroBitCount / 8
-        let zeroDigitsCount = nibbles.leadingZeroBitCount &>> 3
+        let zeroDigitsCount = nibbles.leadingZeroBitCount >> 3
         /// If all 4 digits are 0 we still need to write 1 zero.
         let zeroDigitsCountMax3 = min(3, zeroDigitsCount)
         let toStore = systemRepresentationBytes &>> (zeroDigitsCountMax3 &* 8)
@@ -680,7 +680,7 @@ extension IPv6Address: LosslessStringConvertible {
                     return false
                 }
 
-                currentSegmentValue = (currentSegmentValue &<< 4) | UInt16(digit)
+                currentSegmentValue = (currentSegmentValue << 4) | UInt16(digit)
                 segmentDigitIdx += 1
 
                 continue
@@ -853,9 +853,9 @@ extension IPv6Address {
         package func unpack() -> Unpacked {
             Unpacked(
                 packedSegmentInfos: self.rawValue & 0xFF_FFFF_FFFF,
-                segmentsCount: Int(truncatingIfNeeded: (self.rawValue &>> 40) & 0xF),
-                minReserveBytes: Int(truncatingIfNeeded: (self.rawValue &>> 44) & 0x3F),
-                writeCsAtEnd: (self.rawValue &>> 50) & 1 == 1
+                segmentsCount: Int(truncatingIfNeeded: (self.rawValue >> 40) & 0xF),
+                minReserveBytes: Int(truncatingIfNeeded: (self.rawValue >> 44) & 0x3F),
+                writeCsAtEnd: (self.rawValue >> 50) & 1 == 1
             )
         }
     }

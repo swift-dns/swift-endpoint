@@ -61,8 +61,8 @@ extension UInt8 {
         }
 
         let digit0 = span[0] &- UInt8.ascii0
-        /// essentially `count &>> 1` == `max(count - 2, 0)`
-        let digit1 = unsafe span[unchecked: count &>> 1] &- UInt8.ascii0
+        /// essentially `count >> 1` == `max(count - 2, 0)`
+        let digit1 = unsafe span[unchecked: count >> 1] &- UInt8.ascii0
         /// `count > 0` so `(0...2) ~ (count - 1)`
         let digit2 = span[count - 1] &- UInt8.ascii0
 
@@ -116,14 +116,14 @@ extension UInt8 {
     /// Given enough buffer capacity, this function can be used like so:
     /// ```
     /// let (paddedBytes, count) = uint8Value.asDecimal()
-    /// buffer.storeBytes(of: paddedBytes &>> 8, toByteOffset: writerIndex, as: UInt32.self)
+    /// buffer.storeBytes(of: paddedBytes >> 8, toByteOffset: writerIndex, as: UInt32.self)
     /// writerIndex += count
     /// ```
     @inline(always)
     package func asDecimal() -> (paddedBytes: UInt32, count: Int) {
         let entry = cswift_endpoint_decimal_digits(self)
-        let paddedBytes = entry &<< 8
-        let count = Int(entry &>> 24) &- 1
+        let paddedBytes = entry << 8
+        let count = Int(entry >> 24) &- 1
         return (paddedBytes, count)
     }
 }

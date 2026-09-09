@@ -75,7 +75,7 @@ extension IPv4Address {
         IPv6Address(
             UnsignedInteger128(
                 _low: 0x0000_0000_0000_0000,
-                _high: 0x0000_0000_FFFF_0000 | (UInt64(self.asUInt32(byteOrder: .bigEndian)) &<< 32)
+                _high: 0x0000_0000_FFFF_0000 | (UInt64(self.asUInt32(byteOrder: .bigEndian)) << 32)
             ),
             byteOrder: .bigEndian
         )

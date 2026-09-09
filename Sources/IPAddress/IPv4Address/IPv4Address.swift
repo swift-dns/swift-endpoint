@@ -148,7 +148,7 @@ public struct IPv4Address: Sendable, Hashable {
     @inlinable
     public var isContiguous: Bool {
         let address = self.asUInt32(byteOrder: .native)
-        return (address &<< 1) | address == address
+        return (address << 1) | address == address
     }
 
     /// Initialize an `IPv4Address` from its raw 32-bit unsigned integer representation.
@@ -166,9 +166,9 @@ public struct IPv4Address: Sendable, Hashable {
     public init(_ _1: UInt8, _ _2: UInt8, _ _3: UInt8, _ _4: UInt8) {
         let bytes =
             UInt32(_1)
-            | UInt32(_2) &<< 8
-            | UInt32(_3) &<< 16
-            | UInt32(_4) &<< 24
+            | UInt32(_2) << 8
+            | UInt32(_3) << 16
+            | UInt32(_4) << 24
         self._storage = bytes.littleEndian
     }
 }

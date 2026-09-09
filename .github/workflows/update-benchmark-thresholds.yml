@@ -11,10 +11,6 @@ on:
         required: true
         type: number
         default: 500
-      pr_number:
-        description: "Pull Request number to comment on. If not provided, the workflow will not comment any PRs."
-        required: false
-        type: number
       target:
         description: "Regex filter for benchmark target names that contains the benchmarks to run. If not provided, all targets will be run."
         required: false
@@ -41,7 +37,32 @@ env:
   RUN_LINK: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
   THRESHOLDS_PATH: "Benchmarks/Thresholds/"
 jobs:
+  check-ci-config:
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 5
+
+    outputs:
+      enabled: ${{ steps.ci-config.outputs.enabled }}
+
+    steps:
+      - name: Check out ${{ github.event.repository.name }}
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check the ci config
+        id: ci-config
+        env:
+          JOB_KEYS: "benchmarks"
+        run: |
+          ENABLED="$(.github/scripts/ci-config.sh)"
+          printf '%s\n' "enabled=${ENABLED}" >> "${GITHUB_OUTPUT}"
+
   update-benchmark-thresholds:
+    needs: check-ci-config
+    if: ${{ needs.check-ci-config.outputs.enabled == 'true' }}
+
     runs-on: [self-hosted, linux, x64]
 
     timeout-minutes: 1440
@@ -64,21 +85,6 @@ jobs:
       - name: Enable full performance
         run: set-perf-mode performance
 
-      - name: Construct in-progress comment
-        if: ${{ inputs.pr_number != '' }}
-        run: |
-          printf '%s\n' "## [Benchmark Thresholds Update](${RUN_LINK}) Report" >> in-progress-comment.md
-          printf '%s\n' 'Thresholds update in progress...' >> in-progress-comment.md
-
-      - name: Comment in PR
-        if: ${{ inputs.pr_number != '' }}
-        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
-        with:
-          github-token: ${{ steps.app-token-initial.outputs.token }}
-          pr-number: ${{ inputs.pr_number }}
-          file-path: in-progress-comment.md
-          comment-tag: benchmark-thresholds-update-comment
-
       - name: Check out code
         uses: actions/checkout@v7
         with:
@@ -89,6 +95,30 @@ jobs:
         run: |
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
           git remote set-url origin "https://x-access-token:${{ steps.app-token-initial.outputs.token }}@github.com/${{ github.repository }}.git"
+
+      - name: Resolve pull request number
+        id: pull-request
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          PR_NUMBER="$(.github/scripts/resolve-pull-request-number.sh)"
+          printf '%s\n' "number=${PR_NUMBER}" >> "${GITHUB_OUTPUT}"
+
+      - name: Construct in-progress comment
+        if: steps.pull-request.outputs.number != ''
+        run: |
+          printf '%s\n' "## [Benchmark Thresholds Update](${RUN_LINK}) Report" >> in-progress-comment.md
+          printf '%s\n' 'Thresholds update in progress...' >> in-progress-comment.md
+
+      - name: Comment in PR
+        if: steps.pull-request.outputs.number != ''
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
+        with:
+          github-token: ${{ steps.app-token-initial.outputs.token }}
+          pr-number: ${{ steps.pull-request.outputs.number }}
+          file-path: in-progress-comment.md
+          comment-tag: benchmark-thresholds-update-comment
 
       - name: Resolve Swift toolchain for cache key
         id: swift-toolchain
@@ -239,12 +269,12 @@ jobs:
           fi
 
       - name: Update comment in PR
-        if: always() && (inputs.pr_number != '')
+        if: always() && (steps.pull-request.outputs.number != '')
         id: pr-comment
         uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b # v3.0.1
         with:
           github-token: ${{ steps.app-token.outputs.token }}
-          pr-number: ${{ inputs.pr_number }}
+          pr-number: ${{ steps.pull-request.outputs.number }}
           file-path: comment.md
           comment-tag: benchmark-thresholds-update-comment
 
@@ -252,7 +282,7 @@ jobs:
         if: always()
         run: |
           cat comment.md >> "${GITHUB_STEP_SUMMARY}"
-          if [[ -n '${{ inputs.pr_number }}' ]]; then
+          if [[ -n '${{ steps.pull-request.outputs.number }}' ]]; then
             printf '%s\n' 'Commented at ${{ steps.pr-comment.outputs.html-url }}' >> "${GITHUB_STEP_SUMMARY}"
           fi
 

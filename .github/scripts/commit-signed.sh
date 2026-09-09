@@ -85,6 +85,14 @@ api_failure_details() {
   return 0
 }
 
+# Percent-encodes every byte outside 'A-Za-z0-9-._~'; GitHub reads an encoded '/' as a literal one.
+url_encode() {
+  local value="${1?url_encode requires a value to encode}"
+
+  jq --null-input --raw-output --arg value "${value}" '$value | @uri'
+  return "$?"
+}
+
 git_in_work_dir() {
   git -C "${work_dir}" "$@"
   return "$?"
@@ -167,8 +175,13 @@ desired_tree_sha() {
 
 # Fetches the remote branch head into 'branch_head_file'; returns 1 when the branch is absent.
 fetch_remote_branch_head() {
-  local url="${api_url}/repos/${repository}/branches/${branch}"
-  local status
+  local encoded_branch url status
+
+  if ! encoded_branch="$(url_encode "${branch}")"; then
+    fatal "Failed to url-encode BRANCH '${branch}'"
+  fi
+
+  url="${api_url}/repos/${repository}/branches/${encoded_branch}"
   status="$(github_api GET "${url}" "" "${branch_head_file}")"
 
   if [[ "${status}" == "404" ]]; then
@@ -184,9 +197,14 @@ fetch_remote_branch_head() {
 point_branch_at_commit() {
   local target_branch="${1:?point_branch_at_commit requires a branch name}"
   local target_sha="${2:?point_branch_at_commit requires a 40-char commit SHA}"
-  local create_url="${api_url}/repos/${repository}/git/refs"
-  local update_url="${api_url}/repos/${repository}/git/refs/heads/${target_branch}"
-  local status
+  local encoded_branch create_url update_url status
+
+  if ! encoded_branch="$(url_encode "${target_branch}")"; then
+    fatal "Failed to url-encode the branch '${target_branch}'"
+  fi
+
+  create_url="${api_url}/repos/${repository}/git/refs"
+  update_url="${api_url}/repos/${repository}/git/refs/heads/${encoded_branch}"
 
   jq --null-input --arg ref "refs/heads/${target_branch}" --arg sha "${target_sha}" \
     '{ref: $ref, sha: $sha}' > "${payload_file}"
@@ -215,8 +233,14 @@ point_branch_at_commit() {
 # Deletes the branch without failing the run, so cleanup never masks the real error.
 delete_branch() {
   local target_branch="${1:?delete_branch requires a branch name}"
-  local url="${api_url}/repos/${repository}/git/refs/heads/${target_branch}"
-  local status
+  local encoded_branch url status
+
+  if ! encoded_branch="$(url_encode "${target_branch}")"; then
+    error "Failed to url-encode the branch '${target_branch}'"
+    return 0
+  fi
+
+  url="${api_url}/repos/${repository}/git/refs/heads/${encoded_branch}"
   status="$(github_api DELETE "${url}" "" "${response_file}")"
 
   if [[ "${status}" != "204" && "${status}" != "404" && "${status}" != "422" ]]; then

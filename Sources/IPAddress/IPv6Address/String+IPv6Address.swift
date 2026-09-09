@@ -693,7 +693,7 @@ extension IPv6Address: LosslessStringConvertible {
                 let idxNoIncrement = idx - 1
                 guard
                     segmentDigitIdx > 0,
-                    IPv4Address.parseIPv4(
+                    IPv4Address.parseIPv4_noInline(
                         span: unsafe span.extracting(
                             unchecked: Range(
                                 uncheckedBounds: (idxNoIncrement &- segmentDigitIdx, count)

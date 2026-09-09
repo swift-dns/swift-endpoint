@@ -270,8 +270,8 @@ extension IPv4Address: LosslessStringConvertible {
     }
 
     @inlinable
-    @inline(always)
-    static func parseIPv4(
+    @inline(never)
+    static func parseIPv4_noInline(
         span: Span<UInt8>,
         address: inout UInt32
     ) -> Bool {

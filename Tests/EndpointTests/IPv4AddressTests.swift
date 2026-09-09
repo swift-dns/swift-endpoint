@@ -26,7 +26,7 @@ struct IPv4AddressTests {
     @Test func ipv4Address() {
         let ip = IPv4Address(127, 0, 0, 1)
         #expect(ip.asUInt32() == 0x7F00_0001)
-        #expect(ip.bytes == (0x7F, 0x00, 0x00, 0x01))
+        #expect(ContiguousArray(copying: ip.bytes) == [0x7F, 0x00, 0x00, 0x01])
     }
 
     @Test func `IPv4Address serialize parse happy-path with span works correctly`() throws {
@@ -343,14 +343,14 @@ struct IPv4AddressTests {
     @available(SwiftStdlib 5.1, *)
     @Test(arguments: IPv4AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
     func `IPv4Address cString APIs compatibility with C`(ip: IPv4Address) {
-        let expectedBytes = [ip.bytes.0, ip.bytes.1, ip.bytes.2, ip.bytes.3]
+        let expectedBytes = ContiguousArray(copying: ip.bytes)
 
         var inAddress = in_addr()
         let pton = ip.withCString { span in
             span.withUnsafeBufferPointer { unsafe inet_pton(AF_INET, $0.baseAddress!, &inAddress) }
         }
         #expect(pton == 1)
-        #expect(withUnsafeBytes(of: inAddress) { unsafe Array($0) } == expectedBytes)
+        #expect(withUnsafeBytes(of: inAddress) { unsafe ContiguousArray($0) } == expectedBytes)
 
         var buffer = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
         let ntop = unsafe inet_ntop(AF_INET, &inAddress, &buffer, socklen_t(INET_ADDRSTRLEN))
@@ -361,11 +361,10 @@ struct IPv4AddressTests {
     @available(SwiftStdlib 5.1, *)
     @Test(arguments: IPv4AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
     func `IPv4Address stores its bytes in big-endian order`(ip: IPv4Address) {
-        let expectedBytes = [ip.bytes.0, ip.bytes.1, ip.bytes.2, ip.bytes.3]
         let storageBytes = withUnsafeBytes(of: ip.asUInt32(byteOrder: .bigEndian)) {
-            unsafe Array($0)
+            unsafe ContiguousArray($0)
         }
-        #expect(storageBytes == expectedBytes)
+        #expect(storageBytes == ContiguousArray(copying: ip.bytes))
     }
 
     @available(SwiftStdlib 5.1, *)
@@ -374,14 +373,14 @@ struct IPv4AddressTests {
         testCase: IPv4DecimalLengthTestCase
     ) {
         let ip = testCase.address
-        let expectedBytes = [ip.bytes.0, ip.bytes.1, ip.bytes.2, ip.bytes.3]
+        let expectedBytes = ContiguousArray(copying: ip.bytes)
 
         var inAddress = in_addr()
         let pton = ip.withCString { span in
             span.withUnsafeBufferPointer { unsafe inet_pton(AF_INET, $0.baseAddress!, &inAddress) }
         }
         #expect(pton == 1)
-        #expect(withUnsafeBytes(of: inAddress) { unsafe Array($0) } == expectedBytes)
+        #expect(withUnsafeBytes(of: inAddress) { unsafe ContiguousArray($0) } == expectedBytes)
 
         var buffer = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
         let ntop = unsafe inet_ntop(AF_INET, &inAddress, &buffer, socklen_t(INET_ADDRSTRLEN))
@@ -426,6 +425,43 @@ struct IPv4AddressTests {
         #expect(privateIP == IPv4Address(192, 168, 1, 98))
     }
 
+    @Test(arguments: IPv4AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
+    func `IPv4Address bytes are in network byte order`(ip: IPv4Address) {
+        let address = ip.asUInt32(byteOrder: .bigEndian)
+        #expect(
+            ContiguousArray(copying: ip.bytes) == [
+                UInt8(truncatingIfNeeded: address),
+                UInt8(truncatingIfNeeded: address &>> 8),
+                UInt8(truncatingIfNeeded: address &>> 16),
+                UInt8(truncatingIfNeeded: address &>> 24),
+            ]
+        )
+    }
+
+    @Test(arguments: IPv4AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
+    func `IPv4Address bytes accessor guarantees exact byte amount of 4`(ip: IPv4Address) {
+        let count = ip.bytes.count
+        #expect(count == 4)
+        #expect(IPv4Address.size == 4)
+        #expect(count == IPv4Address.size)
+    }
+
+    @Test(arguments: IPv4AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
+    func `IPv4Address bytes round-trip through parsing`(ip: IPv4Address) {
+        #expect(IPv4Address(parsing: ip.bytes) == ip)
+    }
+
+    @Test(arguments: IPv4AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
+    func `IPv4Address bytes match serialize`(ip: IPv4Address) {
+        let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: IPv4Address.size)
+        defer { unsafe buffer.deallocate() }
+        var outputSpan = unsafe OutputSpan(buffer: buffer, initializedCount: 0)
+        let didSerialize = ip.serialize(into: &outputSpan)
+        let serialized = ContiguousArray(copying: outputSpan.span)
+        #expect(didSerialize)
+        #expect(ContiguousArray(copying: ip.bytes) == serialized)
+    }
+
 }
 
 @available(SwiftStdlib 5.1, *)
@@ -435,7 +471,7 @@ private func testTextualRepresentationLengths(
 ) {
     let description = ip.description
     let length = description.utf8.count
-    let lastByteDigits = String(ip.bytes.3).utf8.count
+    let lastByteDigits = String(ip.bytes[3]).utf8.count
 
     #expect(ip.textualRepresentationLength == length, sourceLocation: sourceLocation)
     /// `_textualRepresentationWriteRequiredCapacity` includes possible extra 2 bytes of

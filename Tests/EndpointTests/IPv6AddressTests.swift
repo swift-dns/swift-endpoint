@@ -57,22 +57,12 @@ struct IPv6AddressTests {
         let expectedAddress: UInt128 = 0x0102_F3F4_1516_7080_90A0_CBBC_0D0E_0F11
         #expect(ip.asUInt128() == expectedAddress)
 
-        #expect(ip.bytes.0 == 0x01)
-        #expect(ip.bytes.1 == 0x02)
-        #expect(ip.bytes.2 == 0xF3)
-        #expect(ip.bytes.3 == 0xF4)
-        #expect(ip.bytes.4 == 0x15)
-        #expect(ip.bytes.5 == 0x16)
-        #expect(ip.bytes.6 == 0x70)
-        #expect(ip.bytes.7 == 0x80)
-        #expect(ip.bytes.8 == 0x90)
-        #expect(ip.bytes.9 == 0xA0)
-        #expect(ip.bytes.10 == 0xCB)
-        #expect(ip.bytes.11 == 0xBC)
-        #expect(ip.bytes.12 == 0x0D)
-        #expect(ip.bytes.13 == 0x0E)
-        #expect(ip.bytes.14 == 0x0F)
-        #expect(ip.bytes.15 == 0x11)
+        #expect(
+            ContiguousArray(copying: ip.bytes) == [
+                0x01, 0x02, 0xF3, 0xF4, 0x15, 0x16, 0x70, 0x80,
+                0x90, 0xA0, 0xCB, 0xBC, 0x0D, 0x0E, 0x0F, 0x11,
+            ]
+        )
 
         #expect(ip.segments.0 == 0x0102)
         #expect(ip.segments.1 == 0xF3F4)
@@ -380,11 +370,7 @@ struct IPv6AddressTests {
         options: IPv6Address.DescriptionOptions
     ) throws {
         let ip = try #require(testCase.ip?.address)
-        let bytes = ip.bytes
-        let expectedBytes = [
-            bytes.0, bytes.1, bytes.2, bytes.3, bytes.4, bytes.5, bytes.6, bytes.7,
-            bytes.8, bytes.9, bytes.10, bytes.11, bytes.12, bytes.13, bytes.14, bytes.15,
-        ]
+        let expectedBytes = ContiguousArray(copying: ip.bytes)
 
         var in6Address = in6_addr()
         let pton = ip.withCString(options: options) { span in
@@ -398,7 +384,7 @@ struct IPv6AddressTests {
         }
 
         #expect(pton == 1)
-        #expect(withUnsafeBytes(of: in6Address) { unsafe Array($0) } == expectedBytes)
+        #expect(withUnsafeBytes(of: in6Address) { unsafe ContiguousArray($0) } == expectedBytes)
 
         var buffer = [CChar](repeating: 0, count: Int(INET6_ADDRSTRLEN))
         let ntop = unsafe inet_ntop(AF_INET6, &in6Address, &buffer, socklen_t(INET6_ADDRSTRLEN))
@@ -409,15 +395,10 @@ struct IPv6AddressTests {
     @available(SwiftStdlib 6.0, *)
     @Test(arguments: IPv6AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
     func `IPv6Address stores its bytes in big-endian order`(ip: IPv6Address) throws {
-        let bytes = ip.bytes
-        let expectedBytes = [
-            bytes.0, bytes.1, bytes.2, bytes.3, bytes.4, bytes.5, bytes.6, bytes.7,
-            bytes.8, bytes.9, bytes.10, bytes.11, bytes.12, bytes.13, bytes.14, bytes.15,
-        ]
         let storageBytes = withUnsafeBytes(of: ip.asUnsignedInteger128(byteOrder: .bigEndian)) {
-            unsafe Array($0)
+            unsafe ContiguousArray($0)
         }
-        #expect(storageBytes == expectedBytes)
+        #expect(storageBytes == ContiguousArray(copying: ip.bytes))
     }
 
     @available(SwiftStdlib 6.2, *)
@@ -556,6 +537,61 @@ struct IPv6AddressTests {
 
         let loopback: IPv6Address = "::1"
         #expect(loopback == IPv6Address(1))
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test(arguments: IPv6AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
+    func `IPv6Address bytes are in network byte order`(ip: IPv6Address) {
+        let address = ip.asUnsignedInteger128(byteOrder: .bigEndian)
+        let low = address._low
+        let high = address._high
+        #expect(
+            ContiguousArray(copying: ip.bytes) == [
+                UInt8(truncatingIfNeeded: low),
+                UInt8(truncatingIfNeeded: low &>> 8),
+                UInt8(truncatingIfNeeded: low &>> 16),
+                UInt8(truncatingIfNeeded: low &>> 24),
+                UInt8(truncatingIfNeeded: low &>> 32),
+                UInt8(truncatingIfNeeded: low &>> 40),
+                UInt8(truncatingIfNeeded: low &>> 48),
+                UInt8(truncatingIfNeeded: low &>> 56),
+                UInt8(truncatingIfNeeded: high),
+                UInt8(truncatingIfNeeded: high &>> 8),
+                UInt8(truncatingIfNeeded: high &>> 16),
+                UInt8(truncatingIfNeeded: high &>> 24),
+                UInt8(truncatingIfNeeded: high &>> 32),
+                UInt8(truncatingIfNeeded: high &>> 40),
+                UInt8(truncatingIfNeeded: high &>> 48),
+                UInt8(truncatingIfNeeded: high &>> 56),
+            ]
+        )
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test(arguments: IPv6AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
+    func `IPv6Address bytes accessor guarantees exact byte amount of 16`(ip: IPv6Address) {
+        let count = ip.bytes.count
+        #expect(count == 16)
+        #expect(IPv6Address.size == 16)
+        #expect(count == IPv6Address.size)
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test(arguments: IPv6AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
+    func `IPv6Address bytes round-trip through parsing`(ip: IPv6Address) {
+        #expect(IPv6Address(parsing: ip.bytes) == ip)
+    }
+
+    @available(SwiftStdlib 6.0, *)
+    @Test(arguments: IPv6AddressTestCase.stringAndAddress.compactMap({ $0.ip?.address }))
+    func `IPv6Address bytes match serialize`(ip: IPv6Address) {
+        let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: IPv6Address.size)
+        defer { unsafe buffer.deallocate() }
+        var outputSpan = unsafe OutputSpan(buffer: buffer, initializedCount: 0)
+        let didSerialize = ip.serialize(into: &outputSpan)
+        let serialized = ContiguousArray(copying: outputSpan.span)
+        #expect(didSerialize)
+        #expect(ContiguousArray(copying: ip.bytes) == serialized)
     }
 
 }

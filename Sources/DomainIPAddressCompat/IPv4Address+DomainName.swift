@@ -36,9 +36,9 @@ extension DomainName {
         /// 16 is the maximum number of bytes required to represent an IPv4 address here
         unsafe buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 16) { bufferPtr in
             var bufferIdx = 0
-            let bytes = ipv4.bytes
+            let bytes = ipv4._unprotectedBytes
 
-            let (paddedBytes0, count0) = bytes.0.asDecimal()
+            let (paddedBytes0, count0) = bytes[0].asDecimal()
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
             unsafe bufferPtr.storeBytes(
                 of: paddedBytes0 | UInt32(truncatingIfNeeded: count0),
@@ -47,7 +47,7 @@ extension DomainName {
             )
             bufferIdx += count0 + 1
 
-            let (paddedBytes1, count1) = bytes.1.asDecimal()
+            let (paddedBytes1, count1) = bytes[1].asDecimal()
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
             unsafe bufferPtr.storeBytes(
                 of: paddedBytes1 | UInt32(truncatingIfNeeded: count1),
@@ -56,7 +56,7 @@ extension DomainName {
             )
             bufferIdx += count1 + 1
 
-            let (paddedBytes2, count2) = bytes.2.asDecimal()
+            let (paddedBytes2, count2) = bytes[2].asDecimal()
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
             unsafe bufferPtr.storeBytes(
                 of: paddedBytes2 | UInt32(truncatingIfNeeded: count2),
@@ -65,7 +65,7 @@ extension DomainName {
             )
             bufferIdx += count2 + 1
 
-            let (paddedBytes3, count3) = bytes.3.asDecimal()
+            let (paddedBytes3, count3) = bytes[3].asDecimal()
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
             unsafe bufferPtr.storeBytes(
                 of: paddedBytes3 | UInt32(truncatingIfNeeded: count3),
@@ -87,9 +87,9 @@ extension DomainName {
         /// 15 more bytes are required for the "in-addr" and "arpa" labels.
         unsafe buffer.writeWithUnsafeMutableBytes(minimumWritableBytes: 31) { bufferPtr in
             var bufferIdx = 0
-            let bytes = ipv4.bytes
+            let bytes = ipv4._unprotectedBytes
 
-            let (paddedBytes3, count3) = bytes.3.asDecimal()
+            let (paddedBytes3, count3) = bytes[3].asDecimal()
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
             unsafe bufferPtr.storeBytes(
                 of: paddedBytes3 | UInt32(truncatingIfNeeded: count3),
@@ -98,7 +98,7 @@ extension DomainName {
             )
             bufferIdx += count3 + 1
 
-            let (paddedBytes2, count2) = bytes.2.asDecimal()
+            let (paddedBytes2, count2) = bytes[2].asDecimal()
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
             unsafe bufferPtr.storeBytes(
                 of: paddedBytes2 | UInt32(truncatingIfNeeded: count2),
@@ -107,7 +107,7 @@ extension DomainName {
             )
             bufferIdx += count2 + 1
 
-            let (paddedBytes1, count1) = bytes.1.asDecimal()
+            let (paddedBytes1, count1) = bytes[1].asDecimal()
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
             unsafe bufferPtr.storeBytes(
                 of: paddedBytes1 | UInt32(truncatingIfNeeded: count1),
@@ -116,7 +116,7 @@ extension DomainName {
             )
             bufferIdx += count1 + 1
 
-            let (paddedBytes0, count0) = bytes.0.asDecimal()
+            let (paddedBytes0, count0) = bytes[0].asDecimal()
             /// This is safe; We've already reserved max capacity needed for the longest possible IPv4 address
             unsafe bufferPtr.storeBytes(
                 of: paddedBytes0 | UInt32(truncatingIfNeeded: count0),

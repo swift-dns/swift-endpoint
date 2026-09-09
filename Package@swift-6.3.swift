@@ -92,6 +92,9 @@ var settings: [SwiftSetting] {
         .enableUpcomingFeature("MemberImportVisibility"),
         .enableUpcomingFeature("InternalImportsByDefault"),
         .enableUpcomingFeature("ExistentialAny"),
+        .enableExperimentalFeature("BuiltinModule"),
+        .enableExperimentalFeature("AddressableTypes"),
+        .enableExperimentalFeature("Lifetimes"),
         .enableExperimentalFeature(
             "AvailabilityMacro=SwiftStdlib 5.1:macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0"
         ),

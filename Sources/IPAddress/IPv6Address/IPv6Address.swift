@@ -1,3 +1,6 @@
+import func Builtin.addressOfBorrow
+import func Builtin.unprotectedAddressOfBorrow
+
 /// An IPv6 address.
 ///
 /// IPv6 addresses are defined as 128-bit integers in [IETF RFC 4291].
@@ -82,6 +85,7 @@
 ///
 /// [IETF RFC 5952]: https://datatracker.ietf.org/doc/html/rfc5952
 @available(SwiftStdlib 5.1, *)
+@_addressableForDependencies
 public struct IPv6Address: Sendable, Hashable {
     /// The byte size of an IPv6.
     public static var size: Int {
@@ -342,35 +346,35 @@ extension IPv6Address {
         byteOrder == .bigEndian ? self._storage : self._storage.byteSwapped
     }
 
-    /// The 16 bytes representing this IPv6 address.
+    /// A view of exactly 16 (IPv6Address.size) bytes representing this IPv6 address, in network byte order.
+    /// For example `IPv6Address("::1")!.bytes` contains `[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]`.
     @inlinable
-    public var bytes:
-        (
-            UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8,
-            UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8
-        )
-    {
-        let address = self.asUnsignedInteger128(byteOrder: .bigEndian)
-        let low = address._low
-        let high = address._high
-        return (
-            UInt8(truncatingIfNeeded: low),
-            UInt8(truncatingIfNeeded: low &>> 8),
-            UInt8(truncatingIfNeeded: low &>> 16),
-            UInt8(truncatingIfNeeded: low &>> 24),
-            UInt8(truncatingIfNeeded: low &>> 32),
-            UInt8(truncatingIfNeeded: low &>> 40),
-            UInt8(truncatingIfNeeded: low &>> 48),
-            UInt8(truncatingIfNeeded: low &>> 56),
-            UInt8(truncatingIfNeeded: high),
-            UInt8(truncatingIfNeeded: high &>> 8),
-            UInt8(truncatingIfNeeded: high &>> 16),
-            UInt8(truncatingIfNeeded: high &>> 24),
-            UInt8(truncatingIfNeeded: high &>> 32),
-            UInt8(truncatingIfNeeded: high &>> 40),
-            UInt8(truncatingIfNeeded: high &>> 48),
-            UInt8(truncatingIfNeeded: high &>> 56)
-        )
+    public var bytes: Span<UInt8> {
+        @_lifetime(borrow self)
+        get {
+            let pointer = UnsafeRawPointer(Builtin.addressOfBorrow(self))
+            let span = unsafe Span<UInt8>(_unsafeStart: pointer, byteCount: Self.size)
+            return unsafe _overrideLifetime(span, borrowing: self)
+        }
+    }
+
+    /// A stack-unprotected view of exactly 16 (IPv6Address.size) bytes representing this IPv6 address, in network byte order.
+    /// For example `IPv6Address("::1")!._unprotectedBytes` contains `[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]`.
+    ///
+    /// `bytes` vs `_unprotectedBytes`:
+    /// - `bytes` is stack-guarded, and thus safe to use in all contexts.
+    /// - `_unprotectedBytes` is stack-unprotected, and thus unsafe to use in some contexts.
+    /// - If you're NOT using `_unprotectedBytes.withUnsafe...` funcs, then you're guaranteed to be SAFE.
+    /// 
+    @available(SwiftStdlib 5.1, *)
+    @inlinable
+    public var _unprotectedBytes: Span<UInt8> {
+        @_lifetime(borrow self)
+        get {
+            let pointer = UnsafeRawPointer(Builtin.unprotectedAddressOfBorrow(self))
+            let span = unsafe Span<UInt8>(_unsafeStart: pointer, byteCount: Self.size)
+            return unsafe _overrideLifetime(span, borrowing: self)
+        }
     }
 
     /// The 8 segments representing this IPv6 address, each being 2 bytes / 16 bits.

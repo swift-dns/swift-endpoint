@@ -39,12 +39,12 @@ extension IPv4Address: CustomStringConvertible {
         let address = self.asUInt32(byteOrder: .bigEndian)
         let (paddedBytes, count) = UInt8(truncatingIfNeeded: address).asDecimal()
         /// The first segment has no leading `.`, so it writes the digits a byte lower.
-        unsafe buffer.storeBytes(of: paddedBytes &>> 8, toByteOffset: 0, as: UInt32.self)
+        unsafe buffer.storeBytes(of: paddedBytes >> 8, toByteOffset: 0, as: UInt32.self)
         var resultIdx = count
 
         for idx in 1..<4 {
             let shift = idx * 8
-            let byte = UInt8(truncatingIfNeeded: address &>> shift)
+            let byte = UInt8(truncatingIfNeeded: address >> shift)
             let (paddedBytes, count) = byte.asDecimal()
             unsafe buffer.storeBytes(
                 of: paddedBytes | UInt32(UInt8.asciiDot),
@@ -84,9 +84,9 @@ extension IPv4Address: CustomStringConvertible {
         /// We do the same as above, but via m1c (`128 - 100`).
         let atLeast100 = ((low7Bits &+ m1c) | address) & m80
         /// 1 in each lane if yes, 0 if no.
-        let isAtLeast10 = atLeast10 &>> 7
+        let isAtLeast10 = atLeast10 >> 7
         /// 1 in each lane if yes, 0 if no.
-        let isAtLeast100 = atLeast100 &>> 7
+        let isAtLeast100 = atLeast100 >> 7
         return isAtLeast10 &+ isAtLeast100
     }
 
@@ -102,7 +102,7 @@ extension IPv4Address: CustomStringConvertible {
         let extraDigits = self._extraDecimalDigitsToPrintPerByte & 0x00FF_FFFF
         /// Puts sum of all 4 lanes into bits 25th-28th.
         /// Then we bit shift by 24 to get the sum into bits 1st-3rd.
-        let extraDigitsCount = (extraDigits &* 0x0101_0101) &>> 24
+        let extraDigitsCount = (extraDigits &* 0x0101_0101) >> 24
         /// 9 == 3 dots + the first digit of each of the 4 bytes + 2 headroom bytes.
         return 9 &+ Int(extraDigitsCount)
     }
@@ -113,7 +113,7 @@ extension IPv4Address: CustomStringConvertible {
         let allDigits = self._extraDecimalDigitsToPrintPerByte
         /// Puts sum of all 4 lanes into bits 25th-28th.
         /// Then we bit shift by 24 to get the sum into bits 1st-3rd.
-        let extraDigitsCount = (allDigits &* 0x0101_0101) &>> 24
+        let extraDigitsCount = (allDigits &* 0x0101_0101) >> 24
         /// 7 == 3 dots + the first digit of each of the 4 bytes.
         return 7 &+ Int(extraDigitsCount)
     }
@@ -331,7 +331,7 @@ extension IPv4Address: LosslessStringConvertible {
             return false
         }
 
-        address = (segment1 &<< 24) | (segment2 &<< 16) | (segment3 &<< 8) | segment4
+        address = (segment1 << 24) | (segment2 << 16) | (segment3 << 8) | segment4
 
         return true
     }

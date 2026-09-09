@@ -46,10 +46,10 @@ extension Port: CustomStringConvertible {
         /// integer byte-order is almost always little-endian.
         let digits =
             UInt64(tenThousands)
-            | (UInt64(thousands) &<< 8)
-            | (UInt64(hundreds) &<< 16)
-            | (UInt64(tens) &<< 24)
-            | (UInt64(ones) &<< 32)
+            | (UInt64(thousands) << 8)
+            | (UInt64(hundreds) << 16)
+            | (UInt64(tens) << 24)
+            | (UInt64(ones) << 32)
         /// Add `0x30` == ASCII `0` to each to make ASCII codes out of the numbers.
         let m30: UInt64 = 0x30_30_30_30_30
         let asciiBytes = digits &+ m30
@@ -68,9 +68,9 @@ extension Port: CustomStringConvertible {
         /// Always store all 8 bytes, but only advance past the significant digits.
         unsafe buffer.storeBytes(of: toStore, toByteOffset: 0, as: UInt64.self)
 
-        /// `zeroDigitsBitsMax32 &>> 3` == `zeroDigitsBitsMax32 / 8`
+        /// `zeroDigitsBitsMax32 >> 3` == `zeroDigitsBitsMax32 / 8`
         /// Compiler will optimize `/ 8` to a shift by 3 anyway so 🤷‍♂️.
-        let numPortTrailingZerosMax4 = zeroDigitsBitsMax32 &>> 3
+        let numPortTrailingZerosMax4 = zeroDigitsBitsMax32 >> 3
         return 5 &- numPortTrailingZerosMax4
     }
 }
@@ -239,10 +239,10 @@ extension Port: LosslessStringConvertible {
         /// Read all possible 5 digits, clamped to `lastIdx` so we don't read out of bounds.
         let bytes =
             UInt64(unsafe span[unchecked: 0])
-            | (UInt64(unsafe span[unchecked: min(1, lastIdx)]) &<< 8)
-            | (UInt64(unsafe span[unchecked: min(2, lastIdx)]) &<< 16)
-            | (UInt64(unsafe span[unchecked: min(3, lastIdx)]) &<< 24)
-            | (UInt64(unsafe span[unchecked: lastIdx]) &<< 32)
+            | (UInt64(unsafe span[unchecked: min(1, lastIdx)]) << 8)
+            | (UInt64(unsafe span[unchecked: min(2, lastIdx)]) << 16)
+            | (UInt64(unsafe span[unchecked: min(3, lastIdx)]) << 24)
+            | (UInt64(unsafe span[unchecked: lastIdx]) << 32)
 
         /// `0x30` == ASCII `0`
         let m30: UInt64 = 0x30_30_30_30_30
@@ -309,11 +309,11 @@ extension Port: LosslessStringConvertible {
         let pairs = multipliedDigitsInBytes & 0x00FF_00FF_00FF_00FF
         /// `0x1388_0032_0000_8000` == `10_000 << 47 | 100 << 31 | 1 << 15`.
         /// This means (1st lane) * 10_000 + (3rd lane) * 100 + (5th lane) * 1 end up in bits 47th...63rd.
-        /// Example: `0x2B_00_04_00_00` -> `0xDD_8002_0000_0000`, and `&>> 47` of that is `443`.
+        /// Example: `0x2B_00_04_00_00` -> `0xDD_8002_0000_0000`, and `>> 47` of that is `443`.
         ///
         /// The biggest value this can produce is `99999`, which needs 17 bits, and bits 47...63
         /// are exactly 17 bits.
-        let value = UInt32(truncatingIfNeeded: (pairs &* 0x1388_0032_0000_8000) &>> 47)
+        let value = UInt32(truncatingIfNeeded: (pairs &* 0x1388_0032_0000_8000) >> 47)
 
         guard value <= 65535 else {
             return false

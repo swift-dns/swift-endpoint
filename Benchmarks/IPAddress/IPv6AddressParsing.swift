@@ -178,8 +178,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     ) { benchmark in
         for _ in 0..<3_000_000 {
             var ipv6Address = in6_addr()
-            _ = cString2GroupsCompressedInTheMiddleNoBrackets.withUnsafeBufferPointer { ptr in
-                unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, &ipv6Address)
+            unsafe _withUnprotectedUnsafeMutablePointer(to: &ipv6Address) { addressPointer in
+                _ = cString2GroupsCompressedInTheMiddleNoBrackets.withUnsafeBufferPointer { ptr in
+                    unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, addressPointer)
+                }
             }
             blackHole(ipv6Address)
         }
@@ -194,8 +196,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var ipv6Address = in6_addr()
-        _ = cString2GroupsCompressedInTheMiddleNoBrackets.withUnsafeBufferPointer { ptr in
-            unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, &ipv6Address)
+        unsafe _withUnprotectedUnsafeMutablePointer(to: &ipv6Address) { addressPointer in
+            _ = cString2GroupsCompressedInTheMiddleNoBrackets.withUnsafeBufferPointer { ptr in
+                unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, addressPointer)
+            }
         }
         blackHole(ipv6Address)
     }
@@ -209,8 +213,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var ipv6Address = in6_addr()
-        _ = cString2GroupsCompressedInTheMiddleNoBrackets.withUnsafeBufferPointer { ptr in
-            unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, &ipv6Address)
+        unsafe _withUnprotectedUnsafeMutablePointer(to: &ipv6Address) { addressPointer in
+            _ = cString2GroupsCompressedInTheMiddleNoBrackets.withUnsafeBufferPointer { ptr in
+                unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, addressPointer)
+            }
         }
         blackHole(ipv6Address)
     }
@@ -585,8 +591,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
         for _ in 0..<3_000_000 {
             var ipv6Address = in6_addr()
             let idx = Int(rng.next() % UInt64(ipv6MultipleIPs.count))
-            _ = ipv6MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
-                unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, &ipv6Address)
+            unsafe _withUnprotectedUnsafeMutablePointer(to: &ipv6Address) { addressPointer in
+                _ = ipv6MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
+                    unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, addressPointer)
+                }
             }
             blackHole(ipv6Address)
         }
@@ -602,8 +610,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     ) { benchmark in
         for idx in ipv6MultipleIPs.indices {
             var ipv6Address = in6_addr()
-            _ = ipv6MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
-                unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, &ipv6Address)
+            unsafe _withUnprotectedUnsafeMutablePointer(to: &ipv6Address) { addressPointer in
+                _ = ipv6MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
+                    unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, addressPointer)
+                }
             }
             blackHole(ipv6Address)
         }
@@ -619,8 +629,10 @@ let ipv6AddressFromStringBenchmarks: @Sendable () -> Void = {
     ) { benchmark in
         for idx in ipv6MultipleIPs.indices {
             var ipv6Address = in6_addr()
-            _ = ipv6MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
-                unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, &ipv6Address)
+            unsafe _withUnprotectedUnsafeMutablePointer(to: &ipv6Address) { addressPointer in
+                _ = ipv6MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
+                    unsafe inet_pton(AF_INET6, ptr.baseAddress.unsafelyUnwrapped, addressPointer)
+                }
             }
             blackHole(ipv6Address)
         }

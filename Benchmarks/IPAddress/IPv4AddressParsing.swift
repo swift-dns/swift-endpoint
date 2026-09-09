@@ -108,8 +108,10 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     ) { benchmark in
         for _ in 0..<6_000_000 {
             var ipv4Address = in_addr()
-            _ = cStringBroadcastIP.withUnsafeBufferPointer { ptr in
-                unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, &ipv4Address)
+            unsafe _withUnprotectedUnsafeMutablePointer(to: &ipv4Address) { addressPointer in
+                _ = cStringBroadcastIP.withUnsafeBufferPointer { ptr in
+                    unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, addressPointer)
+                }
             }
             blackHole(ipv4Address)
         }
@@ -124,8 +126,10 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var ipv4Address = in_addr()
-        _ = cStringBroadcastIP.withUnsafeBufferPointer { ptr in
-            unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, &ipv4Address)
+        unsafe _withUnprotectedUnsafeMutablePointer(to: &ipv4Address) { addressPointer in
+            _ = cStringBroadcastIP.withUnsafeBufferPointer { ptr in
+                unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, addressPointer)
+            }
         }
         blackHole(ipv4Address)
     }
@@ -139,8 +143,10 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var ipv4Address = in_addr()
-        _ = cStringBroadcastIP.withUnsafeBufferPointer { ptr in
-            unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, &ipv4Address)
+        unsafe _withUnprotectedUnsafeMutablePointer(to: &ipv4Address) { addressPointer in
+            _ = cStringBroadcastIP.withUnsafeBufferPointer { ptr in
+                unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, addressPointer)
+            }
         }
         blackHole(ipv4Address)
     }
@@ -328,8 +334,10 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         for _ in 0..<5_000_000 {
             var ipv4Address = in_addr()
             let idx = Int(rng.next() % UInt64(ipv4MultipleIPs.count))
-            _ = ipv4MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
-                unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, &ipv4Address)
+            unsafe _withUnprotectedUnsafeMutablePointer(to: &ipv4Address) { addressPointer in
+                _ = ipv4MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
+                    unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, addressPointer)
+                }
             }
             blackHole(ipv4Address)
         }
@@ -345,8 +353,10 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     ) { benchmark in
         for idx in ipv4MultipleIPs.indices {
             var ipv4Address = in_addr()
-            _ = ipv4MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
-                unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, &ipv4Address)
+            unsafe _withUnprotectedUnsafeMutablePointer(to: &ipv4Address) { addressPointer in
+                _ = ipv4MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
+                    unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, addressPointer)
+                }
             }
             blackHole(ipv4Address)
         }
@@ -362,8 +372,10 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     ) { benchmark in
         for idx in ipv4MultipleIPs.indices {
             var ipv4Address = in_addr()
-            _ = ipv4MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
-                unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, &ipv4Address)
+            unsafe _withUnprotectedUnsafeMutablePointer(to: &ipv4Address) { addressPointer in
+                _ = ipv4MultipleIPsInet[idx].withUnsafeBufferPointer { ptr in
+                    unsafe inet_pton(AF_INET, ptr.baseAddress.unsafelyUnwrapped, addressPointer)
+                }
             }
             blackHole(ipv4Address)
         }

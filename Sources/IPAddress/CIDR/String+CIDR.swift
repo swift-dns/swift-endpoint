@@ -15,7 +15,6 @@ extension CIDR {
     /// e.g. 2001::/220 will result in nil.
     /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
-    @inlinable
     @inline(always)
     public init?(textualRepresentation utf8Span: UTF8Span) {
         self.init(textualRepresentation: utf8Span.span)
@@ -30,7 +29,6 @@ extension CIDR: LosslessStringConvertible {
     /// e.g. 2001::/220 will result in nil.
     /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
-    @inlinable
     @inline(always)
     public init?(_ description: String) {
         guard
@@ -49,7 +47,6 @@ extension CIDR: LosslessStringConvertible {
     /// e.g. 2001::/220 will result in nil.
     /// The prefix itself is kept exactly as provided; host bits are not zeroed out.
     /// e.g. 192.168.1.98/24 stays 192.168.1.98/24, not 192.168.1.0/24.
-    @inlinable
     @inline(always)
     public init?(_ description: Substring) {
         guard
@@ -91,7 +88,7 @@ extension CIDR: LosslessStringConvertible {
                 guard
                     let prefix = IPAddressType(textualRepresentation: prefixSpan),
                     let prefixLength = UInt8(decimalRepresentation: prefixLengthSpan),
-                    prefixLength <= AddressValueType.bitWidth
+                    prefixLength <= _AddressValueType.bitWidth
                 else {
                     return nil
                 }
@@ -109,6 +106,6 @@ extension CIDR: LosslessStringConvertible {
         guard let prefix = IPAddressType(textualRepresentation: span) else {
             return nil
         }
-        self.init(prefix: prefix, prefixLength: AddressValueType.bitWidth)
+        self.init(prefix: prefix, prefixLength: _AddressValueType.bitWidth)
     }
 }

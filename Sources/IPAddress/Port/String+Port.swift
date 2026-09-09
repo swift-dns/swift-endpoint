@@ -17,7 +17,6 @@ extension Port: CustomStringConvertible {
 
     /// Writes the textual representation of this port into `buffer` and returns the number of
     /// significant bytes written. `buffer` must have a capacity of at least 8 bytes.
-    @inlinable
     @inline(always)
     package func writeTextualRepresentation_RequiringMinimumCapacityOf8(
         into buffer: UnsafeMutableRawBufferPointer
@@ -81,7 +80,6 @@ extension Port {
     /// Initialize a `Port` from a `UTF8Span` of its textual representation.
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
     /// For example `"8080"` will parse into `Port(8080)`.
-    @inlinable
     @inline(always)
     public init?(textualRepresentation utf8Span: UTF8Span) {
         self.init(textualRepresentation: utf8Span.span)
@@ -101,7 +99,6 @@ extension Port: ExpressibleByStringLiteral {
     /// **Passing a dynamic `StaticString` (`let str: StaticString = "443"; Port(stringLiteral: str)`) to this init is a bad idea.**
     /// In that case, use `Port(String(str))` instead.
     /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
-    @inlinable
     @inline(always)
     public init(stringLiteral value: StaticString) {
         guard
@@ -159,7 +156,6 @@ extension Port: LosslessStringConvertible {
     /// Initialize a `Port` from its textual representation.
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
     /// For example `"8080"` will parse into `Port(8080)`.
-    @inlinable
     @inline(always)
     public init?(_ description: String) {
         guard
@@ -175,7 +171,6 @@ extension Port: LosslessStringConvertible {
     /// Initialize a `Port` from its textual representation.
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
     /// For example `"8080"` will parse into `Port(8080)`.
-    @inlinable
     @inline(always)
     public init?(_ description: Substring) {
         guard
@@ -218,11 +213,14 @@ extension Port: LosslessStringConvertible {
         self.init(rawValue: rawValue)
     }
 
-    /// Credit goes to @aqrit for original impl.
+    /// Credits:
+    /// To @aqrit: The original impl, and the `(digitsInBytes | raised) & m80` check.
+    /// To Wojciech Mula: The `&* nA1` pair-fold, and the fold after it.
+    /// To Jeroen Koekkoek: The clamped 5-lane read and `m30ForInsignificantBits` padding.
     /// See:
     /// https://github.com/fastfloat/fast_float/blob/a8a02f77480d10c5dc90d39f7b890bc1dff9c1b9/include/fast_float/ascii_number.h#L143
-    /// https://lemire.me/blog/2018/10/03/quickly-parsing-eight-digits/
-    /// https://lemire.me/blog/2022/01/21/swar-explained-parsing-eight-digits/
+    /// https://lemire.me/blog/2023/11/28/parsing-8-bit-integers-quickly/
+    /// http://0x80.pl/notesen/2014-10-12-parsing-decimal-numbers-part-1-swar.html
     @inlinable
     @inline(always)
     static func parsePort(

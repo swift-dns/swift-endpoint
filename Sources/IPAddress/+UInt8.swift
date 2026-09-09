@@ -47,6 +47,11 @@ extension UInt8 {
     /// Reads a span of a text like "127" as a `UInt8`, if the bytes are in correct form.
     /// Otherwise returns `nil`.
     /// Equivalent to `UInt8(string, radix: 10)`, but faster.
+    ///
+    /// Credits:
+    /// To Daniel Lemire: The `multiplier0`/`multiplier1` digit weighting.
+    /// See:
+    /// https://lemire.me/blog/2023/11/28/parsing-8-bit-integers-quickly/
     @inlinable
     package init?(decimalRepresentation span: Span<UInt8>) {
         let count = span.count
@@ -90,7 +95,6 @@ extension UInt8 {
     }
 
     /// Maps a hexadecimal ASCII byte to its `0...15` value.
-    @inlinable
     @inline(always)
     package static func mapHexadecimalByteToUInt8(_ asciiByte: UInt8) -> UInt8? {
         let digit = cswift_endpoint_hexadecimal_digit(asciiByte)
@@ -115,7 +119,6 @@ extension UInt8 {
     /// buffer.storeBytes(of: paddedBytes &>> 8, toByteOffset: writerIndex, as: UInt32.self)
     /// writerIndex += count
     /// ```
-    @inlinable
     @inline(always)
     package func asDecimal() -> (paddedBytes: UInt32, count: Int) {
         let entry = cswift_endpoint_decimal_digits(self)

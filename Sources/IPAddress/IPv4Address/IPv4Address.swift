@@ -21,8 +21,9 @@ public struct IPv4Address: Sendable, Hashable {
         4
     }
 
-    /// The underlying 32 bits (4 bytes) representing this IPv4 address.
-    public var address: UInt32
+    /// The underlying 4 bytes representing this IPv4 address, in big-endian byte order.
+    @usableFromInline
+    var _storage: UInt32
 
     /// Whether this address is an IPv4 Loopback address, known as localhost, or not.
     /// Equivalent to `127.0.0.0/8` in CIDR notation.
@@ -131,23 +132,40 @@ public struct IPv4Address: Sendable, Hashable {
             || CIDR<Self>(prefix: 0xCB_00_71_00, prefixLength: 24).contains(self)
     }
 
+    /// Whether this address is contiguous, and thus suitable for use as a CIDR mask.
+    ///
+    /// A contiguous address has n contiguous 1-bits from the most significant bit and all other bits set to 0.
+    /// For example `255.255.0.0` is contiguous, but `255.0.255.0` is not.
+    ///
+    /// Classless Inter-Domain Routing is defined in [IETF RFC 4632].
+    ///
+    /// [IETF RFC 4632]: https://datatracker.ietf.org/doc/html/rfc4632
+    @available(SwiftStdlib 5.1, *)
+    @inlinable
+    public var isContiguous: Bool {
+        let address = self.asUInt32(byteOrder: .native)
+        return (address &<< 1) | address == address
+    }
+
     /// Initialize an `IPv4Address` from its raw 32-bit unsigned integer representation.
     /// For example `IPv4Address(0x7F00_0001)` will result in an IP address equal to `127.0.0.1`.
     /// Or `IPv4Address(0x7F)` will result in an IP address equal to `0.0.0.127`.
+    /// Or `IPv4Address(0x0100_007F, byteOrder: .bigEndian)` will result in an IP address equal to `127.0.0.1`.
     @inlinable
-    public init(_ address: UInt32) {
-        self.address = address
+    public init(_ address: UInt32, byteOrder: ByteOrder = .native) {
+        self._storage = byteOrder == .bigEndian ? address : address.byteSwapped
     }
 
     /// Initialize an IPv4 from the 4 8-bits (1-bytes) representing it.
     /// For example `IPv4Address(127, 0, 0, 1)` will result in an IP address equal to `127.0.0.1`.
     @inlinable
     public init(_ _1: UInt8, _ _2: UInt8, _ _3: UInt8, _ _4: UInt8) {
-        self.address =
-            UInt32(_1) &<< 24
-            | UInt32(_2) &<< 16
-            | UInt32(_3) &<< 8
-            | UInt32(_4)
+        let bytes =
+            UInt32(_1)
+            | UInt32(_2) &<< 8
+            | UInt32(_3) &<< 16
+            | UInt32(_4) &<< 24
+        self._storage = bytes
     }
 }
 
@@ -160,18 +178,27 @@ extension IPv4Address: ExpressibleByIntegerLiteral {
     /// Or `IPv4Address(0x7F)` will result in an IP address equal to `0.0.0.127`.
     @inlinable
     public init(integerLiteral value: UInt32) {
-        self.address = value
+        self.init(value)
     }
 }
 
 extension IPv4Address {
+    /// The underlying 32 bits (4 bytes) representing this IPv4 address, as a `UInt32`.
+    /// For example `IPv4Address("127.0.0.1")!.asUInt32()` is `0x7F00_0001`.
+    /// Or `IPv4Address("127.0.0.1")!.asUInt32(byteOrder: .bigEndian)` is `0x0100_007F`.
+    @inlinable
+    public func asUInt32(byteOrder: ByteOrder = .native) -> UInt32 {
+        byteOrder == .bigEndian ? self._storage : self._storage.byteSwapped
+    }
+
     /// The 4 bytes representing this IPv4 address.
     public var bytes: (UInt8, UInt8, UInt8, UInt8) {
-        (
-            UInt8(truncatingIfNeeded: self.address &>> 24),
-            UInt8(truncatingIfNeeded: self.address &>> 16),
-            UInt8(truncatingIfNeeded: self.address &>> 8),
-            UInt8(truncatingIfNeeded: self.address)
+        let address = self.asUInt32(byteOrder: .bigEndian)
+        return (
+            UInt8(truncatingIfNeeded: address),
+            UInt8(truncatingIfNeeded: address &>> 8),
+            UInt8(truncatingIfNeeded: address &>> 16),
+            UInt8(truncatingIfNeeded: address &>> 24)
         )
     }
 }

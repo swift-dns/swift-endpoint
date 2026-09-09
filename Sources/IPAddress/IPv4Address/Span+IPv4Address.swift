@@ -23,10 +23,11 @@ extension IPv4Address {
             return false
         }
 
-        span.append(UInt8(truncatingIfNeeded: self.address &>> 24))
-        span.append(UInt8(truncatingIfNeeded: self.address &>> 16))
-        span.append(UInt8(truncatingIfNeeded: self.address &>> 8))
-        span.append(UInt8(truncatingIfNeeded: self.address))
+        let address = self.asUInt32(byteOrder: .bigEndian)
+        span.append(UInt8(truncatingIfNeeded: address))
+        span.append(UInt8(truncatingIfNeeded: address &>> 8))
+        span.append(UInt8(truncatingIfNeeded: address &>> 16))
+        span.append(UInt8(truncatingIfNeeded: address &>> 24))
 
         return true
     }

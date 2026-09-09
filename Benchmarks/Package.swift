@@ -119,7 +119,7 @@ package.platforms = [.macOS(.v26)]
 package.dependencies.append(
     .package(
         url: "https://github.com/MahdiBM/benchmark.git",
-        branch: "mmbm-cpu-user-precision"
+        branch: "mmbm-more-hardware-counters"
     ),
 )
 

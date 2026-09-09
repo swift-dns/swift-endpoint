@@ -13,21 +13,8 @@ public protocol _IPAddressProtocol:
     Hashable,
     CustomStringConvertible
 {
-    associatedtype AddressValueType: _IPAddressProtocolAddressValueType
+    associatedtype _AddressValueType: _IPAddressProtocolAddressValueType
 
-    var address: AddressValueType { get }
-
-    init(_ value: AddressValueType)
-
-    @available(SwiftStdlib 5.1, *)
-    init?(exactly ipAddress: AnyIPAddress)
-
-    @available(SwiftStdlib 5.1, *)
-    init?(textualRepresentation: Span<UInt8>)
-}
-
-@available(SwiftStdlib 5.1, *)
-extension _IPAddressProtocol {
     /// Whether this address is contiguous, and thus suitable for use as a CIDR mask.
     ///
     /// A contiguous address has n contiguous 1-bits from the most significant bit and all other bits set to 0.
@@ -36,10 +23,18 @@ extension _IPAddressProtocol {
     /// Classless Inter-Domain Routing is defined in [IETF RFC 4632].
     ///
     /// [IETF RFC 4632]: https://datatracker.ietf.org/doc/html/rfc4632
-    @inlinable
-    public var isContiguous: Bool {
-        self.address == ~(AddressValueType.max >> (~self.address).leadingZeroBitCount)
-    }
+    @available(SwiftStdlib 5.1, *)
+    var isContiguous: Bool { get }
+
+    func _asUIntValue(byteOrder: ByteOrder) -> _AddressValueType
+
+    init(_ value: _AddressValueType, byteOrder: ByteOrder)
+
+    @available(SwiftStdlib 5.1, *)
+    init?(exactly ipAddress: AnyIPAddress)
+
+    @available(SwiftStdlib 5.1, *)
+    init?(textualRepresentation: Span<UInt8>)
 }
 
 /// DO NOT IMPLEMENT THIS PROTOCOL YOURSELF.
@@ -53,10 +48,22 @@ public protocol _IPAddressProtocolAddressValueType:
     static var bitWidth: Int { get }
     static var max: Self { get }
     var trailingZeroBitCount: Int { get }
-    var leadingZeroBitCount: Int { get }
 
     static func >> (lhs: Self, rhs: Int) -> Self
 
     static func & (lhs: Self, rhs: Self) -> Self
     static prefix func ~ (x: Self) -> Self
+}
+
+extension IPv4Address {
+    public func _asUIntValue(byteOrder: ByteOrder) -> UInt32 {
+        self.asUInt32(byteOrder: byteOrder)
+    }
+}
+
+@available(SwiftStdlib 5.1, *)
+extension IPv6Address {
+    public func _asUIntValue(byteOrder: ByteOrder) -> UnsignedInteger128 {
+        self.asUnsignedInteger128(byteOrder: byteOrder)
+    }
 }

@@ -30,21 +30,21 @@ extension IPv4Address: CustomStringConvertible {
     /// Writes the textual representation of this address into `buffer` and returns the number of
     /// bytes written.
     /// Requires 3 bytes worth of room for the least significant byte at all times.
-    @inlinable
     @inline(always)
     package func writeTextualRepresentation_Requiring2HeadroomBytes(
         into buffer: UnsafeMutableRawBufferPointer
     ) -> Int {
         /// These are safe; We've already reserved max capacity needed for the longest possible
         /// IPv4 address, and only the last segment needs the 2 headroom bytes.
-        let (paddedBytes, count) = UInt8(truncatingIfNeeded: self.address &>> 24).asDecimal()
+        let address = self.asUInt32(byteOrder: .bigEndian)
+        let (paddedBytes, count) = UInt8(truncatingIfNeeded: address).asDecimal()
         /// The first segment has no leading `.`, so it writes the digits a byte lower.
         unsafe buffer.storeBytes(of: paddedBytes &>> 8, toByteOffset: 0, as: UInt32.self)
         var resultIdx = count
 
         for idx in 1..<4 {
-            let shift = 24 - idx * 8
-            let byte = UInt8(truncatingIfNeeded: self.address &>> shift)
+            let shift = idx * 8
+            let byte = UInt8(truncatingIfNeeded: address &>> shift)
             let (paddedBytes, count) = byte.asDecimal()
             unsafe buffer.storeBytes(
                 of: paddedBytes | UInt32(UInt8.asciiDot),
@@ -59,11 +59,12 @@ extension IPv4Address: CustomStringConvertible {
 
     /// 4x 8-bit lanes, one for each byte, each holding how many decimal digits that byte needs
     /// beyond its first one which is always written even if 0 (Example: "0.0.0.0").
-    /// For example for 192.168.1.98, this will be `0x02_02_00_01`, each lane representing a segment's `digitCount - 1`.
+    /// The lanes run from the leftmost address byte upwards, so for 192.168.1.98 this is
+    /// `0x01_00_02_02`, each lane representing a segment's `digitCount - 1`.
     @inlinable
     @inline(always)
     var _extraDecimalDigitsToPrintPerByte: UInt32 {
-        let address = self.address
+        let address = self.asUInt32(byteOrder: .bigEndian)
         /// `0x7F` == `0b0111_1111`
         let m7f: UInt32 = 0x7F7F_7F7F
         /// `0x76` == `0b0111_0110` == `118` == `128 - 10`
@@ -94,12 +95,11 @@ extension IPv4Address: CustomStringConvertible {
     ///
     /// Essentially, this var has to assume that the least significant byte of the address which is
     /// written last, will require 3 bytes of room at all times.
-    @inlinable
     @inline(always)
     package var _textualRepresentationWriteRequiredCapacity: Int {
         /// Mask out the last byte to avoid counting the extra digits it would require.
         /// At the end, we add 2 headroom bytes anyways.
-        let extraDigits = self._extraDecimalDigitsToPrintPerByte & 0xFFFF_FF00
+        let extraDigits = self._extraDecimalDigitsToPrintPerByte & 0x00FF_FFFF
         /// Puts sum of all 4 lanes into bits 25th-28th.
         /// Then we bit shift by 24 to get the sum into bits 1st-3rd.
         let extraDigitsCount = (extraDigits &* 0x0101_0101) &>> 24
@@ -108,7 +108,6 @@ extension IPv4Address: CustomStringConvertible {
     }
 
     /// The exact number of bytes that the textual representation of this address occupies.
-    @inlinable
     @inline(always)
     package var textualRepresentationLength: Int {
         let allDigits = self._extraDecimalDigitsToPrintPerByte
@@ -125,7 +124,6 @@ extension IPv4Address {
     /// Initialize an IPv4 address from a `UTF8Span` of its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
-    @inlinable
     @inline(always)
     public init?(textualRepresentation utf8Span: UTF8Span) {
         self.init(textualRepresentation: utf8Span.span)
@@ -145,7 +143,6 @@ extension IPv4Address: ExpressibleByStringLiteral {
     /// **Passing a dynamic `StaticString` (`let str: StaticString = "192.168.1.1"; IPv4Address(stringLiteral: str)`) to this init is a bad idea.**
     /// In that case, use `IPv4Address(String(str))` instead.
     /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
-    @inlinable
     @inline(always)
     public init(stringLiteral value: StaticString) {
         guard
@@ -203,7 +200,6 @@ extension IPv4Address: LosslessStringConvertible {
     /// Initialize an IPv4 address from its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
-    @inlinable
     @inline(always)
     public init?(_ description: String) {
         guard
@@ -219,7 +215,6 @@ extension IPv4Address: LosslessStringConvertible {
     /// Initialize an IPv4 address from its textual representation.
     /// That is, 4 decimal UInt8s separated by `.`.
     /// For example `"192.168.1.98"` will parse into `192.168.1.98`.
-    @inlinable
     @inline(always)
     public init?(_ description: Substring) {
         guard

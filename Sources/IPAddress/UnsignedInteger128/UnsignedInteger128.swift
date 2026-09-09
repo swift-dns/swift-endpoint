@@ -1,23 +1,16 @@
-/// A replacement for `UInt128`. Swift's own UInt128 requires macOS 15.
+/// A shadow of `UInt128` which DOESN'T require macOS 15.
 ///
-/// Functionally, this implementation is expected to be identical to Swift's own `UInt128`.
-/// However, for performance reasons you are encouraged to immediately turn this value into a
-/// `UInt128` whenever you can, and perform your operations on that `UInt128` value instead.
+/// This type only provides what `IPv6Address` needs to store and manipulate its underlying
+/// 128 bits. It is intentionally not a full integer type: it does not conform to
+/// `BinaryInteger`, `FixedWidthInteger`, `Numeric` or `UnsignedInteger`, and provides no
+/// arithmetic beyond bit manipulation.
 ///
-/// This type provides identical APIs compared to `UInt128`.
-/// In a future minor version, this whole type might be turned into a `typealias` for `UInt128`.
+/// On platforms where `UInt128` is unconditionally available, prefer `UInt128`.
+/// Use `IPv6Address.asUInt128()` to convert.
 /// In a future major version, this whole type might be simply replaced by Swift's own `UInt128`.
 ///
-/// This type conforms to all that `UInt128` currently does, other than `AtomicRepresentable`.
-/// The following conformances on macOS are only available on macOS 15 or higher:
-/// `BinaryInteger`, `FixedWidthInteger`, `Numeric`, `UnsignedInteger`, `ExpressibleByIntegerLiteral`.
-/// Note that for the most part the implementations are available on all macOS versions, but the mere conformances are
-/// limited to macOS 15 or higher.
-/// This might make some behavior or some synthesized functions unavailable, but most functionality should still be available.
-/// On other platforms the conformances are always available.
-///
-/// If you're trying to use this type in macOS versions lower than 15, you might need to make some adjustments to your code.
-/// For example you might need to use the `init(_low:_high:)` instead of using the "ExpressibleByIntegerLiteral" initializer:
+/// The `ExpressibleByIntegerLiteral` conformance is only available on macOS 15 or higher.
+/// On lower versions, use `init(_low:_high:)`:
 ///
 /// ```swift
 /// /// On macOS 15 or higher:
@@ -62,6 +55,20 @@ public struct UnsignedInteger128 {
         self._low = _low
         self._high = _high
     }
+
+    /// Initializes a new `UnsignedInteger128` from a non-negative value that fits in 128 bits.
+    @inlinable
+    public init(_ source: some BinaryInteger) {
+        guard let high = UInt64(exactly: source >> 64) else {
+            fatalError(
+                "value cannot be converted to UnsignedInteger128 because it is outside the representable range"
+            )
+        }
+        self.init(
+            _low: UInt64(truncatingIfNeeded: source),
+            _high: high
+        )
+    }
 }
 
 extension UnsignedInteger128: Sendable, SendableMetatype, Hashable, BitwiseCopyable {}
@@ -70,18 +77,6 @@ extension UnsignedInteger128: Equatable {
     @inlinable
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs._low == rhs._low && lhs._high == rhs._high
-    }
-
-    @inlinable
-    public static func == (lhs: Self, rhs: some BinaryInteger) -> Bool {
-        lhs._low == UInt64(truncatingIfNeeded: rhs)
-            && lhs._high == UInt64(truncatingIfNeeded: rhs >> 64)
-            && (rhs.bitWidth <= 128 || rhs >> 128 == 0)
-    }
-
-    @inlinable
-    public static func == (lhs: some BinaryInteger, rhs: Self) -> Bool {
-        rhs == lhs
     }
 }
 
@@ -93,9 +88,28 @@ extension UnsignedInteger128: ExpressibleByIntegerLiteral {
     }
 }
 
-extension UnsignedInteger128: CustomReflectable {
+extension UnsignedInteger128 {
+    /// The number of bits in the binary representation of this type.
     @inlinable
-    public var customMirror: Mirror {
-        Mirror(self, unlabeledChildren: EmptyCollection<Void>())
+    public static var bitWidth: Int {
+        128
+    }
+
+    /// A value with all bits set to zero.
+    @inlinable
+    public static var zero: Self {
+        Self(_low: 0, _high: 0)
+    }
+
+    /// The minimum representable value.
+    @inlinable
+    public static var min: Self {
+        Self(_low: 0, _high: 0)
+    }
+
+    /// The maximum representable value.
+    @inlinable
+    public static var max: Self {
+        Self(_low: UInt64.max, _high: UInt64.max)
     }
 }

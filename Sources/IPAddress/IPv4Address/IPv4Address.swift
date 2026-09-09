@@ -1,3 +1,6 @@
+import func Builtin.addressOfBorrow
+import func Builtin.unprotectedAddressOfBorrow
+
 /// An IPv4 address.
 ///
 /// IPv4 addresses are defined as 32-bit integers in [IETF RFC 791].
@@ -15,6 +18,7 @@
 /// are indicated with a leading `0x`) are not allowed per [IETF RFC 6943].
 ///
 /// [IETF RFC 6943]: https://datatracker.ietf.org/doc/html/rfc6943#section-3.1.1
+@_addressableForDependencies
 public struct IPv4Address: Sendable, Hashable {
     /// The byte size of an IPv4.
     public static var size: Int {
@@ -165,7 +169,7 @@ public struct IPv4Address: Sendable, Hashable {
             | UInt32(_2) &<< 8
             | UInt32(_3) &<< 16
             | UInt32(_4) &<< 24
-        self._storage = bytes
+        self._storage = bytes.littleEndian
     }
 }
 
@@ -191,14 +195,34 @@ extension IPv4Address {
         byteOrder == .bigEndian ? self._storage : self._storage.byteSwapped
     }
 
-    /// The 4 bytes representing this IPv4 address.
-    public var bytes: (UInt8, UInt8, UInt8, UInt8) {
-        let address = self.asUInt32(byteOrder: .bigEndian)
-        return (
-            UInt8(truncatingIfNeeded: address),
-            UInt8(truncatingIfNeeded: address &>> 8),
-            UInt8(truncatingIfNeeded: address &>> 16),
-            UInt8(truncatingIfNeeded: address &>> 24)
-        )
+    /// A view of exactly 4 (IPv4Address.size) bytes representing this IPv4 address, in network byte order.
+    /// For example `IPv4Address("127.0.0.1")!.bytes` contains `[127, 0, 0, 1]`.
+    @available(SwiftStdlib 5.1, *)
+    @inlinable
+    public var bytes: Span<UInt8> {
+        @_lifetime(borrow self)
+        get {
+            let pointer = UnsafeRawPointer(Builtin.addressOfBorrow(self))
+            let span = unsafe Span<UInt8>(_unsafeStart: pointer, byteCount: Self.size)
+            return unsafe _overrideLifetime(span, borrowing: self)
+        }
+    }
+
+    /// A stack-unprotected view of exactly 4 (IPv4Address.size) bytes representing this IPv4 address, in network byte order.
+    /// For example `IPv4Address("127.0.0.1")!._unprotectedBytes` contains `[127, 0, 0, 1]`.
+    ///
+    /// This unprotected accessor means there is no stack canary to protect the stack frame where this
+    /// accessor will land. An out-of-bounds write from any other code (e.g. when using unsafe-pointers)
+    /// in that same function will go undetected instead of trapping on the stack canary.
+    /// Therefore prefer `bytes` unless you trust the calling frame.
+    @available(SwiftStdlib 5.1, *)
+    @inlinable
+    public var _unprotectedBytes: Span<UInt8> {
+        @_lifetime(borrow self)
+        get {
+            let pointer = UnsafeRawPointer(Builtin.unprotectedAddressOfBorrow(self))
+            let span = unsafe Span<UInt8>(_unsafeStart: pointer, byteCount: Self.size)
+            return unsafe _overrideLifetime(span, borrowing: self)
+        }
     }
 }

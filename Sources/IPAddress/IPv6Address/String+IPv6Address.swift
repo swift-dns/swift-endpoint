@@ -189,7 +189,7 @@ extension IPv6Address {
 
         var lastSegmentReserve: Int = 0
         if !mustUseMixedNotation {
-            /// Because the lane is byte-swapped, segment 0xABCD sits in the lane as 0xCDAB.
+            /// Because the lane is byte-swapped, segment 0xABCD is stored in the lane as 0xCDAB.
             /// We turn off `D` which is the least significant nibble of the whole segment.
             /// So the segment is a single hex digit iff all the remaining nibbles are zero.
             let lastSegmentBits = address._high & 0xF0FF_0000_0000_0000
@@ -371,7 +371,7 @@ extension IPv6Address {
         /// After this, in a lane, if a nibble or any nibbles after it are not zero, then they are set to `0b1000`.
         s = s | ((s &<< 12) & m8000)
         /// `0x1011` == `0b0001_0000_0001_0001`
-        /// Because the lane is byte-swapped, segment 0xABCD sits in the lane as 0xCDAB.
+        /// Because the lane is byte-swapped, segment 0xABCD is stored in the lane as 0xCDAB.
         /// So we need to target D, and therefore the second nibble from the left.
         let m1011: UInt64 = 0x1011_1011_1011_1011
         /// Now we move the `0b1000` nibbles to be `0b0001` aka, 1.

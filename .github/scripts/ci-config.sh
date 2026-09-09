@@ -8,7 +8,6 @@ log() { printf -- "** %s\n" "$*" >&2; }
 error() { printf -- "** ERROR: %s\n" "$*" >&2; }
 fatal() { error "$@"; exit 1; }
 
-readonly job_keys="${JOB_KEYS:-}"
 readonly ci_config_path="${CI_CONFIG_PATH:-.github/ci-config.json}"
 
 # Every key a repository may turn off in its own '.github/ci-config.json'. That file is mandatory,
@@ -44,22 +43,22 @@ validate_ci_config() {
   return 0
 }
 
-disabled_keys_of_job() {
-  local keys_of_job="${1:?disabled_keys_of_job requires the space separated config keys of the current job}"
-  local config_path="${2:?disabled_keys_of_job requires the path of the ci config file}"
+enablement_of_known_keys() {
+  local config_path="${1:?enablement_of_known_keys requires the path of the ci config file}"
 
-  local disabled_keys
-  if ! disabled_keys="$(
-    jq -r --arg keys "${keys_of_job}" '
+  local enablement
+  if ! enablement="$(
+    jq -r --arg known "${known_job_keys}" '
       . as $config
-      | [$keys | split(" ")[] | select($config[.] == false)]
-      | join(", ")
+      | $known
+      | split(" ")[]
+      | "\(.)=\($config[.] != false)"
     ' "${config_path}"
   )"; then
-    fatal "Failed to read the keys '${keys_of_job}' of '${config_path}'"
+    fatal "Failed to read the keys '${known_job_keys}' of '${config_path}'"
   fi
 
-  printf -- '%s' "${disabled_keys}"
+  printf -- '%s\n' "${enablement}"
   return 0
 }
 
@@ -71,19 +70,9 @@ fi
 
 validate_ci_config "${ci_config_path}"
 
-if [[ -z "${job_keys}" ]]; then
-  printf 'true\n'
-  exit 0
-fi
+enablement="$(enablement_of_known_keys "${ci_config_path}")"
+readonly enablement
 
-disabled_keys="$(disabled_keys_of_job "${job_keys}" "${ci_config_path}")"
-readonly disabled_keys
+log "Job keys of '${ci_config_path}': ${enablement//$'\n'/, }"
 
-if [[ -n "${disabled_keys}" ]]; then
-  log "Turned off in '${ci_config_path}': ${disabled_keys}."
-  printf 'false\n'
-  exit 0
-fi
-
-log "None of '${job_keys}' is turned off in '${ci_config_path}'."
-printf 'true\n'
+printf -- '%s\n' "${enablement}"

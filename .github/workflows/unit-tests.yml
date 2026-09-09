@@ -13,6 +13,28 @@ defaults:
     shell: bash --noprofile --norc -Eeuo pipefail {0}
 
 jobs:
+  check-ci-config:
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 5
+
+    outputs:
+      android: ${{ steps.ci-config.outputs.android }}
+      embedded: ${{ steps.ci-config.outputs.embedded }}
+      musl: ${{ steps.ci-config.outputs.musl }}
+      wasm: ${{ steps.ci-config.outputs.wasm }}
+      windows: ${{ steps.ci-config.outputs.windows }}
+
+    steps:
+      - name: Check out ${{ github.event.repository.name }}
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check the ci config
+        id: ci-config
+        run: .github/scripts/ci-config.sh >> "${GITHUB_OUTPUT}"
+
   linux-unit:
     strategy:
       fail-fast: false
@@ -369,6 +391,9 @@ jobs:
 
     runs-on: ${{ matrix.windows.version }}
 
+    needs: check-ci-config
+    if: ${{ needs.check-ci-config.outputs.windows == 'true' }}
+
     timeout-minutes: 20
 
     permissions:
@@ -384,7 +409,6 @@ jobs:
       - name: Check relevance
         id: check-relevance
         env:
-          JOB_KEYS: "windows"
           GITHUB_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
@@ -429,6 +453,9 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    needs: check-ci-config
+    if: ${{ needs.check-ci-config.outputs.android == 'true' }}
+
     timeout-minutes: 30
 
     permissions:
@@ -444,7 +471,6 @@ jobs:
       - name: Check relevance
         id: check-relevance
         env:
-          JOB_KEYS: "android"
           GITHUB_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
@@ -496,6 +522,9 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    needs: check-ci-config
+    if: ${{ needs.check-ci-config.outputs.musl == 'true' }}
+
     container: ${{ matrix.swift-image.name }}
 
     timeout-minutes: 30
@@ -518,7 +547,6 @@ jobs:
       - name: Check relevance
         id: check-relevance
         env:
-          JOB_KEYS: "musl"
           GITHUB_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
@@ -567,6 +595,9 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    needs: check-ci-config
+    if: ${{ needs.check-ci-config.outputs.wasm == 'true' }}
+
     container: ${{ matrix.swift-image.name }}
 
     timeout-minutes: 30
@@ -589,7 +620,6 @@ jobs:
       - name: Check relevance
         id: check-relevance
         env:
-          JOB_KEYS: "wasm"
           GITHUB_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
@@ -648,6 +678,9 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    needs: check-ci-config
+    if: ${{ needs.check-ci-config.outputs.wasm == 'true' && needs.check-ci-config.outputs.embedded == 'true' }}
+
     container: ${{ matrix.swift-image.name }}
 
     timeout-minutes: 30
@@ -670,7 +703,6 @@ jobs:
       - name: Check relevance
         id: check-relevance
         env:
-          JOB_KEYS: "wasm embedded"
           GITHUB_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
@@ -718,6 +750,9 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    needs: check-ci-config
+    if: ${{ needs.check-ci-config.outputs.embedded == 'true' }}
+
     container: ${{ matrix.swift-image.name }}
 
     timeout-minutes: 30
@@ -740,7 +775,6 @@ jobs:
       - name: Check relevance
         id: check-relevance
         env:
-          JOB_KEYS: "embedded"
           GITHUB_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |

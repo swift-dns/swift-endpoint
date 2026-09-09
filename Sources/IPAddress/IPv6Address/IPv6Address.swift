@@ -213,8 +213,8 @@ public struct IPv6Address: Sendable, Hashable {
         let address = self.asUnsignedInteger128(byteOrder: .native)
         let high = address._high
         let low = address._low
-        let shiftedHigh = (high &<< 1) | (low &>> 63)
-        return (shiftedHigh | high == high) && ((low &<< 1) | low == low)
+        let shiftedHigh = (high << 1) | (low >> 63)
+        return (shiftedHigh | high == high) && ((low << 1) | low == low)
     }
 
     /// Initialize an `IPv6Address` from its raw 128-bit unsigned integer representation.
@@ -253,14 +253,14 @@ public struct IPv6Address: Sendable, Hashable {
         _ _8: UInt16
     ) {
         let high =
-            UInt64(_1) &<< 48
-            | UInt64(_2) &<< 32
-            | UInt64(_3) &<< 16
+            UInt64(_1) << 48
+            | UInt64(_2) << 32
+            | UInt64(_3) << 16
             | UInt64(_4)
         let low =
-            UInt64(_5) &<< 48
-            | UInt64(_6) &<< 32
-            | UInt64(_7) &<< 16
+            UInt64(_5) << 48
+            | UInt64(_6) << 32
+            | UInt64(_7) << 16
             | UInt64(_8)
         self._storage = UnsignedInteger128(_low: low, _high: high).bigEndian
     }
@@ -289,22 +289,22 @@ public struct IPv6Address: Sendable, Hashable {
     ) {
         let low =
             UInt64(_1)
-            | UInt64(_2) &<< 8
-            | UInt64(_3) &<< 16
-            | UInt64(_4) &<< 24
-            | UInt64(_5) &<< 32
-            | UInt64(_6) &<< 40
-            | UInt64(_7) &<< 48
-            | UInt64(_8) &<< 56
+            | UInt64(_2) << 8
+            | UInt64(_3) << 16
+            | UInt64(_4) << 24
+            | UInt64(_5) << 32
+            | UInt64(_6) << 40
+            | UInt64(_7) << 48
+            | UInt64(_8) << 56
         let high =
             UInt64(_9)
-            | UInt64(_10) &<< 8
-            | UInt64(_11) &<< 16
-            | UInt64(_12) &<< 24
-            | UInt64(_13) &<< 32
-            | UInt64(_14) &<< 40
-            | UInt64(_15) &<< 48
-            | UInt64(_16) &<< 56
+            | UInt64(_10) << 8
+            | UInt64(_11) << 16
+            | UInt64(_12) << 24
+            | UInt64(_13) << 32
+            | UInt64(_14) << 40
+            | UInt64(_15) << 48
+            | UInt64(_16) << 56
         self._storage = UnsignedInteger128(_low: low, _high: high).littleEndian
     }
 }
@@ -384,13 +384,13 @@ extension IPv6Address {
         let high = address._high
         let low = address._low
         return (
-            UInt16(truncatingIfNeeded: high &>> 48),
-            UInt16(truncatingIfNeeded: high &>> 32),
-            UInt16(truncatingIfNeeded: high &>> 16),
+            UInt16(truncatingIfNeeded: high >> 48),
+            UInt16(truncatingIfNeeded: high >> 32),
+            UInt16(truncatingIfNeeded: high >> 16),
             UInt16(truncatingIfNeeded: high),
-            UInt16(truncatingIfNeeded: low &>> 48),
-            UInt16(truncatingIfNeeded: low &>> 32),
-            UInt16(truncatingIfNeeded: low &>> 16),
+            UInt16(truncatingIfNeeded: low >> 48),
+            UInt16(truncatingIfNeeded: low >> 32),
+            UInt16(truncatingIfNeeded: low >> 16),
             UInt16(truncatingIfNeeded: low)
         )
     }

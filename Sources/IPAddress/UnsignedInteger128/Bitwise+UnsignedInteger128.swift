@@ -115,27 +115,27 @@ extension UnsignedInteger128 {
     @inlinable
     func _shiftedLeft(by count: UInt64) -> Self {
         if count >= 64 {
-            return Self(_low: 0, _high: self._low &<< (count &- 64))
+            return Self(_low: 0, _high: self._low &<< (count - 64))
         }
         if count == 0 {
             return self
         }
         return Self(
             _low: self._low &<< count,
-            _high: (self._high &<< count) | (self._low &>> (64 &- count))
+            _high: (self._high &<< count) | (self._low &>> (64 - count))
         )
     }
 
     @inlinable
     func _shiftedRight(by count: UInt64) -> Self {
         if count >= 64 {
-            return Self(_low: self._high &>> (count &- 64), _high: 0)
+            return Self(_low: self._high &>> (count - 64), _high: 0)
         }
         if count == 0 {
             return self
         }
         return Self(
-            _low: (self._low &>> count) | (self._high &<< (64 &- count)),
+            _low: (self._low &>> count) | (self._high &<< (64 - count)),
             _high: self._high &>> count
         )
     }

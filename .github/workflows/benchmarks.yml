@@ -32,7 +32,7 @@ jobs:
     timeout-minutes: 5
 
     outputs:
-      enabled: ${{ steps.ci-config.outputs.enabled }}
+      benchmarks: ${{ steps.ci-config.outputs.benchmarks }}
 
     steps:
       - name: Check out ${{ github.event.repository.name }}
@@ -42,15 +42,11 @@ jobs:
 
       - name: Check the ci config
         id: ci-config
-        env:
-          JOB_KEYS: "benchmarks"
-        run: |
-          ENABLED="$(.github/scripts/ci-config.sh)"
-          printf '%s\n' "enabled=${ENABLED}" >> "${GITHUB_OUTPUT}"
+        run: .github/scripts/ci-config.sh >> "${GITHUB_OUTPUT}"
 
   benchmark-vs-thresholds:
     needs: check-ci-config
-    if: ${{ needs.check-ci-config.outputs.enabled == 'true' }}
+    if: ${{ needs.check-ci-config.outputs.benchmarks == 'true' }}
 
     runs-on: [self-hosted, linux, x64]
 

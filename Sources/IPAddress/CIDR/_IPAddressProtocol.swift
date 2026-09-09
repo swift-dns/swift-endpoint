@@ -61,6 +61,7 @@ extension IPv4Address {
     }
 }
 
+@available(SwiftStdlib 5.1, *)
 extension IPv6Address {
     public func _asUIntValue(byteOrder: ByteOrder) -> UnsignedInteger128 {
         self.asUnsignedInteger128(byteOrder: byteOrder)

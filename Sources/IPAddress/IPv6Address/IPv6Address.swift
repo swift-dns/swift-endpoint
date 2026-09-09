@@ -365,7 +365,7 @@ extension IPv6Address {
     /// - `bytes` is stack-guarded, and thus safe to use in all contexts.
     /// - `_unprotectedBytes` is stack-unprotected, and thus unsafe to use in some contexts.
     /// - If you're NOT using `_unprotectedBytes.withUnsafe...` funcs, then you're guaranteed to be SAFE.
-    /// 
+    ///
     @available(SwiftStdlib 5.1, *)
     @inlinable
     public var _unprotectedBytes: Span<UInt8> {

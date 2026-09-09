@@ -1,5 +1,6 @@
 public import struct NIOCore.ByteBuffer
 
+@available(SwiftStdlib 5.1, *)
 extension DomainName {
     @nonexhaustive
     public enum IPv4AddressInDomainNameFormatting: Sendable {

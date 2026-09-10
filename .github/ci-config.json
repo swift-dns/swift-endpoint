@@ -4,5 +4,5 @@
     "embedded": false,
     "wasm": false,
     "windows": true,
-    "freebsd": false
+    "freebsd": true
 }

@@ -79,14 +79,21 @@ jobs:
           SHOULD_RUN="$(.github/scripts/check-relevance.sh)"
           printf '%s\n' "should-run=${SHOULD_RUN}" >> "${GITHUB_OUTPUT}"
 
+      - name: Resolve Swift toolchain for cache key
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        id: swift-toolchain
+        env:
+          SOURCE_DESCRIPTION: "swift --version"
+        run: swift --version | .github/scripts/swift-toolchain-id.sh >> "${GITHUB_OUTPUT}"
+
       - name: Restore .build
         if: ${{ steps.check-relevance.outputs.should-run == 'true' && runner.debug != '1' }}
         id: "restore-cache"
         uses: actions/cache/restore@v6
         with:
           path: .build
-          key: "${{ github.event.repository.name }}-nightly-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
-          restore-keys: "${{ github.event.repository.name }}-nightly-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-"
+          key: "${{ github.event.repository.name }}-nightly-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
+          restore-keys: "${{ github.event.repository.name }}-nightly-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-"
 
       - name: Build ${{ github.event.repository.name }}
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
@@ -106,7 +113,7 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: .build
-          key: "${{ github.event.repository.name }}-nightly-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
+          key: "${{ github.event.repository.name }}-nightly-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
 
       - name: Run tests
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
@@ -313,7 +320,11 @@ jobs:
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
         run: |
           # Workaround some kind of GitHub caching issue where it struggles to restore or cache the swiftly toolchain
-          BLOCK_SIZE="$(du -s '${{ env.SWIFTLY_TOOLCHAINS_DIR }}' | awk '{print $1}')"
+          if [[ -d '${{ env.SWIFTLY_TOOLCHAINS_DIR }}' ]]; then
+            BLOCK_SIZE="$(du -s '${{ env.SWIFTLY_TOOLCHAINS_DIR }}' | awk '{print $1}')"
+          else
+            BLOCK_SIZE=0
+          fi
           if [[ "${BLOCK_SIZE}" -lt 1024 ]]; then
             printf '%s\n' "Toolchain directory is too small (${BLOCK_SIZE} blocks), deleting all swiftly directories for fresh installation"
             rm -rf '${{ env.SWIFTLY_TOOLCHAINS_DIR }}' '${{ env.SWIFTLY_BIN_DIR }}' '${{ env.SWIFTLY_HOME_DIR }}'
@@ -334,14 +345,21 @@ jobs:
           swiftly install --assume-yes ${{ matrix.swift.version }}
           swiftly use --assume-yes ${{ matrix.swift.version }}
 
+      - name: Resolve Swift toolchain for cache key
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        id: swift-toolchain
+        env:
+          SOURCE_DESCRIPTION: "swift --version"
+        run: swift --version | .github/scripts/swift-toolchain-id.sh >> "${GITHUB_OUTPUT}"
+
       - name: Restore .build
         if: ${{ steps.check-relevance.outputs.should-run == 'true' && runner.debug != '1' }}
         id: "restore-cache"
         uses: actions/cache/restore@v6
         with:
           path: .build
-          key: "${{ github.event.repository.name }}-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ matrix.macos.version }}-${{ hashFiles('./Package.resolved') }}"
-          restore-keys: "${{ github.event.repository.name }}-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ matrix.macos.version }}-"
+          key: "${{ github.event.repository.name }}-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ matrix.macos.version }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
+          restore-keys: "${{ github.event.repository.name }}-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ matrix.macos.version }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-"
 
       - name: Build ${{ github.event.repository.name }}
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
@@ -360,7 +378,7 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: .build
-          key: "${{ github.event.repository.name }}-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ matrix.macos.version }}-${{ hashFiles('./Package.resolved') }}"
+          key: "${{ github.event.repository.name }}-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ matrix.macos.version }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
 
       - name: Run tests
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
@@ -421,6 +439,28 @@ jobs:
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
         run: find . -type l -exec sh -c 'LINKED="$(readlink -f "{}")"; rm "{}"; cp -a "${LINKED}" "{}"' \;
 
+      - name: Resolve Swift toolchain for cache key
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        id: swift-toolchain
+        env:
+          SDK: android
+          SWIFT_VERSION: ${{ matrix.swift.version }}
+          SOURCE_DESCRIPTION: "the newest android Swift SDK snapshot"
+        run: |
+          .github/scripts/swift-sdk-snapshot.sh \
+            | .github/scripts/swift-toolchain-id.sh >> "${GITHUB_OUTPUT}"
+
+      # Restored after the symlinks are replaced, so that the sweep above leaves the symlinks
+      # 'swift build' keeps inside '.build' alone.
+      - name: Restore .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && runner.debug != '1' }}
+        id: "restore-cache"
+        uses: actions/cache/restore@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-nightly-unit-tests-android-${{ matrix.config.mode }}-build-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
+          restore-keys: "${{ github.event.repository.name }}-nightly-unit-tests-android-${{ matrix.config.mode }}-build-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-"
+
       - name: Run unit tests
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
         uses: skiptools/swift-android-action@2044b79660f201ccef8cbce62877e4ec5409f9c8 # v2.9.5
@@ -441,6 +481,13 @@ jobs:
             --build-tests
             --explicit-target-dependency-import-check error
           swift-test-flags: --skip "IntegrationTests."
+
+      - name: Cache .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && steps.restore-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-nightly-unit-tests-android-${{ matrix.config.mode }}-build-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
 
   windows-nightly-tests:
     strategy:
@@ -490,6 +537,24 @@ jobs:
           Start-Service docker
           docker pull ${{ matrix.swift-image.name }}
 
+      - name: Resolve Swift toolchain for cache key
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        id: swift-toolchain
+        env:
+          SOURCE_DESCRIPTION: "swift --version"
+        run: |
+          docker run --rm ${{ matrix.swift-image.name }} swift --version \
+            | .github/scripts/swift-toolchain-id.sh >> "${GITHUB_OUTPUT}"
+
+      - name: Restore .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && runner.debug != '1' }}
+        id: "restore-cache"
+        uses: actions/cache/restore@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-nightly-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.windows.version }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
+          restore-keys: "${{ github.event.repository.name }}-nightly-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.windows.version }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-"
+
       - name: Write the container script
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
         shell: pwsh
@@ -521,6 +586,13 @@ jobs:
             ${{ matrix.swift-image.name }} `
             powershell.exe -NoLogo -File C:\container-script\run.ps1
 
+      - name: Cache .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && steps.restore-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-nightly-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.windows.version }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
+
   freebsd-nightly-tests:
     strategy:
       fail-fast: false
@@ -542,6 +614,10 @@ jobs:
       actions: read # For reading the previous commit's workflow runs
       contents: read
 
+    env:
+      # swift.org publishes no FreeBSD release toolchain; this nightly build is the only one.
+      SWIFT_TOOLCHAIN_URL: "https://download.swift.org/tmp-ci-nightly/development/freebsd-14_ci_latest.tar.gz"
+
     steps:
       - name: Check out ${{ github.event.repository.name }}
         uses: actions/checkout@v7
@@ -557,20 +633,42 @@ jobs:
           SHOULD_RUN="$(.github/scripts/check-relevance.sh)"
           printf '%s\n' "should-run=${SHOULD_RUN}" >> "${GITHUB_OUTPUT}"
 
+      # The toolchain lives behind a '_latest' url, so the entity tag of that url is what tells one
+      # nightly build of it from the next.
+      - name: Resolve Swift toolchain for cache key
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        id: swift-toolchain
+        env:
+          SOURCE_DESCRIPTION: "the entity tag of the FreeBSD Swift toolchain"
+        run: |
+          curl --silent --show-error --fail --location --head "${SWIFT_TOOLCHAIN_URL}" \
+            | grep --ignore-case '^etag:' \
+            | tail -n 1 \
+            | .github/scripts/swift-toolchain-id.sh >> "${GITHUB_OUTPUT}"
+
+      - name: Restore .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && runner.debug != '1' }}
+        id: "restore-cache"
+        uses: actions/cache/restore@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-nightly-unit-tests-freebsd-${{ matrix.config.mode }}-build-${{ matrix.freebsd.version }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
+          restore-keys: "${{ github.event.repository.name }}-nightly-unit-tests-freebsd-${{ matrix.config.mode }}-build-${{ matrix.freebsd.version }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-"
+
       - name: Build ${{ github.event.repository.name }} and run tests
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
         uses: vmactions/freebsd-vm@f0552d3b69211736abd97f02ff3d4674c56b73b1 # v1.5.5
         env:
-          # swift.org publishes no FreeBSD release toolchain; this nightly build is the only one.
-          SWIFT_TOOLCHAIN_URL: "https://download.swift.org/tmp-ci-nightly/development/freebsd-14_ci_latest.tar.gz"
           BUILD_MODE: ${{ matrix.config.mode }}
         with:
           release: ${{ matrix.freebsd.version }}
           arch: x86_64
           sync: rsync
-          copyback: false
+          copyback: true
           envs: "SWIFT_TOOLCHAIN_URL BUILD_MODE"
+          cache-after-prepare: true
           prepare: |
+            printf '%s\n' 'Installing the Swift toolchain identified by ${{ steps.swift-toolchain.outputs.toolchain-id }}'
             fetch -o /tmp/swift.tar.gz "${SWIFT_TOOLCHAIN_URL}"
             mkdir -p /opt/swift
             tar -xzf /tmp/swift.tar.gz -C /opt/swift
@@ -594,6 +692,13 @@ jobs:
               --disable-xctest \
               -Xswiftc -require-explicit-sendable \
               -c "${BUILD_MODE}"
+
+      - name: Cache .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && steps.restore-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-nightly-unit-tests-freebsd-${{ matrix.config.mode }}-build-${{ matrix.freebsd.version }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
 
   musl-nightly-tests:
     strategy:
@@ -640,6 +745,26 @@ jobs:
           SHOULD_RUN="$(.github/scripts/check-relevance.sh)"
           printf '%s\n' "should-run=${SHOULD_RUN}" >> "${GITHUB_OUTPUT}"
 
+      - name: Resolve Swift toolchain for cache key
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        id: swift-toolchain
+        env:
+          SDK: static
+          SWIFT_VERSION: ${{ matrix.swift.version }}
+          SOURCE_DESCRIPTION: "the newest static Swift SDK snapshot"
+        run: |
+          .github/scripts/swift-sdk-snapshot.sh \
+            | .github/scripts/swift-toolchain-id.sh >> "${GITHUB_OUTPUT}"
+
+      - name: Restore .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && runner.debug != '1' }}
+        id: "restore-cache"
+        uses: actions/cache/restore@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-nightly-unit-tests-musl-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
+          restore-keys: "${{ github.event.repository.name }}-nightly-unit-tests-musl-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-"
+
       # The Static Linux SDK ships no static swift-testing or XCTest, so the tests can only be compiled for glibc.
       - name: Build ${{ github.event.repository.name }}
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
@@ -651,6 +776,13 @@ jobs:
             --explicit-target-dependency-import-check error
             -Xswiftc -require-explicit-sendable
         run: .github/scripts/build-with-sdk.sh
+
+      - name: Cache .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && steps.restore-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-nightly-unit-tests-musl-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
 
   wasi-nightly-tests:
     strategy:
@@ -697,6 +829,26 @@ jobs:
           SHOULD_RUN="$(.github/scripts/check-relevance.sh)"
           printf '%s\n' "should-run=${SHOULD_RUN}" >> "${GITHUB_OUTPUT}"
 
+      - name: Resolve Swift toolchain for cache key
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        id: swift-toolchain
+        env:
+          SDK: wasm
+          SWIFT_VERSION: ${{ matrix.swift.version }}
+          SOURCE_DESCRIPTION: "the newest wasm Swift SDK snapshot"
+        run: |
+          .github/scripts/swift-sdk-snapshot.sh \
+            | .github/scripts/swift-toolchain-id.sh >> "${GITHUB_OUTPUT}"
+
+      - name: Restore .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && runner.debug != '1' }}
+        id: "restore-cache"
+        uses: actions/cache/restore@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-nightly-unit-tests-wasi-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
+          restore-keys: "${{ github.event.repository.name }}-nightly-unit-tests-wasi-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-"
+
       - name: Build ${{ github.event.repository.name }}
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
         env:
@@ -708,6 +860,13 @@ jobs:
             --explicit-target-dependency-import-check error
             -Xswiftc -require-explicit-sendable
         run: .github/scripts/build-with-sdk.sh
+
+      - name: Cache .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && steps.restore-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-nightly-unit-tests-wasi-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
 
       - name: Run tests with wasmtime
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
@@ -764,6 +923,26 @@ jobs:
           SHOULD_RUN="$(.github/scripts/check-relevance.sh)"
           printf '%s\n' "should-run=${SHOULD_RUN}" >> "${GITHUB_OUTPUT}"
 
+      - name: Resolve Swift toolchain for cache key
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        id: swift-toolchain
+        env:
+          SDK: embedded-wasm
+          SWIFT_VERSION: ${{ matrix.swift.version }}
+          SOURCE_DESCRIPTION: "the newest embedded-wasm Swift SDK snapshot"
+        run: |
+          .github/scripts/swift-sdk-snapshot.sh \
+            | .github/scripts/swift-toolchain-id.sh >> "${GITHUB_OUTPUT}"
+
+      - name: Restore .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && runner.debug != '1' }}
+        id: "restore-cache"
+        uses: actions/cache/restore@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-nightly-unit-tests-embedded-wasm-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
+          restore-keys: "${{ github.event.repository.name }}-nightly-unit-tests-embedded-wasm-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-"
+
       # Embedded Swift has no swift-testing or XCTest, so only the library is compiled.
       - name: Build ${{ github.event.repository.name }}
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
@@ -775,6 +954,13 @@ jobs:
             --explicit-target-dependency-import-check error
             -Xswiftc -require-explicit-sendable
         run: .github/scripts/build-with-sdk.sh
+
+      - name: Cache .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && steps.restore-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-nightly-unit-tests-embedded-wasm-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
 
   embedded-baremetal-nightly-tests:
     strategy:
@@ -820,6 +1006,22 @@ jobs:
           SHOULD_RUN="$(.github/scripts/check-relevance.sh)"
           printf '%s\n' "should-run=${SHOULD_RUN}" >> "${GITHUB_OUTPUT}"
 
+      - name: Resolve Swift toolchain for cache key
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        id: swift-toolchain
+        env:
+          SOURCE_DESCRIPTION: "swift --version"
+        run: swift --version | .github/scripts/swift-toolchain-id.sh >> "${GITHUB_OUTPUT}"
+
+      - name: Restore .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && runner.debug != '1' }}
+        id: "restore-cache"
+        uses: actions/cache/restore@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-nightly-unit-tests-embedded-baremetal-${{ matrix.triple.name }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"
+          restore-keys: "${{ github.event.repository.name }}-nightly-unit-tests-embedded-baremetal-${{ matrix.triple.name }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-"
+
       # Embedded Swift needs whole-module optimization, which only the release configuration turns on.
       - name: Build ${{ github.event.repository.name }}
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
@@ -831,3 +1033,10 @@ jobs:
             --explicit-target-dependency-import-check error \
             -Xswiftc -require-explicit-sendable \
             -c release
+
+      - name: Cache .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && steps.restore-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-nightly-unit-tests-embedded-baremetal-${{ matrix.triple.name }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ steps.swift-toolchain.outputs.toolchain-id }}-${{ hashFiles('./Package.resolved') }}"

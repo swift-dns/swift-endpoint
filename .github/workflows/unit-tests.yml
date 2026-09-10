@@ -120,7 +120,7 @@ jobs:
 
       - name: Submit code coverage
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
-        uses: vapor/swift-codecov-action@2f478f2fd22e06ca363967d0fb6c6593a8548cee # v0.3.5
+        uses: vapor/swift-codecov-action@855faf6b50974544c7ab3da724f49e602e43edc6 # v0.3.6
         with:
           build_parameters: "-c ${{ matrix.config.mode }}"
           codecov_token: "${{ secrets.CODECOV_TOKEN }}"
@@ -309,7 +309,11 @@ jobs:
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
         run: |
           # Workaround some kind of GitHub caching issue where it struggles to restore or cache the swiftly toolchain
-          BLOCK_SIZE="$(du -s '${{ env.SWIFTLY_TOOLCHAINS_DIR }}' | awk '{print $1}')"
+          if [[ -d '${{ env.SWIFTLY_TOOLCHAINS_DIR }}' ]]; then
+            BLOCK_SIZE="$(du -s '${{ env.SWIFTLY_TOOLCHAINS_DIR }}' | awk '{print $1}')"
+          else
+            BLOCK_SIZE=0
+          fi
           if [[ "${BLOCK_SIZE}" -lt 1024 ]]; then
             printf '%s\n' "Toolchain directory is too small (${BLOCK_SIZE} blocks), deleting all swiftly directories for fresh installation"
             rm -rf '${{ env.SWIFTLY_TOOLCHAINS_DIR }}' '${{ env.SWIFTLY_BIN_DIR }}' '${{ env.SWIFTLY_HOME_DIR }}'
@@ -372,7 +376,7 @@ jobs:
 
       - name: Submit code coverage
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
-        uses: vapor/swift-codecov-action@2f478f2fd22e06ca363967d0fb6c6593a8548cee # v0.3.5
+        uses: vapor/swift-codecov-action@855faf6b50974544c7ab3da724f49e602e43edc6 # v0.3.6
         with:
           build_parameters: "-c ${{ matrix.config.mode }}"
           codecov_token: "${{ secrets.CODECOV_TOKEN }}"
@@ -417,10 +421,19 @@ jobs:
 
       - name: Update swift
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
-        uses: compnerd/gha-setup-swift@eeda069c5bc95ac8a9ac5cea7d4f588ae5420ca5 # v0.4.0
+        uses: compnerd/gha-setup-swift@397094e75494a93fa8d81db0268dbc8f5d6cf7c6 # v0.4.1
         with:
           swift-version: swift-${{ matrix.swift.version }}-release
           swift-build: ${{ matrix.swift.version }}-RELEASE
+
+      - name: Restore .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && runner.debug != '1' }}
+        id: "restore-cache"
+        uses: actions/cache/restore@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ matrix.windows.version }}-${{ hashFiles('./Package.resolved') }}"
+          restore-keys: "${{ github.event.repository.name }}-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ matrix.windows.version }}-"
 
       - name: Build ${{ github.event.repository.name }}
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
@@ -430,6 +443,13 @@ jobs:
             --explicit-target-dependency-import-check error \
             -Xswiftc -require-explicit-sendable \
             -c ${{ matrix.config.mode }}
+
+      - name: Cache .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && steps.restore-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-unit-tests-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ matrix.windows.version }}-${{ hashFiles('./Package.resolved') }}"
 
       - name: Run tests
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
@@ -487,6 +507,15 @@ jobs:
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
         run: find . -type l -exec sh -c 'LINKED="$(readlink -f "{}")"; rm "{}"; cp -a "${LINKED}" "{}"' \;
 
+      - name: Restore .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && runner.debug != '1' }}
+        id: "restore-cache"
+        uses: actions/cache/restore@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-unit-tests-android-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
+          restore-keys: "${{ github.event.repository.name }}-unit-tests-android-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ runner.os }}-"
+
       - name: Run tests
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
         uses: skiptools/swift-android-action@2044b79660f201ccef8cbce62877e4ec5409f9c8 # v2.9.5
@@ -507,6 +536,13 @@ jobs:
             --build-tests
             --explicit-target-dependency-import-check error
           swift-test-flags: --skip "IntegrationTests."
+
+      - name: Cache .build
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && steps.restore-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: .build
+          key: "${{ github.event.repository.name }}-unit-tests-android-${{ matrix.config.mode }}-build-${{ matrix.swift.version }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
 
   musl-unit:
     strategy:

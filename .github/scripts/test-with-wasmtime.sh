@@ -22,6 +22,9 @@ readonly no_tests_found_exit_code=69 # EX_UNAVAILABLE, what a bundle returns whe
 
 # 'swift build' repoints this symlink at the products directory of the build system it ran with.
 readonly build_dir=".build/${build_mode}"
+# A test that reads a fixture through '#filePath' asks for an absolute path, which resolves against
+# no preopen unless the package directory is also granted under the name it had at build time.
+readonly absolute_package_dir="${PWD}"
 readonly wasmtime_name="wasmtime-v${wasmtime_version}-x86_64-linux"
 readonly wasmtime_root="${RUNNER_TEMP:-/tmp}"
 readonly wasmtime="${wasmtime_root}/${wasmtime_name}/wasmtime"
@@ -60,7 +63,7 @@ matched_any_test=false
 for test_bundle in "${test_bundles[@]}"; do
   log "Running ${test_bundle} with wasmtime."
   bundle_exit_code=0
-  "${wasmtime}" run --dir . "${test_bundle}" \
+  "${wasmtime}" run --dir . --dir ".::${absolute_package_dir}" "${test_bundle}" \
     --testing-library swift-testing "${test_flag_words[@]}" || bundle_exit_code=$?
 
   case "${bundle_exit_code}" in

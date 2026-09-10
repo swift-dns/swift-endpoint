@@ -13,6 +13,7 @@ import Testing
 
 #elseif os(Windows)
 import ucrt
+import WinSDK
 #elseif canImport(Darwin)
 import Darwin
 #elseif canImport(WASILibc)
@@ -387,7 +388,7 @@ struct IPv6AddressTests {
         #expect(withUnsafeBytes(of: in6Address) { unsafe ContiguousArray($0) } == expectedBytes)
 
         var buffer = [CChar](repeating: 0, count: Int(INET6_ADDRSTRLEN))
-        let ntop = unsafe inet_ntop(AF_INET6, &in6Address, &buffer, socklen_t(INET6_ADDRSTRLEN))
+        let ntop = unsafe c_inet_ntop(AF_INET6, &in6Address, &buffer, INET6_ADDRSTRLEN)
         #expect(unsafe ntop != nil)
         #expect(unsafe IPv6Address(cString: buffer) == ip)
     }

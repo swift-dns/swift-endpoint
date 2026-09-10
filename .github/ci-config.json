@@ -3,6 +3,6 @@
     "integration-tests": false,
     "embedded": false,
     "wasm": false,
-    "windows": false,
-    "freebsd": false
+    "windows": true,
+    "freebsd": true
 }

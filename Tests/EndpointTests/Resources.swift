@@ -15,29 +15,27 @@ enum Resources: String {
     }
 
     func data() -> Data {
-        FileManager.default.contents(
-            atPath: self.qualifiedPath()
-        )!
+        try! Data(contentsOf: self.qualifiedURL())
     }
 
-    private func qualifiedPath() -> String {
-        var testsDirectory: [String]
+    private func qualifiedURL() -> URL {
+        let testsDirectory: URL
 
         if let projectRootForTesting = ProcessInfo.processInfo
             .environment["PROJECT_ROOT_FOR_TESTING"],
             !projectRootForTesting.isEmpty
         {
-            testsDirectory = URL(fileURLWithPath: projectRootForTesting).pathComponents
-            testsDirectory.append("Tests")
+            testsDirectory = URL(fileURLWithPath: projectRootForTesting)
+                .appendingPathComponent("Tests")
         } else {
             /// `#filePath` is `<Tests>/EndpointTests/Resources.swift`, so dropping the file name
             /// and the test target's directory leaves the `Tests` directory itself.
-            let thisFile = URL(fileURLWithPath: #filePath).pathComponents
-            testsDirectory = Array(thisFile.dropLast(2))
+            testsDirectory = URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
         }
 
-        testsDirectory.append(contentsOf: ["Resources", self.rawValue])
-
-        return testsDirectory.joined(separator: "/")
+        let resourcesDirectory = testsDirectory.appendingPathComponent("Resources")
+        return resourcesDirectory.appendingPathComponent(self.rawValue)
     }
 }

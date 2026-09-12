@@ -6,18 +6,14 @@ extension String {
     func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
-        do {
-            /// Fast path: Currently always the case for non-Darwin.
-            /// On Darwin, always the case unless for some objc-bridged strings.
-            if let fastResult = try self.utf8.withContiguousStorageIfAvailable({
-                try body(unsafe $0.span)
-            }) {
-                return fastResult
-            }
-        } catch let error as E {
-            throw error
-        } catch {
-            fatalError("Unreachable code path")
+        /// Fast path: Currently always the case for non-Darwin.
+        /// On Darwin, always the case unless for some objc-bridged strings.
+        if let fastResult = self.utf8.withContiguousStorageIfAvailable({ buffer in
+            Result(catching: { () throws(E) -> T in
+                try body(unsafe buffer.span)
+            })
+        }) {
+            return try fastResult.get()
         }
 
         return try self.withSpan_Compatibility_SlowPath(body)
@@ -39,15 +35,12 @@ extension String {
         #endif
 
         var copy = self
-        do {
-            return try copy.withUTF8({
-                try body(unsafe $0.span)
+        let result = copy.withUTF8 { buffer in
+            Result(catching: { () throws(E) -> T in
+                try body(unsafe buffer.span)
             })
-        } catch let error as E {
-            throw error
-        } catch {
-            fatalError("Unreachable code path")
         }
+        return try result.get()
     }
 
     #if canImport(Darwin)
@@ -97,18 +90,14 @@ extension Substring {
     func withSpan_Compatibility<T, E: Error>(
         _ body: (Span<UInt8>) throws(E) -> T
     ) throws(E) -> T {
-        do {
-            /// Fast path: Currently always the case for non-Darwin.
-            /// On Darwin, always the case unless for some objc-bridged strings.
-            if let fastResult = unsafe try self.utf8.withContiguousStorageIfAvailable({
-                try body(unsafe $0.span)
-            }) {
-                return fastResult
-            }
-        } catch let error as E {
-            throw error
-        } catch {
-            fatalError("Unreachable code path")
+        /// Fast path: Currently always the case for non-Darwin.
+        /// On Darwin, always the case unless for some objc-bridged strings.
+        if let fastResult = unsafe self.utf8.withContiguousStorageIfAvailable({ buffer in
+            Result(catching: { () throws(E) -> T in
+                try body(unsafe buffer.span)
+            })
+        }) {
+            return try fastResult.get()
         }
 
         return try self.withSpan_Compatibility_SlowPath(body)
@@ -130,14 +119,11 @@ extension Substring {
         #endif
 
         var copy = self
-        do {
-            return try copy.withUTF8({
-                try body(unsafe $0.span)
+        let result = copy.withUTF8 { buffer in
+            Result(catching: { () throws(E) -> T in
+                try body(unsafe buffer.span)
             })
-        } catch let error as E {
-            throw error
-        } catch {
-            fatalError("Unreachable code path")
         }
+        return try result.get()
     }
 }

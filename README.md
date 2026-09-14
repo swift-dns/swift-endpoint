@@ -176,10 +176,10 @@ These were performed on my M1 Pro MacBook, on macOS 27.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 3.8           | 178.9        | 47.08x  |
-| IPv4    | Parsing     | 14.9          | 47.0         | 3.15x   |
-| IPv6    | Serializing | 29.2          | 221.6        | 7.59x   |
-| IPv6    | Parsing     | 25.2          | 99.9         | 3.96x   |
+| IPv4    | Serializing | 3.9           | 180.4        | 46.26x  |
+| IPv4    | Parsing     | 14.9          | 47.1         | 3.16x   |
+| IPv6    | Serializing | 29.3          | 225.1        | 7.68x   |
+| IPv6    | Parsing     | 25.4          | 100.5        | 3.96x   |
 
 #### Against glibc
 
@@ -187,10 +187,10 @@ These were performed on a dedicated-cpu-core AMD EPYC-Milan VM from Hetzner, on 
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 5.2           | 115.0        | 22.12x  |
-| IPv4    | Parsing     | 17.0          | 27.2         | 1.60x   |
-| IPv6    | Serializing | 36.0          | 164.0        | 4.56x   |
-| IPv6    | Parsing     | 34.3          | 48.0         | 1.40x   |
+| IPv4    | Serializing | 5.3           | 115.0        | 21.70x  |
+| IPv4    | Parsing     | 16.9          | 26.4         | 1.56x   |
+| IPv6    | Serializing | 35.8          | 164.0        | 4.58x   |
+| IPv6    | Parsing     | 34.5          | 48.0         | 1.39x   |
 
 ### Ports
 
@@ -205,10 +205,10 @@ These were performed on my M1 Pro MacBook, on macOS 27.
 
 | Operation   | Swift (ns/op) | Compared against    | Other (ns/op) | Speedup |
 | ----------- | ------------- | ------------------- | ------------- | ------- |
-| Serializing | 4.6           | `snprintf`          | 42.0          | 9.13x   |
-| Serializing | 8.7           | `String(UInt16)`    | 15.8          | 1.82x   |
+| Serializing | 4.6           | `snprintf`          | 42.3          | 9.20x   |
+| Serializing | 9.1           | `String(UInt16)`    | 15.1          | 1.66x   |
 | Parsing     | 3.4           | `strtoul`           | 12.6          | 3.71x   |
-| Parsing     | 4.1           | `UInt16(String)`    | 9.1           | 2.22x   |
+| Parsing     | 4.1           | `UInt16(String)`    | 9.2           | 2.24x   |
 
 #### Against glibc
 
@@ -218,8 +218,8 @@ These were performed on a dedicated-cpu-core AMD EPYC-Milan VM from Hetzner, on 
 | ----------- | ------------- | ------------------- | ------------- | ------- |
 | Serializing | 8.5           | `snprintf`          | 37.7          | 4.44x   |
 | Serializing | 20.2          | `String(UInt16)`    | 21.3          | 1.05x   |
-| Parsing     | 5.1           | `strtoul`           | 14.9          | 2.92x   |
-| Parsing     | 7.5           | `UInt16(String)`    | 11.1          | 1.48x   |
+| Parsing     | 5.1           | `strtoul`           | 14.8          | 2.90x   |
+| Parsing     | 7.7           | `UInt16(String)`    | 11.0          | 1.43x   |
 
 #### Additional Notes
 

@@ -3,50 +3,38 @@ extension String {
     /// Calls `body` with a `Span` of this String's utf8 bytes.
     @inlinable
     @inline(always)
-    func withSpan_Compatibility<T, E: Error>(
-        _ body: (Span<UInt8>) throws(E) -> T
-    ) throws(E) -> T {
-        do {
-            /// Fast path: Currently always the case for non-Darwin.
-            /// On Darwin, always the case unless for some objc-bridged strings.
-            if let fastResult = try self.utf8.withContiguousStorageIfAvailable({
-                try body(unsafe $0.span)
-            }) {
-                return fastResult
-            }
-        } catch let error as E {
-            throw error
-        } catch {
-            fatalError("Unreachable code path")
+    func withSpan_Compatibility<T>(
+        _ body: (Span<UInt8>) -> T
+    ) -> T {
+        /// Fast path: Currently always the case for non-Darwin.
+        /// On Darwin, always the case unless for some objc-bridged strings.
+        if let fastResult = self.utf8.withContiguousStorageIfAvailable({ buffer in
+            body(unsafe buffer.span)
+        }) {
+            return fastResult
         }
 
-        return try self.withSpan_Compatibility_SlowPath(body)
+        return self.withSpan_Compatibility_SlowPath(body)
     }
 
     /// This function can only be reached on Darwin and only for some objc-bridged strings.
     /// Therefore it's not worth inlining. As a matter of fact it's worth not inlining it at all.
     @usableFromInline
     @inline(never)
-    func withSpan_Compatibility_SlowPath<T, E: Error>(
-        _ body: (Span<UInt8>) throws(E) -> T
-    ) throws(E) -> T {
+    func withSpan_Compatibility_SlowPath<T>(
+        _ body: (Span<UInt8>) -> T
+    ) -> T {
         /// Same availability guard as `utf8Span` has in swift repo.
         /// The symbol is available there but will just abort.
         #if !(os(watchOS) && _pointerBitWidth(_32))
         if #available(SwiftStdlib 6.2, *) {
-            return try body(self.utf8Span.span)
+            return body(self.utf8Span.span)
         }
         #endif
 
         var copy = self
-        do {
-            return try copy.withUTF8({
-                try body(unsafe $0.span)
-            })
-        } catch let error as E {
-            throw error
-        } catch {
-            fatalError("Unreachable code path")
+        return copy.withUTF8 { buffer in
+            body(unsafe buffer.span)
         }
     }
 
@@ -94,50 +82,38 @@ extension Substring {
     /// Calls `body` with a `Span` of this Substring's utf8 bytes.
     @inlinable
     @inline(always)
-    func withSpan_Compatibility<T, E: Error>(
-        _ body: (Span<UInt8>) throws(E) -> T
-    ) throws(E) -> T {
-        do {
-            /// Fast path: Currently always the case for non-Darwin.
-            /// On Darwin, always the case unless for some objc-bridged strings.
-            if let fastResult = unsafe try self.utf8.withContiguousStorageIfAvailable({
-                try body(unsafe $0.span)
-            }) {
-                return fastResult
-            }
-        } catch let error as E {
-            throw error
-        } catch {
-            fatalError("Unreachable code path")
+    func withSpan_Compatibility<T>(
+        _ body: (Span<UInt8>) -> T
+    ) -> T {
+        /// Fast path: Currently always the case for non-Darwin.
+        /// On Darwin, always the case unless for some objc-bridged strings.
+        if let fastResult = unsafe self.utf8.withContiguousStorageIfAvailable({ buffer in
+            body(unsafe buffer.span)
+        }) {
+            return fastResult
         }
 
-        return try self.withSpan_Compatibility_SlowPath(body)
+        return self.withSpan_Compatibility_SlowPath(body)
     }
 
     /// This function can only be reached on Darwin and only for some objc-bridged strings.
     /// Therefore it's not worth inlining. As a matter of fact it's worth not inlining it at all.
     @usableFromInline
     @inline(never)
-    func withSpan_Compatibility_SlowPath<T, E: Error>(
-        _ body: (Span<UInt8>) throws(E) -> T
-    ) throws(E) -> T {
+    func withSpan_Compatibility_SlowPath<T>(
+        _ body: (Span<UInt8>) -> T
+    ) -> T {
         /// Same availability guard as `utf8Span` has in swift repo.
         /// The symbol is available there but will just abort.
         #if !(os(watchOS) && _pointerBitWidth(_32))
         if #available(SwiftStdlib 6.2, *) {
-            return try body(self.utf8Span.span)
+            return body(self.utf8Span.span)
         }
         #endif
 
         var copy = self
-        do {
-            return try copy.withUTF8({
-                try body(unsafe $0.span)
-            })
-        } catch let error as E {
-            throw error
-        } catch {
-            fatalError("Unreachable code path")
+        return copy.withUTF8 { buffer in
+            body(unsafe buffer.span)
         }
     }
 }

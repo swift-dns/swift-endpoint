@@ -246,23 +246,22 @@ extension DomainName {
             throw ValidationError.idnaConversionFailed(error)
         }
 
-        do {
-            self = try idnaConversionResult.withSpan { span in
+        let result = idnaConversionResult.withSpan { idnaSpan in
+            Result(catching: { () throws(ValidationError) -> DomainName in
+                try DomainName(
+                    isFQDN: isFQDN,
+                    asciiLowercasedNoRootLabelTextualRepresentationSpan: idnaSpan
+                )
+            })
+        } ifNotAvailable: {
+            Result(catching: { () throws(ValidationError) -> DomainName in
                 try DomainName(
                     isFQDN: isFQDN,
                     asciiLowercasedNoRootLabelTextualRepresentationSpan: span
                 )
-            } ifNotAvailable: {
-                try DomainName(
-                    isFQDN: isFQDN,
-                    asciiLowercasedNoRootLabelTextualRepresentationSpan: span
-                )
-            }
-        } catch let error as ValidationError {
-            throw error
-        } catch {
-            fatalError("Unreachable code path")
+            })
         }
+        self = try result.get()
     }
 
     /// Only intended to be used in the initializer above

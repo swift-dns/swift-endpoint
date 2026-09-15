@@ -1,8 +1,0 @@
-{
-    "$schema": "https://raw.githubusercontent.com/swift-dns/shared/refs/heads/main/.github/schemas/ci-config.schema.json",
-    "integration-tests": false,
-    "embedded": false,
-    "wasm": true,
-    "windows": true,
-    "freebsd": true
-}

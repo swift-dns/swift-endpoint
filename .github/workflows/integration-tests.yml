@@ -18,6 +18,9 @@ jobs:
 
     timeout-minutes: 5
 
+    env:
+      IS_FORK_PULL_REQUEST: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+
     outputs:
       android: ${{ steps.ci-config.outputs.android }}
       integration-tests: ${{ steps.ci-config.outputs.integration-tests }}
@@ -28,8 +31,22 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Check out the ci config of the base branch
+        if: ${{ env.IS_FORK_PULL_REQUEST == 'true' }} # A fork must not turn off the jobs that check it
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base-ref
+          sparse-checkout: |
+            .github/ci-config.yml
+            .github/ci-config.yaml
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
       - name: Check the ci config
         id: ci-config
+        env:
+          CI_CONFIG_DIR: ${{ env.IS_FORK_PULL_REQUEST == 'true' && 'base-ref/.github' || '.github' }}
         run: .github/scripts/ci-config.sh >> "${GITHUB_OUTPUT}"
 
   linux-integration-tests:

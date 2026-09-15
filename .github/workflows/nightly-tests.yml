@@ -18,6 +18,9 @@ jobs:
 
     timeout-minutes: 5
 
+    env:
+      IS_FORK_PULL_REQUEST: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+
     outputs:
       android: ${{ steps.ci-config.outputs.android }}
       embedded: ${{ steps.ci-config.outputs.embedded }}
@@ -32,8 +35,22 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Check out the ci config of the base branch
+        if: ${{ env.IS_FORK_PULL_REQUEST == 'true' }} # A fork must not turn off the jobs that check it
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base-ref
+          sparse-checkout: |
+            .github/ci-config.yml
+            .github/ci-config.yaml
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
       - name: Check the ci config
         id: ci-config
+        env:
+          CI_CONFIG_DIR: ${{ env.IS_FORK_PULL_REQUEST == 'true' && 'base-ref/.github' || '.github' }}
         run: .github/scripts/ci-config.sh >> "${GITHUB_OUTPUT}"
 
   linux-nightly-tests:
@@ -657,7 +674,7 @@ jobs:
 
       - name: Build ${{ github.event.repository.name }} and run tests
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
-        uses: vmactions/freebsd-vm@f0552d3b69211736abd97f02ff3d4674c56b73b1 # v1.5.5
+        uses: vmactions/freebsd-vm@8b0f1a8fc0ea0def307835c258940ca358fe6480 # v1.5.6
         env:
           BUILD_MODE: ${{ matrix.config.mode }}
         with:

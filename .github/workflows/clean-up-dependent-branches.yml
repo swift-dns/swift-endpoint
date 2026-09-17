@@ -28,6 +28,8 @@ jobs:
       - name: Check out ${{ github.event.repository.name }}
         uses: actions/checkout@v7
         with:
+          sparse-checkout: .github/scripts/clean-up-dependent-branches.sh
+          sparse-checkout-cone-mode: false
           persist-credentials: false
 
       - name: Clean up the branches derived from ${{ github.event.ref }}

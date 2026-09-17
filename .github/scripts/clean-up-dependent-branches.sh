@@ -34,6 +34,7 @@ trap 'rm -rf "${workspace}"' EXIT
 
 readonly response_file="${workspace}/response.json"
 readonly branch_names_file="${workspace}/branch-names"
+readonly page_names_file="${workspace}/page-names"
 
 # Performs a GitHub API request, writing the body to a file and printing the HTTP status.
 github_api() {
@@ -137,7 +138,13 @@ list_branch_names() {
         "$(api_failure_details "${status}" "${response_file}")"
     fi
 
-    mapfile -t -d '' page_names < <(jq --join-output '.[] | .name, "\u0000"' "${response_file}")
+    # A process substitution would turn a 'jq' failure into an empty page, ending pagination early.
+    if ! jq --join-output '.[] | .name, "\u0000"' "${response_file}" > "${page_names_file}"; then
+      fatal "Failed to read the branch names out of page ${page} of '${repository}':" \
+        "$(cat "${response_file}")"
+    fi
+
+    mapfile -t -d '' page_names < "${page_names_file}"
     if [[ "${#page_names[@]}" -eq 0 ]]; then
       break
     fi

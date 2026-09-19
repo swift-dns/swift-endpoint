@@ -29,8 +29,9 @@ readonly baselines_dir="${package_path}/.benchmarkBaselines"
 [[ -d "${baselines_dir}" ]] || fatal "No baselines directory at '${baselines_dir}'"
 
 readonly baseline_files=("${baselines_dir}"/*/"${baseline_name}"/*results.json)
-[[ "${#baseline_files[@]}" -gt 0 ]] \
-  || fatal "No baseline results found for '${baseline_name}' under '${baselines_dir}'"
+if [[ "${#baseline_files[@]}" -eq 0 ]]; then
+  fatal "No baseline results found for '${baseline_name}' under '${baselines_dir}'"
+fi
 
 # Sets the cpuUser percentile cache so that 'statistics.percentiles()' returns a known p90 instead of
 # recomputing it from the histogram. When 'from_lookup' is true the raw p90 is read from the lookup
@@ -78,12 +79,19 @@ inject_cpu_user_p90() {
 build_raw_p90_lookup() {
   local raw_dir="${1:?build_raw_p90_lookup requires an output directory}"
 
-  run_benchmark thresholds update "${baseline_name}" --path "${raw_dir}" --no-progress >/dev/null \
-    || fatal "Failed to export raw p90 via 'thresholds update'; the baseline may be unreadable or the package format changed."
+  local -a update_arguments=(
+    thresholds update "${baseline_name}" --path "${raw_dir}" --no-progress
+  )
+  if ! run_benchmark "${update_arguments[@]}" > /dev/null; then
+    fatal "Failed to export raw p90 via 'thresholds update';" \
+      "the baseline may be unreadable or the package format changed."
+  fi
 
   local raw_files=("${raw_dir}"/*.json)
-  [[ "${#raw_files[@]}" -gt 0 ]] \
-    || fatal "Raw p90 export produced no files; the benchmark package output format may have changed."
+  if [[ "${#raw_files[@]}" -eq 0 ]]; then
+    fatal "Raw p90 export produced no files;" \
+      "the benchmark package output format may have changed."
+  fi
 
   local raw_file key
   for raw_file in "${raw_files[@]}"; do
@@ -109,15 +117,17 @@ carries_cpu_user_results() {
 verify_injection() {
   local baseline_file="${1:?verify_injection requires a baseline results file}"
 
-  jq -e --argjson p90_index "${p90_index}" --argjson granularity "${granularity}" '
+  if ! jq -e --argjson p90_index "${p90_index}" --argjson granularity "${granularity}" '
     [.results[] | arrays | .[] | select(.metric | has("cpuUser"))] as $cpu_user_results
     | ($cpu_user_results | length) > 0
       and ($cpu_user_results | all(
         (.statistics._cachedPercentiles[$p90_index] | type) == "number"
         and (.statistics._cachedPercentiles[$p90_index] % $granularity) == 0
         and .statistics._cachedPercentilesHistogramCount == .statistics.histogram._totalCount))
-  ' "${baseline_file}" >/dev/null \
-    || fatal "Post-injection check failed for '${baseline_file}'; cpuUser p90 was not floored as expected."
+  ' "${baseline_file}" > /dev/null; then
+    fatal "Post-injection check failed for '${baseline_file}';" \
+      "cpuUser p90 was not floored as expected."
+  fi
   return 0
 }
 

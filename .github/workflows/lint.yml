@@ -15,11 +15,11 @@ env:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     timeout-minutes: 10
 
-    container: swift:6.3-noble
+    container: swift:6.4-resolute
 
     permissions:
       contents: write # For committing formatting updates

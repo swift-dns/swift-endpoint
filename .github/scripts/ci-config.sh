@@ -20,6 +20,18 @@ esac
 # but a key that is absent from it leaves the jobs it gates enabled.
 readonly known_job_keys="android benchmarks embedded freebsd integration-tests musl wasm windows"
 
+# Keys holding a 'swiftc' flag rather than gating a job. An absent or empty one adds no flag; the
+# jobs pass a set one on as '-Xswiftc <flag>', under the same name with '-arguments' in place of
+# '-flag'.
+readonly known_flag_keys="cxx-interoperability-flag"
+
+# Keys holding a whole argument list rather than gating a job, which the jobs pass on as it stands,
+# under the same name with '-arguments' in place of '-flags'. The android jobs expand theirs in a
+# shell, so it may name an environment variable that they set, such as '${SWIFT_INSTALLATION}'.
+readonly known_argument_keys="android-swift-build-flags wasi-swift-build-flags"
+
+readonly known_keys="${known_job_keys} ${known_flag_keys} ${known_argument_keys}"
+
 resolve_ci_config_path() {
   local config_dir="${1:?resolve_ci_config_path requires the directory that holds the ci config file}"
 
@@ -41,7 +53,7 @@ resolve_ci_config_path() {
 
   fatal "There is no '${config_dir}/ci-config.y[a]ml'" \
     "Every repository must have one, even when it turns nothing off, in which case it is empty." \
-    "The known keys are: ${known_job_keys}"
+    "The known keys are: ${known_keys}"
 }
 
 assert_no_complaint() {
@@ -50,14 +62,16 @@ assert_no_complaint() {
 
   local complaint
   if ! complaint="$(
-    KNOWN_JOB_KEYS="${known_job_keys}" yq eval-all "${expression}" "${config_path}"
+    KNOWN_JOB_KEYS="${known_job_keys}" KNOWN_FLAG_KEYS="${known_flag_keys}" \
+      KNOWN_ARGUMENT_KEYS="${known_argument_keys}" \
+      yq eval-all "${expression}" "${config_path}"
   )"; then
     fatal "Failed to parse '${config_path}'"
   fi
 
   if [[ -n "${complaint}" ]]; then
     fatal "'${config_path}' is invalid because ${complaint}" \
-      "The known keys are: ${known_job_keys}"
+      "The known keys are: ${known_keys}"
   fi
 
   return 0
@@ -88,17 +102,23 @@ validate_ci_config() {
   '
 
   assert_no_complaint "${config_path}" '
-    (strenv(KNOWN_JOB_KEYS) | split(" ")) as $known
+    (strenv(KNOWN_JOB_KEYS) | split(" ")) as $known_jobs
+    | ((strenv(KNOWN_FLAG_KEYS) + " " + strenv(KNOWN_ARGUMENT_KEYS)) | split(" ")) as $known_strings
     | (. // {}) as $config
     | ($config | keys) as $config_keys
     | ($config_keys | group_by(.) | map(select(length > 1) | .[0]) | join(", ")) as $duplicate_keys
-    | (($config_keys | unique) - $known | join(", ")) as $unknown_keys
-    | ([$config | to_entries[] | select(.value | tag != "!!bool") | .key + " (" + (.value | tag) + ")"]
-       | join(", ")) as $not_boolean_keys
+    | (($config_keys | unique) - ($known_jobs + $known_strings) | join(", ")) as $unknown_keys
+    | ([$config | to_entries[]
+        | select(((([.key] - $known_jobs) | length) == 0) and (.value | tag) != "!!bool")
+        | .key + " (" + (.value | tag) + ")"] | join(", ")) as $not_boolean_keys
+    | ([$config | to_entries[]
+        | select(((([.key] - $known_strings) | length) == 0) and (.value | tag) != "!!str")
+        | .key + " (" + (.value | tag) + ")"] | join(", ")) as $not_string_keys
     | [
         (("it holds duplicate keys: " + $duplicate_keys) | select($duplicate_keys != "")),
         (("it holds unknown keys: " + $unknown_keys) | select($unknown_keys != "")),
-        (("these keys of it are not booleans: " + $not_boolean_keys) | select($not_boolean_keys != ""))
+        (("these keys of it are not booleans: " + $not_boolean_keys) | select($not_boolean_keys != "")),
+        (("these keys of it are not strings: " + $not_string_keys) | select($not_string_keys != ""))
       ]
     | .[0] // ""
   '
@@ -126,6 +146,33 @@ enablement_of_known_keys() {
   return 0
 }
 
+# shellcheck disable=SC2016
+arguments_of_known_keys() {
+  local config_path="${1:?arguments_of_known_keys requires the path of the ci config file}"
+
+  local arguments
+  if ! arguments="$(
+    KNOWN_FLAG_KEYS="${known_flag_keys}" KNOWN_ARGUMENT_KEYS="${known_argument_keys}" \
+      yq eval-all '
+        (strenv(KNOWN_FLAG_KEYS) | split(" ")) as $known_flags
+        | (strenv(KNOWN_ARGUMENT_KEYS) | split(" ")) as $known_arguments
+        | (. // {}) as $config
+        | ($known_flags + $known_arguments)[]
+        | . as $key
+        | ($key | sub("-flags?$", "-arguments")) as $output
+        | (($config[$key] // "") | select(. != "")) as $value
+        | ((([$key] - $known_flags) | length) == 0) as $needs_prefix
+        | (($value | select($needs_prefix) | "-Xswiftc " + .) // $value) as $argument
+        | $output + "=" + ($argument // "")
+      ' "${config_path}"
+  )"; then
+    fatal "Failed to read the keys '${known_flag_keys} ${known_argument_keys}' of '${config_path}'"
+  fi
+
+  printf -- '%s\n' "${arguments}"
+  return 0
+}
+
 ci_config_path="$(resolve_ci_config_path "${ci_config_dir}")"
 readonly ci_config_path
 
@@ -142,4 +189,10 @@ readonly enablement
 
 log "Job keys of '${ci_config_path}': ${enablement//$'\n'/, }"
 
+arguments="$(arguments_of_known_keys "${ci_config_path}")"
+readonly arguments
+
+log "Flag and argument keys of '${ci_config_path}': ${arguments//$'\n'/, }"
+
 printf -- '%s\n' "${enablement}"
+printf -- '%s\n' "${arguments}"

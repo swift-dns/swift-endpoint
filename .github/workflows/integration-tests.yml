@@ -14,7 +14,7 @@ defaults:
 
 jobs:
   check-ci-config:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     timeout-minutes: 5
 
@@ -55,11 +55,17 @@ jobs:
       matrix:
         swift-image:
           - name: swift:6.3-noble
+          - name: swift:6.4-resolute
         config:
           - mode: "debug"
           - mode: "release"
+        include:
+          - swift-image: { name: swift:6.3-noble }
+            runner: ubuntu-24.04
+          - swift-image: { name: swift:6.4-resolute }
+            runner: ubuntu-26.04
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
 
     needs: check-ci-config
     if: ${{ needs.check-ci-config.outputs.integration-tests == 'true' }}
@@ -169,6 +175,7 @@ jobs:
       matrix:
         swift:
           - version: 6.3
+          - version: 6.4
 
     runs-on: macos-26
 
@@ -276,6 +283,7 @@ jobs:
           - version: latest-stable
         swift:
           - version: 6.3
+          - version: 6.4
         config:
           - mode: "debug"
           - mode: "release"
@@ -455,11 +463,17 @@ jobs:
       matrix:
         swift:
           - version: 6.3
+          - version: 6.4.0
         config:
           - mode: "debug"
           - mode: "release"
+        include:
+          - swift: { version: 6.3 }
+            runner: ubuntu-24.04
+          - swift: { version: 6.4.0 }
+            runner: ubuntu-26.04
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
 
     needs: check-ci-config
     if: ${{ needs.check-ci-config.outputs.integration-tests == 'true' && needs.check-ci-config.outputs.android == 'true' }}
@@ -522,6 +536,7 @@ jobs:
           copy-files: Tests
           swift-build-flags: >-
             --build-tests
+            --disable-xctest
             --explicit-target-dependency-import-check error
           swift-test-flags: --filter "IntegrationTests."
 

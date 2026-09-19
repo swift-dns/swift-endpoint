@@ -33,12 +33,19 @@ run_and_exit() {
 github_api() {
   local endpoint="${1:?github_api requires an api endpoint}"
 
-  curl --silent --show-error --fail --location \
-    --header "Accept: application/vnd.github+json" \
-    --header "Authorization: Bearer ${github_token}" \
-    --header "X-GitHub-Api-Version: 2022-11-28" \
-    "https://api.github.com/${endpoint}" \
-    || return 1
+  local -a curl_arguments=(
+    --silent
+    --show-error
+    --fail
+    --location
+    --header "Accept: application/vnd.github+json"
+    --header "Authorization: Bearer ${github_token}"
+    --header "X-GitHub-Api-Version: 2022-11-28"
+  )
+
+  if ! curl "${curl_arguments[@]}" "https://api.github.com/${endpoint}"; then
+    return 1
+  fi
   return 0
 }
 
@@ -57,31 +64,38 @@ is_benchmark_update_commit() {
   return 1
 }
 
-head_commit_json="$(github_api "repos/${repository}/commits/${head_sha}")" \
-  || fatal "could not fetch commit '${head_sha}' of '${repository}'"
+if ! head_commit_json="$(github_api "repos/${repository}/commits/${head_sha}")"; then
+  fatal "Could not fetch commit '${head_sha}' of '${repository}'"
+fi
 readonly head_commit_json
 
-is_benchmark_update_commit "${head_commit_json}" "Head ${head_sha:0:7}" \
-  || run_and_exit "Head commit ${head_sha:0:7} is not a benchmark thresholds update"
+if ! is_benchmark_update_commit "${head_commit_json}" "Head ${head_sha:0:7}"; then
+  run_and_exit "Head commit ${head_sha:0:7} is not a benchmark thresholds update"
+fi
 
 parent_sha="$(jq -r '.parents[0].sha // ""' <<< "${head_commit_json}")"
 readonly parent_sha
-[[ "${parent_sha}" =~ ^[0-9a-f]{40}$ ]] \
-  || run_and_exit "Head commit ${head_sha:0:7} has no parent commit to compare against"
+if [[ ! "${parent_sha}" =~ ^[0-9a-f]{40}$ ]]; then
+  run_and_exit "Head commit ${head_sha:0:7} has no parent commit to compare against"
+fi
 
-parent_commit_json="$(github_api "repos/${repository}/commits/${parent_sha}")" \
-  || fatal "could not fetch commit '${parent_sha}' of '${repository}'"
+if ! parent_commit_json="$(github_api "repos/${repository}/commits/${parent_sha}")"; then
+  fatal "Could not fetch commit '${parent_sha}' of '${repository}'"
+fi
 readonly parent_commit_json
 
-is_benchmark_update_commit "${parent_commit_json}" "Parent ${parent_sha:0:7}" \
-  || run_and_exit "Parent commit ${parent_sha:0:7} is not a benchmark thresholds update"
+if ! is_benchmark_update_commit "${parent_commit_json}" "Parent ${parent_sha:0:7}"; then
+  run_and_exit "Parent commit ${parent_sha:0:7} is not a benchmark thresholds update"
+fi
 
-[[ -n "${runner_name}" ]] \
-  || run_and_exit "RUNNER_NAME is not set, so the current job cannot be identified"
+if [[ -z "${runner_name}" ]]; then
+  run_and_exit "RUNNER_NAME is not set, so the current job cannot be identified"
+fi
 
-current_run_jobs_json="$(
-  github_api "repos/${repository}/actions/runs/${run_id}/attempts/${run_attempt}/jobs?per_page=100"
-)" || run_and_exit "Could not fetch the jobs of the current run ${run_id}"
+readonly current_run_jobs_endpoint="repos/${repository}/actions/runs/${run_id}/attempts/${run_attempt}/jobs?per_page=100"
+if ! current_run_jobs_json="$(github_api "${current_run_jobs_endpoint}")"; then
+  run_and_exit "Could not fetch the jobs of the current run ${run_id}"
+fi
 readonly current_run_jobs_json
 
 # A GitHub runner only ever hosts one running job at a time, so this identifies the current job,
@@ -93,25 +107,29 @@ job_name="$(
   ' <<< "${current_run_jobs_json}"
 )"
 readonly job_name
-[[ -n "${job_name}" ]] \
-  || run_and_exit "Could not identify the current job among the jobs of run ${run_id} using runner '${runner_name}'"
+if [[ -z "${job_name}" ]]; then
+  run_and_exit "Could not identify the current job among the jobs of run ${run_id} using runner '${runner_name}'"
+fi
 
-parent_runs_json="$(
-  github_api "repos/${repository}/actions/workflows/${workflow_file}/runs?head_sha=${parent_sha}&per_page=100"
-)" || run_and_exit "Could not fetch the '${workflow_file}' runs of parent commit ${parent_sha:0:7}"
+readonly parent_runs_endpoint="repos/${repository}/actions/workflows/${workflow_file}/runs?head_sha=${parent_sha}&per_page=100"
+if ! parent_runs_json="$(github_api "${parent_runs_endpoint}")"; then
+  run_and_exit "Could not fetch the '${workflow_file}' runs of parent commit ${parent_sha:0:7}"
+fi
 readonly parent_runs_json
 
 mapfile -t parent_run_ids < <(jq -r '.workflow_runs[].id' <<< "${parent_runs_json}")
 readonly parent_run_ids
-[[ "${#parent_run_ids[@]}" -gt 0 ]] \
-  || run_and_exit "No '${workflow_file}' run found for parent commit ${parent_sha:0:7}"
+if [[ "${#parent_run_ids[@]}" -eq 0 ]]; then
+  run_and_exit "No '${workflow_file}' run found for parent commit ${parent_sha:0:7}"
+fi
 
 # A run is cancelled as a whole when a newer commit supersedes it, even though the jobs that had
 # already finished did succeed, so this looks at the job instead of at the run that contains it.
 for parent_run_id in "${parent_run_ids[@]}"; do
-  parent_run_jobs_json="$(
-    github_api "repos/${repository}/actions/runs/${parent_run_id}/jobs?per_page=100"
-  )" || continue
+  parent_run_jobs_endpoint="repos/${repository}/actions/runs/${parent_run_id}/jobs?per_page=100"
+  if ! parent_run_jobs_json="$(github_api "${parent_run_jobs_endpoint}")"; then
+    continue
+  fi
 
   succeeded="$(
     jq --arg job_name "${job_name}" \

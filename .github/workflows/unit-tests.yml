@@ -14,7 +14,7 @@ defaults:
 
 jobs:
   check-ci-config:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     timeout-minutes: 5
 
@@ -27,6 +27,9 @@ jobs:
       musl: ${{ steps.ci-config.outputs.musl }}
       wasm: ${{ steps.ci-config.outputs.wasm }}
       windows: ${{ steps.ci-config.outputs.windows }}
+      cxx-interoperability-arguments: ${{ steps.ci-config.outputs.cxx-interoperability-arguments }}
+      android-swift-build-arguments: ${{ steps.ci-config.outputs.android-swift-build-arguments }}
+      wasi-swift-build-arguments: ${{ steps.ci-config.outputs.wasi-swift-build-arguments }}
 
     steps:
       - name: Check out ${{ github.event.repository.name }}
@@ -58,11 +61,17 @@ jobs:
       matrix:
         swift-image:
           - name: swift:6.3-noble
+          - name: swift:6.4-resolute
         config:
           - mode: "debug"
           - mode: "release"
+        include:
+          - swift-image: { name: swift:6.3-noble }
+            runner: ubuntu-24.04
+          - swift-image: { name: swift:6.4-resolute }
+            runner: ubuntu-26.04
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
 
     container: ${{ matrix.swift-image.name }}
 
@@ -148,6 +157,7 @@ jobs:
       matrix:
         swift:
           - version: 6.3
+          - version: 6.4
 
     runs-on: macos-26
 
@@ -252,6 +262,7 @@ jobs:
           - version: latest-stable
         swift:
           - version: 6.3
+          - version: 6.4
         config:
           - mode: "debug"
           - mode: "release"
@@ -406,6 +417,7 @@ jobs:
           - version: windows-2025
         swift:
           - version: 6.3.3
+          - version: 6.4.0
         config:
           - mode: "debug"
           - mode: "release"
@@ -416,6 +428,9 @@ jobs:
     if: ${{ needs.check-ci-config.outputs.windows == 'true' }}
 
     timeout-minutes: 20
+
+    env:
+      CXX_INTEROPERABILITY_ARGUMENTS: ${{ needs.check-ci-config.outputs.cxx-interoperability-arguments }}
 
     permissions:
       actions: read # For reading the previous commit's workflow runs
@@ -457,8 +472,10 @@ jobs:
         run: |
           swift build \
             --build-tests \
+            --disable-xctest \
             --explicit-target-dependency-import-check error \
             -Xswiftc -require-explicit-sendable \
+            ${CXX_INTEROPERABILITY_ARGUMENTS} \
             -c ${{ matrix.config.mode }}
 
       - name: Cache .build
@@ -476,6 +493,7 @@ jobs:
             --skip-build \
             --disable-xctest \
             -Xswiftc -require-explicit-sendable \
+            ${CXX_INTEROPERABILITY_ARGUMENTS} \
             -c ${{ matrix.config.mode }}
 
   android-unit:
@@ -484,16 +502,25 @@ jobs:
       matrix:
         swift:
           - version: 6.3
+          - version: 6.4.0
         config:
           - mode: "debug"
           - mode: "release"
+        include:
+          - swift: { version: 6.3 }
+            runner: ubuntu-24.04
+          - swift: { version: 6.4.0 }
+            runner: ubuntu-26.04
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
 
     needs: check-ci-config
     if: ${{ needs.check-ci-config.outputs.android == 'true' }}
 
     timeout-minutes: 30
+
+    env:
+      ANDROID_SWIFT_BUILD_ARGUMENTS: ${{ needs.check-ci-config.outputs.android-swift-build-arguments }}
 
     permissions:
       actions: read # For reading the previous commit's workflow runs
@@ -551,7 +578,9 @@ jobs:
           copy-files: Tests
           swift-build-flags: >-
             --build-tests
+            --disable-xctest
             --explicit-target-dependency-import-check error
+            ${ANDROID_SWIFT_BUILD_ARGUMENTS}
           swift-test-flags: --skip "IntegrationTests."
 
       - name: Cache .build
@@ -565,20 +594,26 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        swift-image:
-          - name: swift:6.3-noble
         swift:
-          - version: 6.3
+          - image: swift:6.3-noble
+            version: 6.3
+          - image: swift:6.4-resolute
+            version: 6.4
         config:
           - mode: "debug"
           - mode: "release"
+        include:
+          - swift: { image: swift:6.3-noble }
+            runner: ubuntu-24.04
+          - swift: { image: swift:6.4-resolute }
+            runner: ubuntu-26.04
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
 
     needs: check-ci-config
     if: ${{ needs.check-ci-config.outputs.musl == 'true' }}
 
-    container: ${{ matrix.swift-image.name }}
+    container: ${{ matrix.swift.image }}
 
     timeout-minutes: 30
 
@@ -612,8 +647,8 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .build
-          key: "${{ github.event.repository.name }}-unit-tests-musl-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
-          restore-keys: "${{ github.event.repository.name }}-unit-tests-musl-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-"
+          key: "${{ github.event.repository.name }}-unit-tests-musl-${{ matrix.config.mode }}-build-${{ matrix.swift.image }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
+          restore-keys: "${{ github.event.repository.name }}-unit-tests-musl-${{ matrix.config.mode }}-build-${{ matrix.swift.image }}-${{ runner.os }}-"
 
       # The Static Linux SDK ships no static swift-testing or XCTest, so the tests can only be compiled for glibc.
       - name: Build ${{ github.event.repository.name }}
@@ -632,28 +667,37 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: .build
-          key: "${{ github.event.repository.name }}-unit-tests-musl-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
+          key: "${{ github.event.repository.name }}-unit-tests-musl-${{ matrix.config.mode }}-build-${{ matrix.swift.image }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
 
   wasi-unit:
     strategy:
       fail-fast: false
       matrix:
-        swift-image:
-          - name: swift:6.3-noble
         swift:
-          - version: 6.3
+          - image: swift:6.3-noble
+            version: 6.3
+          - image: swift:6.4-resolute
+            version: 6.4
         config:
           - mode: "debug"
           - mode: "release"
+        include:
+          - swift: { image: swift:6.3-noble }
+            runner: ubuntu-24.04
+          - swift: { image: swift:6.4-resolute }
+            runner: ubuntu-26.04
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
 
     needs: check-ci-config
     if: ${{ needs.check-ci-config.outputs.wasm == 'true' }}
 
-    container: ${{ matrix.swift-image.name }}
+    container: ${{ matrix.swift.image }}
 
     timeout-minutes: 30
+
+    env:
+      WASI_SWIFT_BUILD_ARGUMENTS: ${{ needs.check-ci-config.outputs.wasi-swift-build-arguments }}
 
     permissions:
       actions: read # For reading the previous commit's workflow runs
@@ -685,8 +729,8 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .build
-          key: "${{ github.event.repository.name }}-unit-tests-wasi-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
-          restore-keys: "${{ github.event.repository.name }}-unit-tests-wasi-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-"
+          key: "${{ github.event.repository.name }}-unit-tests-wasi-${{ matrix.config.mode }}-build-${{ matrix.swift.image }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
+          restore-keys: "${{ github.event.repository.name }}-unit-tests-wasi-${{ matrix.config.mode }}-build-${{ matrix.swift.image }}-${{ runner.os }}-"
 
       - name: Build ${{ github.event.repository.name }}
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
@@ -695,9 +739,9 @@ jobs:
           SWIFT_VERSION: ${{ matrix.swift.version }}
           BUILD_MODE: ${{ matrix.config.mode }}
           BUILD_FLAGS: >-
-            --build-tests
-            --explicit-target-dependency-import-check error
-            -Xswiftc -require-explicit-sendable
+            --disable-xctest
+            ${{ env.WASI_SWIFT_BUILD_ARGUMENTS
+            || '--build-tests --explicit-target-dependency-import-check error -Xswiftc -require-explicit-sendable' }}
         run: .github/scripts/build-with-sdk.sh
 
       - name: Cache .build
@@ -705,10 +749,12 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: .build
-          key: "${{ github.event.repository.name }}-unit-tests-wasi-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
+          key: "${{ github.event.repository.name }}-unit-tests-wasi-${{ matrix.config.mode }}-build-${{ matrix.swift.image }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
 
+      # A repository that replaced the flags above dropped '--build-tests' from them, so it has no
+      # test bundle to run here.
       - name: Run tests with wasmtime
-        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && env.WASI_SWIFT_BUILD_ARGUMENTS == '' }}
         env:
           BUILD_MODE: ${{ matrix.config.mode }}
           WASMTIME_VERSION: "48.0.1"
@@ -721,20 +767,26 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        swift-image:
-          - name: swift:6.3-noble
         swift:
-          - version: 6.3
+          - image: swift:6.3-noble
+            version: 6.3
+          - image: swift:6.4-resolute
+            version: 6.4
         config:
           - mode: "debug"
           - mode: "release"
+        include:
+          - swift: { image: swift:6.3-noble }
+            runner: ubuntu-24.04
+          - swift: { image: swift:6.4-resolute }
+            runner: ubuntu-26.04
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
 
     needs: check-ci-config
     if: ${{ needs.check-ci-config.outputs.wasm == 'true' && needs.check-ci-config.outputs.embedded == 'true' }}
 
-    container: ${{ matrix.swift-image.name }}
+    container: ${{ matrix.swift.image }}
 
     timeout-minutes: 30
 
@@ -768,8 +820,8 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: .build
-          key: "${{ github.event.repository.name }}-unit-tests-embedded-wasm-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
-          restore-keys: "${{ github.event.repository.name }}-unit-tests-embedded-wasm-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-"
+          key: "${{ github.event.repository.name }}-unit-tests-embedded-wasm-${{ matrix.config.mode }}-build-${{ matrix.swift.image }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
+          restore-keys: "${{ github.event.repository.name }}-unit-tests-embedded-wasm-${{ matrix.config.mode }}-build-${{ matrix.swift.image }}-${{ runner.os }}-"
 
       # Embedded Swift has no swift-testing or XCTest, so only the library is compiled.
       - name: Build ${{ github.event.repository.name }}
@@ -788,7 +840,7 @@ jobs:
         uses: actions/cache/save@v6
         with:
           path: .build
-          key: "${{ github.event.repository.name }}-unit-tests-embedded-wasm-${{ matrix.config.mode }}-build-${{ matrix.swift-image.name }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
+          key: "${{ github.event.repository.name }}-unit-tests-embedded-wasm-${{ matrix.config.mode }}-build-${{ matrix.swift.image }}-${{ runner.os }}-${{ hashFiles('./Package.resolved') }}"
 
   embedded-baremetal-unit:
     strategy:
@@ -796,12 +848,18 @@ jobs:
       matrix:
         swift-image:
           - name: swift:6.3-noble
+          - name: swift:6.4-resolute
         triple:
           - name: armv7em-none-none-eabi
           - name: aarch64-none-none-elf
           - name: riscv32-none-none-eabi
+        include:
+          - swift-image: { name: swift:6.3-noble }
+            runner: ubuntu-24.04
+          - swift-image: { name: swift:6.4-resolute }
+            runner: ubuntu-26.04
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
 
     needs: check-ci-config
     if: ${{ needs.check-ci-config.outputs.embedded == 'true' }}

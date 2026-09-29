@@ -2,7 +2,7 @@
 extension Port {
     /// Calls `body` with a pointer to a null-terminated C string of this port's textual
     /// representation, in decimal notation. For example `Port(8080)` results in the C
-    /// string `"8080"`.
+    /// string `"8080\0"`.
     ///
     /// The textual representation is in the presentation format expected by C APIs.
     ///
@@ -32,7 +32,7 @@ extension Port {
 
     /// Initialize a `Port` from a null-terminated C string of its textual representation.
     /// That is, at most 5 decimal digits amounting to a value of at most 65535.
-    /// For example `"8080"` will parse into `Port(8080)`.
+    /// For example `"8080\0"` will parse into `Port(8080)`.
     ///
     /// This is useful for interoperability with C APIs that produce null-terminated strings.
     ///

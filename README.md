@@ -164,7 +164,7 @@ For `IPv6Address`, only the Arpa domain name format can be supported. For exampl
 * Each benchmark runs against 32 different IPs, one by one and in a random manner.
   * There is a constant seed to keep the benchmarks consistent across benchmark runs.
   * This means CPUs won't find a clear pattern to over-optimize for in any of the operations, which would make the benchmarks less realistic.
-  * The randomization itself only adds minimal runtime (~0.3ns = 1 cycle) to the benchmarks and is not subtracted.
+  * The randomization itself only adds minimal runtime (~0.2-0.3ns = 1 cycle) to the benchmarks and is not subtracted.
   * All addresses are operational real-world addresses, not documentation examples or such.
   * Different addresses test different branches of a possibly branchy parsing/serialization implementation.
   * 2 of the IPv6 IPs are IPv4-embedded, 1 of which is an IPv4-mapped IPv6 address.
@@ -172,14 +172,14 @@ For `IPv6Address`, only the Arpa domain name format can be supported. For exampl
 
 #### Against Darwin
 
-These were performed on my M1 Pro MacBook, on macOS 27.
+These were performed on M6 processors, on macOS 27.
 
 | IP Type | Operation   | Swift (ns/op) | inet (ns/op) | Speedup |
 | ------- | ----------- | ------------- | ------------ | ------- |
-| IPv4    | Serializing | 3.9           | 180.4        | 46.26x  |
-| IPv4    | Parsing     | 14.9          | 47.1         | 3.16x   |
-| IPv6    | Serializing | 29.3          | 225.1        | 7.68x   |
-| IPv6    | Parsing     | 25.4          | 100.5        | 3.96x   |
+| IPv4    | Serializing | 2.1           | 95.2         | 45.33x  |
+| IPv4    | Parsing     | 10.1          | 26.7         | 2.64x   |
+| IPv6    | Serializing | 17.9          | 121.9        | 6.81x   |
+| IPv6    | Parsing     | 16.2          | 63.4         | 3.91x   |
 
 #### Against glibc
 
@@ -201,14 +201,14 @@ These were performed on a dedicated-cpu-core AMD EPYC-Milan VM from Hetzner, on 
 
 #### Against Darwin
 
-These were performed on my M1 Pro MacBook, on macOS 27.
+These were performed on M6 processors, on macOS 27.
 
 | Operation   | Swift (ns/op) | Compared against    | Other (ns/op) | Speedup |
 | ----------- | ------------- | ------------------- | ------------- | ------- |
-| Serializing | 4.6           | `snprintf`          | 42.3          | 9.20x   |
-| Serializing | 9.1           | `String(UInt16)`    | 15.1          | 1.66x   |
-| Parsing     | 3.4           | `strtoul`           | 12.6          | 3.71x   |
-| Parsing     | 4.1           | `UInt16(String)`    | 9.2           | 2.24x   |
+| Serializing | 2.0           | `snprintf`          | 25.7          | 12.85x  |
+| Serializing | 5.5           | `String(UInt16)`    | 9.5           | 1.73x   |
+| Parsing     | 2.3           | `strtoul`           | 7.6           | 3.30x   |
+| Parsing     | 2.6           | `UInt16(String)`    | 5.8           | 2.23x   |
 
 #### Against glibc
 

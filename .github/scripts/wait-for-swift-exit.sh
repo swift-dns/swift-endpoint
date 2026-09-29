@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
+shopt -s failglob
 IFS=$'\n\t'
 
 log() { printf -- "** %s\n" "$*" >&2; }

@@ -60,7 +60,7 @@ extension Port: CustomStringConvertible {
         /// `0x30` lanes into trailing `0`s.
         /// `& ~0b111` makes sure the number is a multiple of 8 (masks off 3 trailing bits).
         /// Essentially a `num - (num % 8)`.
-        let zeroDigitsBits = (asciiBytes ^ m30).trailingZeroBitCount & ~0b111
+        let zeroDigitsBits = digits.trailingZeroBitCount & ~0b111
         /// If all 5 digits are 0 (zeroDigitsBits >= 40; 64 actually) we still need to write 1 zero.
         let zeroDigitsBitsMax32 = min(zeroDigitsBits, 32)
         let toStore = asciiBytes &>> zeroDigitsBitsMax32

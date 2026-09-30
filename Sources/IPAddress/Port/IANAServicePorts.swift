@@ -500,8 +500,7 @@ extension Port {
     ///
     /// Registered for tcp and udp transport protocols.
     ///
-    /// Defined in RFC-ietf-regext-epp-quic-12 and
-    /// [IETF RFC 5734](https://datatracker.ietf.org/doc/html/rfc5734).
+    /// Defined in [IETF RFC 5734](https://datatracker.ietf.org/doc/html/rfc5734).
     @inlinable
     public static var epp: Self {
         Port(rawValue: 700)
@@ -793,7 +792,7 @@ extension Port {
     ///
     /// Registered for dccp, sctp, tcp and udp transport protocols.
     ///
-    /// Defined in 1, [IETF RFC 4727](https://datatracker.ietf.org/doc/html/rfc4727) and
+    /// Defined in [IETF RFC 4727](https://datatracker.ietf.org/doc/html/rfc4727) and
     /// [IETF RFC 6335](https://datatracker.ietf.org/doc/html/rfc6335).
     @inlinable
     public static var exp1: Self {
@@ -806,7 +805,7 @@ extension Port {
     ///
     /// Registered for dccp, sctp, tcp and udp transport protocols.
     ///
-    /// Defined in 1, [IETF RFC 4727](https://datatracker.ietf.org/doc/html/rfc4727) and
+    /// Defined in [IETF RFC 4727](https://datatracker.ietf.org/doc/html/rfc4727) and
     /// [IETF RFC 6335](https://datatracker.ietf.org/doc/html/rfc6335).
     @inlinable
     public static var exp2: Self {

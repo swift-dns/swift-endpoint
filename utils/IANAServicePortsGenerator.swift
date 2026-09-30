@@ -171,7 +171,7 @@ func docComment(_ paragraphs: [String]) -> String {
 }
 
 /// The registry packs several references into one field, each in its own pair of brackets.
-/// For example `[RFC7858][RFC8094][RFC9250]`.
+/// For example `[RFC 7858][RFC 8094][RFC 9250]`.
 func parseReferences(_ raw: String) -> [String] {
     var references: [String] = []
     var current = ""
@@ -206,7 +206,7 @@ func parseReferences(_ raw: String) -> [String] {
     return references
 }
 
-/// The number of a published RFC, for a reference such as `RFC9110`.
+/// The number of a published RFC, for a reference such as `RFC 9110` or `RFC9110`.
 ///
 /// Deliberately rejects the registry's in-progress draft references, such as
 /// `RFC-ietf-anima-brski-prm-23`, which do not name a published RFC yet.
@@ -214,7 +214,7 @@ func publishedRFCNumber(_ reference: String) -> String? {
     guard
         reference.count > 3,
         reference.hasPrefix("RFC"),
-        case let number = reference.dropFirst(3),
+        case let number = reference.dropFirst(3).trimmingPrefix(" "),
         !number.isEmpty,
         number.allSatisfy(\.isNumber)
     else {
@@ -227,17 +227,24 @@ func isPublished(_ references: some Collection<String>) -> Bool {
     references.contains { publishedRFCNumber($0) != nil }
 }
 
-/// Renders an RFC reference as a link to its datatracker page, and anything else verbatim.
-func renderReference(_ reference: String) -> String {
+func canonicalReference(_ reference: String) -> String {
     guard let number = publishedRFCNumber(reference) else {
         return reference
+    }
+    return "RFC \(number)"
+}
+
+/// Renders an RFC reference as a link to its datatracker page.
+func renderReference(_ reference: String) -> String? {
+    guard let number = publishedRFCNumber(reference) else {
+        return nil
     }
     let label = ["IETF", "RFC", number].joined(separator: nonBreakingSpace)
     return "[\(label)](https://datatracker.ietf.org/doc/html/rfc\(number))"
 }
 
 func referencesPhrase(_ references: Set<String>) -> String {
-    let rendered = references.sorted().map(renderReference)
+    let rendered = references.sorted().compactMap(renderReference)
     switch rendered.count {
     case 0:
         return ""
@@ -291,7 +298,7 @@ func build(_ rows: [[String]]) -> [ServicePort: Registration] {
             continue
         }
 
-        let references = parseReferences(row[referenceColumn])
+        let references = parseReferences(row[referenceColumn]).map(canonicalReference)
 
         // The registry lists a handful of ports as an inclusive range rather than a single
         // number, and leaves the column empty for unassigned entries. Neither is emitted.

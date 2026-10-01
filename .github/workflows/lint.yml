@@ -44,6 +44,7 @@ jobs:
       - name: Configure git
         run: |
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          git config core.fileMode false
 
       - name: Check config file
         run: |

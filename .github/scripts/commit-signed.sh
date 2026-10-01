@@ -12,12 +12,11 @@ readonly token="${GH_TOKEN:?GH_TOKEN must be a token allowed to write contents t
 readonly repository="${REPOSITORY:?REPOSITORY must be the owner/name of the repository to commit to, e.g. 'swift-dns/swift-dns'}"
 readonly branch="${BRANCH:?BRANCH must be the branch to create the signed commit on, e.g. 'thr-update/main'}"
 readonly base_sha="${BASE_SHA:?BASE_SHA must be the 40-char commit SHA the branch is force-reset to before committing}"
-readonly commit_message="${COMMIT_MESSAGE:?COMMIT_MESSAGE must be the commit message; its first line becomes the headline}"
+readonly commit_message="${COMMIT_MESSAGE:?COMMIT_MESSAGE must be the commit message}"
 readonly work_dir="${WORK_DIR:?WORK_DIR must point at the checked-out repository holding the changes to commit}"
 readonly output_file="${OUTPUT_FILE:?OUTPUT_FILE must be the file path to write 'has-changes' and 'commit-sha' to}"
 readonly pathspec="${PATHSPEC-}"
 readonly api_url="${GITHUB_API_URL:-https://api.github.com}"
-readonly graphql_url="${GITHUB_GRAPHQL_URL:-https://api.github.com/graphql}"
 
 if [[ ! "${repository}" =~ ^[^/]+/[^/]+$ ]]; then
   fatal "REPOSITORY is not in 'owner/name' form: '${repository}'"
@@ -26,20 +25,17 @@ if [[ ! "${base_sha}" =~ ^[0-9a-f]{40}$ ]]; then
   fatal "BASE_SHA is not a 40-char commit SHA: '${base_sha}'"
 fi
 if [[ -z "${commit_message//[[:space:]]/}" ]]; then
-  fatal "COMMIT_MESSAGE is blank; the GraphQL commit headline cannot be empty"
+  fatal "COMMIT_MESSAGE is blank; the commit message cannot be empty"
 fi
 [[ -d "${work_dir}" ]] || fatal "WORK_DIR directory does not exist: '${work_dir}'"
 
-readonly staging_branch="${branch}-staging"
-
 workspace="$(mktemp -d)" || fatal "Failed to create a temporary workspace directory"
 readonly workspace
-staging_branch_touched=0
-trap cleanup EXIT
+trap 'rm -rf "${workspace}"' EXIT
 
-readonly changes_file="${workspace}/changes.jsonl"
-readonly additions_file="${workspace}/additions.json"
-readonly deletions_file="${workspace}/deletions.json"
+readonly tree_entries_file="${workspace}/tree-entries.jsonl"
+readonly new_blobs_file="${workspace}/new-blobs.txt"
+readonly blob_content_file="${workspace}/blob-content.b64"
 readonly payload_file="${workspace}/payload.json"
 readonly response_file="${workspace}/response.json"
 readonly branch_head_file="${workspace}/branch-head.json"
@@ -98,62 +94,17 @@ git_in_work_dir() {
   return "$?"
 }
 
-# Collects the changed paths, splitting them into GraphQL 'additions' and 'deletions'.
-# Returns 1 when the working tree holds no changes within PATHSPEC.
-collect_file_changes() {
-  local -a status_args=(status --porcelain=v1 -z --untracked-files=all)
+reject_unmerged_paths() {
+  local -a unmerged_args=(ls-files --unmerged -z)
   if [[ -n "${pathspec}" ]]; then
-    status_args+=(-- "${pathspec}")
+    unmerged_args+=(-- "${pathspec}")
   fi
 
-  local -a changed_paths=()
-  local entry index_status worktree_status changed_path original_path
-  while IFS= read -r -d '' entry; do
-    index_status="${entry:0:1}"
-    worktree_status="${entry:1:1}"
-    changed_path="${entry:3}"
-
-    if [[ "${index_status}" == "U" || "${worktree_status}" == "U" ]]; then
-      fatal "Unmerged path in '${work_dir}': '${changed_path}'"
-    fi
-
-    changed_paths+=("${changed_path}")
-
-    if [[ "${index_status}" == "R" || "${index_status}" == "C" ]]; then
-      if ! IFS= read -r -d '' original_path; then
-        fatal "Missing original path for rename/copy entry: '${entry}'"
-      fi
-      changed_paths+=("${original_path}")
-    fi
-  done < <(git_in_work_dir "${status_args[@]}")
-
-  if [[ "${#changed_paths[@]}" -eq 0 ]]; then
-    return 1
-  fi
-
-  local file_path contents
-  for changed_path in "${changed_paths[@]}"; do
-    file_path="${work_dir}/${changed_path}"
-    if [[ -e "${file_path}" || -L "${file_path}" ]]; then
-      if ! contents="$(base64 < "${file_path}" | tr -d '\n')"; then
-        fatal "Failed to base64-encode '${file_path}'"
-      fi
-      jq --null-input --arg path "${changed_path}" --arg contents "${contents}" \
-        '{path: $path, contents: $contents}'
-    else
-      jq --null-input --arg path "${changed_path}" '{path: $path}'
-    fi
-  done > "${changes_file}"
-
-  jq --slurp 'map(select(has("contents"))) | unique_by(.path)' \
-    "${changes_file}" > "${additions_file}"
-  jq --slurp 'map(select(has("contents") | not)) | unique_by(.path)' \
-    "${changes_file}" > "${deletions_file}"
-
-  local addition_count deletion_count
-  addition_count="$(jq length "${additions_file}")"
-  deletion_count="$(jq length "${deletions_file}")"
-  log "Collected ${addition_count} addition(s) and ${deletion_count} deletion(s)."
+  local unmerged_entry unmerged_path
+  while IFS= read -r -d '' unmerged_entry; do
+    unmerged_path="${unmerged_entry#*$'\t'}"
+    fatal "Unmerged path in '${work_dir}': '${unmerged_path}'"
+  done < <(git_in_work_dir "${unmerged_args[@]}")
   return 0
 }
 
@@ -170,6 +121,54 @@ desired_tree_sha() {
   if ! git_in_work_dir write-tree; then
     fatal "Failed to write the staged tree in '${work_dir}'"
   fi
+  return 0
+}
+
+# Collects the staged changes as tree entries, listing the blobs that need uploading.
+# Returns 1 when the staged tree holds no changes within PATHSPEC.
+collect_file_changes() {
+  local -a diff_args=(diff-tree -r -z --no-renames "${base_sha}" "${wanted_tree}")
+  if [[ -n "${pathspec}" ]]; then
+    diff_args+=(-- "${pathspec}")
+  fi
+
+  local change_count=0
+  local change_meta changed_path old_mode new_mode old_sha new_sha change_status
+  local entry_mode entry_type entry_sha
+  : > "${new_blobs_file}"
+  while IFS= read -r -d '' change_meta && IFS= read -r -d '' changed_path; do
+    IFS=' ' read -r old_mode new_mode old_sha new_sha change_status <<< "${change_meta#:}"
+    change_count=$((change_count + 1))
+
+    entry_mode="${new_mode}"
+    entry_sha="${new_sha}"
+    if [[ "${change_status}" == "D" ]]; then
+      entry_mode="${old_mode}"
+      entry_sha=""
+    fi
+
+    entry_type="blob"
+    if [[ "${entry_mode}" == "160000" ]]; then
+      entry_type="commit"
+    elif [[ -n "${entry_sha}" && "${entry_sha}" != "${old_sha}" ]]; then
+      printf -- '%s\n' "${entry_sha}" >> "${new_blobs_file}"
+    fi
+
+    jq --null-input --compact-output \
+      --arg path "${changed_path}" \
+      --arg mode "${entry_mode}" \
+      --arg type "${entry_type}" \
+      --arg sha "${entry_sha}" \
+      '{path: $path, mode: $mode, type: $type, sha: (if $sha == "" then null else $sha end)}'
+  done < <(git_in_work_dir "${diff_args[@]}") > "${tree_entries_file}"
+
+  if [[ "${change_count}" -eq 0 ]]; then
+    return 1
+  fi
+
+  local new_blob_count
+  new_blob_count="$(sort -u "${new_blobs_file}" | wc -l | tr -d ' ')"
+  log "Collected ${change_count} change(s), with ${new_blob_count} new blob(s) to upload."
   return 0
 }
 
@@ -230,80 +229,79 @@ point_branch_at_commit() {
   return 0
 }
 
-# Deletes the branch without failing the run, so cleanup never masks the real error.
-delete_branch() {
-  local target_branch="${1:?delete_branch requires a branch name}"
-  local encoded_branch url status
+upload_new_blobs() {
+  local url blob_sha status stored_sha
+  url="${api_url}/repos/${repository}/git/blobs"
 
-  if ! encoded_branch="$(url_encode "${target_branch}")"; then
-    error "Failed to url-encode the branch '${target_branch}'"
-    return 0
-  fi
+  while IFS= read -r blob_sha; do
+    if ! git_in_work_dir cat-file blob "${blob_sha}" | base64 | tr -d '\n' > "${blob_content_file}"; then
+      fatal "Failed to base64-encode blob ${blob_sha} of '${work_dir}'"
+    fi
+    jq --null-input --rawfile content "${blob_content_file}" \
+      '{content: $content, encoding: "base64"}' > "${payload_file}"
 
-  url="${api_url}/repos/${repository}/git/refs/heads/${encoded_branch}"
-  status="$(github_api DELETE "${url}" "" "${response_file}")"
+    status="$(github_api POST "${url}" "${payload_file}" "${response_file}")"
+    if [[ "${status}" != "201" ]]; then
+      fatal "Failed to upload blob ${blob_sha} to '${repository}':" \
+        "$(api_failure_details "${status}" "${response_file}")"
+    fi
 
-  if [[ "${status}" != "204" && "${status}" != "404" && "${status}" != "422" ]]; then
-    error "Failed to delete branch '${target_branch}' of '${repository}':" \
+    stored_sha="$(jq --raw-output '.sha' "${response_file}")"
+    if [[ "${stored_sha}" != "${blob_sha}" ]]; then
+      fatal "GitHub stored blob ${blob_sha} as '${stored_sha}'"
+    fi
+  done < <(sort -u "${new_blobs_file}")
+
+  return 0
+}
+
+create_tree() {
+  local url status created_tree
+  url="${api_url}/repos/${repository}/git/trees"
+
+  jq --null-input --arg base_tree "${base_tree}" --slurpfile entries "${tree_entries_file}" \
+    '{base_tree: $base_tree, tree: $entries}' > "${payload_file}"
+
+  status="$(github_api POST "${url}" "${payload_file}" "${response_file}")"
+  if [[ "${status}" != "201" ]]; then
+    fatal "Failed to create the tree in '${repository}':" \
       "$(api_failure_details "${status}" "${response_file}")"
   fi
-  return 0
-}
 
-cleanup() {
-  if [[ "${staging_branch_touched}" == "1" ]]; then
-    delete_branch "${staging_branch}"
+  created_tree="$(jq --raw-output '.sha' "${response_file}")"
+  if [[ "${created_tree}" != "${wanted_tree}" ]]; then
+    fatal "GitHub built tree '${created_tree}' instead of the staged tree ${wanted_tree}"
   fi
-
-  rm -rf "${workspace}"
   return 0
 }
 
-# Creates the commit through the GraphQL API so GitHub signs it, and prints its OID.
+# Creates the commit through the REST API so GitHub signs it, and prints its SHA.
 create_signed_commit() {
-  local target_branch="${1:?create_signed_commit requires a branch name}"
-  local headline body status commit_oid
-  headline="${commit_message%%$'\n'*}"
-  body="${commit_message#"${headline}"}"
-  body="${body#$'\n'}"
-  body="${body#$'\n'}"
+  local url status commit_sha
+  url="${api_url}/repos/${repository}/git/commits"
 
   jq --null-input \
-    --arg repository "${repository}" \
-    --arg branch "${target_branch}" \
-    --arg headline "${headline}" \
-    --arg body "${body}" \
-    --arg expected_head_oid "${base_sha}" \
-    --slurpfile additions "${additions_file}" \
-    --slurpfile deletions "${deletions_file}" \
-    '{
-      query: "mutation CommitOnBranch($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid url } } }",
-      variables: {
-        input: {
-          branch: {repositoryNameWithOwner: $repository, branchName: $branch},
-          message: {headline: $headline, body: $body},
-          expectedHeadOid: $expected_head_oid,
-          fileChanges: {additions: $additions[0], deletions: $deletions[0]}
-        }
-      }
-    }' > "${payload_file}"
+    --arg message "${commit_message}" \
+    --arg tree "${wanted_tree}" \
+    --arg parent "${base_sha}" \
+    '{message: $message, tree: $tree, parents: [$parent]}' > "${payload_file}"
 
-  status="$(github_api POST "${graphql_url}" "${payload_file}" "${response_file}")"
-  if [[ "${status}" != "200" ]]; then
-    fatal "GraphQL createCommitOnBranch request failed:" \
+  status="$(github_api POST "${url}" "${payload_file}" "${response_file}")"
+  if [[ "${status}" != "201" ]]; then
+    fatal "Failed to create the commit in '${repository}':" \
       "$(api_failure_details "${status}" "${response_file}")"
   fi
-  if jq --exit-status 'has("errors")' "${response_file}" > /dev/null; then
-    fatal "GraphQL createCommitOnBranch returned errors:" \
-      "$(jq --compact-output '.errors' "${response_file}")"
+
+  commit_sha="$(jq --raw-output '.sha' "${response_file}")"
+  if [[ ! "${commit_sha}" =~ ^[0-9a-f]{40}$ ]]; then
+    fatal "GitHub returned an unexpected commit SHA: '${commit_sha}'"
+  fi
+  if ! jq --exit-status '.verification.verified == true' "${response_file}" > /dev/null; then
+    fatal "GitHub did not sign commit ${commit_sha}, so no branch will point at it:" \
+      "$(jq --compact-output '.verification' "${response_file}")"
   fi
 
-  commit_oid="$(jq --raw-output '.data.createCommitOnBranch.commit.oid' "${response_file}")"
-  if [[ ! "${commit_oid}" =~ ^[0-9a-f]{40}$ ]]; then
-    fatal "GraphQL createCommitOnBranch returned an unexpected OID: '${commit_oid}'"
-  fi
-
-  printf -- '%s' "${commit_oid}"
+  printf -- '%s' "${commit_sha}"
   return 0
 }
 
@@ -311,14 +309,21 @@ if ! git_in_work_dir rev-parse --git-dir > /dev/null 2>&1; then
   fatal "WORK_DIR is not a git repository: '${work_dir}'"
 fi
 
+if ! base_tree="$(git_in_work_dir rev-parse --verify --quiet "${base_sha}^{commit}^{tree}")"; then
+  fatal "BASE_SHA is not a commit in '${work_dir}': '${base_sha}'"
+fi
+readonly base_tree
+
+reject_unmerged_paths
+
+wanted_tree="$(desired_tree_sha)"
+readonly wanted_tree
+
 if ! collect_file_changes; then
   log "No changes in '${work_dir}' under pathspec '${pathspec:-.}'; nothing to commit."
   printf -- 'has-changes=false\n' >> "${output_file}"
   exit 0
 fi
-
-wanted_tree="$(desired_tree_sha)"
-readonly wanted_tree
 
 if fetch_remote_branch_head; then
   branch_head_sha="$(jq --raw-output '.commit.sha' "${branch_head_file}")"
@@ -334,10 +339,10 @@ if fetch_remote_branch_head; then
   fi
 fi
 
-staging_branch_touched=1
-point_branch_at_commit "${staging_branch}" "${base_sha}"
+upload_new_blobs
+create_tree
 
-commit_sha="$(create_signed_commit "${staging_branch}")"
+commit_sha="$(create_signed_commit)"
 readonly commit_sha
 
 point_branch_at_commit "${branch}" "${commit_sha}"

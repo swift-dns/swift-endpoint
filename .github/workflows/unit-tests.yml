@@ -190,29 +190,15 @@ jobs:
           SHOULD_RUN="$(.github/scripts/check-relevance.sh)"
           printf '%s\n' "should-run=${SHOULD_RUN}" >> "${GITHUB_OUTPUT}"
 
-      - name: Restore swiftly home
+      - name: Restore swiftly
         if: ${{ steps.check-relevance.outputs.should-run == 'true' && runner.debug != '1' }}
-        id: "restore-home"
+        id: "restore-swiftly"
         uses: actions/cache/restore@v6
         with:
-          path: "${{ env.SWIFTLY_HOME_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-home-${{ matrix.swift.version }}-${{ runner.os }}"
-
-      - name: Restore swiftly bin
-        if: ${{ steps.check-relevance.outputs.should-run == 'true' && runner.debug != '1' }}
-        id: "restore-bin"
-        uses: actions/cache/restore@v6
-        with:
-          path: "${{ env.SWIFTLY_BIN_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-bin-${{ matrix.swift.version }}-${{ runner.os }}"
-
-      - name: Restore swiftly toolchains
-        if: ${{ steps.check-relevance.outputs.should-run == 'true' && runner.debug != '1' }}
-        id: "restore-toolchains"
-        uses: actions/cache/restore@v6
-        with:
-          path: "${{ env.SWIFTLY_TOOLCHAINS_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-toolchain-${{ matrix.swift.version }}-${{ runner.os }}"
+          path: |
+            ${{ env.SWIFTLY_HOME_DIR }}
+            ${{ env.SWIFTLY_TOOLCHAINS_DIR }}
+          key: "${{ github.event.repository.name }}-swiftly-${{ matrix.swift.version }}-${{ runner.os }}"
 
       - name: Update swift via Swiftly
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
@@ -230,26 +216,14 @@ jobs:
           swiftly install --assume-yes ${{ matrix.swift.version }}
           swiftly use --assume-yes ${{ matrix.swift.version }}
 
-      - name: Cache swiftly home
-        if: ${{ steps.check-relevance.outputs.should-run == 'true' && steps.restore-home.outputs.cache-hit != 'true' }}
+      - name: Cache swiftly
+        if: ${{ steps.check-relevance.outputs.should-run == 'true' && steps.restore-swiftly.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@v6
         with:
-          path: "${{ env.SWIFTLY_HOME_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-home-${{ matrix.swift.version }}-${{ runner.os }}"
-
-      - name: Cache swiftly bin
-        if: ${{ steps.check-relevance.outputs.should-run == 'true' && steps.restore-bin.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v6
-        with:
-          path: "${{ env.SWIFTLY_BIN_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-bin-${{ matrix.swift.version }}-${{ runner.os }}"
-
-      - name: Cache swiftly toolchains
-        if: ${{ steps.check-relevance.outputs.should-run == 'true' && steps.restore-toolchains.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v6
-        with:
-          path: "${{ env.SWIFTLY_TOOLCHAINS_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-toolchain-${{ matrix.swift.version }}-${{ runner.os }}"
+          path: |
+            ${{ env.SWIFTLY_HOME_DIR }}
+            ${{ env.SWIFTLY_TOOLCHAINS_DIR }}
+          key: "${{ github.event.repository.name }}-swiftly-${{ matrix.swift.version }}-${{ runner.os }}"
 
   macos-unit:
     strategy:
@@ -313,29 +287,15 @@ jobs:
         with:
           xcode-version: ${{ matrix.xcode.version }}
 
-      - name: Restore swiftly home
+      - name: Restore swiftly
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
-        id: "restore-home"
+        id: "restore-swiftly"
         uses: actions/cache/restore@v6
         with:
-          path: "${{ env.SWIFTLY_HOME_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-home-${{ matrix.swift.version }}-${{ runner.os }}"
-
-      - name: Restore swiftly bin
-        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
-        id: "restore-bin"
-        uses: actions/cache/restore@v6
-        with:
-          path: "${{ env.SWIFTLY_BIN_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-bin-${{ matrix.swift.version }}-${{ runner.os }}"
-
-      - name: Restore swiftly toolchains
-        if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
-        id: "restore-toolchains"
-        uses: actions/cache/restore@v6
-        with:
-          path: "${{ env.SWIFTLY_TOOLCHAINS_DIR }}"
-          key: "${{ github.event.repository.name }}-swiftly-toolchain-${{ matrix.swift.version }}-${{ runner.os }}"
+          path: |
+            ${{ env.SWIFTLY_HOME_DIR }}
+            ${{ env.SWIFTLY_TOOLCHAINS_DIR }}
+          key: "${{ github.event.repository.name }}-swiftly-${{ matrix.swift.version }}-${{ runner.os }}"
 
       - name: Update swift via Swiftly
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}

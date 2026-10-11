@@ -523,7 +523,7 @@ extension IPv6Address: ExpressibleByStringLiteral {
         }
         self.init(
             _CompatibilityUInt128Typealias(
-                _low: result.lo | UInt64(ipv4Address),
+                _low: result.lo | UInt64(UInt32(bigEndian: ipv4Address)),
                 _high: result.hi
             )
         )
@@ -728,9 +728,11 @@ extension IPv6Address: LosslessStringConvertible {
 
                 let isBeforeCs = segmentsCountBeforeCs == 0
                 let forBeforeCs =
-                    (beforeCs &<< 32) | _CompatibilityUInt128Typealias(ipv4Address)
+                    (beforeCs &<< 32)
+                    | _CompatibilityUInt128Typealias(UInt32(bigEndian: ipv4Address))
                 let forAfterCs =
-                    (afterCs &<< 32) | _CompatibilityUInt128Typealias(ipv4Address)
+                    (afterCs &<< 32)
+                    | _CompatibilityUInt128Typealias(UInt32(bigEndian: ipv4Address))
                 beforeCs = isBeforeCs ? forBeforeCs : beforeCs
                 afterCs = isBeforeCs ? afterCs : forAfterCs
 

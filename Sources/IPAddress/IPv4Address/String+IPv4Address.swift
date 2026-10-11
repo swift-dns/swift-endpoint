@@ -7,7 +7,7 @@ extension IPv4Address: CustomStringConvertible {
         /// For example for "255.255.255.255".
         ///
         /// This impl relies on an impl detail of `String` in `_SmallString.capacity` where it will
-        /// inline-allocate 15 bytes at all times, for up to exactly 15 utf8 bytes.
+        /// inline-allocate up to 15 utf8-bytes most of the times.
         ///
         /// So if we know `String` will inline-allocate 15 bytes anyway (`_pointerBitWidth(_64) == true`),
         /// then we don't bother with calculating the exact required capacity. Otherwise we
@@ -76,8 +76,8 @@ extension IPv4Address: CustomStringConvertible {
         /// Turn the most significant bit (MSB) off so next operations don't carry over per lane, or overflow.
         let low7Bits = address & m7f
         /// We add m76 to each lane (`128 - 10`), if the MSB is turned on, we know that the number
-        /// was at least 10. This only misses to cover the case where the number is 0b1000_0000,
-        /// because in `low7bits` we turned off the 8th bit in each lane.
+        /// was at least 10. This can miss numbers with the 8th bit on, like `0b1000_0000`,
+        /// because in `low7Bits` we turned off the 8th bit in each lane.
         /// If 8th bit was on then the number was above 10 anyway, so a `| address` is enough.
         /// `& m80` is to only keep the 8th bit in each lane. If it's on, then the number was at least 10.
         let atLeast10 = ((low7Bits &+ m76) | address) & m80
@@ -100,7 +100,7 @@ extension IPv4Address: CustomStringConvertible {
         /// Mask out the last byte to avoid counting the extra digits it would require.
         /// At the end, we add 2 headroom bytes anyways.
         let extraDigits = self._extraDecimalDigitsToPrintPerByte & 0x00FF_FFFF
-        /// Puts sum of all 4 lanes into bits 25th-28th.
+        /// Puts sum of all 4 lanes into bits 25th-27th.
         /// Then we bit shift by 24 to get the sum into bits 1st-3rd.
         let extraDigitsCount = (extraDigits &* 0x0101_0101) >> 24
         /// 9 == 3 dots + the first digit of each of the 4 bytes + 2 headroom bytes.
@@ -112,7 +112,7 @@ extension IPv4Address: CustomStringConvertible {
     package var textualRepresentationLength: Int {
         let allDigits = self._extraDecimalDigitsToPrintPerByte
         /// Puts sum of all 4 lanes into bits 25th-28th.
-        /// Then we bit shift by 24 to get the sum into bits 1st-3rd.
+        /// Then we bit shift by 24 to get the sum into bits 1st-4th.
         let extraDigitsCount = (allDigits &* 0x0101_0101) >> 24
         /// 7 == 3 dots + the first digit of each of the 4 bytes.
         return 7 &+ Int(extraDigitsCount)
@@ -266,7 +266,7 @@ extension IPv4Address: LosslessStringConvertible {
             return nil
         }
 
-        self.init(address)
+        self.init(address, byteOrder: .bigEndian)
     }
 
     @inlinable
@@ -287,6 +287,8 @@ extension IPv4Address: LosslessStringConvertible {
     /// segments are. Segments 1 and 2 are found from the start, and segments 3 and 4 from the end,
     /// so all 4 are parsed at the same time instead of walking the bytes one by one.
     ///
+    /// `address` is set in big-endian byte order.
+    ///
     /// Additional Credits:
     /// To Wojciech Mula: The `&* nA1` pair-fold, and the fold after it.
     /// See:
@@ -298,15 +300,13 @@ extension IPv4Address: LosslessStringConvertible {
         count: Int,
         address: inout UInt32
     ) -> Bool {
-        /// The shortest possible IPv4 address is "0.0.0.0" with 7 bytes, and the longest possible
-        /// one is "255.255.255.255" with 15 bytes.
-        /// We need to ensure of the 7 bytes at least, so we know we can read 4-bytes at a time.
+        /// The shortest possible IPv4 address is "0.0.0.0" with 7 bytes.
         guard count >= 7 else { return false }
 
         /// `0x30` == ASCII `0`
         let m30: UInt64 = 0x3030_3030_3030_3030
 
-        /// Read 1 window per segment, each also covering the dots around that segment.
+        /// Read 1 window per segment, each also covering some dots around each segment.
         ///
         /// XORing with `m30` turns the ASCII codes of `0`...`9` into the numbers `0x00`...`0x09`, and
         /// the ASCII code of `.` (`0x2E`) into `0x1E`. So among digits and dots, only the dots have
@@ -314,8 +314,8 @@ extension IPv4Address: LosslessStringConvertible {
         ///
         /// Example for "192.168.1.98" (Notice little-endian byte-order):
         /// `window1`: bytes 0...3 ("192.") -> `0x1E_02_09_01`.
-        /// `window2`: bytes 2...7 ("2.168.") -> `0x30_30_1E_08_06_01_1E_02` (in bytes 0...5).
-        /// `window3`: bytes 5...11 ("68.1.98") -> `0x08_09_1E_01_1E_08_06_30` (in bytes 1...7).
+        /// `window2`: bytes 2...7 ("2.168.") -> `0x30_30_1E_08_06_01_1E_02` (in lanes 0...5).
+        /// `window3`: bytes 5...11 ("68.1.98") -> `0x08_09_1E_01_1E_08_06_30` (in lanes 1...7).
         /// `window4`: bytes 8...11 ("1.98") -> `0x08_09_1E_01`.
         let (window1, window2, window3, window4) = span.withUnsafeBytes { buffer in
             /// `count >= 7` == `true`, so this is not nil.
@@ -348,10 +348,10 @@ extension IPv4Address: LosslessStringConvertible {
         /// then `window1 & 0x1010_1000` == `0x1000_0000`. `| 0x1000_0000` ensures at least
         /// the most significant lane (byte) is always considered a "dot" since we have 4 lanes but
         /// only 3 can ever be representing an IPv4 segment which is in the range `0...255`.
-        /// `m10` intentionally turns of the least significant lane that can be a dot as well,
-        /// but will mess up our calculations for finding the first dot's bit count situation.
+        /// `m10` intentionally turns off the least significant lane, since a segment has at least
+        /// 1 digit. That lane is always treated as a digit, so a dot there fails the digit check.
         let firstDotBitCount = ((window1 & m10) | m1).trailingZeroBitCount
-        /// Let's find the amount of bits that are for the digits after the dot.
+        /// Let's find the amount of bits that are for the bytes after the dot.
         /// For example in an IP like `1.2.3.4`, we'll have `1.2.` in here and we'll need to get rid
         /// of the `2.` part. So we find the first dot (from left), and get rid of all after it.
         ///
@@ -363,12 +363,12 @@ extension IPv4Address: LosslessStringConvertible {
         /// For "1.2.3.4" it'd be `0x1E_02_1E_01` -> `0x1E_01_00_00` (`firstDotBitCount` == 12).
         let segment1 = window1 &<< w1_afterDotCount
 
-        /// We know where the first dot is. We want to get rid of anything before it in the 2nd candidate.
+        /// We know where the first dot is. We want to get rid of anything before it in `window2`.
         /// `firstDotBitCount` is between 12 and 28. 12 in e.g. `1.2.3.4`, and 28 in e.g. `192.168.1.98`.
         /// Assuming window2 is "2.168.", we want to get rid of the "2." part.
-        /// Example: `0x30_30_1E_08_06_01_1E_02` -> `0x00_00_30_30_1E_08_06_01` (`firstDotBitCount` == 28).
+        /// Example: `0x30_30_1E_08_06_01_1E_02` -> `0x1E_08_06_01` (`firstDotBitCount` == 28).
         let w2_afterFirstDot = UInt32(truncatingIfNeeded: window2 &>> (firstDotBitCount &- 12))
-        /// Now `w2_afterFirstDot` is sure to only contain 1 dot. It's the second dot.
+        /// `w2_afterFirstDot` starts right after the first dot, so its first dot is the second dot.
         /// We find it the same way we found the first dot.
         /// Example: `0x1E_08_06_01` -> `28`.
         let secondDotBitCount = ((w2_afterFirstDot & m10) | m1).trailingZeroBitCount
@@ -379,15 +379,15 @@ extension IPv4Address: LosslessStringConvertible {
         let m1_r: UInt32 = 0x0000_0010
         /// Now let’s find the third dot. We use the 4th candidate for this, not the 3rd which
         /// can potentially contain 2 dots.
-        /// For example in "1.98", we need to find the “.” And get rid of anything before it.
+        /// For example in "1.98", we need to find the “.” and get rid of anything before it.
         let thirdDotBitCount = 31 &- ((window4 & m10_r) | m1_r).leadingZeroBitCount
         /// Keeps the digits after the third dot and moves them to lanes 0...2.
         /// Example: `0x08_09_1E_01` -> `0x00_08_09_00`.
         let thirdDotAndBeforeMask: UInt32 = 0xFFFF_FFFF &<< (thirdDotBitCount &+ 4)
         let segment4 = (window4 & thirdDotAndBeforeMask) >> 8
 
-        /// Now we know where the 2nd and 3rd dots are. We need to get what is in between them.
-        /// That’d be the 3rd and last segment to find.
+        /// The 3rd and last segment is between the 2nd and 3rd dots. We find the 2nd dot again
+        /// here, back from the 3rd dot, and compare both 2nd dot positions further down.
 
         /// Example for "68.1.98": `0x08_09_1E_01_1E_08_06_30` -> `0x00_08_09_1E_01_1E_08_06`.
         let beforeThirdDot = window3 &>> (thirdDotBitCount &- 4)
@@ -397,15 +397,14 @@ extension IPv4Address: LosslessStringConvertible {
         let secondDotBitFromEnd = 63 &- ((beforeThirdDot & 0x0010_1010) | 0x10).leadingZeroBitCount
         /// Keeps lanes 1...4 after the second dot, and moves them to lanes 0...3.
         /// Example: `0x00_08_09_1E_01_1E_08_06` -> `0x1E_01_00_00` (“001.”)
-        let segment3 = UInt32(
-            truncatingIfNeeded: (beforeThirdDot & (UInt64.max &<< (secondDotBitFromEnd &+ 4))) >> 8
-        )
+        let s3_mask = UInt64.max &<< (secondDotBitFromEnd &+ 4)
+        let segment3 = UInt32(truncatingIfNeeded: (beforeThirdDot & s3_mask) >> 8)
 
         /// 2x 32-bit lanes for 2 segments.
-        //// XORing with `0x1E` turns the dot lanes into `0x00` if they are actual dots.
+        /// XORing with `0x1E` turns the dot lanes into `0x00` if they are actual dots.
         /// Example: `0x1E_08_06_01_1E_02_09_01` -> `0x00_08_06_01_00_02_09_01`.
         let segments12 = (UInt64(segment1) | (UInt64(segment2) << 32)) ^ 0x1E00_0000_1E00_0000
-        /// Segment 4 has no dot in the least significant bye, so it’s not XORed and stays `0x00`.
+        /// Segment 4 has no dot in the most significant byte, so it’s not XORed and stays `0x00`.
         /// Example: `0x00_08_09_00_1E_01_00_00` -> `0x00_08_09_00_00_01_00_00`.
         let segments34 = (UInt64(segment3) | (UInt64(segment4) << 32)) ^ 0x0000_0000_1E00_0000
 
@@ -415,7 +414,7 @@ extension IPv4Address: LosslessStringConvertible {
         /// every dot lane above `0x00`, as long as the lane was below `0x80`.
         /// We OR with the values themselves again to cover for when the lanes themselves
         /// had the 8th bit set but lost the 8th bit in the addition operation.
-        /// Lanes can only overflow into the next lane only when they are invalid themselves.
+        /// Lanes can only overflow into the next lane when they are invalid themselves.
         let m7f767676: UInt64 = 0x7F76_7676_7F76_7676
         let invalidLanes12 = (segments12 &+ m7f767676) | segments12
         let invalidLanes34 = (segments34 &+ m7f767676) | segments34
@@ -425,7 +424,7 @@ extension IPv4Address: LosslessStringConvertible {
         let nA1: UInt64 = 0x0A01
         /// We multiply by `nA1` so each lane turns into `10 * previousLane + lane`, which is at
         /// most `10 * 9 + 9` == `99` < `256` so it fits into one lane.
-        /// Then we only need lanes 0 (`10 * tens + ones`) and 2 (the hundreds) of each segment,
+        /// Then we only need lanes 0 (the hundreds) and 2 (`10 * tens + ones`) of each segment,
         /// so we turn off the other lanes.
         /// Example: `0x00_08_06_01_00_02_09_01` -> `0x00_44_00_01_00_5C_00_01` (68, 1, 92, 1).
         let pairs12 = (segments12 &* nA1) & 0x00FF_00FF_00FF_00FF
@@ -450,8 +449,8 @@ extension IPv4Address: LosslessStringConvertible {
 
         guard invalid == 0 else { return false }
 
-        /// The second dot is at byte `(firstDotBit + secondDotBit) / 8` from the start, and at byte
-        /// `count - 9 + (thirdDotBit + secondDotBitFromEnd) / 8` from the end.
+        /// The second dot is at byte `(firstDotBitCount + secondDotBitCount) / 8` from the start,
+        /// and at byte `count - 9 + (thirdDotBitCount + secondDotBitFromEnd) / 8` from the end.
         /// Those must be the same byte, which makes the 4 segments and the 3 dots cover every byte
         /// exactly once.
         /// Example: `(28 + 28) / 8` == `7`, and `12 - 9 + (12 + 20) / 8` == `7`.
@@ -459,16 +458,16 @@ extension IPv4Address: LosslessStringConvertible {
         let secondDotFromEnd = (count << 3) &+ thirdDotBitCount &+ secondDotBitFromEnd
         guard secondDotFromStart == secondDotFromEnd else { return false }
 
-        /// Puts the values of segments 1 and 2 at bits 24...31 and 56...63, and the values of
-        /// segments 3 and 4 at bits 8...15 and 40...47.
+        /// Puts the values of segments 1 and 2 at bits 0...7 and 32...39, and the values of
+        /// segments 3 and 4 at bits 16...23 and 48...55.
         /// Example: `0x00_A8_23_F1_00_C0_00_01` and `0x00_62_00_64_00_01_00_00`
-        /// -> `0xA8_00_62_00_C0_00_01_00`.
-        let interleaved12 = (values12 & 0x00FF_0000_00FF_0000) << 8
-        let interleaved34 = (values34 & 0x00FF_0000_00FF_0000) >> 8
+        /// -> `0x00_62_00_A8_00_01_00_C0`.
+        let interleaved12 = (values12 >> 16) & 0x0000_00FF_0000_00FF
+        let interleaved34 = values34 & 0x00FF_0000_00FF_0000
         let interleaved = interleaved12 | interleaved34
-        /// Moves segments 2 and 4 next to segments 1 and 3.
-        /// Example: `0xA8_00_62_00_C0_00_01_00` -> `0xC0_A8_01_62` (192.168.1.98).
-        address = UInt32(truncatingIfNeeded: interleaved | (interleaved >> 40))
+        /// Moves segments 2 and 4 next to segments 1 and 3, with segment 1 in the lowest byte.
+        /// Example: `0x00_62_00_A8_00_01_00_C0` -> `0x62_01_A8_C0` (192.168.1.98).
+        address = UInt32(truncatingIfNeeded: interleaved | (interleaved >> 24)).littleEndian
 
         return true
     }

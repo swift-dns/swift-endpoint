@@ -342,9 +342,13 @@ final class RFCIndexParserDelegate: NSObject, XMLParserDelegate {
 
 func parseRFCIndex(_ data: Data) -> [Int: RFCStatus] {
     let delegate = RFCIndexParserDelegate()
-    let parser = XMLParser(data: data)
+    // swift-corelibs-foundation hands `XMLParser(data:)` to libxml2 in one piece, which libxml2
+    // 2.9 rejects past 10 MB as a "Huge input lookup". A stream reaches libxml2 in chunks.
+    let parser = XMLParser(stream: InputStream(data: data))
     parser.delegate = delegate
-    guard parser.parse() else {
+    // swift-corelibs-foundation runs libxml2 in recovery mode, so `parse()` can succeed on a
+    // malformed document and only report the error in `parserError`.
+    guard parser.parse(), parser.parserError == nil else {
         fatalError("Failed to parse the RFC index: \(String(reflecting: parser.parserError)).")
     }
     guard !delegate.statuses.isEmpty else {

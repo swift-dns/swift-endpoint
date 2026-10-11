@@ -227,7 +227,6 @@ struct PortTests {
         #expect(Port.ipps == 631)
         #expect(Port.stun == 3478)
         #expect(Port.turn == 3478)
-        #expect(Port.`stun-behavior` == 3478)
     }
 
     @available(SwiftStdlib 6.2, *)

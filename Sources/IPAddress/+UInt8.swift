@@ -83,17 +83,6 @@ extension UInt8 {
         self = UInt8(truncatingIfNeeded: value)
     }
 
-    @inlinable
-    static func mapUTF8ByteToUInt8(_ utf8Byte: UInt8) -> UInt8? {
-        guard
-            utf8Byte <= UInt8.ascii9,
-            utf8Byte >= UInt8.ascii0
-        else {
-            return nil
-        }
-        return utf8Byte &- UInt8.ascii0
-    }
-
     /// Maps a hexadecimal ASCII byte to its `0...15` value.
     @inline(always)
     package static func mapHexadecimalByteToUInt8(_ asciiByte: UInt8) -> UInt8? {

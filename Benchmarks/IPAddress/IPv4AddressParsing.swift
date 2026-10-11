@@ -25,14 +25,14 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - IPv4_Parsing_Zero
 
     Benchmark(
-        "IPv4_Parsing_Zero_25M",
+        "IPv4_Parsing_Zero_12M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<25_000_000 {
+        for _ in 0..<12_000_000 {
             let ip = unsafe IPv4Address("0.0.0.0" as String).unsafelyUnwrapped
             blackHole(ip)
         }
@@ -41,14 +41,14 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     // MARK: - IPv4_Parsing_Localhost
 
     Benchmark(
-        "IPv4_Parsing_Localhost_25M",
+        "IPv4_Parsing_Localhost_8M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
-        for _ in 0..<25_000_000 {
+        for _ in 0..<8_000_000 {
             let ip = unsafe IPv4Address("127.0.0.1" as String).unsafelyUnwrapped
             blackHole(ip)
         }
@@ -217,7 +217,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "IPv4_Parsing_Multiple_IPs_8M",
+        "IPv4_Parsing_Multiple_IPs_10M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -225,7 +225,7 @@ let ipv4AddressFromStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         var rng = FastRNG()
-        for _ in 0..<8_000_000 {
+        for _ in 0..<10_000_000 {
             let idx = Int(rng.next() % UInt64(ipv4MultipleIPs.count))
             let ip = unsafe IPv4Address(
                 textualRepresentation: ipv4MultipleIPs[idx].span

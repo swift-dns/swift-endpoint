@@ -28,6 +28,8 @@ extension IPv4AddressTestCase {
         IPv4AddressTestCase("192.168.1.256", ip: nil),
         IPv4AddressTestCase("192.168.1.", ip: nil),
         IPv4AddressTestCase("1111.168.1.1", ip: nil),
+        IPv4AddressTestCase("111.1681.1.1", ip: nil),
+        IPv4AddressTestCase("1.1.9999999999.1", ip: nil),
         IPv4AddressTestCase("192.168.1.2.3", ip: nil),
         IPv4AddressTestCase("192.168.1", ip: nil),
         IPv4AddressTestCase(".168.1.123", ip: nil),

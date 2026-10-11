@@ -24,6 +24,11 @@ extension IPv4Address {
         }
 
         let address = self.asUInt32(byteOrder: .bigEndian)
+        /// Currently these multiple appends result in code containing a trap for each append.
+        /// This is solved in the PR below, which hopefully will make it to Swift 6.5.
+        /// The PR enables LLVM to correctly identify span-count bounds and notice that we already
+        /// have 1 `freeCapacity` check, so it can get rid of the per-append traps.
+        /// See https://github.com/swiftlang/swift/pull/92790.
         span.append(UInt8(truncatingIfNeeded: address))
         span.append(UInt8(truncatingIfNeeded: address >> 8))
         span.append(UInt8(truncatingIfNeeded: address >> 16))

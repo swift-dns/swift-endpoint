@@ -38,19 +38,22 @@ struct PortTests {
         let bufferPointer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: 20)
         defer { unsafe bufferPointer.deallocate() }
         var outputSpan = unsafe OutputSpan(buffer: bufferPointer, initializedCount: 0)
+        outputSpan.append(0xAA)
+        outputSpan.append(0xBB)
+        outputSpan.append(0xCC)
 
         let didSerialize = port.serialize(into: &outputSpan)
 
         #expect(didSerialize)
         #expect(outputSpan.capacity == 20)
-        #expect(outputSpan.freeCapacity == 18)
-        #expect(outputSpan.count == 2)
+        #expect(outputSpan.freeCapacity == 15)
+        #expect(outputSpan.count == 5)
         outputSpan.span.withUnsafeBytes { ptr in
             let data = unsafe [UInt8](ptr)
-            #expect(data == expected)
+            #expect(data == [0xAA, 0xBB, 0xCC] + expected)
         }
 
-        let _parsedPort = Port(parsing: outputSpan.span)
+        let _parsedPort = Port(parsing: outputSpan.span.extracting(droppingFirst: 3))
         let parsedPort = try #require(_parsedPort)
         #expect(parsedPort == port)
     }

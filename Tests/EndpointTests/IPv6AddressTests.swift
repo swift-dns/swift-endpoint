@@ -81,13 +81,16 @@ struct IPv6AddressTests {
         let bufferPointer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: 20)
         defer { unsafe bufferPointer.deallocate() }
         var outputSpan = unsafe OutputSpan(buffer: bufferPointer, initializedCount: 0)
+        outputSpan.append(0xAA)
+        outputSpan.append(0xBB)
+        outputSpan.append(0xCC)
 
         let didSerialize = ip.serialize(into: &outputSpan)
 
         #expect(didSerialize)
         #expect(outputSpan.capacity == 20)
-        #expect(outputSpan.freeCapacity == 4)
-        #expect(outputSpan.count == 16)
+        #expect(outputSpan.freeCapacity == 1)
+        #expect(outputSpan.count == 19)
         let isFull = outputSpan.isFull
         #expect(!isFull)
         let isEmpty = outputSpan.isEmpty
@@ -96,6 +99,7 @@ struct IPv6AddressTests {
             let data = unsafe [UInt8](ptr)
             #expect(
                 data == [
+                    0xAA, 0xBB, 0xCC,
                     0x01, 0x02, 0xF3, 0xF4,
                     0x15, 0x16, 0x70, 0x80,
                     0x90, 0xA0, 0xCB, 0xBC,
@@ -104,7 +108,7 @@ struct IPv6AddressTests {
             )
         }
 
-        let _parsedIP = IPv6Address(parsing: outputSpan.span)
+        let _parsedIP = IPv6Address(parsing: outputSpan.span.extracting(droppingFirst: 3))
         let parsedIP = try #require(_parsedIP)
         #expect(parsedIP == ip)
     }

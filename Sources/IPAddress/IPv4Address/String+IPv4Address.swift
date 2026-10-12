@@ -282,12 +282,11 @@ extension IPv4Address: LosslessStringConvertible {
         )
     }
 
-    /// Each of the 4 segments is 1 to 3 digits, so each segment can only be in a small window at a
-    /// fixed offset from either the start or the end of the span, no matter how long the other
-    /// segments are. Segments 1 and 2 are found from the start, and segments 3 and 4 from the end,
-    /// so all 4 are parsed at the same time instead of walking the bytes one by one.
+    /// Parses an IPv4 address from a `Span<UInt8>` of its textual representation.
     ///
     /// `address` is set in big-endian byte order.
+    /// This func with `count` parameter is used for IPv4-literal folding, otherwise makes no other
+    /// difference compared to the `parseIPv4` function without the `count` parameter.
     ///
     /// Additional Credits:
     /// To Wojciech Mula: The `&* nA1` pair-fold, and the fold after it.
@@ -307,6 +306,7 @@ extension IPv4Address: LosslessStringConvertible {
         let m30: UInt64 = 0x3030_3030_3030_3030
 
         /// Read 1 window per segment, each also covering some dots around each segment.
+        /// Segment 3's window is read further down, once all 3 dots are already known.
         ///
         /// XORing with `m30` turns the ASCII codes of `0`...`9` into the numbers `0x00`...`0x09`, and
         /// the ASCII code of `.` (`0x2E`) into `0x1E`. So among digits and dots, only the dots have
@@ -315,9 +315,8 @@ extension IPv4Address: LosslessStringConvertible {
         /// Example for "192.168.1.98" (Notice little-endian byte-order):
         /// `window1`: bytes 0...3 ("192.") -> `0x1E_02_09_01`.
         /// `window2`: bytes 2...7 ("2.168.") -> `0x30_30_1E_08_06_01_1E_02` (in lanes 0...5).
-        /// `window3`: bytes 5...11 ("68.1.98") -> `0x08_09_1E_01_1E_08_06_30` (in lanes 1...7).
         /// `window4`: bytes 8...11 ("1.98") -> `0x08_09_1E_01`.
-        let (window1, window2, window3, window4) = span.withUnsafeBytes { buffer in
+        let (window1, window2, window4) = span.withUnsafeBytes { buffer in
             /// `count >= 7` == `true`, so this is not nil.
             let base = unsafe buffer.baseAddress.unsafelyUnwrapped
             let m30_u32 = UInt32(truncatingIfNeeded: m30)
@@ -334,11 +333,7 @@ extension IPv4Address: LosslessStringConvertible {
             /// Reads the "1.98" part.
             let w4 = unsafe _loadUInt32(from: base, at: count &- 4)
             let window4 = w4 ^ m30_u32
-            /// Similar to the `window2`, but read from the end.
-            /// Reads the "68.1" part, and `w4` adds the "1.98" part, so `window3` is "68.1.98".
-            let w3_p1 = unsafe _loadUInt32(from: base, at: count &- 7)
-            let window3 = (UInt64(w3_p1) << 8) | (UInt64(w4) << 32) ^ m30
-            return (window1, window2, window3, window4)
+            return (window1, window2, window4)
         }
 
         let m10: UInt32 = 0x1010_1000
@@ -377,8 +372,7 @@ extension IPv4Address: LosslessStringConvertible {
 
         let m10_r: UInt32 = 0x001010_10
         let m1_r: UInt32 = 0x0000_0010
-        /// Now let’s find the third dot. We use the 4th candidate for this, not the 3rd which
-        /// can potentially contain 2 dots.
+        /// Now let’s find the third dot which must be in `window4`.
         /// For example in "1.98", we need to find the “.” and get rid of anything before it.
         let thirdDotBitCount = 31 &- ((window4 & m10_r) | m1_r).leadingZeroBitCount
         /// Keeps the digits after the third dot and moves them to lanes 0...2.
@@ -386,19 +380,26 @@ extension IPv4Address: LosslessStringConvertible {
         let thirdDotAndBeforeMask: UInt32 = 0xFFFF_FFFF &<< (thirdDotBitCount &+ 4)
         let segment4 = (window4 & thirdDotAndBeforeMask) >> 8
 
-        /// The 3rd and last segment is between the 2nd and 3rd dots. We find the 2nd dot again
-        /// here, back from the 3rd dot, and compare both 2nd dot positions further down.
-
-        /// Example for "68.1.98": `0x08_09_1E_01_1E_08_06_30` -> `0x00_08_09_1E_01_1E_08_06`.
-        let beforeThirdDot = window3 &>> (thirdDotBitCount &- 4)
-        /// The second dot, from the end, is the last of lanes 0...2 with its 5th bit set.
-        /// The `| 0x10` makes lane (byte) 0 count as the second dot if lanes 1 and 2 are not dots.
-        /// Example: `0x00_08_09_1E_01_1E_08_06` -> `20`, so segment 3 has 1 digit.
-        let secondDotBitFromEnd = 63 &- ((beforeThirdDot & 0x0010_1010) | 0x10).leadingZeroBitCount
-        /// Keeps lanes 1...4 after the second dot, and moves them to lanes 0...3.
-        /// Example: `0x00_08_09_1E_01_1E_08_06` -> `0x1E_01_00_00` (“001.”)
-        let s3_mask = UInt64.max &<< (secondDotBitFromEnd &+ 4)
-        let segment3 = UInt32(truncatingIfNeeded: (beforeThirdDot & s3_mask) >> 8)
+        /// The 3rd and last segment is between the 2nd and 3rd dots, which are both found by now.
+        /// `thirdDotBitCount` is 4, 12 or 20, so this only reads within bytes `count - 7`...`count - 2`.
+        /// Example for "192.168.1.98": bytes 6...9 ("8.1.") -> `0x1E_01_1E_08`.
+        let window3 = span.withUnsafeBytes { buffer in
+            let base = unsafe buffer.baseAddress.unsafelyUnwrapped
+            let w3_idx = count &- 7 &+ (thirdDotBitCount >> 3)
+            let w3 = unsafe _loadUInt32(from: base, at: w3_idx)
+            return w3 ^ UInt32(truncatingIfNeeded: m30)
+        }
+        /// Example: `28 + 28` == `56` for "192.168.1.98", covering "192.168.".
+        let secondDotBitCountFromStart = firstDotBitCount &+ secondDotBitCount
+        /// `count << 3` == `count &* 8`.
+        /// Example: `68 - 96 - 12` == `-40` for "192.168.1.98", covering ".1.98".
+        let thirdDotBitCountFromEnd = 68 &- (count << 3) &- thirdDotBitCount
+        /// The number of bits in `window3` before segment 3.
+        /// Example: `56 + -40` == `16` for "192.168.1.98", covering "8.".
+        let thirdSegmentShift = secondDotBitCountFromStart &+ thirdDotBitCountFromEnd
+        /// Turns off the lanes before segment 3, like the 2nd dot.
+        /// Example: `0x1E_01_1E_08` -> `0x1E_01_00_00` (“001.”)
+        let segment3 = window3 & (0xFFFF_FFFF &<< thirdSegmentShift)
 
         /// 2x 32-bit lanes for 2 segments.
         /// XORing with `0x1E` turns the dot lanes into `0x00` if they are actual dots.
@@ -415,9 +416,9 @@ extension IPv4Address: LosslessStringConvertible {
         /// We OR with the values themselves again to cover for when the lanes themselves
         /// had the 8th bit set but lost the 8th bit in the addition operation.
         /// Lanes can only overflow into the next lane when they are invalid themselves.
-        let m7f767676: UInt64 = 0x7F76_7676_7F76_7676
-        let invalidLanes12 = (segments12 &+ m7f767676) | segments12
-        let invalidLanes34 = (segments34 &+ m7f767676) | segments34
+        let m7f76: UInt64 = 0x7F76_7676_7F76_7676
+        let invalidLanes12 = (segments12 &+ m7f76) | segments12
+        let invalidLanes34 = (segments34 &+ m7f76) | segments34
         let invalidLanes = invalidLanes12 | invalidLanes34
 
         /// `0x0A01` == `0x0A` (10) then `0x01` (1).
@@ -449,14 +450,9 @@ extension IPv4Address: LosslessStringConvertible {
 
         guard invalid == 0 else { return false }
 
-        /// The second dot is at byte `(firstDotBitCount + secondDotBitCount) / 8` from the start,
-        /// and at byte `count - 9 + (thirdDotBitCount + secondDotBitFromEnd) / 8` from the end.
-        /// Those must be the same byte, which makes the 4 segments and the 3 dots cover every byte
-        /// exactly once.
-        /// Example: `(28 + 28) / 8` == `7`, and `12 - 9 + (12 + 20) / 8` == `7`.
-        let secondDotFromStart = firstDotBitCount &+ secondDotBitCount &+ 72
-        let secondDotFromEnd = (count << 3) &+ thirdDotBitCount &+ secondDotBitFromEnd
-        guard secondDotFromStart == secondDotFromEnd else { return false }
+        /// Segment 3 must have 1 to 3 digits, so `0`, `8` or `16` bit-shifts.
+        /// It's negative when segment 3 has more than 3 digits.
+        guard UInt(bitPattern: thirdSegmentShift) <= 16 else { return false }
 
         /// Puts the values of segments 1 and 2 at bits 0...7 and 32...39, and the values of
         /// segments 3 and 4 at bits 16...23 and 48...55.

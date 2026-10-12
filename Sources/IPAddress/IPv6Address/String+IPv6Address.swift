@@ -335,7 +335,7 @@ extension IPv6Address {
     /// That is, for each segment, 0 if the segment is in range `0x0...0xF`, up to 3 if
     /// the segment is in range `0x1000...0xFFFF`. All-zero segments count as 0.
     ///
-    /// Credits:
+    /// Additional Credits:
     /// To Henry Warren: The two `s` smear steps (Hacker's Delight).
     /// See:
     /// https://en.wikipedia.org/wiki/Hacker%27s_Delight
@@ -394,7 +394,7 @@ extension IPv6Address {
         return UInt16(truncatingIfNeeded: word &>> shift)
     }
 
-    /// Credits:
+    /// Additional Credits:
     /// To Wojciech Mula: The `nibbles` expansion, and the `above9Mask`/`above9Base` correction.
     /// See:
     /// http://0x80.pl/notesen/2014-09-21-convert-to-hex.html

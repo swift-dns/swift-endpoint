@@ -1,0 +1,473 @@
+{
+  "$schema" : "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat" : "CycloneDX",
+  "components" : [
+    {
+      "bom-ref" : "swift-atomics",
+      "externalReferences" : [
+
+      ],
+      "name" : "swift-atomics",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "0442cb5a3f98ab802acb777929fdb446bda11a34",
+            "url" : "https://github.com/apple/swift-atomics.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-package"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/apple/swift-atomics@1.3.1",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "1.3.1"
+    },
+    {
+      "bom-ref" : "swift-atomics:Atomics",
+      "externalReferences" : [
+
+      ],
+      "name" : "Atomics",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "0442cb5a3f98ab802acb777929fdb446bda11a34",
+            "url" : "https://github.com/apple/swift-atomics.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-product"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/apple/swift-atomics:Atomics@1.3.1",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "1.3.1"
+    },
+    {
+      "bom-ref" : "swift-collections",
+      "externalReferences" : [
+
+      ],
+      "name" : "swift-collections",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "a0cb0954ecb21e4e31b0070e6ed5674e8556685a",
+            "url" : "https://github.com/apple/swift-collections.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-package"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/apple/swift-collections@1.6.0",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "1.6.0"
+    },
+    {
+      "bom-ref" : "swift-collections:BasicContainers",
+      "externalReferences" : [
+
+      ],
+      "name" : "BasicContainers",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "a0cb0954ecb21e4e31b0070e6ed5674e8556685a",
+            "url" : "https://github.com/apple/swift-collections.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-product"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/apple/swift-collections:BasicContainers@1.6.0",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "1.6.0"
+    },
+    {
+      "bom-ref" : "swift-collections:DequeModule",
+      "externalReferences" : [
+
+      ],
+      "name" : "DequeModule",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "a0cb0954ecb21e4e31b0070e6ed5674e8556685a",
+            "url" : "https://github.com/apple/swift-collections.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-product"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/apple/swift-collections:DequeModule@1.6.0",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "1.6.0"
+    },
+    {
+      "bom-ref" : "swift-endpoint",
+      "externalReferences" : [
+
+      ],
+      "name" : "swift-endpoint",
+      "pedigree" : {
+
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-package"
+        }
+      ],
+      "purl" : "pkg:swift/swift-endpoint",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "unknown"
+    },
+    {
+      "bom-ref" : "swift-endpoint:Domain",
+      "externalReferences" : [
+
+      ],
+      "name" : "Domain",
+      "pedigree" : {
+
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-product"
+        }
+      ],
+      "purl" : "pkg:swift/swift-endpoint/swift-endpoint:Domain",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "unknown"
+    },
+    {
+      "bom-ref" : "swift-endpoint:DomainIPAddressCompat",
+      "externalReferences" : [
+
+      ],
+      "name" : "DomainIPAddressCompat",
+      "pedigree" : {
+
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-product"
+        }
+      ],
+      "purl" : "pkg:swift/swift-endpoint/swift-endpoint:DomainIPAddressCompat",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "unknown"
+    },
+    {
+      "bom-ref" : "swift-endpoint:Endpoint",
+      "externalReferences" : [
+
+      ],
+      "name" : "Endpoint",
+      "pedigree" : {
+
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-product"
+        }
+      ],
+      "purl" : "pkg:swift/swift-endpoint/swift-endpoint:Endpoint",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "unknown"
+    },
+    {
+      "bom-ref" : "swift-endpoint:EndpointTests",
+      "externalReferences" : [
+
+      ],
+      "name" : "EndpointTests",
+      "pedigree" : {
+
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-product"
+        }
+      ],
+      "purl" : "pkg:swift/swift-endpoint/swift-endpoint:EndpointTests",
+      "scope" : "excluded",
+      "type" : "library",
+      "version" : "unknown"
+    },
+    {
+      "bom-ref" : "swift-endpoint:IPAddress",
+      "externalReferences" : [
+
+      ],
+      "name" : "IPAddress",
+      "pedigree" : {
+
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-product"
+        }
+      ],
+      "purl" : "pkg:swift/swift-endpoint/swift-endpoint:IPAddress",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "unknown"
+    },
+    {
+      "bom-ref" : "swift-idna",
+      "externalReferences" : [
+
+      ],
+      "name" : "swift-idna",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "9284116292c2f89361ece0adc9b7d3d586afc1d0",
+            "url" : "https://github.com/swift-dns/swift-idna.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-package"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/swift-dns/swift-idna@1.0.0-beta.25",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "1.0.0-beta.25"
+    },
+    {
+      "bom-ref" : "swift-idna:SwiftIDNA",
+      "externalReferences" : [
+
+      ],
+      "name" : "SwiftIDNA",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "9284116292c2f89361ece0adc9b7d3d586afc1d0",
+            "url" : "https://github.com/swift-dns/swift-idna.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-product"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/swift-dns/swift-idna:SwiftIDNA@1.0.0-beta.25",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "1.0.0-beta.25"
+    },
+    {
+      "bom-ref" : "swift-nio",
+      "externalReferences" : [
+
+      ],
+      "name" : "swift-nio",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "cd3e1152083706d77b223fb29110e590efcc70c0",
+            "url" : "https://github.com/apple/swift-nio.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-package"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/apple/swift-nio@2.101.2",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "2.101.2"
+    },
+    {
+      "bom-ref" : "swift-nio:NIOCore",
+      "externalReferences" : [
+
+      ],
+      "name" : "NIOCore",
+      "pedigree" : {
+        "commits" : [
+          {
+            "uid" : "cd3e1152083706d77b223fb29110e590efcc70c0",
+            "url" : "https://github.com/apple/swift-nio.git"
+          }
+        ]
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-product"
+        }
+      ],
+      "purl" : "pkg:swift/github.com/apple/swift-nio:NIOCore@2.101.2",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "2.101.2"
+    }
+  ],
+  "dependencies" : [
+    {
+      "dependsOn" : [
+        "swift-atomics:Atomics"
+      ],
+      "ref" : "swift-atomics"
+    },
+    {
+      "dependsOn" : [
+        "swift-collections:BasicContainers",
+        "swift-collections:DequeModule"
+      ],
+      "ref" : "swift-collections"
+    },
+    {
+      "dependsOn" : [
+        "swift-endpoint:Domain",
+        "swift-endpoint:DomainIPAddressCompat",
+        "swift-endpoint:Endpoint",
+        "swift-endpoint:EndpointTests",
+        "swift-endpoint:IPAddress",
+        "swift-idna",
+        "swift-nio"
+      ],
+      "ref" : "swift-endpoint"
+    },
+    {
+      "dependsOn" : [
+        "swift-idna:SwiftIDNA",
+        "swift-nio:NIOCore"
+      ],
+      "ref" : "swift-endpoint:Domain"
+    },
+    {
+      "dependsOn" : [
+        "swift-idna:SwiftIDNA",
+        "swift-nio:NIOCore"
+      ],
+      "ref" : "swift-endpoint:DomainIPAddressCompat"
+    },
+    {
+      "dependsOn" : [
+        "swift-idna:SwiftIDNA",
+        "swift-nio:NIOCore"
+      ],
+      "ref" : "swift-endpoint:Endpoint"
+    },
+    {
+      "dependsOn" : [
+        "swift-collections",
+        "swift-idna:SwiftIDNA"
+      ],
+      "ref" : "swift-idna"
+    },
+    {
+      "dependsOn" : [
+        "swift-collections:BasicContainers"
+      ],
+      "ref" : "swift-idna:SwiftIDNA"
+    },
+    {
+      "dependsOn" : [
+        "swift-atomics",
+        "swift-collections",
+        "swift-nio:NIOCore"
+      ],
+      "ref" : "swift-nio"
+    },
+    {
+      "dependsOn" : [
+        "swift-atomics:Atomics",
+        "swift-collections:DequeModule"
+      ],
+      "ref" : "swift-nio:NIOCore"
+    }
+  ],
+  "metadata" : {
+    "component" : {
+      "bom-ref" : "swift-endpoint",
+      "externalReferences" : [
+
+      ],
+      "name" : "swift-endpoint",
+      "pedigree" : {
+
+      },
+      "properties" : [
+        {
+          "name" : "swift-entity",
+          "value" : "swift-package"
+        }
+      ],
+      "purl" : "pkg:swift/swift-endpoint",
+      "scope" : "required",
+      "type" : "library",
+      "version" : "unknown"
+    },
+    "timestamp" : "2026-10-12T14:38:33Z",
+    "tools" : {
+      "components" : [
+        {
+          "bom-ref" : "urn:uuid:530d88fe-dfae-441e-9dac-d3c49ca58e2a",
+          "licenses" : [
+            {
+              "license" : {
+                "id" : "Apache-2.0",
+                "url" : "http://swift.org/LICENSE.txt"
+              }
+            }
+          ],
+          "name" : "swift-package-manager",
+          "purl" : "pkg:swift/github.com/swiftlang/swift-package-manager@6.4.0-dev",
+          "scope" : "excluded",
+          "type" : "application",
+          "version" : "6.4.0-dev"
+        }
+      ]
+    }
+  },
+  "serialNumber" : "urn:uuid:d020d511-8992-4213-a07f-1156fe15cc49",
+  "specVersion" : "1.7",
+  "version" : 1
+}

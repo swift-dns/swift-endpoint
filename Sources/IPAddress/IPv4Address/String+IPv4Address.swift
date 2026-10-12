@@ -290,7 +290,7 @@ extension IPv4Address: LosslessStringConvertible {
     /// `count` must be `span.count`.
     ///
     /// Additional Credits:
-    /// To Wojciech Mula: The `&* nA1` pair-fold, and the fold after it.
+    /// To Wojciech Mula: The `&* n64A1` pair-fold and the fold after it at once.
     /// See:
     /// http://0x80.pl/notesen/2014-10-12-parsing-decimal-numbers-part-1-swar.html
     @inlinable
@@ -315,97 +315,100 @@ extension IPv4Address: LosslessStringConvertible {
         ///
         /// Example for "192.168.1.98" (Notice little-endian byte-order):
         /// `window1`: bytes 0...3 ("192.") -> `0x1E_02_09_01`.
-        /// `window2`: bytes 2...7 ("2.168.") -> `0x30_30_1E_08_06_01_1E_02` (in lanes 0...5).
+        /// `window12`: bytes 0...7 ("192.168.") -> `0x1E_08_06_01_1E_02_09_01`.
         /// `window4`: bytes 8...11 ("1.98") -> `0x08_09_1E_01`.
-        let (window1, window2, window4) = span.withUnsafeBytes { buffer in
+        let (window1, window12, window4) = span.withUnsafeBytes { buffer in
             /// `count >= 7` == `true`, so this is not nil.
             let base = unsafe buffer.baseAddress.unsafelyUnwrapped
             let m30_u32 = UInt32(truncatingIfNeeded: m30)
             /// Reads the "192." part.
             /// We know `count >= 7` so this won't be an out-of-bounds read.
             let w1 = unsafe _loadUInt32(from: base, at: 0)
+            /// Same as the low 32 bits of `window12`, but without waiting for `w2`.
+            /// Helps with latency.
             let window1 = w1 ^ m30_u32
-            /// Reads the "2.168." part.
-            /// With `count == 7` a read at byte 4 would go out of bounds, so it starts at byte 3.
-            /// "2." from `w1` | "168." << 16 == "2.168.".
-            let w2_p2 = unsafe _loadUInt32(from: base, at: min(4, count &- 4))
-            let window2 = (UInt64(w1 >> 16) | (UInt64(w2_p2) << 16)) ^ m30
+            /// Reads the "168." part.
+            /// With `count == 7` a read at byte 4 would go out of bounds, so it starts at byte 0.
+            /// `(count >> 1) & 4` == `4` for a `count` of 8...15, and `0` for a `count` of 7.
+            let w2 = unsafe _loadUInt32(from: base, at: (count >> 1) & 4)
+            /// "192." | "168." << 32 == "192.168.".
+            let window12 = (UInt64(w1) | (UInt64(w2) << 32)) ^ m30
             /// Similar to the `window1`, but read from the end.
             /// Reads the "1.98" part.
             let w4 = unsafe _loadUInt32(from: base, at: count &- 4)
             let window4 = w4 ^ m30_u32
-            return (window1, window2, window4)
+            return (window1, window12, window4)
         }
 
-        let m10: UInt32 = 0x1010_1000
-        let m1: UInt32 = 0x1000_0000
+        let m01: UInt32 = 0x0101_0000
 
         /// Example: Assuming `window1` is `0x1E_02_09_01` (little-endian byte-order),
-        /// then `window1 & 0x1010_1000` == `0x1000_0000`. `| 0x1000_0000` ensures at least
-        /// the most significant lane (byte) is always considered a "dot" since we have 4 lanes but
-        /// only 3 can ever be representing an IPv4 segment which is in the range `0...255`.
-        /// `m10` intentionally turns off the least significant lane, since a segment has at least
-        /// 1 digit. That lane is always treated as a digit, so a dot there fails the digit check.
-        let firstDotBitCount = ((window1 & m10) | m1).trailingZeroBitCount
+        /// then `(window1 << 4) & 0x0101_0000` == `0xE0_20_90_10 & 0x0101_0000` == `0x0000_0000`.
+        ///
+        /// `trailingZeroBitCount` of `0` is `32`, so at least the most significant lane (byte) is
+        /// always considered a "dot" since we have 4 lanes but only 3 can ever be representing an
+        /// IPv4 segment which is in the range `0...255`.
+        /// `m01` intentionally turns off the 2 least significant lanes, since a segment has at least
+        /// 1 digit and `<< 4` moves the "dot" of the 2nd lane to the 3rd anyway.
+        /// First lane is always treated as a digit, so a dot there fails the digit check later on.
+        ///
+        /// `<< 4` makes it so `firstDotEndBitCount` also counts the bits of the first dot itself.
+        /// Example: `0x1E_02_09_01` ("192.") -> `0x0000_0000` (32).
+        /// Example: `0x1E_02_1E_01` ("1.2.") -> `0x0001_0000` (16).
+        let firstDotEndBitCount = ((window1 << 4) & m01).trailingZeroBitCount
         /// Let's find the amount of bits that are for the bytes after the dot.
         /// For example in an IP like `1.2.3.4`, we'll have `1.2.` in here and we'll need to get rid
         /// of the `2.` part. So we find the first dot (from left), and get rid of all after it.
-        ///
-        /// `0x10` == `0b0001_0000`. The low 4 bits will be included in `firstDotBitCount`.
-        /// The top 4 bits no, since the `1` in `0001` is blocking `trailingZeroBitCount` from counting them.
-        /// Therefore instead of `32 - firstDotBitCount`, we use `28 - firstDotBitCount`, to account for the top 4 bits.
-        let w1_afterDotCount = 28 &- firstDotBitCount
-        /// Example: `0x1E_02_09_01` -> `0x1E_02_09_01` (`firstDotBitCount` == 28).
-        /// For "1.2.3.4" it'd be `0x1E_02_1E_01` -> `0x1E_01_00_00` (`firstDotBitCount` == 12).
+        let w1_afterDotCount = 32 &- firstDotEndBitCount
+        /// Example: `0x1E_02_09_01` -> `0x1E_02_09_01` (`firstDotEndBitCount` == 32).
+        /// For "1.2.3.4" it'd be `0x1E_02_1E_01` -> `0x1E_01_00_00` (`firstDotEndBitCount` == 16).
         let segment1 = window1 &<< w1_afterDotCount
 
-        /// We know where the first dot is. We want to get rid of it and anything before it in `window2`.
-        /// `firstDotBitCount` is between 12 and 28. 12 in e.g. `1.2.3.4`, and 28 in e.g. `192.168.1.98`.
-        /// Assuming window2 is "2.168.", we want to get rid of the "2." part.
-        /// Example: `0x30_30_1E_08_06_01_1E_02` -> `0x1E_08_06_01` (`firstDotBitCount` == 28).
-        let w2_afterFirstDot = UInt32(truncatingIfNeeded: window2 &>> (firstDotBitCount &- 12))
-        /// `w2_afterFirstDot` starts right after the first dot, so its first dot is the second dot.
+        /// Assuming `window12` is "192.168.", we want to get rid of the "192." part.
+        /// `firstDotEndBitCount` is between 16 and 32. 16 in e.g. `1.2.3.4`, and 32 in e.g. `192.168.1.98`.
+        /// Example: `0x1E_08_06_01_1E_02_09_01` -> `0x1E_08_06_01` (`firstDotEndBitCount` == 32).
+        let w2_afterFirstDot = window12 &>> firstDotEndBitCount
+        /// `w2_afterFirstDot` starts right after the first dot. Its first dot is the second dot.
         /// We find it the same way we found the first dot.
-        /// Example: `0x1E_08_06_01` -> `28`.
-        let secondDotBitCount = ((w2_afterFirstDot & m10) | m1).trailingZeroBitCount
+        /// Example: `0x1E_08_06_01` -> `32`.
+        let secondDotEndBitCount =
+            ((UInt32(truncatingIfNeeded: w2_afterFirstDot) << 4) & m01).trailingZeroBitCount
         /// Example: `0x1E_08_06_01` -> `0x1E_08_06_01`. For "1.2.3.45" it'd be `0x1E_03_1E_02` -> `0x1E_02_00_00`.
-        let segment2 = w2_afterFirstDot &<< (28 &- secondDotBitCount)
+        let segment2 = UInt32(truncatingIfNeeded: w2_afterFirstDot) &<< (32 &- secondDotEndBitCount)
 
         let m10_r: UInt32 = 0x001010_10
         let m1_r: UInt32 = 0x0000_0010
         /// Now let’s find the third dot which must be in `window4`.
         /// For example in "1.98", we need to find the “.” and get rid of it and anything before it.
-        let thirdDotBitCount = 31 &- ((window4 & m10_r) | m1_r).leadingZeroBitCount
-        /// Keeps the digits after the third dot and moves them to lanes 0...2.
-        /// Example: `0x08_09_1E_01` -> `0x00_08_09_00`.
-        let thirdDotAndBeforeMask: UInt32 = 0xFFFF_FFFF &<< (thirdDotBitCount &+ 4)
-        let segment4 = (window4 & thirdDotAndBeforeMask) >> 8
+        /// Example: `window4` == `0x08_09_1E_01` -> `19`.
+        let thirdDotLeadingZeroBitCount = ((window4 & m10_r) | m1_r).leadingZeroBitCount
+        /// Keeps the digits after the third dot.
+        /// Example: `0x08_09_1E_01` -> `0x08_09_00_00`.
+        let thirdDotAndBeforeMask = UInt32(
+            truncatingIfNeeded: 0x0000_0007_FFFF_FFFF &>> thirdDotLeadingZeroBitCount
+        )
+        let segment4 = window4 & ~thirdDotAndBeforeMask
 
         /// The 3rd and last segment is between the 2nd and 3rd dots, which are both found by now.
-        /// `thirdDotBitCount` is 4, 12 or 20, so this only reads within bytes `count - 7`...`count - 2`.
+        /// `thirdDotLeadingZeroBitCount` is 11, 19 or 27, so this only reads within bytes `count - 7`...`count - 2`.
+        /// `thirdDotLeadingZeroBitCount >> 3` == `thirdDotLeadingZeroBitCount / 8`.
+        let w3_idx = count &- 4 &- (thirdDotLeadingZeroBitCount >> 3)
         /// Example for "192.168.1.98": bytes 6...9 ("8.1.") -> `0x1E_01_1E_08`.
         let window3 = span.withUnsafeBytes { buffer in
             let base = unsafe buffer.baseAddress.unsafelyUnwrapped
-            /// `thirdDotBitCount >> 3` == `thirdDotBitCount / 8`.
-            let w3_idx = count &- 7 &+ (thirdDotBitCount >> 3)
             let w3 = unsafe _loadUInt32(from: base, at: w3_idx)
             return w3 ^ UInt32(truncatingIfNeeded: m30)
         }
 
-        /// `count << 3` == `count &* 8` == `96` for "192.168.1.98".
-        let fullBitCount = count << 3
-        /// Example: `28 + 28` == `56` for "192.168.1.98", covering "192.168".
-        let secondDotBitCountFromStart = firstDotBitCount &+ secondDotBitCount
-        /// The third dot starts `thirdDotBitCount - 4` bits into `window4` which is the last 32 bits.
-        /// Example: `32 - (12 - 4)` == `24` for "192.168.1.98", covering ".98".
-        let thirdDotBitCountFromEnd = 32 &- (thirdDotBitCount &- 4)
-        /// Where the second dot would start if segment 3 had 3 digits, `32` for those and the dot.
-        /// Example: `96 - 32 - 24` == `40` for "192.168.1.98", covering "192.1".
-        let paddedSecondDotBitCountFromStart = fullBitCount &- 32 &- thirdDotBitCountFromEnd
-        /// Example: `56 - 40` == `16` for "192.168.1.98", covering the "00" of "001".
-        let extraDigitsShift = secondDotBitCountFromStart &- paddedSecondDotBitCountFromStart
+        /// Example: `32 + 32` == `64` for "192.168.1.98", covering "192.168.".
+        let secondDotEndBitCountFromStart = firstDotEndBitCount &+ secondDotEndBitCount
+        /// Where `window3` starts, which is where segment 3 would start if it had 3 digits.
+        /// `w3_idx << 3` == `w3_idx &* 8` == `48` for "192.168.1.98", covering "192.16".
+        let window3BitCountFromStart = w3_idx << 3
+        /// Example: `64 - 48` == `16` for "192.168.1.98", covering the "8." of "8.1.".
+        let extraDigitsShift = secondDotEndBitCountFromStart &- window3BitCountFromStart
         /// Turns off the lanes before segment 3, like the 2nd dot.
-        /// Example: `0x1E_01_1E_08` -> `0x1E_01_00_00` (“001.”)
+        /// Example: `0x1E_01_1E_08` -> `0x1E_01_00_00` (“1.”)
         let segment3 = window3 & (0xFFFF_FFFF &<< extraDigitsShift)
 
         /// 2x 32-bit lanes for 2 segments.
@@ -413,8 +416,9 @@ extension IPv4Address: LosslessStringConvertible {
         /// Example: `0x1E_08_06_01_1E_02_09_01` -> `0x00_08_06_01_00_02_09_01`.
         let segments12 = (UInt64(segment1) | (UInt64(segment2) << 32)) ^ 0x1E00_0000_1E00_0000
         /// Segment 4 has no dot in the most significant byte, so it’s not XORed and stays `0x00`.
+        /// `<< 24` moves the digits of segment 4 to lanes 4...6.
         /// Example: `0x00_08_09_00_1E_01_00_00` -> `0x00_08_09_00_00_01_00_00`.
-        let segments34 = (UInt64(segment3) | (UInt64(segment4) << 32)) ^ 0x0000_0000_1E00_0000
+        let segments34 = (UInt64(segment3) | (UInt64(segment4) << 24)) ^ 0x0000_0000_1E00_0000
 
         /// `0x76` == `0x80` - 10, for the digit lanes.
         /// `0x7F` == `0x80` - 1, for the dot lanes.
@@ -428,32 +432,23 @@ extension IPv4Address: LosslessStringConvertible {
         let invalidLanes34 = (segments34 &+ m7f76) | segments34
         let invalidLanes = invalidLanes12 | invalidLanes34
 
-        /// `0x0A01` == `0x0A` (10) then `0x01` (1).
-        let nA1: UInt64 = 0x0A01
-        /// We multiply by `nA1` so each lane turns into `10 * previousLane + lane`, which is at
-        /// most `10 * 9 + 9` == `99` < `256` so it fits into one lane.
-        /// Then we only need lanes 0 (the hundreds) and 2 (`10 * tens + ones`) of each segment,
-        /// so we turn off the other lanes.
-        /// Example: `0x00_08_06_01_00_02_09_01` -> `0x00_44_00_01_00_5C_00_01` (68, 1, 92, 1).
-        let pairs12 = (segments12 &* nA1) & 0x00FF_00FF_00FF_00FF
-        /// Example: `0x00_08_09_00_00_01_00_00` -> `0x00_62_00_00_00_01_00_00` (98, 0, 1, 0).
-        let pairs34 = (segments34 &* nA1) & 0x00FF_00FF_00FF_00FF
-        /// `0x0064_0001` == `100 << 16 | 1`.
-        /// This means `100 * hundreds + (10 * tens + ones)` of each segment ends up in
-        /// bits 16...31 and 48...63.
-        /// The biggest value this can produce is much less than `255 * 100 + 255` which
-        /// still fits into 15 bits.
-        /// Example: `0x00_44_00_01_00_5C_00_01` -> `0x00_A8_23_F1_00_C0_00_01` (168, 192).
-        let values12 = pairs12 &* 0x0064_0001
-        /// Example: `0x00_62_00_00_00_01_00_00` -> `0x00_62_00_64_00_01_00_00` (98, 1).
-        let values34 = pairs34 &* 0x0064_0001
+        /// `0x7DFA_FA00` == `0x8000_0000` - `0x0205_0600`, where `0x02_05_06_00` is “256.”.
+        /// Adding it to a big-endian segment sets the 32nd bit when the segment is above `255` when
+        /// the lanes are invalid.
+        /// `.byteSwapped` is to get big-endian version of the segments.
+        ///
+        /// Example: `0x00_08_06_01_00_02_09_01` -> `0x01_09_02_00_01_06_08_00`
+        /// -> `0x7F_03_FC_00_7F_01_02_00` (bits 31 and 63 are `0`).
+        let m7dfa: UInt64 = 0x7DFA_FA00_7DFA_FA00
+        let overflows12 = segments12.byteSwapped &+ m7dfa
+        let overflows34 = segments34.byteSwapped &+ m7dfa
 
         /// `0x80` == `0b1000_0000`
         let m80: UInt64 = 0x8080_8080_8080_8080
-        let mff00: UInt64 = 0xFF00_0000_FF00_0000
+        let m8000: UInt64 = 0x8000_0000_8000_0000
         /// The 8th bit of any lane in `invalidLanes` means there's an invalid byte.
-        /// Any of bits 24...31 or 56...63 set in a value means a segment above `255` which is also invalid.
-        let invalid = (invalidLanes & m80) | ((values12 | values34) & mff00)
+        /// Bit 31 or 63 set in an overflow means a segment above `255` which is also invalid.
+        let invalid = (invalidLanes & m80) | ((overflows12 | overflows34) & m8000)
 
         guard invalid == 0 else { return false }
 
@@ -461,9 +456,18 @@ extension IPv4Address: LosslessStringConvertible {
         /// It's negative when segment 3 has more than 3 digits.
         guard UInt(bitPattern: extraDigitsShift) <= 16 else { return false }
 
+        /// `0x0064_0A01` == `100 << 16 | 10 << 8 | 1`.
+        /// We multiply by `n64A1` so `100 * hundreds + 10 * tens + ones` of each segment ends up in
+        /// bits 16...23 and 48...55.
+        /// Example: `0x00_08_06_01_00_02_09_01` -> `0xA8_A8_10_CC_98_C0_13_01` (168, 192).
+        let n64A1: UInt64 = 0x0064_0A01
+        let values12 = segments12 &* n64A1
+        /// Example: `0x00_08_09_00_00_01_00_00` -> `0xD4_62_09_64_0A_01_00_00` (98, 1).
+        let values34 = segments34 &* n64A1
+
         /// Puts the values of segments 1 and 2 at bits 0...7 and 32...39, and the values of
         /// segments 3 and 4 at bits 16...23 and 48...55.
-        /// Example: `0x00_A8_23_F1_00_C0_00_01` and `0x00_62_00_64_00_01_00_00`
+        /// Example: `0xA8_A8_10_CC_98_C0_13_01` and `0xD4_62_09_64_0A_01_00_00`
         /// -> `0x00_62_00_A8_00_01_00_C0`.
         let interleaved12 = (values12 >> 16) & 0x0000_00FF_0000_00FF
         let interleaved34 = values34 & 0x00FF_0000_00FF_0000

@@ -1,5 +1,5 @@
-#ifndef CSWIFT_DNS_ENDPOINT_SLOW_STATIC_IPV6_PARSE_H
-#define CSWIFT_DNS_ENDPOINT_SLOW_STATIC_IPV6_PARSE_H
+#ifndef CSWIFT_DNS_ENDPOINT_SLOW_STATIC_IP_PARSE_H
+#define CSWIFT_DNS_ENDPOINT_SLOW_STATIC_IP_PARSE_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -20,7 +20,7 @@ extern "C" {
 //
 //   1. The loop must be single-exit. Errors set `failed` and `continue` rather than returning, so
 //      the loop condition is the only way out. This is sound because every in-loop error path
-//      fires while `r` is still `{0, 0, false}`.
+//      fires while `r` is still `{0, 0, false, 0, 0}`.
 //   2. The trip count must be a constant. Hence `k < 45` plus the `n > 45` rejection above the
 //      loop, without which an over-long input would stop early and fall into the post-loop logic
 //      instead of being rejected.
@@ -36,75 +36,11 @@ typedef struct {
     uint64_t hi;
     uint64_t lo;
     bool ok;
+    // Where the embedded IPv4 address starts in the input and how many bytes it has, 0 if none.
+    // It is parsed by the caller, so its 32 bits in `lo` are left zero.
+    size_t ipv4Start;
+    size_t ipv4Count;
 } cswift_endpoint_slow_static_ipv6_parse_result;
-
-// A duplicate of the Swift `IPv4Address._parseSegment`.
-__attribute__((always_inline))
-static inline bool cswift_endpoint_slow_static_parse_ipv4_segment(
-    const uint8_t *s,
-    size_t count,
-    size_t *idx,
-    uint32_t *out
-) {
-    size_t i = *idx;
-
-    if (i >= count) return false;
-    uint8_t d1 = (uint8_t)(s[i] - (uint8_t)'0');
-    if (d1 > 9) return false;
-    uint32_t segment = d1;
-    i += 1;
-
-    uint8_t d2 = i < count ? (uint8_t)(s[i] - (uint8_t)'0') : 0xFF;
-    if (d2 <= 9) {
-        segment = segment * 10 + d2;
-        i += 1;
-
-        uint8_t d3 = i < count ? (uint8_t)(s[i] - (uint8_t)'0') : 0xFF;
-        if (d3 <= 9) {
-            segment = segment * 10 + d3;
-            i += 1;
-
-            if (segment > 255) return false;
-        }
-    }
-
-    *idx = i;
-    *out = segment;
-    return true;
-}
-
-// A duplicate of the Swift `IPv4Address.parseIPv4`.
-__attribute__((always_inline))
-static inline bool cswift_endpoint_slow_static_parse_embedded_ipv4(
-    const uint8_t *s,
-    size_t count,
-    uint32_t *out
-) {
-    // The shortest possible IPv4 address is "0.0.0.0" with 7 bytes, and the longest possible
-    // one is "255.255.255.255" with 15 bytes.
-    if (count < 7 || count > 15) return false;
-
-    size_t idx = 0;
-    uint32_t s1, s2, s3, s4;
-
-    if (!cswift_endpoint_slow_static_parse_ipv4_segment(s, count, &idx, &s1)) return false;
-    if (idx >= count || s[idx] != (uint8_t)'.') return false;
-    idx += 1;
-
-    if (!cswift_endpoint_slow_static_parse_ipv4_segment(s, count, &idx, &s2)) return false;
-    if (idx >= count || s[idx] != (uint8_t)'.') return false;
-    idx += 1;
-
-    if (!cswift_endpoint_slow_static_parse_ipv4_segment(s, count, &idx, &s3)) return false;
-    if (idx >= count || s[idx] != (uint8_t)'.') return false;
-    idx += 1;
-
-    if (!cswift_endpoint_slow_static_parse_ipv4_segment(s, count, &idx, &s4)) return false;
-    if (idx != count) return false;
-
-    *out = (s1 << 24) | (s2 << 16) | (s3 << 8) | s4;
-    return true;
-}
 
 // | byte == ':' | adjacent == ':' | returns |                meaning               |
 // +-------------+-----------------+---------+--------------------------------------+
@@ -123,7 +59,7 @@ static inline cswift_endpoint_slow_static_ipv6_parse_result cswift_endpoint_slow
     const uint8_t *s,
     size_t n
 ) {
-    cswift_endpoint_slow_static_ipv6_parse_result r = {0, 0, false};
+    cswift_endpoint_slow_static_ipv6_parse_result r = {0, 0, false, 0, 0};
 
     // 2 == "::".count
     if (n < 2) return r;
@@ -153,6 +89,8 @@ static inline cswift_endpoint_slow_static_ipv6_parse_result cswift_endpoint_slow
     uint16_t currentSegmentValue = 0;
     size_t segmentDigitIdx = 0;
     size_t idx = 0;
+    size_t ipv4Start = 0;
+    size_t ipv4Count = 0;
 
     bool startsWithColon = s[0] == (uint8_t)':';
     // For when there is a lone colon at the start
@@ -187,22 +125,18 @@ static inline cswift_endpoint_slow_static_ipv6_parse_result cswift_endpoint_slow
 
         if (byte == (uint8_t)'.') {
             // The embedded IPv4 address starts where the digits of this segment started.
-            uint32_t ipv4Address = 0;
             // Revert the increment we did at the beginning of the loop.
             size_t idxNoIncrement = idx - 1;
             if (segmentDigitIdx == 0) { failed = true; continue; }
             size_t start = idxNoIncrement - segmentDigitIdx;
-            if (!cswift_endpoint_slow_static_parse_embedded_ipv4(
-                    s + start,
-                    count - start,
-                    &ipv4Address)) {
-                failed = true;
-                continue;
-            }
+            // The caller parses the embedded IPv4 address, so only its position is kept here,
+            // counted from the start of the input before the brackets were trimmed.
+            ipv4Start = (startsWithBracket ? 1 : 0) + start;
+            ipv4Count = count - start;
 
             bool isBeforeCs = segmentsCountBeforeCs == 0;
-            __uint128_t forBeforeCs = (beforeCs << 32) | (__uint128_t)ipv4Address;
-            __uint128_t forAfterCs = (afterCs << 32) | (__uint128_t)ipv4Address;
+            __uint128_t forBeforeCs = beforeCs << 32;
+            __uint128_t forAfterCs = afterCs << 32;
             beforeCs = isBeforeCs ? forBeforeCs : beforeCs;
             afterCs = isBeforeCs ? afterCs : forAfterCs;
 
@@ -266,6 +200,8 @@ static inline cswift_endpoint_slow_static_ipv6_parse_result cswift_endpoint_slow
     r.hi = (uint64_t)(address >> 64);
     r.lo = (uint64_t)address;
     r.ok = true;
+    r.ipv4Start = ipv4Start;
+    r.ipv4Count = ipv4Count;
     return r;
 }
 
@@ -273,4 +209,4 @@ static inline cswift_endpoint_slow_static_ipv6_parse_result cswift_endpoint_slow
 }  // extern "C"
 #endif
 
-#endif  // CSWIFT_DNS_ENDPOINT_SLOW_STATIC_IPV6_PARSE_H
+#endif  // CSWIFT_DNS_ENDPOINT_SLOW_STATIC_IP_PARSE_H

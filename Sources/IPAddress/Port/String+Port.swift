@@ -213,7 +213,7 @@ extension Port: LosslessStringConvertible {
         self.init(rawValue: rawValue)
     }
 
-    /// Credits:
+    /// Additional Credits:
     /// To @aqrit: The original impl, and the `(digitsInBytes | raised) & m80` check.
     /// To Wojciech Mula: The `&* nA1` pair-fold, and the fold after it.
     /// To Jeroen Koekkoek: The clamped 5-lane read and `m30ForInsignificantBits` padding.

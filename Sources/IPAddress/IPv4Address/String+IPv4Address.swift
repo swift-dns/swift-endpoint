@@ -7,7 +7,7 @@ extension IPv4Address: CustomStringConvertible {
         /// For example for "255.255.255.255".
         ///
         /// This impl relies on an impl detail of `String` in `_SmallString.capacity` where it will
-        /// inline-allocate 15 bytes at all times, for up to exactly 15 utf8 bytes.
+        /// inline-allocate up to 15 utf8-bytes most of the times.
         ///
         /// So if we know `String` will inline-allocate 15 bytes anyway (`_pointerBitWidth(_64) == true`),
         /// then we don't bother with calculating the exact required capacity. Otherwise we
@@ -76,8 +76,8 @@ extension IPv4Address: CustomStringConvertible {
         /// Turn the most significant bit (MSB) off so next operations don't carry over per lane, or overflow.
         let low7Bits = address & m7f
         /// We add m76 to each lane (`128 - 10`), if the MSB is turned on, we know that the number
-        /// was at least 10. This only misses to cover the case where the number is 0b1000_0000,
-        /// because in `low7bits` we turned off the 8th bit in each lane.
+        /// was at least 10. This can miss numbers with the 8th bit on, like `0b1000_0000`,
+        /// because in `low7Bits` we turned off the 8th bit in each lane.
         /// If 8th bit was on then the number was above 10 anyway, so a `| address` is enough.
         /// `& m80` is to only keep the 8th bit in each lane. If it's on, then the number was at least 10.
         let atLeast10 = ((low7Bits &+ m76) | address) & m80
@@ -100,7 +100,7 @@ extension IPv4Address: CustomStringConvertible {
         /// Mask out the last byte to avoid counting the extra digits it would require.
         /// At the end, we add 2 headroom bytes anyways.
         let extraDigits = self._extraDecimalDigitsToPrintPerByte & 0x00FF_FFFF
-        /// Puts sum of all 4 lanes into bits 25th-28th.
+        /// Puts sum of all 4 lanes into bits 25th-27th.
         /// Then we bit shift by 24 to get the sum into bits 1st-3rd.
         let extraDigitsCount = (extraDigits &* 0x0101_0101) >> 24
         /// 9 == 3 dots + the first digit of each of the 4 bytes + 2 headroom bytes.
@@ -112,7 +112,7 @@ extension IPv4Address: CustomStringConvertible {
     package var textualRepresentationLength: Int {
         let allDigits = self._extraDecimalDigitsToPrintPerByte
         /// Puts sum of all 4 lanes into bits 25th-28th.
-        /// Then we bit shift by 24 to get the sum into bits 1st-3rd.
+        /// Then we bit shift by 24 to get the sum into bits 1st-4th.
         let extraDigitsCount = (allDigits &* 0x0101_0101) >> 24
         /// 7 == 3 dots + the first digit of each of the 4 bytes.
         return 7 &+ Int(extraDigitsCount)
@@ -266,7 +266,7 @@ extension IPv4Address: LosslessStringConvertible {
             return nil
         }
 
-        self.init(address)
+        self.init(address, byteOrder: .bigEndian)
     }
 
     @inlinable
@@ -282,6 +282,20 @@ extension IPv4Address: LosslessStringConvertible {
         )
     }
 
+    /// Parses an IPv4 address from a `Span<UInt8>` of its textual representation.
+    ///
+    /// `address` is set in big-endian byte order.
+    /// This func with `count` parameter is used for IPv4-literal folding, otherwise makes no other
+    /// difference compared to the `parseIPv4` function without the `count` parameter.
+    /// `count` must be `span.count`.
+    ///
+    /// Additional Credits:
+    /// To Wojciech Mula: Folding digits with a multiplication.
+    /// To Daniel Lemire: The 3-digit `&* n64A1` fold, and the `.byteSwapped` overflow check.
+    /// To Jean-Marc Bourguet: The `0x0064_0A01` form of that fold.
+    /// See:
+    /// http://0x80.pl/notesen/2014-10-12-parsing-decimal-numbers-part-1-swar.html
+    /// https://lemire.me/blog/2023/11/28/parsing-8-bit-integers-quickly/
     @inlinable
     @inline(always)
     static func parseIPv4(
@@ -289,88 +303,190 @@ extension IPv4Address: LosslessStringConvertible {
         count: Int,
         address: inout UInt32
     ) -> Bool {
-        /// The shortest possible IPv4 address is "0.0.0.0" with 7 bytes, and the longest possible
-        /// one is "255.255.255.255" with 15 bytes.
-        guard count >= 7, count <= 15 else {
-            return false
+        /// The shortest possible IPv4 address is "0.0.0.0" with 7 bytes.
+        guard count >= 7 else { return false }
+
+        /// `0x30` == ASCII `0`
+        let m30: UInt64 = 0x3030_3030_3030_3030
+
+        /// Read 1 window per segment, each also covering some dots around each segment.
+        /// Segment 3's window is read further down, once all 3 dots are already known.
+        ///
+        /// XORing with `m30` turns the ASCII codes of `0`...`9` into the numbers `0x00`...`0x09`, and
+        /// the ASCII code of `.` (`0x2E`) into `0x1E`. So among digits and dots, only the dots have
+        /// their 5th bit (`0x10`) set. Invalid bytes are rejected later on.
+        ///
+        /// Example for "192.168.1.98" (Notice little-endian byte-order):
+        /// `window1`: bytes 0...3 ("192.") -> `0x1E_02_09_01`.
+        /// `window12`: bytes 0...7 ("192.168.") -> `0x1E_08_06_01_1E_02_09_01`.
+        /// `window4`: bytes 8...11 ("1.98") -> `0x08_09_1E_01`.
+        let (window1, window12, window4) = span.withUnsafeBytes { buffer in
+            /// `count >= 7` == `true`, so this is not nil.
+            let base = unsafe buffer.baseAddress.unsafelyUnwrapped
+            let m30_u32 = UInt32(truncatingIfNeeded: m30)
+            /// Reads the "192." part.
+            /// We know `count >= 7` so this won't be an out-of-bounds read.
+            let w1 = unsafe _loadUInt32(from: base, at: 0)
+            /// Same as the low 32 bits of `window12`, but without waiting for `w2`.
+            /// Helps with latency.
+            let window1 = w1 ^ m30_u32
+            /// Reads the "168." part.
+            /// With `count == 7` a read at byte 4 would go out of bounds, so it starts at byte 0.
+            /// `(count >> 1) & 4` == `4` for a `count` of 8...15, and `0` for a `count` of 7.
+            let w2 = unsafe _loadUInt32(from: base, at: (count >> 1) & 4)
+            /// "192." | "168." << 32 == "192.168.".
+            let window12 = (UInt64(w1) | (UInt64(w2) << 32)) ^ m30
+            /// Similar to the `window1`, but read from the end.
+            /// Reads the "1.98" part.
+            let w4 = unsafe _loadUInt32(from: base, at: count &- 4)
+            let window4 = w4 ^ m30_u32
+            return (window1, window12, window4)
         }
 
-        var idx = 0
+        let m01: UInt32 = 0x0101_0000
 
-        guard
-            let segment1 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
-            idx < count,
-            span[idx] == .asciiDot
-        else {
-            return false
+        /// Example: Assuming `window1` is `0x1E_02_09_01` (little-endian byte-order),
+        /// then `(window1 << 4) & 0x0101_0000` == `0xE0_20_90_10 & 0x0101_0000` == `0x0000_0000`.
+        ///
+        /// `trailingZeroBitCount` of `0` is `32`, so at least the most significant lane (byte) is
+        /// always considered a "dot" since we have 4 lanes but only 3 can ever be representing an
+        /// IPv4 segment which is in the range `0...255`.
+        /// `m01` intentionally turns off the 2 least significant lanes, since a segment has at least
+        /// 1 digit and `<< 4` moves the "dot" of the 2nd lane to the 3rd anyway.
+        /// First lane is always treated as a digit, so a dot there fails the digit check later on.
+        ///
+        /// `<< 4` makes it so `firstDotEndBitCount` also counts the bits of the first dot itself.
+        /// Example: `0x1E_02_09_01` ("192.") -> `0x0000_0000` (32).
+        /// Example: `0x1E_02_1E_01` ("1.2.") -> `0x0001_0000` (16).
+        let firstDotEndBitCount = ((window1 << 4) & m01).trailingZeroBitCount
+        /// Let's find the amount of bits that are for the bytes after the dot.
+        /// For example in an IP like `1.2.3.4`, we'll have `1.2.` in here and we'll need to get rid
+        /// of the `2.` part. So we find the first dot (from left), and get rid of all after it.
+        let w1_afterDotCount = 32 &- firstDotEndBitCount
+        /// Example: `0x1E_02_09_01` -> `0x1E_02_09_01` (`firstDotEndBitCount` == 32).
+        /// For "1.2.3.4" it'd be `0x1E_02_1E_01` -> `0x1E_01_00_00` (`firstDotEndBitCount` == 16).
+        let segment1 = window1 &<< w1_afterDotCount
+
+        /// Assuming `window12` is "192.168.", we want to get rid of the "192." part.
+        /// `firstDotEndBitCount` is between 16 and 32. 16 in e.g. `1.2.3.4`, and 32 in e.g. `192.168.1.98`.
+        /// Example: `0x1E_08_06_01_1E_02_09_01` -> `0x1E_08_06_01` (`firstDotEndBitCount` == 32).
+        let w2_afterFirstDot = window12 &>> firstDotEndBitCount
+        /// `w2_afterFirstDot` starts right after the first dot. Its first dot is the second dot.
+        /// We find it the same way we found the first dot.
+        /// Example: `0x1E_08_06_01` -> `32`.
+        let secondDotEndBitCount =
+            ((UInt32(truncatingIfNeeded: w2_afterFirstDot) << 4) & m01).trailingZeroBitCount
+        /// Example: `0x1E_08_06_01` -> `0x1E_08_06_01`. For "1.2.3.45" it'd be `0x1E_03_1E_02` -> `0x1E_02_00_00`.
+        let segment2 = UInt32(truncatingIfNeeded: w2_afterFirstDot) &<< (32 &- secondDotEndBitCount)
+
+        let m10_r: UInt32 = 0x001010_10
+        let m1_r: UInt32 = 0x0000_0010
+        /// Now let’s find the third dot which must be in `window4`.
+        /// For example in "1.98", we need to find the “.” and get rid of it and anything before it.
+        /// Example: `window4` == `0x08_09_1E_01` -> `19`.
+        let thirdDotLeadingZeroBitCount = ((window4 & m10_r) | m1_r).leadingZeroBitCount
+        /// Keeps the digits after the third dot.
+        /// Example: `0x08_09_1E_01` -> `0x08_09_00_00`.
+        let thirdDotAndBeforeMask = UInt32(
+            truncatingIfNeeded: (0x0000_0007_FFFF_FFFF as UInt64) &>> thirdDotLeadingZeroBitCount
+        )
+        let segment4 = window4 & ~thirdDotAndBeforeMask
+
+        /// The 3rd and last segment is between the 2nd and 3rd dots, which are both found by now.
+        /// `thirdDotLeadingZeroBitCount` is 11, 19 or 27, so this only reads within bytes `count - 7`...`count - 2`.
+        /// `thirdDotLeadingZeroBitCount >> 3` == `thirdDotLeadingZeroBitCount / 8`.
+        let w3_idx = count &- 4 &- (thirdDotLeadingZeroBitCount >> 3)
+        /// Example for "192.168.1.98": bytes 6...9 ("8.1.") -> `0x1E_01_1E_08`.
+        let window3 = span.withUnsafeBytes { buffer in
+            let base = unsafe buffer.baseAddress.unsafelyUnwrapped
+            let w3 = unsafe _loadUInt32(from: base, at: w3_idx)
+            return w3 ^ UInt32(truncatingIfNeeded: m30)
         }
-        idx += 1
 
-        guard
-            let segment2 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
-            idx < count,
-            span[idx] == .asciiDot
-        else {
-            return false
-        }
-        idx += 1
+        /// Example: `32 + 32` == `64` for "192.168.1.98", covering "192.168.".
+        let secondDotEndBitCountFromStart = firstDotEndBitCount &+ secondDotEndBitCount
+        /// Where `window3` starts, which is where segment 3 would start if it had 3 digits.
+        /// `w3_idx << 3` == `w3_idx &* 8` == `48` for "192.168.1.98", covering "192.16".
+        let window3BitCountFromStart = w3_idx << 3
+        /// Example: `64 - 48` == `16` for "192.168.1.98", covering the "8." of "8.1.".
+        let extraDigitsShift = secondDotEndBitCountFromStart &- window3BitCountFromStart
+        /// Turns off the lanes before segment 3, like the 2nd dot.
+        /// Example: `0x1E_01_1E_08` -> `0x1E_01_00_00` (“1.”)
+        let segment3 = window3 & (0xFFFF_FFFF &<< extraDigitsShift)
 
-        guard
-            let segment3 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
-            idx < count,
-            span[idx] == .asciiDot
-        else {
-            return false
-        }
-        idx += 1
+        /// 2x 32-bit lanes for 2 segments.
+        /// XORing with `0x1E` turns the dot lanes into `0x00` if they are actual dots.
+        /// Example: `0x1E_08_06_01_1E_02_09_01` -> `0x00_08_06_01_00_02_09_01`.
+        let segments12 = (UInt64(segment1) | (UInt64(segment2) << 32)) ^ 0x1E00_0000_1E00_0000
+        /// Segment 4 has no dot in the most significant byte, so it’s not XORed and stays `0x00`.
+        /// `<< 24` moves the digits of segment 4 to lanes 4...6.
+        /// Example: `0x00_08_09_00_1E_01_00_00` -> `0x00_08_09_00_00_01_00_00`.
+        let segments34 = (UInt64(segment3) | (UInt64(segment4) << 24)) ^ 0x0000_0000_1E00_0000
 
-        guard
-            let segment4 = IPv4Address._parseSegment(from: span, count: count, advancing: &idx),
-            idx == count
-        else {
-            return false
-        }
+        /// `0x76` == `0x80` - 10, for the digit lanes.
+        /// `0x7F` == `0x80` - 1, for the dot lanes.
+        /// Adding these to the lanes (bytes) sets the 8th bit of every digit lane above `0x09` and
+        /// every dot lane above `0x00`, as long as the lane was below `0x80`.
+        /// We OR with the values themselves again to cover for when the lanes themselves
+        /// had the 8th bit set but lost the 8th bit in the addition operation.
+        /// Lanes can only overflow into the next lane when they are invalid themselves.
+        let m7f76: UInt64 = 0x7F76_7676_7F76_7676
+        let invalidLanes12 = (segments12 &+ m7f76) | segments12
+        let invalidLanes34 = (segments34 &+ m7f76) | segments34
+        let invalidLanes = invalidLanes12 | invalidLanes34
 
-        address = (segment1 << 24) | (segment2 << 16) | (segment3 << 8) | segment4
+        /// `0x7DFA_FA00` == `0x8000_0000` - `0x0205_0600`, where `0x02_05_06_00` is “256.”.
+        /// Adding it to a big-endian segment with valid lanes sets the 32nd bit when the segment is
+        /// above `255`.
+        /// `.byteSwapped` is to get big-endian version of the segments.
+        ///
+        /// Example: `0x00_08_06_01_00_02_09_01` -> `0x01_09_02_00_01_06_08_00`
+        /// -> `0x7F_03_FC_00_7F_01_02_00` (bits 31 and 63 are `0`).
+        let m7dfa: UInt64 = 0x7DFA_FA00_7DFA_FA00
+        let overflows12 = segments12.byteSwapped &+ m7dfa
+        let overflows34 = segments34.byteSwapped &+ m7dfa
+
+        /// `0x80` == `0b1000_0000`
+        let m80: UInt64 = 0x8080_8080_8080_8080
+        let m8000: UInt64 = 0x8000_0000_8000_0000
+        /// The 8th bit of any lane in `invalidLanes` means there's an invalid byte.
+        /// Bit 31 or 63 set in an overflow means a segment above `255` which is also invalid.
+        let invalid = (invalidLanes & m80) | ((overflows12 | overflows34) & m8000)
+
+        guard invalid == 0 else { return false }
+
+        /// Segment 3 must have 1 to 3 digits, so `0`, `8` or `16` bit-shifts.
+        /// It's negative when segment 3 has more than 3 digits.
+        guard UInt(bitPattern: extraDigitsShift) <= 16 else { return false }
+
+        /// `0x0064_0A01` == `100 << 16 | 10 << 8 | 1`.
+        /// We multiply by `n64A1` so `100 * hundreds + 10 * tens + ones` of each segment ends up in
+        /// bits 16...23 and 48...55.
+        /// Each segment is at most `255` by now, so its value fits into those 8 bits.
+        /// Example: `0x00_08_06_01_00_02_09_01` -> `0xA8_A8_10_CC_98_C0_13_01` (168, 192).
+        let n64A1: UInt64 = 0x0064_0A01
+        let values12 = segments12 &* n64A1
+        /// Example: `0x00_08_09_00_00_01_00_00` -> `0xD4_62_09_64_0A_01_00_00` (98, 1).
+        let values34 = segments34 &* n64A1
+
+        /// Puts the values of segments 1 and 2 at bits 0...7 and 32...39, and the values of
+        /// segments 3 and 4 at bits 16...23 and 48...55.
+        /// Example: `0xA8_A8_10_CC_98_C0_13_01` and `0xD4_62_09_64_0A_01_00_00`
+        /// -> `0x00_62_00_A8_00_01_00_C0`.
+        let interleaved12 = (values12 >> 16) & 0x0000_00FF_0000_00FF
+        let interleaved34 = values34 & 0x00FF_0000_00FF_0000
+        let interleaved = interleaved12 | interleaved34
+        /// Moves segments 2 and 4 next to segments 1 and 3, with segment 1 in the lowest byte.
+        /// Example: `0x00_62_00_A8_00_01_00_C0` -> `0x62_01_A8_C0` (192.168.1.98).
+        address = UInt32(truncatingIfNeeded: interleaved | (interleaved >> 24)).littleEndian
 
         return true
     }
 
+    /// Reads 4 bytes at `offset` as a `UInt32` with the byte at `offset` in the lowest lane.
     @inlinable
     @inline(always)
-    static func _parseSegment(
-        from span: Span<UInt8>,
-        count: Int,
-        advancing idx: inout Int
-    ) -> UInt32? {
-        guard idx < count,
-            let digit1 = UInt8.mapUTF8ByteToUInt8(span[idx])
-        else {
-            return nil
-        }
-        var segment = UInt32(digit1)
-        idx += 1
-
-        guard idx < count,
-            let digit2 = UInt8.mapUTF8ByteToUInt8(span[idx])
-        else {
-            return segment
-        }
-        segment = segment * 10 + UInt32(digit2)
-        idx += 1
-
-        guard idx < count,
-            let digit3 = UInt8.mapUTF8ByteToUInt8(span[idx])
-        else {
-            return segment
-        }
-        segment = segment * 10 + UInt32(digit3)
-        idx += 1
-
-        guard segment <= 255 else {
-            return nil
-        }
-
-        return segment
+    static func _loadUInt32(from base: UnsafeRawPointer, at offset: Int) -> UInt32 {
+        unsafe UInt32(littleEndian: base.loadUnaligned(fromByteOffset: offset, as: UInt32.self))
     }
 }

@@ -5,8 +5,13 @@ import Foundation
 import FoundationNetworking
 #endif
 
+#if canImport(FoundationXML)
+import FoundationXML
+#endif
+
 let registryURL =
     "https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.csv"
+let rfcIndexURL = "https://www.rfc-editor.org/rfc-index.xml"
 let outputPath = "Sources/IPAddress/Port/IANAServicePorts.swift"
 
 /// The column width available to a doc comment line, after the 4 spaces of indentation and the
@@ -22,7 +27,7 @@ func fetchWithRetries(url: URL) throws -> Data {
         do {
             return try Data(contentsOf: url)
         } catch {
-            print("✗ Failed to fetch the registry: \(String(reflecting: error))")
+            print("✗ Failed to fetch \(url): \(String(reflecting: error))")
             print("Retrying in 3 seconds...")
             sleep(3)
         }
@@ -223,15 +228,156 @@ func publishedRFCNumber(_ reference: String) -> String? {
     return String(number)
 }
 
-func isPublished(_ references: some Collection<String>) -> Bool {
-    references.contains { publishedRFCNumber($0) != nil }
-}
-
 func canonicalReference(_ reference: String) -> String {
     guard let number = publishedRFCNumber(reference) else {
         return reference
     }
     return "RFC \(number)"
+}
+
+/// Every RFC status that [rfc-index.xsd] allows. The schema refers to [RFC 2026] for their
+/// meaning.
+///
+/// [rfc-index.xsd]: https://www.rfc-editor.org/rfc-index.xsd
+/// [RFC 2026]: https://datatracker.ietf.org/doc/html/rfc2026
+enum RFCStatus: String {
+    case internetStandard = "INTERNET STANDARD"
+    case draftStandard = "DRAFT STANDARD"
+    case proposedStandard = "PROPOSED STANDARD"
+    case unknown = "UNKNOWN"
+    case bestCurrentPractice = "BEST CURRENT PRACTICE"
+    case forYourInformation = "FOR YOUR INFORMATION"
+    case experimental = "EXPERIMENTAL"
+    case historic = "HISTORIC"
+    case informational = "INFORMATIONAL"
+
+    /// [RFC 2026] says Experimental, Informational and Historic RFCs "are not Internet Standards
+    /// in any sense". [RFC 6410] keeps the existing Draft Standards on the Standards Track.
+    ///
+    /// [RFC 2026]: https://datatracker.ietf.org/doc/html/rfc2026#section-4.2
+    /// [RFC 6410]: https://datatracker.ietf.org/doc/html/rfc6410#section-2.3
+    var isStandardsTrackOrBCP: Bool {
+        switch self {
+        case .internetStandard, .draftStandard, .proposedStandard, .bestCurrentPractice:
+            return true
+        case .unknown, .forYourInformation, .experimental, .historic, .informational:
+            return false
+        }
+    }
+}
+
+/// Collects the `current-status` of every `rfc-entry` in the [RFC index], by RFC number. Only
+/// the direct children of an `rfc-entry` count, since `doc-id` also nests deeper, for example
+/// in `obsoleted-by`.
+///
+/// [RFC index]: https://www.rfc-editor.org/rfc-index.xml
+final class RFCIndexParserDelegate: NSObject, XMLParserDelegate {
+    var statuses: [Int: RFCStatus] = [:]
+    var elementNames: [String] = []
+    var text = ""
+    var docID: String?
+    var currentStatus: String?
+
+    func parser(
+        _ parser: XMLParser,
+        didStartElement elementName: String,
+        namespaceURI: String?,
+        qualifiedName: String?,
+        attributes: [String: String]
+    ) {
+        elementNames.append(elementName)
+        text = ""
+    }
+
+    func parser(_ parser: XMLParser, foundCharacters string: String) {
+        text += string
+    }
+
+    func parser(
+        _ parser: XMLParser,
+        didEndElement elementName: String,
+        namespaceURI: String?,
+        qualifiedName: String?
+    ) {
+        elementNames.removeLast()
+
+        if elementName == "rfc-entry" {
+            addEntry()
+        } else if elementNames.last == "rfc-entry", elementName == "doc-id" {
+            guard docID == nil else {
+                fatalError("An RFC index entry has a second doc-id, \(text).")
+            }
+            docID = text
+        } else if elementNames.last == "rfc-entry", elementName == "current-status" {
+            guard currentStatus == nil else {
+                fatalError("An RFC index entry has a second current-status, \(text).")
+            }
+            currentStatus = text
+        }
+    }
+
+    func addEntry() {
+        guard
+            let docID,
+            docID.hasPrefix("RFC"),
+            case let digits = docID.dropFirst(3),
+            digits.allSatisfy({ $0.isASCII && $0.isNumber }),
+            let number = Int(digits)
+        else {
+            fatalError("An RFC index entry has an unexpected doc-id, \(String(reflecting: docID)).")
+        }
+        guard let currentStatus, let status = RFCStatus(rawValue: currentStatus) else {
+            fatalError(
+                "The RFC index has an unexpected current-status for \(docID), "
+                    + "\(String(reflecting: currentStatus))."
+            )
+        }
+        guard statuses.updateValue(status, forKey: number) == nil else {
+            fatalError("The RFC index lists \(docID) more than once.")
+        }
+        self.docID = nil
+        self.currentStatus = nil
+    }
+}
+
+func parseRFCIndex(_ data: Data) -> [Int: RFCStatus] {
+    let delegate = RFCIndexParserDelegate()
+    // swift-corelibs-foundation hands `XMLParser(data:)` to libxml2 in one piece, which libxml2
+    // 2.9 rejects past 10 MB as a "Huge input lookup". A stream reaches libxml2 in chunks.
+    let parser = XMLParser(stream: InputStream(data: data))
+    parser.delegate = delegate
+    // swift-corelibs-foundation runs libxml2 in recovery mode, so `parse()` can succeed on a
+    // malformed document and only report the error in `parserError`.
+    guard parser.parse(), parser.parserError == nil else {
+        fatalError("Failed to parse the RFC index: \(String(reflecting: parser.parserError)).")
+    }
+    guard !delegate.statuses.isEmpty else {
+        fatalError("The RFC index is empty.")
+    }
+    return delegate.statuses
+}
+
+/// The references to Standards Track and Best Current Practice RFCs. A reference to an RFC that
+/// the RFC index does not list is left out, and collected into `unlistedRFCs`.
+func standardsTrackOrBCPReferences(
+    _ references: [String],
+    statuses: [Int: RFCStatus],
+    unlistedRFCs: inout Set<String>
+) -> [String] {
+    var standards: [String] = []
+    for reference in references {
+        guard let number = publishedRFCNumber(reference) else {
+            continue
+        }
+        guard let rfc = Int(number), let status = statuses[rfc] else {
+            unlistedRFCs.insert(reference)
+            continue
+        }
+        if status.isStandardsTrackOrBCP {
+            standards.append(reference)
+        }
+    }
+    return standards
 }
 
 /// Renders an RFC reference as a link to its datatracker page.
@@ -277,7 +423,7 @@ func column(_ name: String, in header: [String]) -> Int {
     return index
 }
 
-func build(_ rows: [[String]]) -> [ServicePort: Registration] {
+func build(_ rows: [[String]], rfcStatuses: [Int: RFCStatus]) -> [ServicePort: Registration] {
     guard let header = rows.first else {
         fatalError("The registry is empty.")
     }
@@ -291,6 +437,7 @@ func build(_ rows: [[String]]) -> [ServicePort: Registration] {
 
     var table: [ServicePort: Registration] = [:]
     var skippedPortNumbers: Set<String> = []
+    var unlistedRFCs: Set<String> = []
 
     for row in rows.dropFirst() where row.count > widestColumn {
         let name = row[serviceNameColumn].trimmingCharacters(in: .whitespaces)
@@ -298,13 +445,17 @@ func build(_ rows: [[String]]) -> [ServicePort: Registration] {
             continue
         }
 
-        let references = parseReferences(row[referenceColumn]).map(canonicalReference)
+        let references = standardsTrackOrBCPReferences(
+            parseReferences(row[referenceColumn]).map(canonicalReference),
+            statuses: rfcStatuses,
+            unlistedRFCs: &unlistedRFCs
+        )
 
         // The registry lists a handful of ports as an inclusive range rather than a single
         // number, and leaves the column empty for unassigned entries. Neither is emitted.
         let rawPort = row[portNumberColumn].trimmingCharacters(in: .whitespaces)
         guard let port = UInt16(rawPort) else {
-            if !rawPort.isEmpty, isPublished(references) {
+            if !rawPort.isEmpty, !references.isEmpty {
                 skippedPortNumbers.insert(rawPort)
             }
             continue
@@ -327,16 +478,24 @@ func build(_ rows: [[String]]) -> [ServicePort: Registration] {
 
     if !skippedPortNumbers.isEmpty {
         print(
-            "Skipped port numbers backed by a published RFC: "
+            "Skipped port numbers backed by a Standards Track or BCP RFC: "
                 + skippedPortNumbers.sorted().joined(separator: ", ")
         )
     }
 
-    // A registration the registry does not back with a published RFC is dropped entirely.
-    let published = table.filter { isPublished($0.value.references) }
-    print("Dropped \(table.count - published.count) registrations with no published RFC")
+    if !unlistedRFCs.isEmpty {
+        print(
+            "Skipped references to RFCs missing from the RFC index: "
+                + unlistedRFCs.sorted().joined(separator: ", ")
+        )
+    }
 
-    return published
+    // A registration the registry does not back with a Standards Track or BCP RFC is dropped
+    // entirely.
+    let backed = table.filter { !$0.value.references.isEmpty }
+    print("Dropped \(table.count - backed.count) registrations with no Standards Track or BCP RFC")
+
+    return backed
 }
 
 struct Entry {
@@ -374,7 +533,11 @@ func emit(_ table: [ServicePort: Registration]) -> String {
         // https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
         // https://datatracker.ietf.org/doc/html/rfc6335
         //
-        // Only registrations that the registry backs with a published RFC are emitted.
+        // Only registrations that the registry backs with a Standards Track or Best Current
+        // Practice RFC are emitted, going by each RFC's current status in the RFC Editor's index.
+        //
+        // https://www.rfc-editor.org/rfc-index.xml
+        // https://datatracker.ietf.org/doc/html/rfc2026
 
         extension Port {
 
@@ -434,7 +597,14 @@ func run() {
     let rows = parseCSV(text)
     print("Parsed \(rows.count) rows")
 
-    let table = build(rows)
+    print("Downloading \(rfcIndexURL) ...")
+    let rfcIndex = try! fetchWithRetries(url: URL(string: rfcIndexURL)!)
+    print("Downloaded \(rfcIndex.count) bytes")
+
+    let rfcStatuses = parseRFCIndex(rfcIndex)
+    print("Parsed \(rfcStatuses.count) RFCs")
+
+    let table = build(rows, rfcStatuses: rfcStatuses)
     print("Built \(table.count) registrations")
 
     let generated = emit(table)

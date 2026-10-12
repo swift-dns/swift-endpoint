@@ -297,15 +297,16 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "IPv4_Serializing_Multiple_IPs_25M",
+        "IPv4_Serializing_Multiple_IPs_30M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
             maxIterations: 1000
         )
     ) { benchmark in
+        let ipv4MultipleIPs = ipv4MultipleIPs.span
         var rng = FastRNG()
-        for _ in 0..<25_000_000 {
+        for _ in 0..<30_000_000 {
             let idx = Int(rng.next() % UInt64(ipv4MultipleIPs.count))
             withUnsafeTemporaryAllocation(byteCount: 15, alignment: 1) { buffer in
                 let written = unsafe ipv4MultipleIPs[idx]
@@ -324,6 +325,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
+        let ipv4MultipleIPs = ipv4MultipleIPs.span
         for idx in ipv4MultipleIPs.indices {
             withUnsafeTemporaryAllocation(byteCount: 15, alignment: 1) { buffer in
                 let written = unsafe ipv4MultipleIPs[idx]
@@ -342,6 +344,7 @@ let ipv4AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
+        let ipv4MultipleIPs = ipv4MultipleIPs.span
         for idx in ipv4MultipleIPs.indices {
             withUnsafeTemporaryAllocation(byteCount: 15, alignment: 1) { buffer in
                 let written = unsafe ipv4MultipleIPs[idx]

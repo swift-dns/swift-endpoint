@@ -32,30 +32,35 @@ extension IPv6Address {
     /// Serialize the address into the provided span.
     /// Returns true if the address was serialized successfully, false otherwise.
     @inlinable
-    public func serialize(into span: inout OutputSpan<UInt8>) -> Bool {
-        guard span.freeCapacity >= 16 else {
+    public func serialize(into outputSpan: inout OutputSpan<UInt8>) -> Bool {
+        guard outputSpan.freeCapacity >= 16 else {
             return false
         }
 
         let address = self.asUnsignedInteger128(byteOrder: .bigEndian)
         let low = address._low
         let high = address._high
-        span.append(UInt8(truncatingIfNeeded: low))
-        span.append(UInt8(truncatingIfNeeded: low >> 8))
-        span.append(UInt8(truncatingIfNeeded: low >> 16))
-        span.append(UInt8(truncatingIfNeeded: low >> 24))
-        span.append(UInt8(truncatingIfNeeded: low >> 32))
-        span.append(UInt8(truncatingIfNeeded: low >> 40))
-        span.append(UInt8(truncatingIfNeeded: low >> 48))
-        span.append(UInt8(truncatingIfNeeded: low >> 56))
-        span.append(UInt8(truncatingIfNeeded: high))
-        span.append(UInt8(truncatingIfNeeded: high >> 8))
-        span.append(UInt8(truncatingIfNeeded: high >> 16))
-        span.append(UInt8(truncatingIfNeeded: high >> 24))
-        span.append(UInt8(truncatingIfNeeded: high >> 32))
-        span.append(UInt8(truncatingIfNeeded: high >> 40))
-        span.append(UInt8(truncatingIfNeeded: high >> 48))
-        span.append(UInt8(truncatingIfNeeded: high >> 56))
+        /// Currently these multiple appends result in code containing a trap for each append.
+        /// This is solved in the PR below, which hopefully will make it to Swift 6.5.
+        /// The PR enables LLVM to correctly identify span-count bounds and notice that we already
+        /// have 1 `freeCapacity` check, so it can get rid of the per-append traps.
+        /// See https://github.com/swiftlang/swift/pull/92790.
+        outputSpan.append(UInt8(truncatingIfNeeded: low))
+        outputSpan.append(UInt8(truncatingIfNeeded: low >> 8))
+        outputSpan.append(UInt8(truncatingIfNeeded: low >> 16))
+        outputSpan.append(UInt8(truncatingIfNeeded: low >> 24))
+        outputSpan.append(UInt8(truncatingIfNeeded: low >> 32))
+        outputSpan.append(UInt8(truncatingIfNeeded: low >> 40))
+        outputSpan.append(UInt8(truncatingIfNeeded: low >> 48))
+        outputSpan.append(UInt8(truncatingIfNeeded: low >> 56))
+        outputSpan.append(UInt8(truncatingIfNeeded: high))
+        outputSpan.append(UInt8(truncatingIfNeeded: high >> 8))
+        outputSpan.append(UInt8(truncatingIfNeeded: high >> 16))
+        outputSpan.append(UInt8(truncatingIfNeeded: high >> 24))
+        outputSpan.append(UInt8(truncatingIfNeeded: high >> 32))
+        outputSpan.append(UInt8(truncatingIfNeeded: high >> 40))
+        outputSpan.append(UInt8(truncatingIfNeeded: high >> 48))
+        outputSpan.append(UInt8(truncatingIfNeeded: high >> 56))
 
         return true
     }

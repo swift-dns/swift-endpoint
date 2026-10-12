@@ -291,7 +291,6 @@ extension IPv6Address {
 
     /// Makes a nibble for 4 segments of a big-endian-ordered 64-bit word, each bit
     /// representing whether the segment at that lane is all-zero (1) or not (0).
-    /// Zeroness is unaffected by the byte order within a segment.
     @inlinable
     static func makeNibbleFor4Segments(of word: UInt64) -> UInt8 {
         /// 4x 16 bit lanes, each for a segment
@@ -336,7 +335,7 @@ extension IPv6Address {
     /// That is, for each segment, 0 if the segment is in range `0x0...0xF`, up to 3 if
     /// the segment is in range `0x1000...0xFFFF`. All-zero segments count as 0.
     ///
-    /// Credits:
+    /// Additional Credits:
     /// To Henry Warren: The two `s` smear steps (Hacker's Delight).
     /// See:
     /// https://en.wikipedia.org/wiki/Hacker%27s_Delight
@@ -395,7 +394,7 @@ extension IPv6Address {
         return UInt16(truncatingIfNeeded: word &>> shift)
     }
 
-    /// Credits:
+    /// Additional Credits:
     /// To Wojciech Mula: The `nibbles` expansion, and the `above9Mask`/`above9Base` correction.
     /// See:
     /// http://0x80.pl/notesen/2014-09-21-convert-to-hex.html
@@ -480,10 +479,32 @@ extension IPv6Address: ExpressibleByStringLiteral {
     /// Might be deprecated in favor of a Swift macro in the future. For now helps with skipping Swift compile-time macro issues.
     @inline(always)
     public init(stringLiteral value: StaticString) {
-        let result = value.withUTF8Buffer {
-            unsafe cswift_endpoint_slow_static_parse_ipv6($0.baseAddress, $0.count)
+        let (result, ipv4IsValid, ipv4Address) = value.withUTF8Buffer { buffer in
+            let result = unsafe cswift_endpoint_slow_static_parse_ipv6(
+                buffer.baseAddress,
+                buffer.count
+            )
+            /// The C parser leaves the embedded IPv4 address, if any, to be parsed here, so it
+            /// folds to a constant just like `IPv4Address(stringLiteral:)` does.
+            var ipv4Address: UInt32 = 0
+            var ipv4IsValid = true
+            if result.ipv4Count > 0 {
+                ipv4IsValid = IPv4Address.parseIPv4(
+                    span: unsafe buffer.span.extracting(
+                        unchecked: Range(
+                            uncheckedBounds: (
+                                result.ipv4Start,
+                                result.ipv4Start &+ result.ipv4Count
+                            )
+                        )
+                    ),
+                    count: result.ipv4Count,
+                    address: &ipv4Address
+                )
+            }
+            return (result, ipv4IsValid, ipv4Address)
         }
-        guard result.ok else {
+        guard result.ok, ipv4IsValid else {
             fatalError(
                 """
                 An invalid StaticString passed to an IPv6Address initializer:
@@ -502,7 +523,7 @@ extension IPv6Address: ExpressibleByStringLiteral {
         }
         self.init(
             _CompatibilityUInt128Typealias(
-                _low: result.lo,
+                _low: result.lo | UInt64(UInt32(bigEndian: ipv4Address)),
                 _high: result.hi
             )
         )
@@ -707,9 +728,11 @@ extension IPv6Address: LosslessStringConvertible {
 
                 let isBeforeCs = segmentsCountBeforeCs == 0
                 let forBeforeCs =
-                    (beforeCs &<< 32) | _CompatibilityUInt128Typealias(ipv4Address)
+                    (beforeCs &<< 32)
+                    | _CompatibilityUInt128Typealias(UInt32(bigEndian: ipv4Address))
                 let forAfterCs =
-                    (afterCs &<< 32) | _CompatibilityUInt128Typealias(ipv4Address)
+                    (afterCs &<< 32)
+                    | _CompatibilityUInt128Typealias(UInt32(bigEndian: ipv4Address))
                 beforeCs = isBeforeCs ? forBeforeCs : beforeCs
                 afterCs = isBeforeCs ? afterCs : forAfterCs
 

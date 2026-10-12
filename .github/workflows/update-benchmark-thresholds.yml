@@ -144,6 +144,12 @@ jobs:
           SKIP: ${{ inputs.skip }}
           RUN_COUNT: ${{ inputs.run_count }}
         run: |
+          if [[ ! "${RUN_COUNT}" =~ ^[0-9]+(\.0+)?$ ]]; then
+            printf '%s\n' "Run count must be a whole number, got: '${RUN_COUNT}'" >&2
+            exit 1
+          fi
+          RUN_COUNT="${RUN_COUNT%%.*}"
+
           COMMAND=(
             run-with-priority
             swiftly run swift ${TOOLCHAIN_MODIFIER}
@@ -169,7 +175,7 @@ jobs:
             COMMAND+=(--skip "${SKIP}")
           fi
 
-          "${COMMAND[@]}" 2>&1 | grep 'Running the command multiple times'
+          "${COMMAND[@]}" 2>&1 | grep --line-buffered 'Running the command multiple times'
 
       - name: Cache .build
         if: steps.restore-cache.outputs.cache-hit != 'true'

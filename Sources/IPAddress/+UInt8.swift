@@ -48,7 +48,7 @@ extension UInt8 {
     /// Otherwise returns `nil`.
     /// Equivalent to `UInt8(string, radix: 10)`, but faster.
     ///
-    /// Credits:
+    /// Additional Credits:
     /// To Daniel Lemire: The `multiplier0`/`multiplier1` digit weighting.
     /// See:
     /// https://lemire.me/blog/2023/11/28/parsing-8-bit-integers-quickly/
@@ -81,17 +81,6 @@ extension UInt8 {
         }
 
         self = UInt8(truncatingIfNeeded: value)
-    }
-
-    @inlinable
-    static func mapUTF8ByteToUInt8(_ utf8Byte: UInt8) -> UInt8? {
-        guard
-            utf8Byte <= UInt8.ascii9,
-            utf8Byte >= UInt8.ascii0
-        else {
-            return nil
-        }
-        return utf8Byte &- UInt8.ascii0
     }
 
     /// Maps a hexadecimal ASCII byte to its `0...15` value.

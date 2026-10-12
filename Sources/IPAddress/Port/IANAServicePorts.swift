@@ -6,7 +6,11 @@
 // https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
 // https://datatracker.ietf.org/doc/html/rfc6335
 //
-// Only registrations that the registry backs with a published RFC are emitted.
+// Only registrations that the registry backs with a Standards Track or Best Current
+// Practice RFC are emitted, going by each RFC's current status in the RFC Editor's index.
+//
+// https://www.rfc-editor.org/rfc-index.xml
+// https://datatracker.ietf.org/doc/html/rfc2026
 
 extension Port {
     /// The IANA `discard` service port, 9.
@@ -194,18 +198,6 @@ extension Port {
         Port(rawValue: 269)
     }
 
-    /// The IANA `gist` service port, 270.
-    ///
-    /// Q-mode encapsulation for GIST messages
-    ///
-    /// Registered for udp transport protocol.
-    ///
-    /// Defined in [IETF RFC 5971](https://datatracker.ietf.org/doc/html/rfc5971).
-    @inlinable
-    public static var gist: Self {
-        Port(rawValue: 270)
-    }
-
     /// The IANA `pt-tls` service port, 271.
     ///
     /// IETF Network Endpoint Assessment (NEA) Posture Transport Protocol over TLS (PT-TLS)
@@ -254,30 +246,6 @@ extension Port {
         Port(rawValue: 324)
     }
 
-    /// The IANA `matip-type-a` service port, 350.
-    ///
-    /// MATIP Type A
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 2351](https://datatracker.ietf.org/doc/html/rfc2351).
-    @inlinable
-    public static var `matip-type-a`: Self {
-        Port(rawValue: 350)
-    }
-
-    /// The IANA `matip-type-b` service port, 351.
-    ///
-    /// MATIP Type B
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 2351](https://datatracker.ietf.org/doc/html/rfc2351).
-    @inlinable
-    public static var `matip-type-b`: Self {
-        Port(rawValue: 351)
-    }
-
     /// The IANA `nnsp` service port, 433.
     ///
     /// NNTP for transit servers (NNSP)
@@ -301,18 +269,6 @@ extension Port {
     @inlinable
     public static var https: Self {
         Port(rawValue: 443)
-    }
-
-    /// The IANA `snpp` service port, 444.
-    ///
-    /// Simple Network Paging Protocol
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 1568](https://datatracker.ietf.org/doc/html/rfc1568).
-    @inlinable
-    public static var snpp: Self {
-        Port(rawValue: 444)
     }
 
     /// The IANA `submissions` service port, 465.
@@ -362,18 +318,6 @@ extension Port {
         Port(rawValue: 547)
     }
 
-    /// The IANA `cybercash` service port, 551.
-    ///
-    /// cybercash
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 1898](https://datatracker.ietf.org/doc/html/rfc1898).
-    @inlinable
-    public static var cybercash: Self {
-        Port(rawValue: 551)
-    }
-
     /// The IANA `nntps` service port, 563.
     ///
     /// nntp protocol over TLS/SSL (was snntp)
@@ -408,30 +352,6 @@ extension Port {
     @inlinable
     public static var `syslog-conn`: Self {
         Port(rawValue: 601)
-    }
-
-    /// The IANA `xmlrpc-beep` service port, 602.
-    ///
-    /// XML-RPC over BEEP
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 3529](https://datatracker.ietf.org/doc/html/rfc3529).
-    @inlinable
-    public static var `xmlrpc-beep`: Self {
-        Port(rawValue: 602)
-    }
-
-    /// The IANA `idxp` service port, 603.
-    ///
-    /// IDXP
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 4767](https://datatracker.ietf.org/doc/html/rfc4767).
-    @inlinable
-    public static var idxp: Self {
-        Port(rawValue: 603)
     }
 
     /// The IANA `tunnel` service port, 604.
@@ -530,18 +450,6 @@ extension Port {
         Port(rawValue: 702)
     }
 
-    /// The IANA `tbrpf` service port, 712.
-    ///
-    /// TBRPF
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 3684](https://datatracker.ietf.org/doc/html/rfc3684).
-    @inlinable
-    public static var tbrpf: Self {
-        Port(rawValue: 712)
-    }
-
     /// The IANA `iris-xpcs` service port, 714.
     ///
     /// IRIS over XPCS
@@ -608,8 +516,7 @@ extension Port {
     ///
     /// Registered for tcp and udp transport protocols.
     ///
-    /// Defined in [IETF RFC 7858](https://datatracker.ietf.org/doc/html/rfc7858),
-    /// [IETF RFC 8094](https://datatracker.ietf.org/doc/html/rfc8094) and
+    /// Defined in [IETF RFC 7858](https://datatracker.ietf.org/doc/html/rfc7858) and
     /// [IETF RFC 9250](https://datatracker.ietf.org/doc/html/rfc9250).
     @inlinable
     public static var `domain-s`: Self {
@@ -700,18 +607,6 @@ extension Port {
         Port(rawValue: 910)
     }
 
-    /// The IANA `apex-edge` service port, 913.
-    ///
-    /// APEX endpoint-relay service
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 3340](https://datatracker.ietf.org/doc/html/rfc3340).
-    @inlinable
-    public static var `apex-edge`: Self {
-        Port(rawValue: 913)
-    }
-
     /// The IANA `rift-lies` service port, 914.
     ///
     /// Routing in Fat Trees Link Information Element
@@ -734,18 +629,6 @@ extension Port {
     @inlinable
     public static var `rift-ties`: Self {
         Port(rawValue: 915)
-    }
-
-    /// The IANA `nas` service port, 991.
-    ///
-    /// Netnews Administration System
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 4707](https://datatracker.ietf.org/doc/html/rfc4707).
-    @inlinable
-    public static var nas: Self {
-        Port(rawValue: 991)
     }
 
     /// The IANA `imaps` service port, 993.
@@ -812,18 +695,6 @@ extension Port {
         Port(rawValue: 1022)
     }
 
-    /// The IANA `6a44` service port, 1027.
-    ///
-    /// IPv6 Behind NAT44 CPEs
-    ///
-    /// Registered for udp transport protocol.
-    ///
-    /// Defined in [IETF RFC 6751](https://datatracker.ietf.org/doc/html/rfc6751).
-    @inlinable
-    public static var `6a44`: Self {
-        Port(rawValue: 1027)
-    }
-
     /// The IANA `mtqp` service port, 1038.
     ///
     /// Message Tracking Query Protocol
@@ -834,19 +705,6 @@ extension Port {
     @inlinable
     public static var mtqp: Self {
         Port(rawValue: 1038)
-    }
-
-    /// The IANA `ltp-deepspace` service port, 1113.
-    ///
-    /// Licklider Transmission Protocol
-    ///
-    /// Registered for dccp, tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 5326](https://datatracker.ietf.org/doc/html/rfc5326) and
-    /// [IETF RFC 7122](https://datatracker.ietf.org/doc/html/rfc7122).
-    @inlinable
-    public static var `ltp-deepspace`: Self {
-        Port(rawValue: 1113)
     }
 
     /// The IANA `sacred` service port, 1118.
@@ -861,30 +719,6 @@ extension Port {
         Port(rawValue: 1118)
     }
 
-    /// The IANA `c1222-acse` service port, 1153.
-    ///
-    /// ANSI C12.22 Port
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 6142](https://datatracker.ietf.org/doc/html/rfc6142).
-    @inlinable
-    public static var `c1222-acse`: Self {
-        Port(rawValue: 1153)
-    }
-
-    /// The IANA `pptp` service port, 1723.
-    ///
-    /// pptp
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 2637](https://datatracker.ietf.org/doc/html/rfc2637).
-    @inlinable
-    public static var pptp: Self {
-        Port(rawValue: 1723)
-    }
-
     /// The IANA `radius` service port, 1812.
     ///
     /// RADIUS
@@ -897,42 +731,6 @@ extension Port {
         Port(rawValue: 1812)
     }
 
-    /// The IANA `radius-acct` service port, 1813.
-    ///
-    /// RADIUS Accounting
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 2866](https://datatracker.ietf.org/doc/html/rfc2866).
-    @inlinable
-    public static var `radius-acct`: Self {
-        Port(rawValue: 1813)
-    }
-
-    /// The IANA `slp-notify` service port, 1847.
-    ///
-    /// SLP Notification
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 3082](https://datatracker.ietf.org/doc/html/rfc3082).
-    @inlinable
-    public static var `slp-notify`: Self {
-        Port(rawValue: 1847)
-    }
-
-    /// The IANA `hsrp` service port, 1985.
-    ///
-    /// Hot Standby Router Protocol
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 2281](https://datatracker.ietf.org/doc/html/rfc2281).
-    @inlinable
-    public static var hsrp: Self {
-        Port(rawValue: 1985)
-    }
-
     /// The IANA `nfs` service port, 2049.
     ///
     /// Network File System - Sun Microsystems
@@ -943,31 +741,6 @@ extension Port {
     @inlinable
     public static var nfs: Self {
         Port(rawValue: 2049)
-    }
-
-    /// The IANA `radsec` service port, 2083.
-    ///
-    /// Secure Radius Service
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 6614](https://datatracker.ietf.org/doc/html/rfc6614) and
-    /// [IETF RFC 7360](https://datatracker.ietf.org/doc/html/rfc7360).
-    @inlinable
-    public static var radsec: Self {
-        Port(rawValue: 2083)
-    }
-
-    /// The IANA `tdmoip` service port, 2142.
-    ///
-    /// TDM OVER IP
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 5087](https://datatracker.ietf.org/doc/html/rfc5087).
-    @inlinable
-    public static var tdmoip: Self {
-        Port(rawValue: 2142)
     }
 
     /// The IANA `amt` service port, 2268.
@@ -1054,18 +827,6 @@ extension Port {
         Port(rawValue: 3260)
     }
 
-    /// The IANA `odette-ftp` service port, 3305.
-    ///
-    /// ODETTE-FTP
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 5024](https://datatracker.ietf.org/doc/html/rfc5024).
-    @inlinable
-    public static var `odette-ftp`: Self {
-        Port(rawValue: 3305)
-    }
-
     /// The IANA `ifcp-port` service port, 3420.
     ///
     /// iFCP User Port
@@ -1090,18 +851,6 @@ extension Port {
         Port(rawValue: 3478)
     }
 
-    /// The IANA `stun-behavior` service port, 3478.
-    ///
-    /// STUN Behavior Discovery over TCP
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 5780](https://datatracker.ietf.org/doc/html/rfc5780).
-    @inlinable
-    public static var `stun-behavior`: Self {
-        Port(rawValue: 3478)
-    }
-
     /// The IANA `turn` service port, 3478.
     ///
     /// TURN over TCP
@@ -1112,18 +861,6 @@ extension Port {
     @inlinable
     public static var turn: Self {
         Port(rawValue: 3478)
-    }
-
-    /// The IANA `nut` service port, 3493.
-    ///
-    /// Network UPS Tools
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 9271](https://datatracker.ietf.org/doc/html/rfc9271).
-    @inlinable
-    public static var nut: Self {
-        Port(rawValue: 3493)
     }
 
     /// The IANA `lsp-ping` service port, 3503.
@@ -1162,18 +899,6 @@ extension Port {
         Port(rawValue: 3565)
     }
 
-    /// The IANA `tsp` service port, 3653.
-    ///
-    /// Tunnel Setup Protocol
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 5572](https://datatracker.ietf.org/doc/html/rfc5572).
-    @inlinable
-    public static var tsp: Self {
-        Port(rawValue: 3653)
-    }
-
     /// The IANA `gsakmp` service port, 3761.
     ///
     /// gsakmp port
@@ -1210,66 +935,6 @@ extension Port {
         Port(rawValue: 3785)
     }
 
-    /// The IANA `radius-dynauth` service port, 3799.
-    ///
-    /// RADIUS Dynamic Authorization
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 3576](https://datatracker.ietf.org/doc/html/rfc3576).
-    @inlinable
-    public static var `radius-dynauth`: Self {
-        Port(rawValue: 3799)
-    }
-
-    /// The IANA `asap-sctp` service port, 3863.
-    ///
-    /// asap sctp
-    ///
-    /// Registered for sctp transport protocol.
-    ///
-    /// Defined in [IETF RFC 5352](https://datatracker.ietf.org/doc/html/rfc5352).
-    @inlinable
-    public static var `asap-sctp`: Self {
-        Port(rawValue: 3863)
-    }
-
-    /// The IANA `asap-udp` service port, 3863.
-    ///
-    /// asap udp port
-    ///
-    /// Registered for udp transport protocol.
-    ///
-    /// Defined in [IETF RFC 5352](https://datatracker.ietf.org/doc/html/rfc5352).
-    @inlinable
-    public static var `asap-udp`: Self {
-        Port(rawValue: 3863)
-    }
-
-    /// The IANA `asap-sctp-tls` service port, 3864.
-    ///
-    /// asap-sctp/tls
-    ///
-    /// Registered for sctp transport protocol.
-    ///
-    /// Defined in [IETF RFC 5352](https://datatracker.ietf.org/doc/html/rfc5352).
-    @inlinable
-    public static var `asap-sctp-tls`: Self {
-        Port(rawValue: 3864)
-    }
-
-    /// The IANA `asap-tcp-tls` service port, 3864.
-    ///
-    /// asap/tls tcp port
-    ///
-    /// Registered for tcp transport protocol.
-    ///
-    /// Defined in [IETF RFC 5352](https://datatracker.ietf.org/doc/html/rfc5352).
-    @inlinable
-    public static var `asap-tcp-tls`: Self {
-        Port(rawValue: 3864)
-    }
-
     /// The IANA `diameter` service port, 3868.
     ///
     /// DIAMETER
@@ -1282,18 +947,6 @@ extension Port {
         Port(rawValue: 3868)
     }
 
-    /// The IANA `mupdate` service port, 3905.
-    ///
-    /// Mailbox Update (MUPDATE) protocol
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 3656](https://datatracker.ietf.org/doc/html/rfc3656).
-    @inlinable
-    public static var mupdate: Self {
-        Port(rawValue: 3905)
-    }
-
     /// The IANA `dsmipv6` service port, 4191.
     ///
     /// Dual Stack MIPv6 NAT Traversal
@@ -1304,18 +957,6 @@ extension Port {
     @inlinable
     public static var dsmipv6: Self {
         Port(rawValue: 4191)
-    }
-
-    /// The IANA `rwhois` service port, 4321.
-    ///
-    /// Remote Who Is
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 2167](https://datatracker.ietf.org/doc/html/rfc2167).
-    @inlinable
-    public static var rwhois: Self {
-        Port(rawValue: 4321)
     }
 
     /// The IANA `netconf-ch-ssh` service port, 4334.
@@ -1416,41 +1057,16 @@ extension Port {
         Port(rawValue: 4551)
     }
 
-    /// The IANA `rsip` service port, 4555.
-    ///
-    /// RSIP Port
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 3103](https://datatracker.ietf.org/doc/html/rfc3103).
-    @inlinable
-    public static var rsip: Self {
-        Port(rawValue: 4555)
-    }
-
     /// The IANA `dtn-bundle` service port, 4556.
     ///
     /// DTN Bundle TCP CL Protocol
     ///
     /// Registered for dccp, tcp and udp transport protocols.
     ///
-    /// Defined in [IETF RFC 7122](https://datatracker.ietf.org/doc/html/rfc7122) and
-    /// [IETF RFC 9174](https://datatracker.ietf.org/doc/html/rfc9174).
+    /// Defined in [IETF RFC 9174](https://datatracker.ietf.org/doc/html/rfc9174).
     @inlinable
     public static var `dtn-bundle`: Self {
         Port(rawValue: 4556)
-    }
-
-    /// The IANA `iax` service port, 4569.
-    ///
-    /// Inter-Asterisk eXchange
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 5456](https://datatracker.ietf.org/doc/html/rfc5456).
-    @inlinable
-    public static var iax: Self {
-        Port(rawValue: 4569)
     }
 
     /// The IANA `rid` service port, 4590.
@@ -1502,18 +1118,6 @@ extension Port {
     @inlinable
     public static var `gre-udp-dtls`: Self {
         Port(rawValue: 4755)
-    }
-
-    /// The IANA `vxlan` service port, 4789.
-    ///
-    /// Virtual eXtensible Local Area Network (VXLAN)
-    ///
-    /// Registered for udp transport protocol.
-    ///
-    /// Defined in [IETF RFC 7348](https://datatracker.ietf.org/doc/html/rfc7348).
-    @inlinable
-    public static var vxlan: Self {
-        Port(rawValue: 4789)
     }
 
     /// The IANA `avt-profile-1` service port, 5004.
@@ -1568,18 +1172,6 @@ extension Port {
     @inlinable
     public static var sips: Self {
         Port(rawValue: 5061)
-    }
-
-    /// The IANA `cxtp` service port, 5091.
-    ///
-    /// Context Transfer Protocol
-    ///
-    /// Registered for sctp transport protocol.
-    ///
-    /// Defined in [IETF RFC 4065](https://datatracker.ietf.org/doc/html/rfc4065).
-    @inlinable
-    public static var cxtp: Self {
-        Port(rawValue: 5091)
     }
 
     /// The IANA `snmpssh` service port, 5161.
@@ -1666,18 +1258,6 @@ extension Port {
         Port(rawValue: 5318)
     }
 
-    /// The IANA `stun-behaviors` service port, 5349.
-    ///
-    /// STUN Behavior Discovery over TLS
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 5780](https://datatracker.ietf.org/doc/html/rfc5780).
-    @inlinable
-    public static var `stun-behaviors`: Self {
-        Port(rawValue: 5349)
-    }
-
     /// The IANA `stuns` service port, 5349.
     ///
     /// Session Traversal Utilities for NAT (STUN) port
@@ -1726,18 +1306,6 @@ extension Port {
     @inlinable
     public static var pcp: Self {
         Port(rawValue: 5351)
-    }
-
-    /// The IANA `dns-llq` service port, 5352.
-    ///
-    /// DNS Long-Lived Queries
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 8764](https://datatracker.ietf.org/doc/html/rfc8764).
-    @inlinable
-    public static var `dns-llq`: Self {
-        Port(rawValue: 5352)
     }
 
     /// The IANA `mdns` service port, 5353.
@@ -1827,18 +1395,6 @@ extension Port {
         Port(rawValue: 5868)
     }
 
-    /// The IANA `rfb` service port, 5900.
-    ///
-    /// Remote Framebuffer
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 6143](https://datatracker.ietf.org/doc/html/rfc6143).
-    @inlinable
-    public static var rfb: Self {
-        Port(rawValue: 5900)
-    }
-
     /// The IANA `gsmp-ancp` service port, 6068.
     ///
     /// GSMP/ANCP
@@ -1913,18 +1469,6 @@ extension Port {
         Port(rawValue: 6514)
     }
 
-    /// The IANA `odette-ftps` service port, 6619.
-    ///
-    /// ODETTE-FTP over TLS/SSL
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 5024](https://datatracker.ietf.org/doc/html/rfc5024).
-    @inlinable
-    public static var `odette-ftps`: Self {
-        Port(rawValue: 6619)
-    }
-
     /// The IANA `mpls-udp` service port, 6635.
     ///
     /// Encapsulate MPLS packets in UDP tunnels.
@@ -1949,18 +1493,6 @@ extension Port {
         Port(rawValue: 6636)
     }
 
-    /// The IANA `ovsdb` service port, 6640.
-    ///
-    /// Open vSwitch Database protocol
-    ///
-    /// Registered for tcp transport protocol.
-    ///
-    /// Defined in [IETF RFC 7047](https://datatracker.ietf.org/doc/html/rfc7047).
-    @inlinable
-    public static var ovsdb: Self {
-        Port(rawValue: 6640)
-    }
-
     /// The IANA `babel` service port, 6696.
     ///
     /// Babel Routing Protocol
@@ -1971,18 +1503,6 @@ extension Port {
     @inlinable
     public static var babel: Self {
         Port(rawValue: 6696)
-    }
-
-    /// The IANA `ircs-u` service port, 6697.
-    ///
-    /// Internet Relay Chat via TLS/SSL
-    ///
-    /// Registered for tcp transport protocol.
-    ///
-    /// Defined in [IETF RFC 7194](https://datatracker.ietf.org/doc/html/rfc7194).
-    @inlinable
-    public static var `ircs-u`: Self {
-        Port(rawValue: 6697)
     }
 
     /// The IANA `babel-dtls` service port, 6699.
@@ -2069,18 +1589,6 @@ extension Port {
         Port(rawValue: 7563)
     }
 
-    /// The IANA `simco` service port, 7626.
-    ///
-    /// SImple Middlebox COnfiguration (SIMCO) Server
-    ///
-    /// Registered for sctp and tcp transport protocols.
-    ///
-    /// Defined in [IETF RFC 4540](https://datatracker.ietf.org/doc/html/rfc4540).
-    @inlinable
-    public static var simco: Self {
-        Port(rawValue: 7626)
-    }
-
     /// The IANA `raqmon-pdu` service port, 7744.
     ///
     /// RAQMON PDU
@@ -2103,30 +1611,6 @@ extension Port {
     @inlinable
     public static var `s-bfd`: Self {
         Port(rawValue: 7784)
-    }
-
-    /// The IANA `mipv6tls` service port, 7872.
-    ///
-    /// TLS-based Mobile IPv6 Security
-    ///
-    /// Registered for udp transport protocol.
-    ///
-    /// Defined in [IETF RFC 6618](https://datatracker.ietf.org/doc/html/rfc6618).
-    @inlinable
-    public static var mipv6tls: Self {
-        Port(rawValue: 7872)
-    }
-
-    /// The IANA `aero` service port, 8060.
-    ///
-    /// Asymmetric Extended Route Optimization (AERO)
-    ///
-    /// Registered for udp transport protocol.
-    ///
-    /// Defined in [IETF RFC 6706](https://datatracker.ietf.org/doc/html/rfc6706).
-    @inlinable
-    public static var aero: Self {
-        Port(rawValue: 8060)
     }
 
     /// The IANA `hncp-udp-port` service port, 8231.
@@ -2153,18 +1637,6 @@ extension Port {
         Port(rawValue: 8232)
     }
 
-    /// The IANA `pim-port` service port, 8471.
-    ///
-    /// PIM over Reliable Transport
-    ///
-    /// Registered for sctp and tcp transport protocols.
-    ///
-    /// Defined in [IETF RFC 6559](https://datatracker.ietf.org/doc/html/rfc6559).
-    @inlinable
-    public static var `pim-port`: Self {
-        Port(rawValue: 8471)
-    }
-
     /// The IANA `lsp-self-ping` service port, 8503.
     ///
     /// MPLS LSP Self-Ping
@@ -2177,30 +1649,6 @@ extension Port {
         Port(rawValue: 8503)
     }
 
-    /// The IANA `sapv1` service port, 9875.
-    ///
-    /// Session Announcement v1
-    ///
-    /// Registered for tcp and udp transport protocols.
-    ///
-    /// Defined in [IETF RFC 2974](https://datatracker.ietf.org/doc/html/rfc2974).
-    @inlinable
-    public static var sapv1: Self {
-        Port(rawValue: 9875)
-    }
-
-    /// The IANA `kca-service` service port, 9878.
-    ///
-    /// The KX509 Kerberized Certificate Issuance Protocol in Use in 2012
-    ///
-    /// Registered for udp transport protocol.
-    ///
-    /// Defined in [IETF RFC 6717](https://datatracker.ietf.org/doc/html/rfc6717).
-    @inlinable
-    public static var `kca-service`: Self {
-        Port(rawValue: 9878)
-    }
-
     /// The IANA `sctp-tunneling` service port, 9899.
     ///
     /// SCTP TUNNELING
@@ -2211,30 +1659,6 @@ extension Port {
     @inlinable
     public static var `sctp-tunneling`: Self {
         Port(rawValue: 9899)
-    }
-
-    /// The IANA `enrp-sctp` service port, 9901.
-    ///
-    /// enrp server channel
-    ///
-    /// Registered for sctp transport protocol.
-    ///
-    /// Defined in [IETF RFC 5353](https://datatracker.ietf.org/doc/html/rfc5353).
-    @inlinable
-    public static var `enrp-sctp`: Self {
-        Port(rawValue: 9901)
-    }
-
-    /// The IANA `enrp-sctp-tls` service port, 9902.
-    ///
-    /// enrp/tls server channel
-    ///
-    /// Registered for sctp transport protocol.
-    ///
-    /// Defined in [IETF RFC 5353](https://datatracker.ietf.org/doc/html/rfc5353).
-    @inlinable
-    public static var `enrp-sctp-tls`: Self {
-        Port(rawValue: 9902)
     }
 
     /// The IANA `multicast-ping` service port, 9903.
@@ -2295,19 +1719,6 @@ extension Port {
     @inlinable
     public static var `snmptls-trap`: Self {
         Port(rawValue: 10162)
-    }
-
-    /// The IANA `hip-nat-t` service port, 10500.
-    ///
-    /// HIP NAT-Traversal
-    ///
-    /// Registered for udp transport protocol.
-    ///
-    /// Defined in [IETF RFC 5770](https://datatracker.ietf.org/doc/html/rfc5770) and
-    /// [IETF RFC 9028](https://datatracker.ietf.org/doc/html/rfc9028).
-    @inlinable
-    public static var `hip-nat-t`: Self {
-        Port(rawValue: 10500)
     }
 
     /// The IANA `nfsrdma` service port, 20049.

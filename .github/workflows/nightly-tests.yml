@@ -688,7 +688,7 @@ jobs:
 
       - name: Build ${{ github.event.repository.name }} and run tests
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
-        uses: vmactions/freebsd-vm@a2f9a41fa97f6848b8c3b791087dfcdaa5b473ff # v1.5.8
+        uses: vmactions/freebsd-vm@c46abacb49f09938ca4e1702d15d836285d694cc # v1.5.9
         env:
           BUILD_MODE: ${{ matrix.config.mode }}
         with:

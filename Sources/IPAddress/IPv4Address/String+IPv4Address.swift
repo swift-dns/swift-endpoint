@@ -287,6 +287,7 @@ extension IPv4Address: LosslessStringConvertible {
     /// `address` is set in big-endian byte order.
     /// This func with `count` parameter is used for IPv4-literal folding, otherwise makes no other
     /// difference compared to the `parseIPv4` function without the `count` parameter.
+    /// `count` must be `span.count`.
     ///
     /// Additional Credits:
     /// To Wojciech Mula: The `&* nA1` pair-fold, and the fold after it.
@@ -358,7 +359,7 @@ extension IPv4Address: LosslessStringConvertible {
         /// For "1.2.3.4" it'd be `0x1E_02_1E_01` -> `0x1E_01_00_00` (`firstDotBitCount` == 12).
         let segment1 = window1 &<< w1_afterDotCount
 
-        /// We know where the first dot is. We want to get rid of anything before it in `window2`.
+        /// We know where the first dot is. We want to get rid of it and anything before it in `window2`.
         /// `firstDotBitCount` is between 12 and 28. 12 in e.g. `1.2.3.4`, and 28 in e.g. `192.168.1.98`.
         /// Assuming window2 is "2.168.", we want to get rid of the "2." part.
         /// Example: `0x30_30_1E_08_06_01_1E_02` -> `0x1E_08_06_01` (`firstDotBitCount` == 28).
@@ -373,7 +374,7 @@ extension IPv4Address: LosslessStringConvertible {
         let m10_r: UInt32 = 0x001010_10
         let m1_r: UInt32 = 0x0000_0010
         /// Now let’s find the third dot which must be in `window4`.
-        /// For example in "1.98", we need to find the “.” and get rid of anything before it.
+        /// For example in "1.98", we need to find the “.” and get rid of it and anything before it.
         let thirdDotBitCount = 31 &- ((window4 & m10_r) | m1_r).leadingZeroBitCount
         /// Keeps the digits after the third dot and moves them to lanes 0...2.
         /// Example: `0x08_09_1E_01` -> `0x00_08_09_00`.
@@ -385,21 +386,27 @@ extension IPv4Address: LosslessStringConvertible {
         /// Example for "192.168.1.98": bytes 6...9 ("8.1.") -> `0x1E_01_1E_08`.
         let window3 = span.withUnsafeBytes { buffer in
             let base = unsafe buffer.baseAddress.unsafelyUnwrapped
+            /// `thirdDotBitCount >> 3` == `thirdDotBitCount / 8`.
             let w3_idx = count &- 7 &+ (thirdDotBitCount >> 3)
             let w3 = unsafe _loadUInt32(from: base, at: w3_idx)
             return w3 ^ UInt32(truncatingIfNeeded: m30)
         }
-        /// Example: `28 + 28` == `56` for "192.168.1.98", covering "192.168.".
+
+        /// `count << 3` == `count &* 8` == `96` for "192.168.1.98".
+        let fullBitCount = count << 3
+        /// Example: `28 + 28` == `56` for "192.168.1.98", covering "192.168".
         let secondDotBitCountFromStart = firstDotBitCount &+ secondDotBitCount
-        /// `count << 3` == `count &* 8`.
-        /// Example: `68 - 96 - 12` == `-40` for "192.168.1.98", covering ".1.98".
-        let thirdDotBitCountFromEnd = 68 &- (count << 3) &- thirdDotBitCount
-        /// The number of bits in `window3` before segment 3.
-        /// Example: `56 + -40` == `16` for "192.168.1.98", covering "8.".
-        let thirdSegmentShift = secondDotBitCountFromStart &+ thirdDotBitCountFromEnd
+        /// The third dot starts `thirdDotBitCount - 4` bits into `window4` which is the last 32 bits.
+        /// Example: `32 - (12 - 4)` == `24` for "192.168.1.98", covering ".98".
+        let thirdDotBitCountFromEnd = 32 &- (thirdDotBitCount &- 4)
+        /// Where the second dot would start if segment 3 had 3 digits, `32` for those and the dot.
+        /// Example: `96 - 32 - 24` == `40` for "192.168.1.98", covering "192.1".
+        let paddedSecondDotBitCountFromStart = fullBitCount &- 32 &- thirdDotBitCountFromEnd
+        /// Example: `56 - 40` == `16` for "192.168.1.98", covering the "00" of "001".
+        let extraDigitsShift = secondDotBitCountFromStart &- paddedSecondDotBitCountFromStart
         /// Turns off the lanes before segment 3, like the 2nd dot.
         /// Example: `0x1E_01_1E_08` -> `0x1E_01_00_00` (“001.”)
-        let segment3 = window3 & (0xFFFF_FFFF &<< thirdSegmentShift)
+        let segment3 = window3 & (0xFFFF_FFFF &<< extraDigitsShift)
 
         /// 2x 32-bit lanes for 2 segments.
         /// XORing with `0x1E` turns the dot lanes into `0x00` if they are actual dots.
@@ -452,7 +459,7 @@ extension IPv4Address: LosslessStringConvertible {
 
         /// Segment 3 must have 1 to 3 digits, so `0`, `8` or `16` bit-shifts.
         /// It's negative when segment 3 has more than 3 digits.
-        guard UInt(bitPattern: thirdSegmentShift) <= 16 else { return false }
+        guard UInt(bitPattern: extraDigitsShift) <= 16 else { return false }
 
         /// Puts the values of segments 1 and 2 at bits 0...7 and 32...39, and the values of
         /// segments 3 and 4 at bits 16...23 and 48...55.

@@ -388,7 +388,7 @@ extension IPv4Address: LosslessStringConvertible {
         /// Keeps the digits after the third dot.
         /// Example: `0x08_09_1E_01` -> `0x08_09_00_00`.
         let thirdDotAndBeforeMask = UInt32(
-            truncatingIfNeeded: 0x0000_0007_FFFF_FFFF &>> thirdDotLeadingZeroBitCount
+            truncatingIfNeeded: (0x0000_0007_FFFF_FFFF as UInt64) &>> thirdDotLeadingZeroBitCount
         )
         let segment4 = window4 & ~thirdDotAndBeforeMask
 

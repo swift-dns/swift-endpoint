@@ -18,8 +18,8 @@ extension IPv4Address {
     /// Serialize the address into the provided span.
     /// Returns true if the address was serialized successfully, false otherwise.
     @inlinable
-    public func serialize(into span: inout OutputSpan<UInt8>) -> Bool {
-        guard span.freeCapacity >= 4 else {
+    public func serialize(into outputSpan: inout OutputSpan<UInt8>) -> Bool {
+        guard outputSpan.freeCapacity >= 4 else {
             return false
         }
 
@@ -29,10 +29,10 @@ extension IPv4Address {
         /// The PR enables LLVM to correctly identify span-count bounds and notice that we already
         /// have 1 `freeCapacity` check, so it can get rid of the per-append traps.
         /// See https://github.com/swiftlang/swift/pull/92790.
-        span.append(UInt8(truncatingIfNeeded: address))
-        span.append(UInt8(truncatingIfNeeded: address >> 8))
-        span.append(UInt8(truncatingIfNeeded: address >> 16))
-        span.append(UInt8(truncatingIfNeeded: address >> 24))
+        outputSpan.append(UInt8(truncatingIfNeeded: address))
+        outputSpan.append(UInt8(truncatingIfNeeded: address >> 8))
+        outputSpan.append(UInt8(truncatingIfNeeded: address >> 16))
+        outputSpan.append(UInt8(truncatingIfNeeded: address >> 24))
 
         return true
     }

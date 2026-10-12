@@ -16,8 +16,8 @@ extension Port {
     /// Serialize the port into the provided span, in network byte order.
     /// Returns true if the port was serialized successfully, false otherwise.
     @inlinable
-    public func serialize(into span: inout OutputSpan<UInt8>) -> Bool {
-        guard span.freeCapacity >= 2 else {
+    public func serialize(into outputSpan: inout OutputSpan<UInt8>) -> Bool {
+        guard outputSpan.freeCapacity >= 2 else {
             return false
         }
 
@@ -26,8 +26,8 @@ extension Port {
         /// The PR enables LLVM to correctly identify span-count bounds and notice that we already
         /// have 1 `freeCapacity` check, so it can get rid of the per-append traps.
         /// See https://github.com/swiftlang/swift/pull/92790.
-        span.append(UInt8(truncatingIfNeeded: self.rawValue >> 8))
-        span.append(UInt8(truncatingIfNeeded: self.rawValue))
+        outputSpan.append(UInt8(truncatingIfNeeded: self.rawValue >> 8))
+        outputSpan.append(UInt8(truncatingIfNeeded: self.rawValue))
 
         return true
     }

@@ -146,7 +146,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
     ]
 
     Benchmark(
-        "Port_Serializing_Multiple_Ports_15M",
+        "Port_Serializing_Multiple_Ports_20M",
         configuration: .init(
             metrics: [.cpuUser],
             warmupIterations: 5,
@@ -155,7 +155,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
     ) { benchmark in
         let portMultiplePorts = portMultiplePorts.span
         var rng = FastRNG()
-        for _ in 0..<15_000_000 {
+        for _ in 0..<20_000_000 {
             let idx = Int(rng.next() % UInt64(portMultiplePorts.count))
             withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
                 let written = unsafe portMultiplePorts[idx]

@@ -563,6 +563,8 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 1000
         )
     ) { benchmark in
+        let ipv6MultipleIPs = ipv6MultipleIPs.span
+        let ipv6MultipleIPsOptions = ipv6MultipleIPsOptions.span
         var rng = FastRNG()
         for _ in 0..<4_000_000 {
             let idx = Int(rng.next() % UInt64(ipv6MultipleIPs.count))
@@ -585,6 +587,8 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
+        let ipv6MultipleIPs = ipv6MultipleIPs.span
+        let ipv6MultipleIPsOptions = ipv6MultipleIPsOptions.span
         for idx in ipv6MultipleIPs.indices {
             unsafe ipv6MultipleIPs[idx].makeDescription(options: ipv6MultipleIPsOptions[idx]) {
                 (maxBytes, writeBytes) in
@@ -605,6 +609,8 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
+        let ipv6MultipleIPs = ipv6MultipleIPs.span
+        let ipv6MultipleIPsOptions = ipv6MultipleIPsOptions.span
         for idx in ipv6MultipleIPs.indices {
             unsafe ipv6MultipleIPs[idx].makeDescription(options: ipv6MultipleIPsOptions[idx]) {
                 (maxBytes, writeBytes) in

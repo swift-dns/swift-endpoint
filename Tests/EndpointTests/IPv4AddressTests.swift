@@ -473,10 +473,11 @@ private func testTextualRepresentationLengths(
     of ip: IPv4Address,
     sourceLocation: SourceLocation = #_sourceLocation
 ) {
-    let description = ip.description
+    let description = "\(ip.bytes[0]).\(ip.bytes[1]).\(ip.bytes[2]).\(ip.bytes[3])"
     let length = description.utf8.count
     let lastByteDigits = String(ip.bytes[3]).utf8.count
 
+    #expect(ip.description == description, sourceLocation: sourceLocation)
     #expect(ip.textualRepresentationLength == length, sourceLocation: sourceLocation)
     /// `_textualRepresentationWriteRequiredCapacity` includes possible extra 2 bytes of
     /// headroom for speculative writes.

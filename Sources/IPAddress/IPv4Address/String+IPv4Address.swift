@@ -290,9 +290,12 @@ extension IPv4Address: LosslessStringConvertible {
     /// `count` must be `span.count`.
     ///
     /// Additional Credits:
-    /// To Wojciech Mula: The `&* n64A1` pair-fold and the fold after it at once.
+    /// To Wojciech Mula: Folding digits with a multiplication.
+    /// To Daniel Lemire: The 3-digit `&* n64A1` fold, and the `.byteSwapped` overflow check.
+    /// To Jean-Marc Bourguet: The `0x0064_0A01` form of that fold.
     /// See:
     /// http://0x80.pl/notesen/2014-10-12-parsing-decimal-numbers-part-1-swar.html
+    /// https://lemire.me/blog/2023/11/28/parsing-8-bit-integers-quickly/
     @inlinable
     @inline(always)
     static func parseIPv4(
@@ -433,8 +436,8 @@ extension IPv4Address: LosslessStringConvertible {
         let invalidLanes = invalidLanes12 | invalidLanes34
 
         /// `0x7DFA_FA00` == `0x8000_0000` - `0x0205_0600`, where `0x02_05_06_00` is “256.”.
-        /// Adding it to a big-endian segment sets the 32nd bit when the segment is above `255` when
-        /// the lanes are invalid.
+        /// Adding it to a big-endian segment with valid lanes sets the 32nd bit when the segment is
+        /// above `255`.
         /// `.byteSwapped` is to get big-endian version of the segments.
         ///
         /// Example: `0x00_08_06_01_00_02_09_01` -> `0x01_09_02_00_01_06_08_00`
@@ -459,6 +462,7 @@ extension IPv4Address: LosslessStringConvertible {
         /// `0x0064_0A01` == `100 << 16 | 10 << 8 | 1`.
         /// We multiply by `n64A1` so `100 * hundreds + 10 * tens + ones` of each segment ends up in
         /// bits 16...23 and 48...55.
+        /// Each segment is at most `255` by now, so its value fits into those 8 bits.
         /// Example: `0x00_08_06_01_00_02_09_01` -> `0xA8_A8_10_CC_98_C0_13_01` (168, 192).
         let n64A1: UInt64 = 0x0064_0A01
         let values12 = segments12 &* n64A1

@@ -153,6 +153,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 1000
         )
     ) { benchmark in
+        let portMultiplePorts = portMultiplePorts.span
         var rng = FastRNG()
         for _ in 0..<15_000_000 {
             let idx = Int(rng.next() % UInt64(portMultiplePorts.count))
@@ -173,6 +174,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
+        let portMultiplePorts = portMultiplePorts.span
         for idx in portMultiplePorts.indices {
             withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
                 let written = unsafe portMultiplePorts[idx]
@@ -191,6 +193,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
+        let portMultiplePorts = portMultiplePorts.span
         for idx in portMultiplePorts.indices {
             withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
                 let written = unsafe portMultiplePorts[idx]
@@ -219,6 +222,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 1000
         )
     ) { benchmark in
+        let portMultiplePortsSnprintf = portMultiplePortsSnprintf.span
         var rng = FastRNG()
         for _ in 0..<3_000_000 {
             let idx = Int(rng.next() % UInt64(portMultiplePortsSnprintf.count))
@@ -240,6 +244,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
+        let portMultiplePortsSnprintf = portMultiplePortsSnprintf.span
         for idx in portMultiplePortsSnprintf.indices {
             withUnsafeTemporaryAllocation(byteCount: 6, alignment: 1) { buffer in
                 let base = unsafe buffer.baseAddress.unsafelyUnwrapped
@@ -259,6 +264,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
+        let portMultiplePortsSnprintf = portMultiplePortsSnprintf.span
         for idx in portMultiplePortsSnprintf.indices {
             withUnsafeTemporaryAllocation(byteCount: 6, alignment: 1) { buffer in
                 let base = unsafe buffer.baseAddress.unsafelyUnwrapped
@@ -283,6 +289,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 1000
         )
     ) { benchmark in
+        let portMultiplePorts = portMultiplePorts.span
         var rng = FastRNG()
         for _ in 0..<6_000_000 {
             let idx = Int(rng.next() % UInt64(portMultiplePorts.count))
@@ -299,6 +306,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
+        let portMultiplePorts = portMultiplePorts.span
         for idx in portMultiplePorts.indices {
             let description = portMultiplePorts[idx].description
             blackHole(description)
@@ -313,6 +321,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
+        let portMultiplePorts = portMultiplePorts.span
         for idx in portMultiplePorts.indices {
             let description = portMultiplePorts[idx].description
             blackHole(description)
@@ -329,6 +338,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 1000
         )
     ) { benchmark in
+        let portMultiplePorts = portMultiplePorts.span
         var rng = FastRNG()
         for _ in 0..<6_000_000 {
             let idx = Int(rng.next() % UInt64(portMultiplePorts.count))
@@ -345,6 +355,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
+        let portMultiplePorts = portMultiplePorts.span
         for idx in portMultiplePorts.indices {
             let description = String(portMultiplePorts[idx].rawValue)
             blackHole(description)
@@ -359,6 +370,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
+        let portMultiplePorts = portMultiplePorts.span
         for idx in portMultiplePorts.indices {
             let description = String(portMultiplePorts[idx].rawValue)
             blackHole(description)

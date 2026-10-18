@@ -445,11 +445,11 @@
       "type" : "library",
       "version" : "unknown"
     },
-    "timestamp" : "2026-10-12T14:38:33Z",
+    "timestamp" : "2026-10-17T16:18:28Z",
     "tools" : {
       "components" : [
         {
-          "bom-ref" : "urn:uuid:530d88fe-dfae-441e-9dac-d3c49ca58e2a",
+          "bom-ref" : "urn:uuid:0d748200-726a-485c-9383-27303947077d",
           "licenses" : [
             {
               "license" : {
@@ -459,15 +459,15 @@
             }
           ],
           "name" : "swift-package-manager",
-          "purl" : "pkg:swift/github.com/swiftlang/swift-package-manager@6.4.0-dev",
+          "purl" : "pkg:swift/github.com/swiftlang/swift-package-manager@6.4.1",
           "scope" : "excluded",
           "type" : "application",
-          "version" : "6.4.0-dev"
+          "version" : "6.4.1"
         }
       ]
     }
   },
-  "serialNumber" : "urn:uuid:d020d511-8992-4213-a07f-1156fe15cc49",
+  "serialNumber" : "urn:uuid:962f5e03-cac4-4043-8f5d-965eba232194",
   "specVersion" : "1.7",
   "version" : 1
 }

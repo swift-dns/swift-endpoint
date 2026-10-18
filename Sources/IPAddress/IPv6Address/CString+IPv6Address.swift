@@ -22,7 +22,7 @@ extension IPv6Address {
         ) { (maxWriteableBytes, writeBytes) throws(E) in
             try withUnsafeTemporaryAllocation(
                 byteCount: maxWriteableBytes &+ 1,
-                alignment: 1
+                alignment: 16
             ) { buffer throws(E) in
                 /// `makeDescription` must only see the capacity it asked for, so the last byte
                 /// stays reserved for the null terminator.

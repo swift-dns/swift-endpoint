@@ -17,7 +17,7 @@ extension IPv4Address {
     ) throws(E) -> Result {
         /// 15 bytes for the biggest possible textual representation, plus 1 for the null terminator.
         /// It's not worth it to try to calculate the exact length since we're only stack-allocating.
-        try withUnsafeTemporaryAllocation(byteCount: 16, alignment: 1) { buffer throws(E) in
+        try withUnsafeTemporaryAllocation(byteCount: 16, alignment: 16) { buffer throws(E) in
             let count = unsafe self.writeTextualRepresentation_Requiring2HeadroomBytes(
                 into: buffer
             )

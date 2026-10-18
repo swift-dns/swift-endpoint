@@ -17,7 +17,7 @@ extension Port {
     ) throws(E) -> Result {
         /// 8 bytes for the biggest possible textual representation (5) plus its write headroom (3).
         /// The null terminator goes at index 5 at the most, so it needs no extra room.
-        try withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer throws(E) in
+        try withUnsafeTemporaryAllocation(byteCount: 8, alignment: 8) { buffer throws(E) in
             let count = unsafe self.writeTextualRepresentation_RequiringMinimumCapacityOf8(
                 into: buffer
             )

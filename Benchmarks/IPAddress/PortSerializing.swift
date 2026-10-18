@@ -15,7 +15,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<50_000_000 {
-            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
+            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 8) { buffer in
                 let written = unsafe portSSH.writeTextualRepresentation_RequiringMinimumCapacityOf8(
                     into: buffer
                 )
@@ -37,7 +37,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<50_000_000 {
-            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
+            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 8) { buffer in
                 let written =
                     unsafe portHTTPS.writeTextualRepresentation_RequiringMinimumCapacityOf8(
                         into: buffer
@@ -60,7 +60,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<50_000_000 {
-            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
+            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 8) { buffer in
                 let written =
                     unsafe portHTTPAlt.writeTextualRepresentation_RequiringMinimumCapacityOf8(
                         into: buffer
@@ -83,7 +83,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<50_000_000 {
-            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
+            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 8) { buffer in
                 let written =
                     unsafe portEphemeral.writeTextualRepresentation_RequiringMinimumCapacityOf8(
                         into: buffer
@@ -102,7 +102,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
+        withUnsafeTemporaryAllocation(byteCount: 8, alignment: 8) { buffer in
             let written =
                 unsafe portEphemeral.writeTextualRepresentation_RequiringMinimumCapacityOf8(
                     into: buffer
@@ -120,7 +120,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
+        withUnsafeTemporaryAllocation(byteCount: 8, alignment: 8) { buffer in
             let written =
                 unsafe portEphemeral.writeTextualRepresentation_RequiringMinimumCapacityOf8(
                     into: buffer
@@ -157,7 +157,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         var rng = FastRNG()
         for _ in 0..<20_000_000 {
             let idx = Int(rng.next() % UInt64(portMultiplePorts.count))
-            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
+            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 8) { buffer in
                 let written = unsafe portMultiplePorts[idx]
                     .writeTextualRepresentation_RequiringMinimumCapacityOf8(into: buffer)
                 unsafe blackHole(buffer)
@@ -176,7 +176,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
     ) { benchmark in
         let portMultiplePorts = portMultiplePorts.span
         for idx in portMultiplePorts.indices {
-            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
+            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 8) { buffer in
                 let written = unsafe portMultiplePorts[idx]
                     .writeTextualRepresentation_RequiringMinimumCapacityOf8(into: buffer)
                 unsafe blackHole(buffer)
@@ -195,7 +195,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
     ) { benchmark in
         let portMultiplePorts = portMultiplePorts.span
         for idx in portMultiplePorts.indices {
-            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 1) { buffer in
+            withUnsafeTemporaryAllocation(byteCount: 8, alignment: 8) { buffer in
                 let written = unsafe portMultiplePorts[idx]
                     .writeTextualRepresentation_RequiringMinimumCapacityOf8(into: buffer)
                 unsafe blackHole(buffer)
@@ -226,7 +226,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
         var rng = FastRNG()
         for _ in 0..<3_000_000 {
             let idx = Int(rng.next() % UInt64(portMultiplePortsSnprintf.count))
-            withUnsafeTemporaryAllocation(byteCount: 6, alignment: 1) { buffer in
+            withUnsafeTemporaryAllocation(byteCount: 6, alignment: 8) { buffer in
                 let base = unsafe buffer.baseAddress.unsafelyUnwrapped
                     .assumingMemoryBound(to: CChar.self)
                 let written = unsafe cbench_snprintf_u32(base, 6, portMultiplePortsSnprintf[idx])
@@ -246,7 +246,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
     ) { benchmark in
         let portMultiplePortsSnprintf = portMultiplePortsSnprintf.span
         for idx in portMultiplePortsSnprintf.indices {
-            withUnsafeTemporaryAllocation(byteCount: 6, alignment: 1) { buffer in
+            withUnsafeTemporaryAllocation(byteCount: 6, alignment: 8) { buffer in
                 let base = unsafe buffer.baseAddress.unsafelyUnwrapped
                     .assumingMemoryBound(to: CChar.self)
                 let written = unsafe cbench_snprintf_u32(base, 6, portMultiplePortsSnprintf[idx])
@@ -266,7 +266,7 @@ let portToStringBenchmarks: @Sendable () -> Void = {
     ) { benchmark in
         let portMultiplePortsSnprintf = portMultiplePortsSnprintf.span
         for idx in portMultiplePortsSnprintf.indices {
-            withUnsafeTemporaryAllocation(byteCount: 6, alignment: 1) { buffer in
+            withUnsafeTemporaryAllocation(byteCount: 6, alignment: 8) { buffer in
                 let base = unsafe buffer.baseAddress.unsafelyUnwrapped
                     .assumingMemoryBound(to: CChar.self)
                 let written = unsafe cbench_snprintf_u32(base, 6, portMultiplePortsSnprintf[idx])

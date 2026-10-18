@@ -39,7 +39,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             for _ in 0..<16_000_000 {
                 unsafe addressPointer.pointee.makeDescription(options: .standardOptions) {
                     (maxBytes, writeBytes) in
-                    withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in
+                    withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 16) { buffer in
                         let written = unsafe writeBytes(buffer)
                         unsafe blackHole(buffer)
                         blackHole(written)
@@ -66,7 +66,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             for _ in 0..<12_000_000 {
                 unsafe addressPointer.pointee.makeDescription(options: .standardOptions) {
                     (maxBytes, writeBytes) in
-                    withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in
+                    withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 16) { buffer in
                         let written = unsafe writeBytes(buffer)
                         unsafe blackHole(buffer)
                         blackHole(written)
@@ -93,7 +93,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             for _ in 0..<8_000_000 {
                 unsafe addressPointer.pointee.makeDescription(options: .standardOptions) {
                     (maxBytes, writeBytes) in
-                    withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in
+                    withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 16) { buffer in
                         let written = unsafe writeBytes(buffer)
                         unsafe blackHole(buffer)
                         blackHole(written)
@@ -116,7 +116,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             unsafe blackHole(addressPointer)
             unsafe addressPointer.pointee.makeDescription(options: .standardOptions) {
                 (maxBytes, writeBytes) in
-                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in
+                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 16) { buffer in
                     let written = unsafe writeBytes(buffer)
                     unsafe blackHole(buffer)
                     blackHole(written)
@@ -138,7 +138,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             unsafe blackHole(addressPointer)
             unsafe addressPointer.pointee.makeDescription(options: .standardOptions) {
                 (maxBytes, writeBytes) in
-                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in
+                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 16) { buffer in
                     let written = unsafe writeBytes(buffer)
                     unsafe blackHole(buffer)
                     blackHole(written)
@@ -160,14 +160,16 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<1_000_000 {
-            withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) { ptr in
+            withUnsafeTemporaryAllocation(byteCount: 50, alignment: 16) { buffer in
+                let base = unsafe buffer.baseAddress.unsafelyUnwrapped
+                    .assumingMemoryBound(to: CChar.self)
                 unsafe inet_ntop(
                     AF_INET6,
                     &ipv6CompactInetNtop,
-                    ptr.baseAddress.unsafelyUnwrapped,
+                    base,
                     50
                 )
-                unsafe blackHole(ptr)
+                unsafe blackHole(buffer)
             }
         }
     }
@@ -180,14 +182,16 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) { ptr in
+        withUnsafeTemporaryAllocation(byteCount: 50, alignment: 16) { buffer in
+            let base = unsafe buffer.baseAddress.unsafelyUnwrapped
+                .assumingMemoryBound(to: CChar.self)
             unsafe inet_ntop(
                 AF_INET6,
                 &ipv6CompactInetNtop,
-                ptr.baseAddress.unsafelyUnwrapped,
+                base,
                 50
             )
-            unsafe blackHole(ptr)
+            unsafe blackHole(buffer)
         }
     }
 
@@ -199,14 +203,16 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) { ptr in
+        withUnsafeTemporaryAllocation(byteCount: 50, alignment: 16) { buffer in
+            let base = unsafe buffer.baseAddress.unsafelyUnwrapped
+                .assumingMemoryBound(to: CChar.self)
             unsafe inet_ntop(
                 AF_INET6,
                 &ipv6CompactInetNtop,
-                ptr.baseAddress.unsafelyUnwrapped,
+                base,
                 50
             )
-            unsafe blackHole(ptr)
+            unsafe blackHole(buffer)
         }
     }
 
@@ -227,7 +233,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             for _ in 0..<4_000_000 {
                 unsafe addressPointer.pointee.makeDescription(options: .standardOptions) {
                     (maxBytes, writeBytes) in
-                    withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in
+                    withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 16) { buffer in
                         let written = unsafe writeBytes(buffer)
                         unsafe blackHole(buffer)
                         blackHole(written)
@@ -254,7 +260,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             for _ in 0..<6_000_000 {
                 unsafe addressPointer.pointee.makeDescription(options: .standardOptions) {
                     (maxBytes, writeBytes) in
-                    withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in
+                    withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 16) { buffer in
                         let written = unsafe writeBytes(buffer)
                         unsafe blackHole(buffer)
                         blackHole(written)
@@ -277,7 +283,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             unsafe blackHole(addressPointer)
             unsafe addressPointer.pointee.makeDescription(options: .standardOptions) {
                 (maxBytes, writeBytes) in
-                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in
+                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 16) { buffer in
                     let written = unsafe writeBytes(buffer)
                     unsafe blackHole(buffer)
                     blackHole(written)
@@ -299,7 +305,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             unsafe blackHole(addressPointer)
             unsafe addressPointer.pointee.makeDescription(options: .standardOptions) {
                 (maxBytes, writeBytes) in
-                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in
+                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 16) { buffer in
                     let written = unsafe writeBytes(buffer)
                     unsafe blackHole(buffer)
                     blackHole(written)
@@ -330,7 +336,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
                     options: ipv6MixedBracketOptions
                 ) {
                     (maxBytes, writeBytes) in
-                    withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in
+                    withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 16) { buffer in
                         let written = unsafe writeBytes(buffer)
                         unsafe blackHole(buffer)
                         blackHole(written)
@@ -353,7 +359,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             unsafe blackHole(addressPointer)
             unsafe addressPointer.pointee.makeDescription(options: ipv6MixedBracketOptions) {
                 (maxBytes, writeBytes) in
-                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in
+                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 16) { buffer in
                     let written = unsafe writeBytes(buffer)
                     unsafe blackHole(buffer)
                     blackHole(written)
@@ -375,7 +381,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             unsafe blackHole(addressPointer)
             unsafe addressPointer.pointee.makeDescription(options: ipv6MixedBracketOptions) {
                 (maxBytes, writeBytes) in
-                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in
+                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 16) { buffer in
                     let written = unsafe writeBytes(buffer)
                     unsafe blackHole(buffer)
                     blackHole(written)
@@ -397,14 +403,16 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for _ in 0..<1_000_000 {
-            withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) { ptr in
+            withUnsafeTemporaryAllocation(byteCount: 50, alignment: 16) { buffer in
+                let base = unsafe buffer.baseAddress.unsafelyUnwrapped
+                    .assumingMemoryBound(to: CChar.self)
                 unsafe inet_ntop(
                     AF_INET6,
                     &ipv6MixedInetNtop,
-                    ptr.baseAddress.unsafelyUnwrapped,
+                    base,
                     50
                 )
-                unsafe blackHole(ptr)
+                unsafe blackHole(buffer)
             }
         }
     }
@@ -417,14 +425,16 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) { ptr in
+        withUnsafeTemporaryAllocation(byteCount: 50, alignment: 16) { buffer in
+            let base = unsafe buffer.baseAddress.unsafelyUnwrapped
+                .assumingMemoryBound(to: CChar.self)
             unsafe inet_ntop(
                 AF_INET6,
                 &ipv6MixedInetNtop,
-                ptr.baseAddress.unsafelyUnwrapped,
+                base,
                 50
             )
-            unsafe blackHole(ptr)
+            unsafe blackHole(buffer)
         }
     }
 
@@ -436,14 +446,16 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             maxIterations: 10
         )
     ) { benchmark in
-        withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) { ptr in
+        withUnsafeTemporaryAllocation(byteCount: 50, alignment: 16) { buffer in
+            let base = unsafe buffer.baseAddress.unsafelyUnwrapped
+                .assumingMemoryBound(to: CChar.self)
             unsafe inet_ntop(
                 AF_INET6,
                 &ipv6MixedInetNtop,
-                ptr.baseAddress.unsafelyUnwrapped,
+                base,
                 50
             )
-            unsafe blackHole(ptr)
+            unsafe blackHole(buffer)
         }
     }
 
@@ -570,7 +582,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
             let idx = Int(rng.next() % UInt64(ipv6MultipleIPs.count))
             unsafe ipv6MultipleIPs[idx].makeDescription(options: ipv6MultipleIPsOptions[idx]) {
                 (maxBytes, writeBytes) in
-                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in
+                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 16) { buffer in
                     let written = unsafe writeBytes(buffer)
                     unsafe blackHole(buffer)
                     blackHole(written)
@@ -592,7 +604,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         for idx in ipv6MultipleIPs.indices {
             unsafe ipv6MultipleIPs[idx].makeDescription(options: ipv6MultipleIPsOptions[idx]) {
                 (maxBytes, writeBytes) in
-                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in
+                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 16) { buffer in
                     let written = unsafe writeBytes(buffer)
                     unsafe blackHole(buffer)
                     blackHole(written)
@@ -614,7 +626,7 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         for idx in ipv6MultipleIPs.indices {
             unsafe ipv6MultipleIPs[idx].makeDescription(options: ipv6MultipleIPsOptions[idx]) {
                 (maxBytes, writeBytes) in
-                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 1) { buffer in
+                withUnsafeTemporaryAllocation(byteCount: maxBytes, alignment: 16) { buffer in
                     let written = unsafe writeBytes(buffer)
                     unsafe blackHole(buffer)
                     blackHole(written)
@@ -672,14 +684,16 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         var rng = FastRNG()
         for _ in 0..<1_000_000 {
             let idx = Int(rng.next() % UInt64(ipv6MultipleIPs.count))
-            withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) { ptr in
+            withUnsafeTemporaryAllocation(byteCount: 50, alignment: 16) { buffer in
+                let base = unsafe buffer.baseAddress.unsafelyUnwrapped
+                    .assumingMemoryBound(to: CChar.self)
                 unsafe inet_ntop(
                     AF_INET6,
                     &ipv6MultipleIPsInetNtop[idx],
-                    ptr.baseAddress.unsafelyUnwrapped,
+                    base,
                     50
                 )
-                unsafe blackHole(ptr)
+                unsafe blackHole(buffer)
             }
         }
     }
@@ -693,14 +707,16 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for idx in ipv6MultipleIPs.indices {
-            withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) { ptr in
+            withUnsafeTemporaryAllocation(byteCount: 50, alignment: 16) { buffer in
+                let base = unsafe buffer.baseAddress.unsafelyUnwrapped
+                    .assumingMemoryBound(to: CChar.self)
                 unsafe inet_ntop(
                     AF_INET6,
                     &ipv6MultipleIPsInetNtop[idx],
-                    ptr.baseAddress.unsafelyUnwrapped,
+                    base,
                     50
                 )
-                unsafe blackHole(ptr)
+                unsafe blackHole(buffer)
             }
         }
     }
@@ -714,14 +730,16 @@ let ipv6AddressToStringBenchmarks: @Sendable () -> Void = {
         )
     ) { benchmark in
         for idx in ipv6MultipleIPs.indices {
-            withUnsafeTemporaryAllocation(of: Int8.self, capacity: 50) { ptr in
+            withUnsafeTemporaryAllocation(byteCount: 50, alignment: 16) { buffer in
+                let base = unsafe buffer.baseAddress.unsafelyUnwrapped
+                    .assumingMemoryBound(to: CChar.self)
                 unsafe inet_ntop(
                     AF_INET6,
                     &ipv6MultipleIPsInetNtop[idx],
-                    ptr.baseAddress.unsafelyUnwrapped,
+                    base,
                     50
                 )
-                unsafe blackHole(ptr)
+                unsafe blackHole(buffer)
             }
         }
     }

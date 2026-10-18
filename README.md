@@ -164,7 +164,7 @@ For `IPv6Address`, only the Arpa domain name format can be supported. For exampl
 * Each benchmark runs against 32 different IPs, one by one and in a random manner.
   * There is a constant seed to keep the benchmarks consistent across benchmark runs.
   * This means CPUs won't find a clear pattern to over-optimize for in any of the operations, which would make the benchmarks less realistic.
-  * The randomization itself only adds minimal runtime (~0.2-0.3ns = 1 cycle) to the benchmarks and is not subtracted.
+  * The randomization overhead is small and is not subtracted.
   * All addresses are operational real-world addresses, not documentation examples or such.
   * Different addresses test different branches of a possibly branchy parsing/serialization implementation.
   * 2 of the IPv6 IPs are IPv4-embedded, 1 of which is an IPv4-mapped IPv6 address.

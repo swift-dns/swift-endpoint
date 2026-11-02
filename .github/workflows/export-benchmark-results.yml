@@ -32,7 +32,7 @@ jobs:
   check-ci-config:
     runs-on: ubuntu-26.04
 
-    timeout-minutes: 5
+    timeout-minutes: 30
 
     outputs:
       benchmarks: ${{ steps.ci-config.outputs.benchmarks }}

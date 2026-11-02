@@ -12,6 +12,7 @@ readonly build_mode="${BUILD_MODE:?BUILD_MODE must be 'debug' or 'release'}"
 readonly wasmtime_version="${WASMTIME_VERSION:?WASMTIME_VERSION must be a wasmtime release, e.g. '48.0.1'}"
 readonly wasmtime_sha256="${WASMTIME_SHA256:?WASMTIME_SHA256 must be the sha256 of the x86_64-linux wasmtime tarball of that release}"
 readonly test_flags="${TEST_FLAGS:-}"
+readonly test_environment="${TEST_ENVIRONMENT:-}"
 
 case "${build_mode}" in
   debug | release) ;;
@@ -59,11 +60,20 @@ install_wasmtime
 IFS=' ' read -r -a test_flag_words <<< "${test_flags}"
 readonly test_flag_words
 
+IFS=' ' read -r -a test_environment_words <<< "${test_environment}"
+readonly test_environment_words
+
+wasmtime_environment_flags=()
+for test_environment_word in "${test_environment_words[@]}"; do
+  wasmtime_environment_flags+=(--env "${test_environment_word}")
+done
+readonly wasmtime_environment_flags
+
 matched_any_test=false
 for test_bundle in "${test_bundles[@]}"; do
   log "Running ${test_bundle} with wasmtime."
   bundle_exit_code=0
-  "${wasmtime}" run --dir . --dir ".::${absolute_package_dir}" "${test_bundle}" \
+  "${wasmtime}" run "${wasmtime_environment_flags[@]}" --dir . --dir ".::${absolute_package_dir}" "${test_bundle}" \
     --testing-library swift-testing "${test_flag_words[@]}" || bundle_exit_code=$?
 
   case "${bundle_exit_code}" in

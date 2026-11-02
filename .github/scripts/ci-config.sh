@@ -30,7 +30,13 @@ readonly known_flag_keys="cxx-interoperability-flag"
 # shell, so it may name an environment variable that they set, such as '${SWIFT_INSTALLATION}'.
 readonly known_argument_keys="android-swift-build-flags wasi-swift-build-flags"
 
-readonly known_keys="${known_job_keys} ${known_flag_keys} ${known_argument_keys}"
+# Keys holding space-separated 'NAME=VALUE' pairs rather than gating a job, which the test steps of
+# the platform the key names run with as environment variables. An absent or empty one adds none.
+readonly known_environment_keys="android-test-environment freebsd-test-environment linux-test-environment macos-test-environment wasi-test-environment windows-test-environment"
+
+readonly environment_pair_pattern='^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*$'
+
+readonly known_keys="${known_job_keys} ${known_flag_keys} ${known_argument_keys} ${known_environment_keys}"
 
 resolve_ci_config_path() {
   local config_dir="${1:?resolve_ci_config_path requires the directory that holds the ci config file}"
@@ -64,6 +70,8 @@ assert_no_complaint() {
   if ! complaint="$(
     KNOWN_JOB_KEYS="${known_job_keys}" KNOWN_FLAG_KEYS="${known_flag_keys}" \
       KNOWN_ARGUMENT_KEYS="${known_argument_keys}" \
+      KNOWN_ENVIRONMENT_KEYS="${known_environment_keys}" \
+      ENVIRONMENT_PAIR_PATTERN="${environment_pair_pattern}" \
       yq eval-all "${expression}" "${config_path}"
   )"; then
     fatal "Failed to parse '${config_path}'"
@@ -103,7 +111,8 @@ validate_ci_config() {
 
   assert_no_complaint "${config_path}" '
     (strenv(KNOWN_JOB_KEYS) | split(" ")) as $known_jobs
-    | ((strenv(KNOWN_FLAG_KEYS) + " " + strenv(KNOWN_ARGUMENT_KEYS)) | split(" ")) as $known_strings
+    | (strenv(KNOWN_ENVIRONMENT_KEYS) | split(" ")) as $known_environments
+    | ((strenv(KNOWN_FLAG_KEYS) + " " + strenv(KNOWN_ARGUMENT_KEYS) + " " + strenv(KNOWN_ENVIRONMENT_KEYS)) | split(" ")) as $known_strings
     | (. // {}) as $config
     | ($config | keys) as $config_keys
     | ($config_keys | group_by(.) | map(select(length > 1) | .[0]) | join(", ")) as $duplicate_keys
@@ -114,11 +123,18 @@ validate_ci_config() {
     | ([$config | to_entries[]
         | select(((([.key] - $known_strings) | length) == 0) and (.value | tag) != "!!str")
         | .key + " (" + (.value | tag) + ")"] | join(", ")) as $not_string_keys
+    | ([$config | to_entries[]
+        | select(((([.key] - $known_environments) | length) == 0) and (.value | tag) == "!!str")
+        | .key as $key
+        | .value | split(" ")[]
+        | select(. != "" and (test(strenv(ENVIRONMENT_PAIR_PATTERN)) | not))
+        | $key + " (" + . + ")"] | join(", ")) as $malformed_environment_words
     | [
         (("it holds duplicate keys: " + $duplicate_keys) | select($duplicate_keys != "")),
         (("it holds unknown keys: " + $unknown_keys) | select($unknown_keys != "")),
         (("these keys of it are not booleans: " + $not_boolean_keys) | select($not_boolean_keys != "")),
-        (("these keys of it are not strings: " + $not_string_keys) | select($not_string_keys != ""))
+        (("these keys of it are not strings: " + $not_string_keys) | select($not_string_keys != "")),
+        (("these keys of it hold words that do not match " + strenv(ENVIRONMENT_PAIR_PATTERN) + ": " + $malformed_environment_words) | select($malformed_environment_words != ""))
       ]
     | .[0] // ""
   '
@@ -173,6 +189,26 @@ arguments_of_known_keys() {
   return 0
 }
 
+# shellcheck disable=SC2016
+environments_of_known_keys() {
+  local config_path="${1:?environments_of_known_keys requires the path of the ci config file}"
+
+  local environments
+  if ! environments="$(
+    KNOWN_ENVIRONMENT_KEYS="${known_environment_keys}" yq eval-all '
+      (strenv(KNOWN_ENVIRONMENT_KEYS) | split(" ")) as $known
+      | (. // {}) as $config
+      | $known[]
+      | . + "=" + ($config[.] // "")
+    ' "${config_path}"
+  )"; then
+    fatal "Failed to read the keys '${known_environment_keys}' of '${config_path}'"
+  fi
+
+  printf -- '%s\n' "${environments}"
+  return 0
+}
+
 ci_config_path="$(resolve_ci_config_path "${ci_config_dir}")"
 readonly ci_config_path
 
@@ -194,5 +230,11 @@ readonly arguments
 
 log "Flag and argument keys of '${ci_config_path}': ${arguments//$'\n'/, }"
 
+environments="$(environments_of_known_keys "${ci_config_path}")"
+readonly environments
+
+log "Environment keys of '${ci_config_path}': ${environments//$'\n'/, }"
+
 printf -- '%s\n' "${enablement}"
 printf -- '%s\n' "${arguments}"
+printf -- '%s\n' "${environments}"

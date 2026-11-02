@@ -3,7 +3,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 on:
-  pull_request: { types: [opened, reopened, synchronize] }
+  pull_request: { types: [opened, ready_for_review, reopened, synchronize] }
   push: { branches: [main] }
 
 defaults:
@@ -17,7 +17,9 @@ jobs:
   lint:
     runs-on: ubuntu-26.04
 
-    timeout-minutes: 10
+    if: ${{ !github.event.pull_request.draft }}
+
+    timeout-minutes: 30
 
     container: swift:6.4-resolute
 

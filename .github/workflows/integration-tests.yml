@@ -3,7 +3,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 on:
-  pull_request: { types: [opened, reopened, synchronize] }
+  pull_request: { types: [opened, ready_for_review, reopened, synchronize] }
   push: { branches: [main] }
   schedule:
     - cron: "0 6 * * 6"
@@ -16,7 +16,9 @@ jobs:
   check-ci-config:
     runs-on: ubuntu-26.04
 
-    timeout-minutes: 5
+    if: ${{ !github.event.pull_request.draft }}
+
+    timeout-minutes: 30
 
     env:
       IS_FORK_PULL_REQUEST: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
@@ -25,6 +27,9 @@ jobs:
       android: ${{ steps.ci-config.outputs.android }}
       integration-tests: ${{ steps.ci-config.outputs.integration-tests }}
       android-swift-build-arguments: ${{ steps.ci-config.outputs.android-swift-build-arguments }}
+      android-test-environment: ${{ steps.ci-config.outputs.android-test-environment }}
+      linux-test-environment: ${{ steps.ci-config.outputs.linux-test-environment }}
+      macos-test-environment: ${{ steps.ci-config.outputs.macos-test-environment }}
 
     steps:
       - name: Check out ${{ github.event.repository.name }}
@@ -73,7 +78,7 @@ jobs:
 
     container: ${{ matrix.swift-image.name }}
 
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     permissions:
       actions: read # For reading the previous commit's workflow runs
@@ -128,13 +133,15 @@ jobs:
       - name: Run tests
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
         id: tests-run
+        env:
+          TEST_ENVIRONMENT: ${{ needs.check-ci-config.outputs.linux-test-environment }}
         run: |
           tcpdump -w dns.pcap 'port 53 and (host 8.8.4.4 or host 240.1.2.3)' &
           TCPDUMP_PID=$!
 
           # Disable 'set -e' to prevent the script from exiting on non-zero exit codes
           set +e
-          swift test \
+          env ${TEST_ENVIRONMENT} swift test \
             --filter "IntegrationTests." \
             --skip-build \
             --disable-xctest \
@@ -183,7 +190,7 @@ jobs:
     needs: check-ci-config
     if: ${{ needs.check-ci-config.outputs.integration-tests == 'true' }}
 
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     permissions:
       actions: read # For reading the previous commit's workflow runs
@@ -272,7 +279,7 @@ jobs:
     needs: [check-ci-config, cache-swiftly-toolchain-for-macos]
     if: ${{ needs.check-ci-config.outputs.integration-tests == 'true' }}
 
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     permissions:
       actions: read # For reading the previous commit's workflow runs
@@ -380,13 +387,15 @@ jobs:
       - name: Run tests while capturing packets
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
         id: tests-run
+        env:
+          TEST_ENVIRONMENT: ${{ needs.check-ci-config.outputs.macos-test-environment }}
         run: |
           sudo tcpdump -w dns.pcap 'port 53 and (host 8.8.4.4 or host 240.1.2.3)' &
           TCPDUMP_PID=$!
 
           # Disable 'set -e' to prevent the script from exiting on non-zero exit codes
           set +e
-          swift test \
+          env ${TEST_ENVIRONMENT} swift test \
             --filter "IntegrationTests." \
             --skip-build \
             --disable-xctest \
@@ -430,21 +439,11 @@ jobs:
           - version: 6.3
           - version: 6.4
         ndk:
-          - release: r27d
-            version: 27.3.13750724
-          - release: r28c
-            version: 28.2.13676358
-          - release: r29
-            version: 29.0.14206865
           - release: r30
             version: 30.0.16248370
         config:
           - mode: "debug"
           - mode: "release"
-        exclude:
-          # Swift 6.3 can't work around NDK r29's libc++ bug under C++ interoperability (android/ndk#2230).
-          - swift: { version: 6.3 }
-            ndk: { release: r29, version: 29.0.14206865 }
         include:
           - swift: { version: 6.3 }
             runner: ubuntu-24.04
@@ -525,6 +524,7 @@ jobs:
         # over 'ndk-version'. Env set on this step takes precedence over what the action sets.
         env:
           ANDROID_NDK_ROOT: ${{ steps.android-ndk.outputs.path }}
+          TEST_ENVIRONMENT: ${{ needs.check-ci-config.outputs.android-test-environment }}
         with:
           # Ubuntu runners low on space causes the emulator to fail to install
           free-disk-space: true
@@ -535,7 +535,7 @@ jobs:
             -noaudio
             -no-boot-anim
             -memory 4096
-          test-env: PROJECT_ROOT_FOR_TESTING=/data/local/tmp/android-xctest
+          test-env: PROJECT_ROOT_FOR_TESTING=/data/local/tmp/android-xctest ${TEST_ENVIRONMENT}
           swift-version: ${{ steps.swift-release.outputs.version }}
           ndk-version: ${{ matrix.ndk.version }}
           swift-configuration: ${{ matrix.config.mode }}

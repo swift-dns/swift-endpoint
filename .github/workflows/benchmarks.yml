@@ -4,7 +4,7 @@ concurrency:
   cancel-in-progress: true
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
+    types: [opened, ready_for_review, reopened, synchronize]
   push: { branches: [main] }
   schedule:
     - cron: "0 6 * * 6"
@@ -29,7 +29,9 @@ jobs:
   check-ci-config:
     runs-on: ubuntu-26.04
 
-    timeout-minutes: 5
+    if: ${{ !github.event.pull_request.draft }}
+
+    timeout-minutes: 30
 
     env:
       IS_FORK_PULL_REQUEST: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}

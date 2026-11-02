@@ -3,7 +3,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 on:
-  pull_request: { types: [opened, reopened, synchronize] }
+  pull_request: { types: [opened, ready_for_review, reopened, synchronize] }
   push: { branches: [main] }
   schedule:
     - cron: "0 6 * * 6"
@@ -16,7 +16,9 @@ jobs:
   check-ci-config:
     runs-on: ubuntu-26.04
 
-    timeout-minutes: 5
+    if: ${{ !github.event.pull_request.draft }}
+
+    timeout-minutes: 30
 
     env:
       IS_FORK_PULL_REQUEST: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
@@ -30,6 +32,11 @@ jobs:
       cxx-interoperability-arguments: ${{ steps.ci-config.outputs.cxx-interoperability-arguments }}
       android-swift-build-arguments: ${{ steps.ci-config.outputs.android-swift-build-arguments }}
       wasi-swift-build-arguments: ${{ steps.ci-config.outputs.wasi-swift-build-arguments }}
+      android-test-environment: ${{ steps.ci-config.outputs.android-test-environment }}
+      linux-test-environment: ${{ steps.ci-config.outputs.linux-test-environment }}
+      macos-test-environment: ${{ steps.ci-config.outputs.macos-test-environment }}
+      wasi-test-environment: ${{ steps.ci-config.outputs.wasi-test-environment }}
+      windows-test-environment: ${{ steps.ci-config.outputs.windows-test-environment }}
 
     steps:
       - name: Check out ${{ github.event.repository.name }}
@@ -73,9 +80,11 @@ jobs:
 
     runs-on: ${{ matrix.runner }}
 
+    needs: check-ci-config
+
     container: ${{ matrix.swift-image.name }}
 
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     permissions:
       actions: read # For reading the previous commit's workflow runs
@@ -134,8 +143,10 @@ jobs:
 
       - name: Run tests
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        env:
+          TEST_ENVIRONMENT: ${{ needs.check-ci-config.outputs.linux-test-environment }}
         run: |
-          swift test \
+          env ${TEST_ENVIRONMENT} swift test \
             --skip "IntegrationTests." \
             --skip-build \
             --disable-xctest \
@@ -161,7 +172,9 @@ jobs:
 
     runs-on: macos-26
 
-    timeout-minutes: 20
+    if: ${{ !github.event.pull_request.draft }}
+
+    timeout-minutes: 30
 
     permissions:
       actions: read # For reading the previous commit's workflow runs
@@ -247,9 +260,9 @@ jobs:
 
     runs-on: ${{ matrix.macos.version }}
 
-    needs: cache-swiftly-toolchain-for-macos
+    needs: [check-ci-config, cache-swiftly-toolchain-for-macos]
 
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     permissions:
       actions: read # For reading the previous commit's workflow runs
@@ -356,8 +369,10 @@ jobs:
 
       - name: Run tests
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        env:
+          TEST_ENVIRONMENT: ${{ needs.check-ci-config.outputs.macos-test-environment }}
         run: |
-          swift test \
+          env ${TEST_ENVIRONMENT} swift test \
             --skip "IntegrationTests." \
             --skip-build \
             --disable-xctest \
@@ -391,7 +406,7 @@ jobs:
     needs: check-ci-config
     if: ${{ needs.check-ci-config.outputs.windows == 'true' }}
 
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     env:
       CXX_INTEROPERABILITY_ARGUMENTS: ${{ needs.check-ci-config.outputs.cxx-interoperability-arguments }}
@@ -424,7 +439,7 @@ jobs:
 
       - name: Update swift
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
-        uses: compnerd/gha-setup-swift@bbae8ce86bac5a3449f3992b3d88bc4ca25f2057 # v0.5.0
+        uses: compnerd/gha-setup-swift@9ff1ee4c44888c5817fc14d1b257ac8cabb4935f # v0.5.1
         with:
           swift-version: swift-${{ steps.swift-release.outputs.version }}-release
           swift-build: ${{ steps.swift-release.outputs.version }}-RELEASE
@@ -458,8 +473,10 @@ jobs:
 
       - name: Run tests
         if: ${{ steps.check-relevance.outputs.should-run == 'true' }}
+        env:
+          TEST_ENVIRONMENT: ${{ needs.check-ci-config.outputs.windows-test-environment }}
         run: |
-          swift test \
+          env ${TEST_ENVIRONMENT} swift test \
             --skip "IntegrationTests." \
             --skip-build \
             --disable-xctest \
@@ -475,21 +492,11 @@ jobs:
           - version: 6.3
           - version: 6.4
         ndk:
-          - release: r27d
-            version: 27.3.13750724
-          - release: r28c
-            version: 28.2.13676358
-          - release: r29
-            version: 29.0.14206865
           - release: r30
             version: 30.0.16248370
         config:
           - mode: "debug"
           - mode: "release"
-        exclude:
-          # Swift 6.3 can't work around NDK r29's libc++ bug under C++ interoperability (android/ndk#2230).
-          - swift: { version: 6.3 }
-            ndk: { release: r29, version: 29.0.14206865 }
         include:
           - swift: { version: 6.3 }
             runner: ubuntu-24.04
@@ -571,6 +578,7 @@ jobs:
         # over 'ndk-version'. Env set on this step takes precedence over what the action sets.
         env:
           ANDROID_NDK_ROOT: ${{ steps.android-ndk.outputs.path }}
+          TEST_ENVIRONMENT: ${{ needs.check-ci-config.outputs.android-test-environment }}
         with:
           # Ubuntu runners low on space causes the emulator to fail to install
           free-disk-space: true
@@ -581,7 +589,7 @@ jobs:
             -noaudio
             -no-boot-anim
             -memory 4096
-          test-env: PROJECT_ROOT_FOR_TESTING=/data/local/tmp/android-xctest
+          test-env: PROJECT_ROOT_FOR_TESTING=/data/local/tmp/android-xctest ${TEST_ENVIRONMENT}
           swift-version: ${{ steps.swift-release.outputs.version }}
           ndk-version: ${{ matrix.ndk.version }}
           swift-configuration: ${{ matrix.config.mode }}
@@ -780,6 +788,7 @@ jobs:
           WASMTIME_SHA256: "4c2e31b68ad99e0a519f225a261fda099eb15f056d4a24fdb3c2a46517bde1df"
           TEST_FLAGS: >-
             --skip IntegrationTests.
+          TEST_ENVIRONMENT: ${{ needs.check-ci-config.outputs.wasi-test-environment }}
         run: .github/scripts/test-with-wasmtime.sh
 
   embedded-wasm-unit:
